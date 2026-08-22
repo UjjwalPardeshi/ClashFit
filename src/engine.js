@@ -275,6 +275,14 @@ export class SessionEngine {
     return Math.round(r.freshSeconds + (r.gassedSeconds - r.freshSeconds) * Math.min(1, v / 0.5));
   }
 
+  /** Recover fatigue from a completed breathing session. Bounded, and it never rewrites the
+   *  baselines — the set still happened. */
+  recoverFatigue(fraction) {
+    const st = this.fatigue.recover(fraction);
+    this.combatBand = st.band;
+    return st;
+  }
+
   /** Begin the next set. Fatigue baselines reset; boss HP and combo carry. */
   nextSet() {
     if (this.phase !== Phase.REST) return;

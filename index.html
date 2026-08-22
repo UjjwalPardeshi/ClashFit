@@ -102,6 +102,14 @@
   #turnName{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.1;
             text-shadow:0 2px 18px rgba(0,0,0,.9)}
 
+  /* breathing */
+  #breathBox{display:none;margin-top:18px;text-align:center}
+  #breathBox.show{display:block}
+  #breathLabel{font-size:26px;font-weight:700;letter-spacing:-.01em;margin-bottom:10px}
+  #breathRing{height:8px;background:rgba(255,255,255,.10);overflow:hidden}
+  #breathFill{display:block;height:100%;width:0;background:var(--fatigue)}
+  #breathMeta{margin-top:8px}
+
   /* result overlay */
   #over{position:fixed;inset:0;display:none;place-items:center;text-align:center;z-index:8;
         background:rgba(7,9,12,.86);backdrop-filter:blur(6px)}
@@ -232,7 +240,15 @@
       <div id="restCoach">—</div>
       <div id="restBoss">—</div>
       <div class="lbl" id="restStats"></div>
-      <button id="nextSet" class="go" style="margin-top:16px">Next set</button>
+      <div class="row" style="justify-content:flex-start;margin-top:16px">
+        <button id="breathe">Breathe · 4 cycles</button>
+        <button id="nextSet" class="go">Next set</button>
+      </div>
+      <div id="breathBox">
+        <div id="breathLabel">Breathe in</div>
+        <div id="breathRing"><i id="breathFill"></i></div>
+        <div class="lbl" id="breathMeta"></div>
+      </div>
     </div>
   </div>
 

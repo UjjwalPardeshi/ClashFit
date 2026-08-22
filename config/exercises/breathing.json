@@ -1,0 +1,35 @@
+{
+  "id": "breathing",
+  "family": "CADENCE",
+  "name": "Breathing",
+  "tags": [
+    "mindfulness",
+    "recovery",
+    "no-equipment"
+  ],
+  "framing": "front",
+  "difficulty": 1,
+  "games": [
+    "RECOVERY"
+  ],
+  "detector": {
+    "signalJoint": "SHOULDER",
+    "signalAxis": "y",
+    "minProminence": 0.004,
+    "refractoryMs": 1500,
+    "targetCadence": {
+      "min": 5,
+      "max": 14
+    },
+    "_note": "breaths per minute, not reps. Shoulder rise is roughly a tenth the amplitude of a jumping jack and roughly ten times slower, so prominence and refractory both move."
+  },
+  "fatigue": {
+    "signal": "CADENCE_DECAY",
+    "baselineReps": 3
+  },
+  "cues": {
+    "enter": "Sit or stand still, shoulders visible.",
+    "tooSmall": "Breathe a little deeper.",
+    "tooSlow": "That is a good pace — hold it."
+  }
+}

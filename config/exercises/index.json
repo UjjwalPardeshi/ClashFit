@@ -1,6 +1,6 @@
 {
   "generated": true,
-  "count": 50,
+  "count": 51,
   "exercises": [
     {
       "id": "calf_raise",
@@ -321,6 +321,20 @@
       "tags": [
         "core",
         "isometric"
+      ]
+    },
+    {
+      "id": "breathing",
+      "name": "Breathing",
+      "family": "CADENCE",
+      "difficulty": 1,
+      "games": [
+        "RECOVERY"
+      ],
+      "tags": [
+        "mindfulness",
+        "recovery",
+        "no-equipment"
       ]
     },
     {

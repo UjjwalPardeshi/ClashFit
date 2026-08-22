@@ -8,6 +8,7 @@ import { Haptics } from '../src/haptics.js';
 import { COMMANDS } from '../src/voice.js';
 import { Roster, RosterMode, Circuit, DEFAULT_CIRCUIT } from '../src/roster.js';
 import { Store, LADDERS } from '../src/store.js';
+import { BoxBreathing, recoveryFraction, Phase as BreathPhase } from '../src/breathing.js';
 import { DuelSession, LoopbackTransport, LinkState, newPlayerId } from '../src/duel.js';
 import { SiegeGame, PursuitGame, BreakerGame, SigilGame, GameOutcome, makeFamilyGame } from '../src/games.js';
 import { RepStateMachine } from '../src/repFsm.js';
@@ -412,6 +413,57 @@ t('CLINIC_STS · ships no norms until they are cited', () => {
   eq(clinicSts.norms.source, null);
   eq(clinicSts.norms.bands.length, 0);
   ok(/not a medical device/i.test(clinicSts.notNested), 'missing the not-a-medical-device line');
+});
+
+// ---------- breathing and recovery ----------
+t('breathing · box pattern walks its phases and completes', () => {
+  const b = new BoxBreathing({ inSec: 4, holdInSec: 4, outSec: 4, holdOutSec: 4, cycles: 2 });
+  b.start(0);
+  eq(b.tick(1000).phase, BreathPhase.IN);
+  eq(b.tick(5000).phase, BreathPhase.HOLD_IN);
+  eq(b.tick(9000).phase, BreathPhase.OUT);
+  eq(b.tick(13000).phase, BreathPhase.HOLD_OUT);
+  eq(b.tick(17000).cycle, 1, 'did not roll into the second cycle');
+  ok(b.tick(33000).done, 'never completed');
+  eq(b.totalSec, 32);
+});
+
+t('breathing · wind-down uses a longer exhale than inhale', () => {
+  const w = BoxBreathing.windDown(3);
+  w.start(0);
+  eq(w.tick(1000).phase, BreathPhase.IN);
+  eq(w.tick(6000).phase, BreathPhase.OUT, 'no hold phases expected in wind-down');
+  eq(w.totalSec, 36);
+});
+
+t('breathing · recovery is bounded so it cannot undo a set', () => {
+  // If breathing recovered everything, fatigue would stop meaning anything and the mechanic
+  // that makes this product different would become a skip button.
+  ok(recoveryFraction({ cyclesCompleted: 99, targetCycles: 4 }) <= 0.35, 'unbounded recovery');
+  eq(recoveryFraction({ cyclesCompleted: 0, targetCycles: 4 }), 0);
+  ok(recoveryFraction({ cyclesCompleted: 4, targetCycles: 4, rateInBand: false })
+     < recoveryFraction({ cyclesCompleted: 4, targetCycles: 4, rateInBand: true }),
+     'breathing off-pace scored the same as on-pace');
+});
+
+t('recovery · lowers the band without rewriting the baseline', () => {
+  const e = new SessionEngine(store, 'squat');
+  drive(e, synthWorldSet({ reps: 14, bottom: 80, decay: 0.030, restGrowth: 0.55 }));
+  const before = e.fatigue.state();
+  ok(before.value > 0.2, `fatigue only reached ${before.value.toFixed(2)}`);
+  const baselineBefore = JSON.stringify(e.fatigue.baseline);
+  const after = e.recoverFatigue(0.35);
+  ok(after.value < before.value, 'recovery did nothing');
+  eq(JSON.stringify(e.fatigue.baseline), baselineBefore, 'recovery rewrote the baseline');
+});
+
+t('breathing · is configured as a real exercise with breath-scale gates', () => {
+  const b = cfg('exercises/breathing.json');
+  eq(b.family, 'CADENCE');
+  eq(b.detector.signalJoint, 'SHOULDER');
+  ok(b.detector.minProminence < 0.01, 'prominence gate is set for limbs, not for a chest rise');
+  ok(b.detector.refractoryMs >= 1000, 'refractory is set for reps, not for breaths');
+  ok(b.detector.targetCadence.max <= 20, 'target rate is in reps per minute, not breaths');
 });
 
 // ---------- persistence and progression ----------

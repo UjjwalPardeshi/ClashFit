@@ -140,6 +140,15 @@ export class FatigueEstimator {
     if (need === 0) this.band = candidate;
   }
 
+  /** Breathing between sets measurably recovers a band. Baselines are untouched — the set still
+   *  happened, and the estimator must not be told otherwise. docs/22-HEALTH-DOMAINS.md §3 */
+  recover(fraction) {
+    const f = Math.max(0, Math.min(0.5, fraction));
+    this.value = Math.max(0, this.value * (1 - f));
+    this.#latch(this.#bandFor(this.value));
+    return this.state();
+  }
+
   state() {
     return {
       value: this.value,

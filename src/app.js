@@ -16,6 +16,7 @@ import { Haptics } from './haptics.js';
 import { Voice } from './voice.js';
 import { Roster, RosterMode, Circuit, DEFAULT_CIRCUIT } from './roster.js';
 import { Store } from './store.js';
+import { BoxBreathing, recoveryFraction } from './breathing.js';
 import { Renderer, C } from './render.js';
 import { TraceRecorder } from './trace.js';
 
@@ -47,7 +48,12 @@ const el = {
   rosterNames: $('rosterNames'), rosterHint: $('rosterHint'), rosterGo: $('rosterGo'),
   turn: $('turn'), turnName: $('turnName'), turnMeta: $('turnMeta'),
   streak: $('streak'),
+  breathe: $('breathe'), breathBox: $('breathBox'), breathLabel: $('breathLabel'),
+  breathFill: $('breathFill'), breathMeta: $('breathMeta'),
 };
+
+let breath = null;
+let breathTimer = null;
 
 const store2 = new Store();
 let sessionStartMs = null;
@@ -277,6 +283,50 @@ function onVoiceCommand(cmd) {
   if (cmd === 'start' && !running) el.start.click();
 }
 
+/** Breathing between sets measurably recovers a fatigue band, so it is mechanically useful
+ *  mid-fight rather than a virtue tab nobody opens. docs/22-HEALTH-DOMAINS.md §3 */
+function startBreathing() {
+  stopBreathing();
+  const gassed = engine.fatigue.state().value > 0.45;
+  breath = gassed ? BoxBreathing.windDown(4) : new BoxBreathing({ cycles: 4 });
+  breath.start(performance.now());
+  el.breathBox.classList.add('show');
+  el.breathe.classList.add('on');
+  speech.flush();
+  speech.say(gassed ? 'Long exhale. Follow the bar.' : 'Box breathing. Follow the bar.');
+
+  breathTimer = setInterval(() => {
+    const b = breath.tick(performance.now());
+    el.breathLabel.textContent = b.label;
+    el.breathFill.style.width = `${Math.round(b.phaseProgress * 100)}%`;
+    el.breathMeta.textContent = `cycle ${Math.min(b.cycle + 1, breath.cycles)} of ${breath.cycles}`;
+    if (b.changed && !b.done) haptics?.breathe();
+    if (b.done) finishBreathing();
+  }, 100);
+}
+
+function finishBreathing() {
+  if (!breath) return;
+  const frac = recoveryFraction({ cyclesCompleted: breath.cycle, targetCycles: breath.cycles });
+  const before = engine.fatigue.state();
+  const after = engine.recoverFatigue(frac);
+  stopBreathing();
+  const moved = after.band !== before.band;
+  el.restBand.textContent = after.band;
+  el.restBand.style.color = BAND_COLOR[after.band];
+  el.cue.textContent = moved
+    ? `Recovered to ${after.band}.`
+    : `Fatigue down ${Math.round((before.value - after.value) * 100)} points.`;
+  speech.say(moved ? `Recovered to ${after.band.toLowerCase()}.` : 'Good. Back to it.');
+}
+
+function stopBreathing() {
+  if (breathTimer) { clearInterval(breathTimer); breathTimer = null; }
+  breath = null;
+  el.breathBox.classList.remove('show');
+  el.breathe.classList.remove('on');
+}
+
 function showRest(telemetry, coach) {
   el.restSet.textContent = telemetry.session_set_index;
   el.restBand.textContent = telemetry.fatigue_band;
@@ -288,6 +338,7 @@ function showRest(telemetry, coach) {
     `velocity −${telemetry.velocity_loss_pct}% · range −${telemetry.rom_loss_pct}%` +
     (telemetry.depth_drop_cm ? ` · depth −${telemetry.depth_drop_cm}cm` : '') +
     `<br>source: ${coach.source.toLowerCase()}`;
+  stopBreathing();
   el.rest.classList.add('show');
   audio.duck(0.12, 4000);
   speech.sayPair(coach.coachLine, coach.bossLine);      // the player is on the floor, not reading
@@ -437,7 +488,11 @@ function wire() {
     if (!engine.reps.length) { el.cue.textContent = 'Do a set first, then save it as a ghost.'; return; }
     downloadGhost(ghostFromReps(engine.reps, { exercise: el.exercise.value, name: 'My run' }));
   };
-  el.nextSet.onclick = () => { speech.flush(); el.rest.classList.remove('show'); engine.nextSet(); };
+  el.breathe.onclick = () => startBreathing();
+  el.nextSet.onclick = () => {
+    stopBreathing();
+    speech.flush(); el.rest.classList.remove('show'); engine.nextSet();
+  };
   el.again.onclick = () => { speech.flush(); engine.reset(); el.over.classList.remove('show'); el.rest.classList.remove('show'); };
   el.reset.onclick = () => { engine.reset(); el.over.classList.remove('show'); };
   el.casual.onclick = () => {
