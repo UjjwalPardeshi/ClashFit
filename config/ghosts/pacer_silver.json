@@ -1,0 +1,70 @@
+{
+  "type": "clashfit-ghost",
+  "v": 1,
+  "meta": {
+    "name": "Silver Pacer",
+    "exercise": "squat",
+    "reps": 14,
+    "totalDamage": 1092,
+    "note": "steady, honest depth",
+    "shipped": true
+  },
+  "events": [
+    {
+      "t": 3900,
+      "damage": 78
+    },
+    {
+      "t": 7800,
+      "damage": 78
+    },
+    {
+      "t": 11700,
+      "damage": 78
+    },
+    {
+      "t": 15600,
+      "damage": 78
+    },
+    {
+      "t": 19500,
+      "damage": 78
+    },
+    {
+      "t": 23400,
+      "damage": 78
+    },
+    {
+      "t": 27300,
+      "damage": 78
+    },
+    {
+      "t": 31200,
+      "damage": 78
+    },
+    {
+      "t": 35100,
+      "damage": 78
+    },
+    {
+      "t": 39000,
+      "damage": 78
+    },
+    {
+      "t": 42900,
+      "damage": 78
+    },
+    {
+      "t": 46800,
+      "damage": 78
+    },
+    {
+      "t": 50700,
+      "damage": 78
+    },
+    {
+      "t": 54600,
+      "damage": 78
+    }
+  ]
+}

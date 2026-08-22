@@ -6,7 +6,8 @@ import { PoseLandmarker, FilesetResolver } from
   'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs';
 
 import { loadConfig, reloadInto } from './config.js';
-import { SessionEngine, Phase } from './engine.js';
+import { SessionEngine, Phase, Mode } from './engine.js';
+import { ghostFromReps, parseGhost, downloadGhost } from './ghost.js';
 import { Renderer, C } from './render.js';
 import { TraceRecorder } from './trace.js';
 
@@ -22,7 +23,15 @@ const el = {
   pips: document.querySelectorAll('#pips .pip'), dbg: $('dbg'),
   exercise: $('exercise'), start: $('start'), casual: $('casual'), reset: $('reset'),
   reload: $('reload'), rec: $('rec'), dl: $('dl'), dbgBtn: $('dbgBtn'),
+  mode: $('mode'), ghost: $('ghost'), saveGhost: $('saveGhost'),
+  timerTile: $('timerTile'), timer: $('timer'),
+  race: $('race'), raceYou: $('raceYou'), raceThem: $('raceThem'), raceFill: $('raceFill'),
+  over: $('over'), overKicker: $('overKicker'), overTitle: $('overTitle'),
+  overBody: $('overBody'), again: $('again'),
 };
+
+const PACERS = ['pacer_bronze', 'pacer_silver', 'pacer_gold'];
+let ghosts = {};
 
 const store = {};
 let landmarker = null, engine = null, renderer = null, recorder = new TraceRecorder();
@@ -42,6 +51,15 @@ async function boot() {
     .map((x) => `<option value="${x.id}">${x.name}</option>`).join('');
   el.exercise.value = 'squat';
 
+  // Shipped pacers, so a fresh install can race something immediately.
+  ghosts = Object.fromEntries((await Promise.all(PACERS.map(async (id) => {
+    try { return [id, parseGhost(await (await fetch(`config/ghosts/${id}.json`)).text())]; }
+    catch { return null; }
+  }))).filter(Boolean));
+  el.ghost.innerHTML = Object.entries(ghosts)
+    .map(([id, g]) => `<option value="${id}">${g.meta.name} · ${g.meta.reps} reps</option>`).join('')
+    + '<option value="__file">Load ghost file…</option>';
+
   renderer = new Renderer(el.stage);
   renderer.resize();
   addEventListener('resize', () => renderer.resize());
@@ -53,8 +71,11 @@ async function boot() {
 }
 
 function makeEngine(id) {
+  const mode = el.mode.value;
   engine = new SessionEngine(store, id, {
     casual,
+    mode,
+    onEnd: (reason, s) => showResult(reason, s),
     onRep: (rep) => {
       renderer.hit(rep.verdict, rep.damage);
       el.verdict.textContent = rep.verdict;
@@ -62,12 +83,62 @@ function makeEngine(id) {
         rep.verdict === 'CLEAN' ? C.clean : rep.verdict === 'OK' ? C.system : C.shallow;
     },
   });
+  if (mode === Mode.GHOST_RACE) {
+    const g = ghosts[el.ghost.value] ?? Object.values(ghosts)[0];
+    if (g) engine.loadGhost(g);
+  }
+  el.timerTile.style.display = mode === Mode.TIME_ATTACK ? '' : 'none';
+  el.race.classList.toggle('show', mode === Mode.GHOST_RACE);
+  el.ghost.style.display = mode === Mode.GHOST_RACE ? '' : 'none';
+  el.over.classList.remove('show');
+}
+
+function showResult(reason, s) {
+  const win = s.mode === Mode.GHOST_RACE ? s.playerDamage >= s.ghostDamage : null;
+  el.overKicker.textContent =
+    reason === 'BOSS_DOWN' ? 'Boss down' : reason === 'TIME' ? "Time" : 'Set over';
+  el.overTitle.textContent =
+    s.mode === Mode.GHOST_RACE ? (win ? 'YOU WIN' : 'GHOST WINS')
+    : s.mode === Mode.TIME_ATTACK ? String(s.playerDamage)
+    : 'VICTORY';
+  el.overTitle.style.color = win === false ? C.damage : C.clean;
+  const mean = engine.reps.length
+    ? engine.reps.reduce((a, r) => a + r.formScore, 0) / engine.reps.length : 0;
+  el.overBody.innerHTML =
+    `${s.reps} reps · mean form ${mean.toFixed(2)} · ${s.playerDamage} damage<br>` +
+    `peak fatigue ${s.fatigue.band}` +
+    (s.mode === Mode.GHOST_RACE ? ` · ghost ${s.ghostDamage}` : '');
+  el.over.classList.add('show');
 }
 
 function wire() {
   el.start.onclick = () => (running ? stopCam() : startCam());
-  el.exercise.onchange = () => { makeEngine(el.exercise.value); };
-  el.reset.onclick = () => engine.reset();
+  el.exercise.onchange = () => makeEngine(el.exercise.value);
+  el.mode.onchange = () => makeEngine(el.exercise.value);
+  el.ghost.onchange = () => {
+    if (el.ghost.value !== '__file') return makeEngine(el.exercise.value);
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.json,application/json';
+    inp.onchange = async () => {
+      const f = inp.files?.[0]; if (!f) return;
+      try {
+        const g = parseGhost(await f.text());
+        const id = `file:${f.name}`;
+        ghosts[id] = g;
+        el.ghost.insertAdjacentHTML('afterbegin',
+          `<option value="${id}">${g.meta.name ?? f.name} · ${g.events.length} reps</option>`);
+        el.ghost.value = id;
+        makeEngine(el.exercise.value);
+      } catch (e) { el.cue.textContent = `Not a ghost file: ${e.message}`; }
+    };
+    inp.click();
+  };
+  el.saveGhost.onclick = () => {
+    if (!engine.reps.length) { el.cue.textContent = 'Do a set first, then save it as a ghost.'; return; }
+    downloadGhost(ghostFromReps(engine.reps, { exercise: el.exercise.value, name: 'My run' }));
+  };
+  el.again.onclick = () => { engine.reset(); el.over.classList.remove('show'); };
+  el.reset.onclick = () => { engine.reset(); el.over.classList.remove('show'); };
   el.casual.onclick = () => {
     casual = !casual;
     el.casual.classList.toggle('on', casual);
@@ -170,6 +241,18 @@ function paintHud(s) {
 
   el.reps.textContent = s.reps;
   el.combo.textContent = `×${s.combat.comboMultiplier.toFixed(1)}`;
+
+  if (s.mode === Mode.TIME_ATTACK) {
+    const left = s.timeLeftMs ?? engine.durationMs;
+    el.timer.textContent = Math.ceil(left / 1000);
+    el.timer.style.color = left < 10000 ? C.damage : '';
+  }
+  if (s.mode === Mode.GHOST_RACE) {
+    const you = s.playerDamage, them = s.ghostDamage, tot = you + them;
+    el.raceYou.textContent = `YOU ${you}`;
+    el.raceThem.textContent = `${them} ${s.ghostMeta?.name?.toUpperCase() ?? 'GHOST'}`;
+    el.raceFill.style.width = `${tot ? (you / tot) * 100 : 50}%`;
+  }
   el.band.textContent = s.fatigue.band;
   el.band.style.color = BAND_COLOR[s.fatigue.band];
   const lit = s.fatigue.bandIndex + 1;

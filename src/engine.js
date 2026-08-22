@@ -9,8 +9,10 @@ import { RepStateMachine } from './repFsm.js';
 import { scoreRep, verdict, alignmentSample } from './formScorer.js';
 import { FatigueEstimator, Band } from './fatigue.js';
 import { CombatEngine } from './combat.js';
+import { GhostSource } from './ghost.js';
 
 export const Phase = { CALIBRATING: 'CALIBRATING', FIGHTING: 'FIGHTING', FRAMING_LOST: 'FRAMING_LOST', DEAD: 'DEAD' };
+export const Mode = { BOSS_FIGHT: 'BOSS_FIGHT', TIME_ATTACK: 'TIME_ATTACK', GHOST_RACE: 'GHOST_RACE' };
 
 export class SessionEngine {
   constructor(cfg, exerciseId = 'squat', opts = {}) {
@@ -19,6 +21,19 @@ export class SessionEngine {
     this.combat = new CombatEngine(cfg.combat, { casual: !!opts.casual });
     this.onRep = opts.onRep ?? (() => {});
     this.onBand = opts.onBand ?? (() => {});
+    this.onEnd = opts.onEnd ?? (() => {});
+    this.mode = opts.mode ?? Mode.BOSS_FIGHT;
+    this.ghost = null;
+    this.reset();
+  }
+
+  setMode(mode) { this.mode = mode; this.reset(); }
+
+  /** A ghost is just a recorded rep timeline. It rides the duel's own code path. */
+  loadGhost(ghostData) {
+    this.ghostData = ghostData;
+    this.ghost = new GhostSource(ghostData);
+    this.mode = Mode.GHOST_RACE;
     this.reset();
   }
 
@@ -45,6 +60,35 @@ export class SessionEngine {
     this.romBaselineU = null;
     this.topRefSamples = [];
     this.filter.reset();
+
+    this.fightStartMs = null;
+    this.ended = false;
+    this.endReason = null;
+    this.playerDamage = 0;
+    this.ghostDamage = 0;
+    this.ghost?.reset();
+
+    // Time Attack is scored on total damage, so the boss must not die out from under it.
+    if (this.mode === Mode.TIME_ATTACK && this.cfg.combat.modes?.TIME_ATTACK?.bossHpUncapped) {
+      this.combat.maxHp = 10_000_000;
+      this.combat.hp = 10_000_000;
+    }
+  }
+
+  get durationMs() {
+    return (this.cfg.combat.modes?.TIME_ATTACK?.durationSec ?? 60) * 1000;
+  }
+
+  get timeLeftMs() {
+    if (this.mode !== Mode.TIME_ATTACK || this.fightStartMs === null) return null;
+    return Math.max(0, this.durationMs - (this.lastTMs - this.fightStartMs));
+  }
+
+  #end(reason) {
+    if (this.ended) return;
+    this.ended = true;
+    this.endReason = reason;
+    this.onEnd(reason, this.state());
   }
 
   /**
@@ -53,6 +97,7 @@ export class SessionEngine {
    * @param {number} tMs
    */
   frame(world, image, tMs) {
+    this.lastTMs = tMs;
     if (!world || !world.length) return this.#lost(tMs);
 
     const lms = this.filter.apply(world, tMs);
@@ -77,11 +122,24 @@ export class SessionEngine {
         this.fsm.setTopRef(med);
         this.topRef = med;
         this.phase = Phase.FIGHTING;
+        this.fightStartMs = tMs;
+        this.ghost?.start(tMs);
       }
       return this.state();
     }
 
-    const raw = this.fsm.onFrame(sel.angle, tMs);
+    if (!this.ended) {
+      // A ghost's damage enters through the same idempotent path a remote player's does.
+      if (this.mode === Mode.GHOST_RACE && this.ghost) {
+        for (const e of this.ghost.due(tMs)) {
+          this.combat.onRemoteDamage('GHOST', e.seq, e.damage);
+          this.ghostDamage += e.damage;
+        }
+      }
+      if (this.mode === Mode.TIME_ATTACK && this.timeLeftMs === 0) this.#end('TIME');
+    }
+
+    const raw = this.ended ? null : this.fsm.onFrame(sel.angle, tMs);
     if (raw) this.#completeRep(raw, lms);
     return this.state();
   }
@@ -108,7 +166,8 @@ export class SessionEngine {
     this.reps.push(rec);
     this.lastRep = rec;
     this.lastScore = score;
-    if (this.combat.dead) this.phase = Phase.DEAD;
+    this.playerDamage += rec.damage ?? 0;
+    if (this.combat.dead) { this.phase = Phase.DEAD; this.#end('BOSS_DOWN'); }
     this.onRep(rec, this.combat.state());
   }
 
@@ -137,6 +196,14 @@ export class SessionEngine {
 
   state() {
     return {
+      mode: this.mode,
+      ended: this.ended,
+      endReason: this.endReason,
+      timeLeftMs: this.timeLeftMs,
+      playerDamage: this.playerDamage,
+      ghostDamage: this.ghostDamage,
+      ghostMeta: this.ghost?.meta ?? null,
+      ghostFinished: this.ghost?.finished ?? null,
       phase: this.phase,
       angle: this.angle,
       fsmState: this.fsm.state,

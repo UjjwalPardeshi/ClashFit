@@ -46,6 +46,15 @@ baseline, so everything after is scored against *you*.
 Hit **Debug** to watch the live angle, the state machine, the four sub-scores and the fatigue
 signals. That panel is the tuning instrument.
 
+**Modes.** *Boss Fight* is the full loop. *Time Attack* is 60 seconds for maximum damage — the
+demo-shaped mode, because a rotating judge may not give you four minutes. *Ghost Race* runs a
+recorded rep timeline alongside you: race a shipped pacer, your own past set, or a file someone
+sent you. **Save ghost** exports the run you just did.
+
+Ghosts ride the duel's own code path — a ghost is a remote player that happens to come from a
+file. That makes Ghost Race the instant fallback if two-phone pairing fails in the hall, because
+on screen it looks identical.
+
 ---
 
 ## What works
@@ -61,6 +70,8 @@ signals. That panel is the tuning instrument.
 | Duel maths | Event-sourced HP with dedupe — tested, not wired to a transport |
 | Traces | Record to JSON Lines for replay and regression |
 | 8 exercises | squat · chair squat · lunge · calf raise · glute bridge · push-up · knee push-up · sit-up |
+| Modes | Boss Fight · **Time Attack (60s)** · **Ghost Race** |
+| Ghosts | Three shipped pacers, save your own run, load a friend's |
 
 ## What is deliberately absent
 

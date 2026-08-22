@@ -6,7 +6,9 @@ import { RepStateMachine } from '../src/repFsm.js';
 import { scoreRep, verdict, clamp01 } from '../src/formScorer.js';
 import { FatigueEstimator, Band } from '../src/fatigue.js';
 import { CombatEngine, ComboTracker } from '../src/combat.js';
-import { synthRep, synthSet } from './synth.js';
+import { synthRep, synthSet, synthWorldSet } from './synth.js';
+import { SessionEngine, Mode, Phase } from '../src/engine.js';
+import { GhostSource, ghostFromReps, parseGhost } from '../src/ghost.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const cfg = (p) => JSON.parse(readFileSync(join(HERE, '..', 'config', p), 'utf8'));
@@ -264,6 +266,85 @@ t('duel · 30% packet loss repaired by the recent tail', () => {
   });
   ok(dropped >= 4, `expected drops, got ${dropped}`);
   eq(rx.hp, truth.hp, 'tails did not repair the loss');
+});
+
+// ---------- engine, end to end ----------
+const store = { pose, combat: combatCfg, exercises: { squat, calf_raise: calf } };
+const drive = (engine, frames) => { for (const [w, t] of frames) engine.frame(w, null, t); return engine.state(); };
+
+t('engine · calibrates then counts a clean set', () => {
+  const e = new SessionEngine(store, 'squat');
+  const s = drive(e, synthWorldSet({ reps: 8, bottom: 80 }));
+  eq(s.phase === Phase.DEAD ? Phase.DEAD : s.phase, s.phase);
+  ok(e.reps.length >= 7, `only ${e.reps.length} reps`);
+  ok(Number.isFinite(s.topRef), 'never calibrated');
+});
+
+t('engine · framing loss freezes the fatigue baseline', () => {
+  const e = new SessionEngine(store, 'squat');
+  drive(e, synthWorldSet({ reps: 5, bottom: 80 }));
+  const before = e.fatigue.state().value;
+  for (let i = 0; i < 60; i++) e.frame(null, null, 100000 + i * 33);
+  eq(e.state().phase, Phase.FRAMING_LOST);
+  near(e.fatigue.state().value, before, 1e-9, 'baseline moved during loss');
+});
+
+// ---------- game modes ----------
+t('TIME_ATTACK · ends on the clock, boss survives', () => {
+  const e = new SessionEngine(store, 'squat', { mode: Mode.TIME_ATTACK });
+  const s = drive(e, synthWorldSet({ reps: 40, bottom: 80 }));
+  ok(s.ended, 'never ended');
+  eq(s.endReason, 'TIME');
+  ok(!s.combat.dead, 'boss died in a scored-on-damage mode');
+  ok(s.playerDamage > 0, 'no damage recorded');
+});
+
+t('TIME_ATTACK · no reps counted after the clock stops', () => {
+  const e = new SessionEngine(store, 'squat', { mode: Mode.TIME_ATTACK });
+  drive(e, synthWorldSet({ reps: 40, bottom: 80 }));
+  const atEnd = e.reps.length;
+  drive(e, synthWorldSet({ reps: 5, bottom: 80 }).map(([w, ms]) => [w, ms + 200000]));
+  eq(e.reps.length, atEnd, 'reps leaked past the buzzer');
+});
+
+t('GHOST_RACE · ghost damage lands through the duel path', () => {
+  const g = { type: 'clashfit-ghost', v: 1, meta: { name: 'T' },
+              events: Array.from({ length: 10 }, (_, i) => ({ t: (i + 1) * 1500, damage: 70 })) };
+  const e = new SessionEngine(store, 'squat');
+  e.loadGhost(g);
+  const s = drive(e, synthWorldSet({ reps: 6, bottom: 80 }));
+  ok(s.ghostDamage > 0, 'ghost never fired');
+  eq(s.combat.totalDamage, s.playerDamage + s.ghostDamage, 'player and ghost damage do not reconcile');
+});
+
+t('GHOST_RACE · replaying the same ghost twice is idempotent', () => {
+  const g = { type: 'clashfit-ghost', v: 1, meta: {},
+              events: [{ t: 500, damage: 100 }, { t: 900, damage: 100 }] };
+  const src = new GhostSource(g);
+  src.start(0);
+  const a = src.due(2000);
+  const e = new SessionEngine(store, 'squat');
+  for (const ev of a) e.combat.onRemoteDamage('GHOST', ev.seq, ev.damage);
+  for (const ev of a) e.combat.onRemoteDamage('GHOST', ev.seq, ev.damage);
+  eq(e.combat.totalDamage, 200);
+});
+
+t('ghost · round-trips a recorded set', () => {
+  const e = new SessionEngine(store, 'squat');
+  drive(e, synthWorldSet({ reps: 6, bottom: 80 }));
+  const g = parseGhost(JSON.stringify(ghostFromReps(e.reps, { exercise: 'squat' })));
+  eq(g.events.length, e.reps.length);
+  eq(g.meta.totalDamage, e.reps.reduce((a, r) => a + r.damage, 0));
+  ok(g.events.every((x, i) => i === 0 || x.t >= g.events[i - 1].t), 'ghost events out of order');
+});
+
+t('shipped pacer ghosts are valid and ordered', () => {
+  for (const name of ['pacer_bronze', 'pacer_silver', 'pacer_gold']) {
+    const g = parseGhost(readFileSync(join(HERE, '..', 'config/ghosts', name + '.json'), 'utf8'));
+    ok(g.events.length > 0, name + ' empty');
+    ok(g.events.every((x, i) => i === 0 || x.t > g.events[i - 1].t), name + ' unordered');
+    ok(g.meta.totalDamage === g.events.reduce((a, x) => a + x.damage, 0), name + ' meta mismatch');
+  }
 });
 
 // ---------- report ----------

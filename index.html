@@ -60,6 +60,22 @@
   #dbg b{color:var(--ink);font-weight:600}
   #dbg.show{display:block}
 
+  /* race bar */
+  #race{position:fixed;top:16px;left:50%;transform:translateX(-50%);width:min(520px,60vw);
+        display:none;z-index:3}
+  #race.show{display:block}
+  #raceBar{height:10px;background:var(--fatigue);border:1px solid var(--line);margin-top:6px;
+           overflow:hidden}
+  #raceFill{display:block;height:100%;background:var(--clean);width:50%;transition:width .25s ease}
+
+  /* result overlay */
+  #over{position:fixed;inset:0;display:none;place-items:center;text-align:center;z-index:8;
+        background:rgba(7,9,12,.86);backdrop-filter:blur(6px)}
+  #over.show{display:grid}
+  #overTitle{font-size:clamp(38px,7vw,84px);font-weight:800;letter-spacing:-.03em;line-height:1;
+             margin:10px 0 12px}
+  #overBody{font-size:13px;letter-spacing:.1em;line-height:2}
+
   #boot{position:fixed;inset:0;display:grid;place-items:center;background:var(--ground);z-index:9;
         text-align:center;padding:24px}
   #boot h1{font-size:13px;font-family:var(--mono);letter-spacing:.28em;text-transform:uppercase;
@@ -83,6 +99,15 @@
       <button id="start" class="go">Start camera</button>
     </div>
     <div class="row">
+      <select id="mode" title="Mode">
+        <option value="BOSS_FIGHT">Boss Fight</option>
+        <option value="TIME_ATTACK">Time Attack · 60s</option>
+        <option value="GHOST_RACE">Ghost Race</option>
+      </select>
+      <select id="ghost" title="Ghost" style="display:none"></select>
+      <button id="saveGhost" title="Save this run as a ghost">Save ghost</button>
+    </div>
+    <div class="row">
       <button id="casual">Casual</button>
       <button id="reset">Reset fight</button>
       <button id="reload">Reload config</button>
@@ -94,7 +119,19 @@
     </div>
   </div>
 
+  <div id="race">
+    <div class="lbl" style="display:flex;justify-content:space-between">
+      <span id="raceYou" style="color:var(--clean)">YOU 0</span>
+      <span id="raceThem" style="color:var(--fatigue)">0 GHOST</span>
+    </div>
+    <div id="raceBar"><i id="raceFill"></i></div>
+  </div>
+
   <div id="hud">
+    <div class="tile" id="timerTile" style="display:none">
+      <div class="lbl">Time</div>
+      <div class="big" id="timer">60</div>
+    </div>
     <div class="tile">
       <div class="lbl">Reps</div>
       <div class="big" id="reps">0</div>
@@ -111,6 +148,15 @@
     <div class="tile">
       <div class="lbl">Combo</div>
       <div class="big" id="combo">×1.0</div>
+    </div>
+  </div>
+
+  <div id="over">
+    <div>
+      <div class="lbl" id="overKicker">Result</div>
+      <div id="overTitle">—</div>
+      <div id="overBody" class="lbl"></div>
+      <button id="again" class="go" style="margin-top:18px">Run it again</button>
     </div>
   </div>
 
