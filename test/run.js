@@ -530,8 +530,17 @@ t('one fatigue model · every family declares its signals and weights sum sanely
   }
 });
 
+t('the generated manifest matches what is on disk', () => {
+  const man = JSON.parse(readFileSync(join(HERE, '..', 'config/exercises/index.json'), 'utf8'));
+  const onDisk = readdirSync(join(HERE, '..', 'config/exercises'))
+    .filter(f => f.endsWith('.json') && f !== 'index.json').map(f => f.replace('.json',''));
+  eq(man.count, onDisk.length, 'manifest count drifted from disk');
+  const ids = new Set(man.exercises.map(e => e.id));
+  for (const id of onDisk) ok(ids.has(id), id + ' missing from the manifest — run npm run manifest');
+});
+
 t('every shipped exercise config is loadable and well formed', () => {
-  const dir = readdirSync(join(HERE, '..', 'config/exercises')).filter(f => f.endsWith('.json'));
+  const dir = readdirSync(join(HERE, '..', 'config/exercises')).filter(f => f.endsWith('.json') && f !== 'index.json');
   ok(dir.length >= 45, `only ${dir.length} exercises`);
   const fams = {};
   for (const f of dir) {

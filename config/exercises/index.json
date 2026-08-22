@@ -1,0 +1,755 @@
+{
+  "generated": true,
+  "count": 48,
+  "exercises": [
+    {
+      "id": "calf_raise",
+      "name": "Calf Raise",
+      "family": "REP_CYCLE",
+      "difficulty": 1,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "lower"
+      ]
+    },
+    {
+      "id": "chair_squat",
+      "name": "Chair Squat",
+      "family": "REP_CYCLE",
+      "difficulty": 1,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "accessible",
+        "lower",
+        "no-equipment"
+      ]
+    },
+    {
+      "id": "glute_bridge",
+      "name": "Glute Bridge",
+      "family": "REP_CYCLE",
+      "difficulty": 1,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "posterior"
+      ]
+    },
+    {
+      "id": "squat",
+      "name": "Squat",
+      "family": "REP_CYCLE",
+      "difficulty": 1,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "lower",
+        "no-equipment"
+      ]
+    },
+    {
+      "id": "lunge",
+      "name": "Forward Lunge",
+      "family": "REP_CYCLE",
+      "difficulty": 2,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "lower"
+      ]
+    },
+    {
+      "id": "knee_push_up",
+      "name": "Knee Push-up",
+      "family": "REP_CYCLE",
+      "difficulty": 2,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "accessible",
+        "upper"
+      ]
+    },
+    {
+      "id": "sit_up",
+      "name": "Sit-up",
+      "family": "REP_CYCLE",
+      "difficulty": 2,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "core"
+      ]
+    },
+    {
+      "id": "push_up",
+      "name": "Push-up",
+      "family": "REP_CYCLE",
+      "difficulty": 3,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "upper"
+      ]
+    },
+    {
+      "id": "glute_bridge_hold",
+      "name": "Glute Bridge Hold",
+      "family": "ISOMETRIC_HOLD",
+      "difficulty": 1,
+      "games": [
+        "SIEGE",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "posterior",
+        "isometric",
+        "accessible"
+      ]
+    },
+    {
+      "id": "forearm_plank",
+      "name": "Forearm Plank",
+      "family": "ISOMETRIC_HOLD",
+      "difficulty": 2,
+      "games": [
+        "SIEGE",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "core",
+        "isometric"
+      ]
+    },
+    {
+      "id": "plank",
+      "name": "Plank",
+      "family": "ISOMETRIC_HOLD",
+      "difficulty": 2,
+      "games": [
+        "SIEGE",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "core",
+        "isometric",
+        "no-equipment"
+      ]
+    },
+    {
+      "id": "squat_hold",
+      "name": "Squat Hold",
+      "family": "ISOMETRIC_HOLD",
+      "difficulty": 2,
+      "games": [
+        "SIEGE",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "lower"
+      ]
+    },
+    {
+      "id": "superman_hold",
+      "name": "Superman Hold",
+      "family": "ISOMETRIC_HOLD",
+      "difficulty": 2,
+      "games": [
+        "SIEGE",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "posterior",
+        "isometric"
+      ]
+    },
+    {
+      "id": "wall_sit",
+      "name": "Wall Sit",
+      "family": "ISOMETRIC_HOLD",
+      "difficulty": 2,
+      "games": [
+        "SIEGE",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "lower",
+        "accessible"
+      ]
+    },
+    {
+      "id": "hollow_hold",
+      "name": "Hollow Hold",
+      "family": "ISOMETRIC_HOLD",
+      "difficulty": 3,
+      "games": [
+        "SIEGE",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "core",
+        "isometric"
+      ]
+    },
+    {
+      "id": "side_plank_left",
+      "name": "Side Plank (Left)",
+      "family": "ISOMETRIC_HOLD",
+      "difficulty": 3,
+      "games": [
+        "SIEGE",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "core",
+        "isometric"
+      ]
+    },
+    {
+      "id": "side_plank_right",
+      "name": "Side Plank (Right)",
+      "family": "ISOMETRIC_HOLD",
+      "difficulty": 3,
+      "games": [
+        "SIEGE",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "core",
+        "isometric"
+      ]
+    },
+    {
+      "id": "torso_twists",
+      "name": "Standing Torso Twists",
+      "family": "CADENCE",
+      "difficulty": 1,
+      "games": [
+        "PURSUIT",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "mobility",
+        "warmup"
+      ]
+    },
+    {
+      "id": "butt_kicks",
+      "name": "Butt Kicks",
+      "family": "CADENCE",
+      "difficulty": 2,
+      "games": [
+        "PURSUIT",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "cardio",
+        "lower"
+      ]
+    },
+    {
+      "id": "high_knees",
+      "name": "High Knees",
+      "family": "CADENCE",
+      "difficulty": 2,
+      "games": [
+        "PURSUIT",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "cardio",
+        "lower"
+      ]
+    },
+    {
+      "id": "jumping_jacks",
+      "name": "Jumping Jacks",
+      "family": "CADENCE",
+      "difficulty": 2,
+      "games": [
+        "PURSUIT",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "cardio",
+        "full-body"
+      ]
+    },
+    {
+      "id": "mountain_climbers",
+      "name": "Mountain Climbers",
+      "family": "CADENCE",
+      "difficulty": 2,
+      "games": [
+        "PURSUIT",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "cardio",
+        "core"
+      ]
+    },
+    {
+      "id": "running_in_place",
+      "name": "Running in Place",
+      "family": "CADENCE",
+      "difficulty": 2,
+      "games": [
+        "PURSUIT",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "cardio",
+        "lower"
+      ]
+    },
+    {
+      "id": "seal_jacks",
+      "name": "Seal Jacks",
+      "family": "CADENCE",
+      "difficulty": 2,
+      "games": [
+        "PURSUIT",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "cardio",
+        "full-body"
+      ]
+    },
+    {
+      "id": "shadow_boxing",
+      "name": "Shadow Boxing",
+      "family": "CADENCE",
+      "difficulty": 2,
+      "games": [
+        "PURSUIT",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "cardio",
+        "upper"
+      ]
+    },
+    {
+      "id": "skipping",
+      "name": "Skipping (no rope)",
+      "family": "CADENCE",
+      "difficulty": 2,
+      "games": [
+        "PURSUIT",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "cardio",
+        "lower"
+      ]
+    },
+    {
+      "id": "skater_hops",
+      "name": "Skater Hops",
+      "family": "CADENCE",
+      "difficulty": 3,
+      "games": [
+        "PURSUIT",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "cardio",
+        "lateral"
+      ]
+    },
+    {
+      "id": "broad_jump",
+      "name": "Broad Jump",
+      "family": "BALLISTIC",
+      "difficulty": 3,
+      "games": [
+        "BREAKER",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "explosive",
+        "lower"
+      ]
+    },
+    {
+      "id": "jump_squat",
+      "name": "Jump Squat",
+      "family": "BALLISTIC",
+      "difficulty": 3,
+      "games": [
+        "BREAKER",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "explosive",
+        "lower"
+      ]
+    },
+    {
+      "id": "lateral_bound",
+      "name": "Lateral Bound",
+      "family": "BALLISTIC",
+      "difficulty": 3,
+      "games": [
+        "BREAKER",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "explosive",
+        "lateral"
+      ]
+    },
+    {
+      "id": "squat_thrust",
+      "name": "Squat Thrust",
+      "family": "BALLISTIC",
+      "difficulty": 3,
+      "games": [
+        "BREAKER",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "explosive",
+        "full-body"
+      ]
+    },
+    {
+      "id": "star_jump",
+      "name": "Star Jump",
+      "family": "BALLISTIC",
+      "difficulty": 3,
+      "games": [
+        "BREAKER",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "explosive",
+        "full-body"
+      ]
+    },
+    {
+      "id": "burpee",
+      "name": "Burpee",
+      "family": "BALLISTIC",
+      "difficulty": 4,
+      "games": [
+        "BREAKER",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "explosive",
+        "full-body"
+      ]
+    },
+    {
+      "id": "tuck_jump",
+      "name": "Tuck Jump",
+      "family": "BALLISTIC",
+      "difficulty": 4,
+      "games": [
+        "BREAKER",
+        "CIRCUIT",
+        "DUEL"
+      ],
+      "tags": [
+        "explosive",
+        "lower"
+      ]
+    },
+    {
+      "id": "balasana",
+      "name": "Balasana (Child's Pose)",
+      "family": "POSE_MATCH",
+      "difficulty": 1,
+      "games": [
+        "SIGIL",
+        "CIRCUIT"
+      ],
+      "tags": [
+        "yoga",
+        "flexibility",
+        "balance"
+      ]
+    },
+    {
+      "id": "marjaryasana",
+      "name": "Marjaryasana (Cat-Cow)",
+      "family": "POSE_MATCH",
+      "difficulty": 1,
+      "games": [
+        "SIGIL",
+        "CIRCUIT"
+      ],
+      "tags": [
+        "yoga",
+        "flexibility",
+        "balance"
+      ]
+    },
+    {
+      "id": "tadasana",
+      "name": "Tadasana (Mountain)",
+      "family": "POSE_MATCH",
+      "difficulty": 1,
+      "games": [
+        "SIGIL",
+        "CIRCUIT"
+      ],
+      "tags": [
+        "yoga",
+        "flexibility",
+        "balance"
+      ]
+    },
+    {
+      "id": "adho_mukha_svanasana",
+      "name": "Adho Mukha Svanasana (Downward Dog)",
+      "family": "POSE_MATCH",
+      "difficulty": 2,
+      "games": [
+        "SIGIL",
+        "CIRCUIT"
+      ],
+      "tags": [
+        "yoga",
+        "flexibility",
+        "balance"
+      ]
+    },
+    {
+      "id": "bhujangasana",
+      "name": "Bhujangasana (Cobra)",
+      "family": "POSE_MATCH",
+      "difficulty": 2,
+      "games": [
+        "SIGIL",
+        "CIRCUIT"
+      ],
+      "tags": [
+        "yoga",
+        "flexibility",
+        "balance"
+      ]
+    },
+    {
+      "id": "setu_bandha",
+      "name": "Setu Bandha (Bridge)",
+      "family": "POSE_MATCH",
+      "difficulty": 2,
+      "games": [
+        "SIGIL",
+        "CIRCUIT"
+      ],
+      "tags": [
+        "yoga",
+        "flexibility",
+        "balance"
+      ]
+    },
+    {
+      "id": "utkatasana",
+      "name": "Utkatasana (Chair)",
+      "family": "POSE_MATCH",
+      "difficulty": 2,
+      "games": [
+        "SIGIL",
+        "CIRCUIT"
+      ],
+      "tags": [
+        "yoga",
+        "flexibility",
+        "balance"
+      ]
+    },
+    {
+      "id": "virabhadrasana_i",
+      "name": "Virabhadrasana I (Warrior I)",
+      "family": "POSE_MATCH",
+      "difficulty": 2,
+      "games": [
+        "SIGIL",
+        "CIRCUIT"
+      ],
+      "tags": [
+        "yoga",
+        "flexibility",
+        "balance"
+      ]
+    },
+    {
+      "id": "virabhadrasana_ii",
+      "name": "Virabhadrasana II (Warrior II)",
+      "family": "POSE_MATCH",
+      "difficulty": 2,
+      "games": [
+        "SIGIL",
+        "CIRCUIT"
+      ],
+      "tags": [
+        "yoga",
+        "flexibility",
+        "balance"
+      ]
+    },
+    {
+      "id": "trikonasana",
+      "name": "Trikonasana (Triangle)",
+      "family": "POSE_MATCH",
+      "difficulty": 3,
+      "games": [
+        "SIGIL",
+        "CIRCUIT"
+      ],
+      "tags": [
+        "yoga",
+        "flexibility",
+        "balance"
+      ]
+    },
+    {
+      "id": "vrikshasana",
+      "name": "Vrikshasana (Tree)",
+      "family": "POSE_MATCH",
+      "difficulty": 3,
+      "games": [
+        "SIGIL",
+        "CIRCUIT"
+      ],
+      "tags": [
+        "yoga",
+        "flexibility",
+        "balance"
+      ]
+    },
+    {
+      "id": "garudasana",
+      "name": "Garudasana (Eagle)",
+      "family": "POSE_MATCH",
+      "difficulty": 4,
+      "games": [
+        "SIGIL",
+        "CIRCUIT"
+      ],
+      "tags": [
+        "yoga",
+        "flexibility",
+        "balance"
+      ]
+    },
+    {
+      "id": "natarajasana",
+      "name": "Natarajasana (Dancer)",
+      "family": "POSE_MATCH",
+      "difficulty": 4,
+      "games": [
+        "SIGIL",
+        "CIRCUIT"
+      ],
+      "tags": [
+        "yoga",
+        "flexibility",
+        "balance"
+      ]
+    },
+    {
+      "id": "ustrasana",
+      "name": "Ustrasana (Camel)",
+      "family": "POSE_MATCH",
+      "difficulty": 4,
+      "games": [
+        "SIGIL",
+        "CIRCUIT"
+      ],
+      "tags": [
+        "yoga",
+        "flexibility",
+        "balance"
+      ]
+    }
+  ]
+}

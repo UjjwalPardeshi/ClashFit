@@ -59,8 +59,17 @@ async function boot() {
     return fatal(`Could not load config: ${e.message}. Serve this folder over HTTP — open it with "npm start", not by double-clicking the file.`);
   }
 
-  el.exercise.innerHTML = Object.values(store.exercises)
-    .map((x) => `<option value="${x.id}">${x.name}</option>`).join('');
+  // Grouped by movement family — five detectors, forty-eight exercises.
+  const FAM_LABEL = {
+    REP_CYCLE: 'Strength · reps', ISOMETRIC_HOLD: 'Holds', CADENCE: 'Cardio',
+    BALLISTIC: 'Jumps', POSE_MATCH: 'Yoga',
+  };
+  const groups = {};
+  for (const e of store.manifest.exercises) (groups[e.family] ??= []).push(e);
+  el.exercise.innerHTML = Object.entries(groups).map(([fam, list]) =>
+    `<optgroup label="${FAM_LABEL[fam] ?? fam}">` +
+    list.map((x) => `<option value="${x.id}">${x.name}</option>`).join('') +
+    '</optgroup>').join('');
   el.exercise.value = 'squat';
 
   // Shipped pacers, so a fresh install can race something immediately.
@@ -82,10 +91,25 @@ async function boot() {
   tick();
 }
 
+const FAMILY_GAME = {
+  REP_CYCLE: null, ISOMETRIC_HOLD: Mode.SIEGE, CADENCE: Mode.PURSUIT,
+  BALLISTIC: Mode.BREAKER, POSE_MATCH: Mode.SIGIL,
+};
+
 function makeEngine(id) {
-  const mode = el.mode.value;
+  let mode = el.mode.value;
   // The protocol prescribes the movement — you do not get to pick it.
   if (mode === Mode.CLINIC_STS) { id = store.clinic.sit_to_stand_30s.exercise; el.exercise.value = id; }
+
+  // A game shaped like the movement: holds get Siege, cardio gets Pursuit, jumps get Breaker,
+  // yoga gets Sigil. Only rep-based movements can be played in the rep-based modes.
+  const family = store.exercises[id]?.family ?? 'REP_CYCLE';
+  const forced = FAMILY_GAME[family];
+  if (forced && mode !== forced) { mode = forced; el.mode.value = forced; }
+  if (!forced && [Mode.SIEGE, Mode.PURSUIT, Mode.BREAKER, Mode.SIGIL].includes(mode)) {
+    mode = Mode.BOSS_FIGHT; el.mode.value = mode;
+  }
+  el.mode.disabled = !!forced;
   engine = new SessionEngine(store, id, {
     casual,
     mode,
@@ -108,6 +132,7 @@ function makeEngine(id) {
     const g = ghosts[el.ghost.value] ?? Object.values(ghosts)[0];
     if (g) engine.loadGhost(g);
   }
+  el.exercise.title = `${family.replace('_', ' ').toLowerCase()} · ${forced ?? mode}`;
   const timed = mode === Mode.TIME_ATTACK || mode === Mode.CLINIC_STS;
   el.timerTile.style.display = timed ? '' : 'none';
   el.waveTile.style.display = mode === Mode.SURVIVAL ? '' : 'none';
@@ -323,6 +348,10 @@ function paintHud(s) {
   else if (s.combat.dead) el.cue.textContent = 'Boss down.';
   else if (s.phase === Phase.FIGHTING && s.reps === 0) el.cue.textContent = 'Go.';
 
+  const COUNT_LABEL = { REP_CYCLE: 'Reps', ISOMETRIC_HOLD: 'Holds', CADENCE: 'Cycles',
+                        BALLISTIC: 'Jumps', POSE_MATCH: 'Poses' };
+  const lbl = el.reps.previousElementSibling;
+  if (lbl) lbl.textContent = COUNT_LABEL[s.family] ?? 'Reps';
   el.reps.textContent = s.reps;
   el.combo.textContent = `×${s.combat.comboMultiplier.toFixed(1)}`;
 

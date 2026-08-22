@@ -6,7 +6,8 @@
   "description": "Throwaway prototype: camera pose -> rep detection -> form scoring -> fatigue -> boss damage. Built to tune thresholds and record the Phase 1 video. Rewritten from scratch at the event.",
   "scripts": {
     "start": "node serve.js",
-    "test": "node test/run.js"
+    "test": "node test/run.js",
+    "manifest": "node tools/manifest.js"
   },
   "engines": { "node": ">=20" }
 }

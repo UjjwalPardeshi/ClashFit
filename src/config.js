@@ -2,10 +2,8 @@
 // This mirrors the ConfigStore contract the Android build uses, so tuning done here
 // transfers as literal files. docs/adr/ADR-005-hot-reload-config.md
 
-const EXERCISES = [
-  'squat', 'chair_squat', 'lunge', 'calf_raise',
-  'glute_bridge', 'push_up', 'knee_push_up', 'sit_up',
-];
+// The exercise list comes from a generated manifest, because a browser cannot list a directory.
+// Regenerate with: npm run manifest
 
 async function json(path) {
   const r = await fetch(path, { cache: 'no-store' });
@@ -16,16 +14,18 @@ async function json(path) {
 const CLINIC = ['sit_to_stand_30s'];
 
 export async function loadConfig() {
-  const [pose, combat, ...rest] = await Promise.all([
+  const [pose, combat, manifest] = await Promise.all([
     json('config/pose.json'),
     json('config/combat.json'),
-    ...EXERCISES.map((id) => json(`config/exercises/${id}.json`)),
-    ...CLINIC.map((id) => json(`config/clinic/${id}.json`)),
+    json('config/exercises/index.json'),
   ]);
-  const ex = rest.slice(0, EXERCISES.length);
-  const cl = rest.slice(EXERCISES.length);
+  const ids = manifest.exercises.map((e) => e.id);
+  const [ex, cl] = await Promise.all([
+    Promise.all(ids.map((id) => json(`config/exercises/${id}.json`))),
+    Promise.all(CLINIC.map((id) => json(`config/clinic/${id}.json`))),
+  ]);
   return {
-    pose, combat,
+    pose, combat, manifest,
     exercises: Object.fromEntries(ex.map((e) => [e.id, e])),
     clinic: Object.fromEntries(cl.map((c) => [c.id, c])),
     version: Date.now(),
