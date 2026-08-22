@@ -103,7 +103,13 @@ contracts specify no internal timers. It makes them testable in seconds.
 
 ## 6. The pre-demo ritual — run before every judging round
 
-Three minutes, every time. This is the checklist that saves demos.
+**Built as a button.** `src/preflight.js` runs all of it in about two seconds and names exactly
+what is wrong — under sleep deprivation at hour 26, a checklist you have to remember to run is a
+checklist you skip. It reports READY / READY WITH WARNINGS / NOT READY, and a debug overlay left
+on is a hard failure because it is the single easiest thing to forget and it reads as unfinished
+in front of a jury.
+
+The manual list it encodes:
 
 1. Both phones ≥ 80% battery
 2. Golden APK present on both

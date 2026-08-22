@@ -17,6 +17,7 @@ import { Voice } from './voice.js';
 import { Roster, RosterMode, Circuit, DEFAULT_CIRCUIT } from './roster.js';
 import { Store } from './store.js';
 import { BoxBreathing, recoveryFraction } from './breathing.js';
+import { preflight, summariseChecks, Status } from './preflight.js';
 import { Renderer, C } from './render.js';
 import { TraceRecorder } from './trace.js';
 
@@ -50,7 +51,30 @@ const el = {
   streak: $('streak'),
   breathe: $('breathe'), breathBox: $('breathBox'), breathLabel: $('breathLabel'),
   breathFill: $('breathFill'), breathMeta: $('breathMeta'),
+  modes: $('modes'), modeGrid: $('modeGrid'), modesBtn: $('modesBtn'), modesClose: $('modesClose'),
+  pre: $('pre'), preList: $('preList'), preVerdict: $('preVerdict'),
+  preBtn: $('preBtn'), preRun: $('preRun'), preClose: $('preClose'),
 };
+
+/** docs/17-GAME-MODES.md §9: show this to a judge even if you only demo one mode. It takes four
+ *  seconds and it changes what the product looks like. */
+const MODE_TILES = [
+  { group: 'Solo', id: 'BOSS_FIGHT', name: 'Boss Fight', desc: 'The core loop. Reps deal damage, the boss adapts to your fatigue.' },
+  { group: 'Solo', id: 'TIME_ATTACK', name: 'Time Attack', desc: 'Sixty seconds, maximum damage. Fits a rotating judge.' },
+  { group: 'Solo', id: 'SURVIVAL', name: 'Survival', desc: 'Endless waves, no mercy rule. Fatigue genuinely ends the run.' },
+  { group: 'Solo', id: 'BOSS_RUSH', name: 'Boss Rush', desc: 'Three bosses back to back, no rest.' },
+  { group: 'Solo', id: 'TEMPO_TRIAL', name: 'Tempo Trial', desc: 'Match the beat. Scores how you move, not that you moved.' },
+  { group: 'Versus', id: 'GHOST_RACE', name: 'Ghost Race', desc: 'Race a recorded run — a pacer, your past self, or a friend’s file.' },
+  { group: 'Versus', id: 'DUEL', name: 'Duel', desc: 'Two devices, one boss, no server. Events sync, not state.' },
+  { group: 'Group', id: 'PASS_THE_PHONE', name: 'Pass the Phone', desc: 'Turns on one device. The boss keeps its damage between players.' },
+  { group: 'Group', id: 'LAST_STANDING', name: 'Last Standing', desc: 'Out when your measured fatigue hits GASSED. Not when you run out of reps.' },
+  { group: 'Group', id: 'CIRCUIT', name: 'Circuit', desc: 'A prescribed sequence across four movement families.' },
+  { group: 'Family', id: 'SIEGE', name: 'Siege', desc: 'Holds. Your plank is the shield; break form and a hit lands.', needs: 'holds' },
+  { group: 'Family', id: 'PURSUIT', name: 'Pursuit', desc: 'Cardio. Distance is cadence; stop and it closes on you.', needs: 'cardio' },
+  { group: 'Family', id: 'BREAKER', name: 'Breaker', desc: 'Jumps. Height is force, and a stiff landing does not break through.', needs: 'jumps' },
+  { group: 'Family', id: 'SIGIL', name: 'Sigil', desc: 'Yoga. No boss, no damage, no ranking — a constellation you light.', needs: 'yoga' },
+  { group: 'Clinic', id: 'CLINIC_STS', name: '30s Sit-to-Stand', desc: 'A published functional assessment. Not a medical device.' },
+];
 
 let breath = null;
 let breathTimer = null;
@@ -405,6 +429,53 @@ function showFamilyResult(reason, s) {
   openSummaryLater();
 }
 
+function openModes() {
+  const groups = {};
+  for (const m of MODE_TILES) (groups[m.group] ??= []).push(m);
+  el.modeGrid.innerHTML = Object.entries(groups).map(([g, list]) =>
+    list.map((m) => `
+      <button class="modeTile${m.id === el.mode.value ? ' sel' : ''}" data-mode="${m.id}">
+        <b>${m.name}</b><span>${m.desc}</span>
+        <em>${g}${m.needs ? ' · needs ' + m.needs : ''}</em>
+      </button>`).join('')).join('');
+  el.modeGrid.querySelectorAll('.modeTile').forEach((b) => {
+    b.onclick = () => {
+      const id = b.dataset.mode;
+      // A family game needs a movement from that family; pick the first one that fits.
+      const needFamily = { SIEGE: 'ISOMETRIC_HOLD', PURSUIT: 'CADENCE',
+                           BREAKER: 'BALLISTIC', SIGIL: 'POSE_MATCH' }[id];
+      if (needFamily) {
+        const first = store.manifest.exercises.find((e) => e.family === needFamily);
+        if (first) el.exercise.value = first.id;
+      }
+      el.mode.value = id;
+      el.modes.classList.remove('show');
+      makeEngine(el.exercise.value);
+    };
+  });
+  el.modes.classList.add('show');
+}
+
+async function runPreflight() {
+  const results = await preflight({
+    store, store2, engine, audio, haptics, speech, voice,
+    running, arenaMode, duel, fps, inferMs,
+    exerciseId: el.exercise.value,
+    hasTraces: recorder.frames.length > 0,
+  });
+  const sum = summariseChecks(results);
+  el.preVerdict.textContent = sum.verdict;
+  el.preVerdict.style.color = sum.FAIL ? C.damage : sum.WARN ? C.shallow : C.clean;
+  const COLOR = { PASS: C.clean, WARN: C.shallow, FAIL: C.damage, SKIP: C.mute };
+  el.preList.innerHTML = results.map((r) => `
+    <div class="preRow">
+      <i style="color:${COLOR[r.status]}">${r.status}</i>
+      <b>${r.label}</b><span>${r.detail}</span>
+    </div>`).join('');
+  el.pre.classList.add('show');
+  return sum;
+}
+
 function openSummary() {
   drawSummary(el.sumCanvas, engine.reps, store.pose.fatigue.bands, {
     exercise: el.exercise.value,
@@ -562,6 +633,11 @@ function wire() {
     renderer.reducedMotion = !renderer.reducedMotion;
     el.motion.classList.toggle('on', renderer.reducedMotion);
   };
+  el.modesBtn.onclick = () => openModes();
+  el.modesClose.onclick = () => el.modes.classList.remove('show');
+  el.preBtn.onclick = () => runPreflight();
+  el.preRun.onclick = () => runPreflight();
+  el.preClose.onclick = () => el.pre.classList.remove('show');
   el.sumBtn.onclick = () => openSummary();
   el.sumClose.onclick = () => el.sum.classList.remove('show');
   el.sumPng.onclick = () => exportPng(el.sumCanvas,

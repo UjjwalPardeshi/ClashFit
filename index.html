@@ -87,6 +87,28 @@
   .sumCard{width:min(1000px,96vw);border:1px solid var(--line);background:var(--surface);padding:20px}
   #sumCanvas{width:100%;display:block;border:1px solid var(--line)}
 
+  /* wide overlays */
+  #modes,#pre{position:fixed;inset:0;display:none;place-items:center;z-index:7;padding:24px;
+              overflow:auto;background:rgba(7,9,12,.94);backdrop-filter:blur(8px)}
+  #modes.show,#pre.show{display:grid}
+  .wideCard{width:min(880px,96vw);border:1px solid var(--line);background:var(--surface);padding:24px 26px}
+  .wideCard h2{font-size:clamp(20px,3vw,30px);font-weight:700;letter-spacing:-.02em;margin:8px 0 20px}
+  #modeGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+  .modeTile{border:1px solid var(--line);background:var(--ground);padding:13px 15px;cursor:pointer;
+            text-align:left;font-family:var(--sans)}
+  .modeTile:hover{border-color:var(--system)}
+  .modeTile.sel{border-color:var(--clean)}
+  .modeTile b{display:block;font-size:15px;font-weight:700;letter-spacing:-.01em;margin-bottom:4px}
+  .modeTile span{display:block;font-size:12.5px;color:var(--mute);line-height:1.45}
+  .modeTile em{display:block;font-style:normal;font-family:var(--mono);font-size:10px;
+               letter-spacing:.12em;text-transform:uppercase;color:var(--system);margin-top:7px}
+  #preList{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line)}
+  .preRow{display:flex;align-items:baseline;gap:12px;background:var(--ground);padding:9px 13px}
+  .preRow i{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.1em;
+            width:44px;flex-shrink:0;font-style:normal}
+  .preRow b{font-weight:500;font-size:14px;flex:1}
+  .preRow span{font-family:var(--mono);font-size:11.5px;color:var(--mute);text-align:right}
+
   /* roster + turn */
   #roster{position:fixed;inset:0;display:none;place-items:center;z-index:7;padding:24px;
           background:rgba(7,9,12,.92);backdrop-filter:blur(8px)}
@@ -173,6 +195,8 @@
       <button id="dl" disabled>Download</button>
       <button id="dbgBtn">Debug</button>
       <button id="sumBtn">Summary</button>
+      <button id="modesBtn">Modes</button>
+      <button id="preBtn">Preflight</button>
     </div>
     <div class="row">
       <button id="arena" title="Rear ultra-wide, mirrored to a laptop — the demo configuration">Arena</button>
@@ -215,6 +239,27 @@
     <div class="tile">
       <div class="lbl">Combo</div>
       <div class="big" id="combo">×1.0</div>
+    </div>
+  </div>
+
+  <div id="modes">
+    <div class="wideCard">
+      <div class="lbl">Modes</div>
+      <h2 id="modesTitle">One engine, fifteen ways to play</h2>
+      <div id="modeGrid"></div>
+      <button id="modesClose" style="margin-top:18px">Close</button>
+    </div>
+  </div>
+
+  <div id="pre">
+    <div class="wideCard">
+      <div class="lbl">Pre-demo ritual</div>
+      <h2 id="preVerdict">—</h2>
+      <div id="preList"></div>
+      <div class="row" style="justify-content:flex-start;margin-top:16px">
+        <button id="preRun" class="go">Run again</button>
+        <button id="preClose">Close</button>
+      </div>
     </div>
   </div>
 

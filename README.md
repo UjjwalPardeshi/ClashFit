@@ -98,6 +98,8 @@ CSV of every rep's raw telemetry.
 | Summary | Fatigue curve chart, PNG export for the deck, CSV of raw per-rep data |
 | Persistence | Local only — sessions, per-rep telemetry, calibration, personal bests, trends |
 | Progression | **Forgiving streaks** (a rest day earns it), difficulty ladders with quiet demotion |
+| Preflight | The pre-demo ritual as a button — eleven checks in two seconds |
+| Mode grid | All fifteen modes on one screen, because a dropdown is invisible to a judge |
 | Ghosts | Three shipped pacers, save your own run, load a friend's |
 
 ## What is deliberately absent

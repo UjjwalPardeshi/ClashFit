@@ -9,6 +9,7 @@ import { COMMANDS } from '../src/voice.js';
 import { Roster, RosterMode, Circuit, DEFAULT_CIRCUIT } from '../src/roster.js';
 import { Store, LADDERS } from '../src/store.js';
 import { BoxBreathing, recoveryFraction, Phase as BreathPhase } from '../src/breathing.js';
+import { preflight, summariseChecks, Status } from '../src/preflight.js';
 import { DuelSession, LoopbackTransport, LinkState, newPlayerId } from '../src/duel.js';
 import { SiegeGame, PursuitGame, BreakerGame, SigilGame, GameOutcome, makeFamilyGame } from '../src/games.js';
 import { RepStateMachine } from '../src/repFsm.js';
@@ -413,6 +414,71 @@ t('CLINIC_STS · ships no norms until they are cited', () => {
   eq(clinicSts.norms.source, null);
   eq(clinicSts.norms.bands.length, 0);
   ok(/not a medical device/i.test(clinicSts.notNested), 'missing the not-a-medical-device line');
+});
+
+// ---------- preflight ----------
+const scratchStore = () => {
+  const m = new Map();
+  return new Store({ getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v) });
+};
+const preCtx = (over = {}) => ({
+  store: { pose: { ...pose, debugOverlay: false }, exercises: store.exercises },
+  store2: scratchStore(),
+  audio: { ctx: { state: 'running' } },
+  speech: { enabled: true, voice: { lang: 'en-IN' } },
+  haptics: { available: true, enabled: true },
+  running: true, fps: 30, inferMs: 14,
+  exerciseId: 'squat', hasTraces: true,
+  ...over,
+});
+
+t('preflight · a healthy setup reads READY', async () => {
+  const r = await preflight(preCtx());
+  const sum = summariseChecks(r);
+  eq(sum.FAIL, 0, r.filter(x => x.status === Status.FAIL).map(x => x.label).join(', '));
+  ok(sum.ok, 'not ok despite no failures');
+});
+
+t('preflight · a debug overlay left on is a hard FAIL', () => {
+  // The single easiest thing to forget, and it reads as unfinished in front of a jury.
+  return preflight(preCtx({ store: { pose: { ...pose, debugOverlay: true }, exercises: store.exercises } }))
+    .then((r) => {
+      const row = r.find((x) => x.id === 'config');
+      eq(row.status, Status.FAIL);
+      ok(/debugOverlay/.test(row.detail), row.detail);
+    });
+});
+
+t('preflight · a stopped camera fails, a slow one warns', async () => {
+  eq((await preflight(preCtx({ running: false }))).find(r => r.id === 'camera').status, Status.FAIL);
+  eq((await preflight(preCtx({ fps: 8 }))).find(r => r.id === 'camera').status, Status.WARN);
+});
+
+t('preflight · CPU-speed inference fails, over-budget warns', async () => {
+  eq((await preflight(preCtx({ inferMs: 90 }))).find(r => r.id === 'infer').status, Status.FAIL);
+  eq((await preflight(preCtx({ inferMs: 30 }))).find(r => r.id === 'infer').status, Status.WARN);
+  eq((await preflight(preCtx({ inferMs: 14 }))).find(r => r.id === 'infer').status, Status.PASS);
+});
+
+t('preflight · no camera-free fallback is a warning, not silence', async () => {
+  const row = (await preflight(preCtx({ hasTraces: false }))).find(r => r.id === 'fallback');
+  eq(row.status, Status.WARN);
+  ok(/trace/i.test(row.detail), row.detail);
+});
+
+t('preflight · never throws, however broken the context', async () => {
+  for (const ctx of [{}, { store: null }, { store2: null, audio: null, speech: null }]) {
+    const r = await preflight(ctx);
+    ok(Array.isArray(r) && r.length >= 8, 'returned nothing useful');
+    ok(r.every(x => x.status in Status || Object.values(Status).includes(x.status)), 'bad status');
+  }
+});
+
+t('preflight · covers every item in the pre-demo ritual', async () => {
+  const ids = (await preflight(preCtx())).map(r => r.id);
+  for (const need of ['camera', 'infer', 'config', 'library', 'offline', 'audio',
+                      'speech', 'haptics', 'storage', 'calibration', 'fallback'])
+    ok(ids.includes(need), `ritual item missing: ${need}`);
 });
 
 // ---------- tempo trial ----------
