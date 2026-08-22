@@ -68,6 +68,25 @@
            overflow:hidden}
   #raceFill{display:block;height:100%;background:var(--clean);width:50%;transition:width .25s ease}
 
+  /* rest card */
+  #rest{position:fixed;inset:0;display:none;place-items:center;z-index:7;padding:24px;
+        background:rgba(7,9,12,.9);backdrop-filter:blur(8px)}
+  #rest.show{display:grid}
+  .restCard{max-width:34rem;text-align:left;border:1px solid var(--line);background:var(--surface);
+            padding:26px 28px}
+  #restCoach{font-size:clamp(20px,3vw,28px);font-weight:600;letter-spacing:-.015em;line-height:1.3;
+             margin:14px 0 16px}
+  #restBoss{font-size:16px;color:var(--damage);font-style:italic;line-height:1.45;
+            border-left:2px solid var(--damage);padding-left:14px;margin-bottom:18px}
+  #restStats{line-height:1.9}
+
+  /* summary */
+  #sum{position:fixed;inset:0;display:none;place-items:center;z-index:7;padding:24px;overflow:auto;
+       background:rgba(7,9,12,.94);backdrop-filter:blur(8px)}
+  #sum.show{display:grid}
+  .sumCard{width:min(1000px,96vw);border:1px solid var(--line);background:var(--surface);padding:20px}
+  #sumCanvas{width:100%;display:block;border:1px solid var(--line)}
+
   /* result overlay */
   #over{position:fixed;inset:0;display:none;place-items:center;text-align:center;z-index:8;
         background:rgba(7,9,12,.86);backdrop-filter:blur(6px)}
@@ -116,6 +135,7 @@
       <button id="rec">● Record trace</button>
       <button id="dl" disabled>Download</button>
       <button id="dbgBtn">Debug</button>
+      <button id="sumBtn">Summary</button>
     </div>
   </div>
 
@@ -148,6 +168,30 @@
     <div class="tile">
       <div class="lbl">Combo</div>
       <div class="big" id="combo">×1.0</div>
+    </div>
+  </div>
+
+  <div id="rest">
+    <div class="restCard">
+      <div class="lbl">Set <span id="restSet">1</span> · <span id="restBand">FRESH</span></div>
+      <div id="restCoach">—</div>
+      <div id="restBoss">—</div>
+      <div class="lbl" id="restStats"></div>
+      <button id="nextSet" class="go" style="margin-top:16px">Next set</button>
+    </div>
+  </div>
+
+  <div id="sum">
+    <div class="sumCard">
+      <canvas id="sumCanvas"></canvas>
+      <div class="row" style="margin-top:16px;justify-content:flex-start">
+        <button id="sumPng" class="go">Download PNG</button>
+        <button id="sumCsv">Download CSV</button>
+        <button id="sumClose">Close</button>
+      </div>
+      <p class="lbl" style="margin-top:14px;line-height:1.8">
+        This is the evidence, not decoration. The PNG is deck slide 4.
+      </p>
     </div>
   </div>
 

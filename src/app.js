@@ -8,6 +8,9 @@ import { PoseLandmarker, FilesetResolver } from
 import { loadConfig, reloadInto } from './config.js';
 import { SessionEngine, Phase, Mode } from './engine.js';
 import { ghostFromReps, parseGhost, downloadGhost } from './ghost.js';
+import { Audio } from './audio.js';
+import { Speech } from './speech.js';
+import { drawSummary, exportPng, exportCsv } from './summary.js';
 import { Renderer, C } from './render.js';
 import { TraceRecorder } from './trace.js';
 
@@ -28,7 +31,15 @@ const el = {
   race: $('race'), raceYou: $('raceYou'), raceThem: $('raceThem'), raceFill: $('raceFill'),
   over: $('over'), overKicker: $('overKicker'), overTitle: $('overTitle'),
   overBody: $('overBody'), again: $('again'),
+  rest: $('rest'), restSet: $('restSet'), restBand: $('restBand'), restCoach: $('restCoach'),
+  restBoss: $('restBoss'), restStats: $('restStats'), nextSet: $('nextSet'),
+  sum: $('sum'), sumCanvas: $('sumCanvas'), sumBtn: $('sumBtn'),
+  sumPng: $('sumPng'), sumCsv: $('sumCsv'), sumClose: $('sumClose'),
 };
+
+const audio = new Audio();
+const speech = new Speech();
+let lastCombo = 1;
 
 const PACERS = ['pacer_bronze', 'pacer_silver', 'pacer_gold'];
 let ghosts = {};
@@ -75,12 +86,19 @@ function makeEngine(id) {
   engine = new SessionEngine(store, id, {
     casual,
     mode,
-    onEnd: (reason, s) => showResult(reason, s),
-    onRep: (rep) => {
+    onEnd: (reason, s) => { if (reason === 'BOSS_DOWN') audio.bossDeath(); showResult(reason, s); },
+    onSetEnd: (telemetry, coach) => showRest(telemetry, coach),
+    onRep: (rep, combat) => {
       renderer.hit(rep.verdict, rep.damage);
       el.verdict.textContent = rep.verdict;
       el.verdict.style.color =
         rep.verdict === 'CLEAN' ? C.clean : rep.verdict === 'OK' ? C.system : C.shallow;
+
+      if (rep.verdict === 'SHALLOW') audio.repShallow();
+      else audio.repClean(combat.comboMultiplier);
+      const m = combat.comboMultiplier;
+      if (Math.floor(m) > Math.floor(lastCombo) && m > 1) audio.comboMilestone(m);
+      lastCombo = m;
     },
   });
   if (mode === Mode.GHOST_RACE) {
@@ -91,6 +109,30 @@ function makeEngine(id) {
   el.race.classList.toggle('show', mode === Mode.GHOST_RACE);
   el.ghost.style.display = mode === Mode.GHOST_RACE ? '' : 'none';
   el.over.classList.remove('show');
+}
+
+function showRest(telemetry, coach) {
+  el.restSet.textContent = telemetry.session_set_index;
+  el.restBand.textContent = telemetry.fatigue_band;
+  el.restBand.style.color = BAND_COLOR[telemetry.fatigue_band];
+  el.restCoach.textContent = coach.coachLine;
+  el.restBoss.textContent = `"${coach.bossLine}"`;
+  el.restStats.innerHTML =
+    `${telemetry.reps} reps · mean form ${telemetry.form_mean_pct}% · ` +
+    `velocity −${telemetry.velocity_loss_pct}% · range −${telemetry.rom_loss_pct}%` +
+    (telemetry.depth_drop_cm ? ` · depth −${telemetry.depth_drop_cm}cm` : '') +
+    `<br>source: ${coach.source.toLowerCase()}`;
+  el.rest.classList.add('show');
+  audio.duck(0.12, 4000);
+  speech.sayPair(coach.coachLine, coach.bossLine);      // the player is on the floor, not reading
+}
+
+function openSummary() {
+  drawSummary(el.sumCanvas, engine.reps, store.pose.fatigue.bands, {
+    exercise: el.exercise.value,
+    title: engine.reps.length ? 'Fatigue across the set' : 'No reps yet',
+  });
+  el.sum.classList.add('show');
 }
 
 function showResult(reason, s) {
@@ -109,10 +151,17 @@ function showResult(reason, s) {
     `peak fatigue ${s.fatigue.band}` +
     (s.mode === Mode.GHOST_RACE ? ` · ghost ${s.ghostDamage}` : '');
   el.over.classList.add('show');
+  openSummaryLater();
+}
+
+/** Draw the summary in the background so it is already there when they hit the button. */
+function openSummaryLater() {
+  try { drawSummary(el.sumCanvas, engine.reps, store.pose.fatigue.bands, { exercise: el.exercise.value }); }
+  catch { /* chart is never allowed to break the fight */ }
 }
 
 function wire() {
-  el.start.onclick = () => (running ? stopCam() : startCam());
+  el.start.onclick = () => { audio.ensure(); (running ? stopCam() : startCam()); };
   el.exercise.onchange = () => makeEngine(el.exercise.value);
   el.mode.onchange = () => makeEngine(el.exercise.value);
   el.ghost.onchange = () => {
@@ -137,7 +186,8 @@ function wire() {
     if (!engine.reps.length) { el.cue.textContent = 'Do a set first, then save it as a ghost.'; return; }
     downloadGhost(ghostFromReps(engine.reps, { exercise: el.exercise.value, name: 'My run' }));
   };
-  el.again.onclick = () => { engine.reset(); el.over.classList.remove('show'); };
+  el.nextSet.onclick = () => { speech.flush(); el.rest.classList.remove('show'); engine.nextSet(); };
+  el.again.onclick = () => { speech.flush(); engine.reset(); el.over.classList.remove('show'); el.rest.classList.remove('show'); };
   el.reset.onclick = () => { engine.reset(); el.over.classList.remove('show'); };
   el.casual.onclick = () => {
     casual = !casual;
@@ -162,6 +212,12 @@ function wire() {
     }
   };
   el.dl.onclick = () => recorder.download();
+  el.sumBtn.onclick = () => openSummary();
+  el.sumClose.onclick = () => el.sum.classList.remove('show');
+  el.sumPng.onclick = () => exportPng(el.sumCanvas,
+    `clashfit-${el.exercise.value}-${engine.reps.length}reps.png`);
+  el.sumCsv.onclick = () => exportCsv(engine.reps,
+    `clashfit-${el.exercise.value}-${engine.reps.length}reps.csv`);
   el.dbgBtn.onclick = () => {
     el.dbg.classList.toggle('show');
     el.dbgBtn.classList.toggle('on', el.dbg.classList.contains('show'));
@@ -234,6 +290,10 @@ function paintHud(s) {
     !running ? C.mute :
     s.phase === Phase.FRAMING_LOST ? C.damage :
     s.phase === Phase.CALIBRATING ? C.shallow : C.clean;
+
+  if (s.phase === Phase.FRAMING_LOST && !paintHud.lostAnnounced) {
+    audio.framingLost(); paintHud.lostAnnounced = true;
+  } else if (s.phase !== Phase.FRAMING_LOST) paintHud.lostAnnounced = false;
 
   if (s.cue) el.cue.textContent = s.cue;
   else if (s.combat.dead) el.cue.textContent = 'Boss down.';
