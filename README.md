@@ -79,10 +79,12 @@ CSV of every rep's raw telemetry.
 | Form scoring | Depth (superlinear) · ROM · tempo · alignment |
 | Fatigue | Velocity loss · ROM collapse · pause growth → 4 bands, latched |
 | Combat | Damage curve, combo with grace, boss phases, fatigue-adaptive boss, mercy resolution |
-| Duel maths | Event-sourced HP with dedupe — tested, not wired to a transport |
+| Duel | Event-sourced sync with self-healing tails, live over BroadcastChannel between two tabs |
 | Traces | Record to JSON Lines for replay and regression |
-| 8 exercises | squat · chair squat · lunge · calf raise · glute bridge · push-up · knee push-up · sit-up |
-| Modes | Boss Fight · Time Attack (60s) · Ghost Race · Survival · Boss Rush · **Clinic** |
+| 48 exercises | 8 reps · 9 holds · 10 cardio · 7 jumps · 14 asanas |
+| Modes | Boss Fight · Time Attack · Ghost Race · Survival · Boss Rush · Clinic · **Duel** |
+| Families | **5 detectors** — reps · holds · cardio · jumps · yoga |
+| Family games | Siege (holds) · Pursuit (cardio) · Breaker (jumps) · Sigil (yoga) |
 | Coach | Telemetry summariser, 20-line template bank, output validator, TTS |
 | Audio | Fully synthesised — rep pitch climbs with the combo |
 | Summary | Fatigue curve chart, PNG export for the deck, CSV of raw per-rep data |
