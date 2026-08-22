@@ -1,0 +1,108 @@
+# ClashFit — prototype
+
+**Throwaway.** This exists to prove the pose → rep → form → fatigue → damage loop works, to tune
+thresholds against a real body, and to record the Phase 1 video. **It is not carried into the
+hackathon.** A fresh repository is created at check-in and the Android app is written from scratch
+there. This prototype is disclosed in the Phase 1 pre-existing-components field.
+
+Design lives in [`../docs/`](../docs/). The core algorithms are
+[05-POSE-ENGINE-SPEC](../docs/05-POSE-ENGINE-SPEC.md) and [04-GAME-DESIGN](../docs/04-GAME-DESIGN.md).
+
+---
+
+## Run
+
+```bash
+npm start          # http://localhost:8080
+npm test           # 32 tests, no camera or browser needed
+```
+
+No install step — no dependencies. MediaPipe loads from a CDN, so the first run needs internet.
+
+> Open it through `npm start`, not by double-clicking `index.html`. The camera API requires a
+> secure context, and `http://localhost` is one; `file://` is not.
+
+**Setup for a squat:** stand **side-on**, 2–2.5 m back, whole body in frame. Stand still for a
+second — that captures your rest angle — then start. First completed rep sets your range-of-motion
+baseline, so everything after is scored against *you*.
+
+Hit **Debug** to watch the live angle, the state machine, the four sub-scores and the fatigue
+signals. That panel is the tuning instrument.
+
+---
+
+## What works
+
+| | |
+|---|---|
+| Pose | MediaPipe Pose Landmarker, 33 world landmarks, GPU delegate |
+| Filtering | One Euro per landmark per axis |
+| Rep detection | Hysteretic 4-state FSM with dwell guards, **direction-aware** |
+| Form scoring | Depth (superlinear) · ROM · tempo · alignment |
+| Fatigue | Velocity loss · ROM collapse · pause growth → 4 bands, latched |
+| Combat | Damage curve, combo with grace, boss phases, fatigue-adaptive boss, mercy resolution |
+| Duel maths | Event-sourced HP with dedupe — tested, not wired to a transport |
+| Traces | Record to JSON Lines for replay and regression |
+| 8 exercises | squat · chair squat · lunge · calf raise · glute bridge · push-up · knee push-up · sit-up |
+
+## What is deliberately absent
+
+On-device LLM coach, TTS, duel transport, NFC pairing, sensors, art, audio. All specified in
+`../docs/`, all built at the event.
+
+---
+
+## Tuning
+
+**`config/` is the source of truth for every threshold.** Edit the JSON, hit **Reload config** in
+the page — no restart. These exact files are copied to the phone at check-in, so tuning done here
+is not thrown away even though the code is.
+
+- `config/pose.json` — filter, visibility gate, fatigue weights and bands
+- `config/combat.json` — damage curve, combo, boss, fatigue responses
+- `config/exercises/*.json` — per-exercise thresholds
+
+Malformed JSON never takes the app down; it keeps the last good config and says so.
+
+---
+
+## Tests
+
+`npm test` runs 32 assertions with no camera and no body, using synthetic angle sequences from
+`test/synth.js`. It covers the fixtures in [14-TEST-PLAN](../docs/14-TEST-PLAN.md): clean reps,
+shallow reps, threshold jitter, too-fast and too-slow reps, framing loss mid-set, inverted-direction
+exercises, a set to failure reaching GASSED, band latching, the damage curve, combo grace, mercy
+resolution, and duel sync under duplication, reordering and 30% packet loss.
+
+**The suite has already earned its place — it caught three real bugs:**
+
+1. **`bottomEnter` sat too close to `targetAngle`**, so every rep that counted already scored ~0.9
+   on depth. The sub-score discriminated nothing. Rule now: `bottomEnter` is the generous "this
+   counts", `targetAngle` is the strict "full marks".
+2. **The fatigue bands were unreachable.** `GASSED` at 0.70 needed roughly a 72% concentric
+   velocity loss — far past what a real set produces. The mercy rule, which is the kindest
+   behaviour in the product *and* the safest thing that can happen during a live demo, would never
+   have fired. Bands are now 0.15 / 0.30 / 0.50.
+3. **The mercy cap inherited a hot combo multiplier**, so it set a target the player could not
+   reach once the streak broke. The estimate is combo-neutral now.
+
+The published damage table was also wrong. The real curve, asserted in the suite:
+
+| formScore | Verdict | Damage |
+|---|---|---|
+| 0.00 | SHALLOW | 35 |
+| 0.30 | SHALLOW | 50 |
+| 0.55 | OK | 67 |
+| 0.80 | CLEAN | 85 |
+| 0.95 | CLEAN | 96 |
+| 1.00 | CLEAN | 100 |
+
+---
+
+## Recording fixtures
+
+**Record** → do the set → **Stop** → **Download**. Drop the `.jsonl` into `traces/`.
+
+Capture F1–F9 from [14-TEST-PLAN](../docs/14-TEST-PLAN.md) §2 — especially **F3** (a set to
+genuine failure, which validates the fatigue model) and **F9** (a tall and a short subject, which
+proves the ROM normalisation is fair).
