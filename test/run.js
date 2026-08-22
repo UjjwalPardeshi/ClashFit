@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { angle3 } from '../src/geometry.js';
 import { makeDetector } from '../src/detectors/index.js';
+import { missingJoints, jointPhrase } from '../src/geometry.js';
 import { DuelSession, LoopbackTransport, LinkState, newPlayerId } from '../src/duel.js';
 import { SiegeGame, PursuitGame, BreakerGame, SigilGame, GameOutcome, makeFamilyGame } from '../src/games.js';
 import { RepStateMachine } from '../src/repFsm.js';
@@ -10,7 +11,7 @@ import { scoreRep, verdict, clamp01 } from '../src/formScorer.js';
 import { FatigueEstimator, Band } from '../src/fatigue.js';
 import { CombatEngine, ComboTracker } from '../src/combat.js';
 import { synthRep, synthSet, synthWorldSet, stick, holdFrames, cadenceFrames, jumpFrames } from './synth.js';
-import { SessionEngine, Mode, Phase } from '../src/engine.js';
+import { SessionEngine, Mode, Phase, Calib } from '../src/engine.js';
 import { IsometricHoldDetector } from '../src/detectors/isometric.js';
 import { CadenceDetector } from '../src/detectors/cadence.js';
 import { BallisticDetector } from '../src/detectors/ballistic.js';
@@ -407,6 +408,72 @@ t('CLINIC_STS · ships no norms until they are cited', () => {
   eq(clinicSts.norms.source, null);
   eq(clinicSts.norms.bands.length, 0);
   ok(/not a medical device/i.test(clinicSts.notNested), 'missing the not-a-medical-device line');
+});
+
+// ---------- calibration ----------
+t('calibration · names the joints it cannot see', () => {
+  const lm = stick({});
+  lm[25].visibility = 0.1; lm[26].visibility = 0.1;          // both knees
+  const miss = missingJoints(lm, ['HIP', 'KNEE', 'ANKLE'], 0.6, 0);
+  eq(miss.join(','), 'KNEE');
+  eq(jointPhrase(miss), 'knees');
+  eq(jointPhrase(['KNEE', 'ANKLE']), 'knees or ankles');
+  eq(jointPhrase(['HIP', 'KNEE', 'ANKLE']), 'hips, knees or ankles');
+});
+
+t('calibration · will not start the fight until the pose is still', () => {
+  const e = new SessionEngine(store, 'squat');
+  // Moving at a human rate — roughly 3Hz — so it must never settle.
+  let t2 = 0;
+  for (let i = 0; i < 200; i++) {
+    e.frame(stick({ knee: 120 + (Math.floor(i / 5) % 2) * 50 }), null, t2 += 33);
+  }
+  eq(e.state().phase, Phase.CALIBRATING, 'started while the player was still moving');
+});
+
+t('calibration · frame-rate jitter is filtered out, human motion is not', () => {
+  // A 15Hz alternation is sensor noise, not a person, and One Euro is supposed to remove it.
+  // Anything at human speed must survive filtering and keep the gate closed.
+  const run = (period) => {
+    const e = new SessionEngine(store, 'squat');
+    let t2 = 0;
+    for (let i = 0; i < 200; i++)
+      e.frame(stick({ knee: 120 + (Math.floor(i / period) % 2) * 50 }), null, t2 += 33);
+    return e.state().phase;
+  };
+  eq(run(1), Phase.FIGHTING, 'per-frame jitter was treated as real movement');
+  eq(run(5), Phase.CALIBRATING, 'human-rate movement was filtered away');
+  eq(run(15), Phase.CALIBRATING, 'slow movement was filtered away');
+});
+
+t('calibration · a still pose reaches READY and starts', () => {
+  const e = new SessionEngine(store, 'squat');
+  let t2 = 0;
+  for (let i = 0; i < 120; i++) e.frame(stick({ knee: 176 }), null, t2 += 33);
+  eq(e.state().phase, Phase.FIGHTING, 'never started');
+  ok(Number.isFinite(e.state().topRef), 'no reference angle captured');
+});
+
+t('calibration · a partial view produces a named cue, not a spinner', () => {
+  const e = new SessionEngine(store, 'squat');
+  let t2 = 0;
+  for (let i = 0; i < 40; i++) {
+    const lm = stick({});
+    lm[27].visibility = 0.1; lm[28].visibility = 0.1;        // ankles out of frame
+    e.frame(lm, null, t2 += 33);
+  }
+  const s2 = e.state();
+  eq(s2.calib, Calib.PARTIAL);
+  ok(/ankles/.test(s2.cue), `cue was "${s2.cue}"`);
+  ok(!/not detected|error|failed/i.test(s2.cue), 'generic error text leaked into the cue');
+});
+
+t('calibration · hold progress is reported for the ring', () => {
+  const e = new SessionEngine(store, 'squat');
+  let t2 = 0;
+  for (let i = 0; i < 25; i++) e.frame(stick({ knee: 176 }), null, t2 += 33);
+  const s2 = e.state();
+  ok(s2.calibProgress > 0 && s2.calibProgress < 1, `progress ${s2.calibProgress}`);
 });
 
 // ---------- family games ----------

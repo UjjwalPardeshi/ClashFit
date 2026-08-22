@@ -62,7 +62,8 @@ export class Renderer {
 
     this.#video(video, w, h);
     if (landmarks) this.#skeleton(landmarks, w, h, state);
-    if (state.gameState) this.#familyGame(state, w, h, now);
+    if (state.phase === 'CALIBRATING') this.#calibration(state, w, h, now);
+    else if (state.gameState) this.#familyGame(state, w, h, now);
     else this.#boss(state, w, h, now);
     this.#pops(now, w, h);
 
@@ -253,6 +254,55 @@ export class Renderer {
       this.#label(cx, y0 + rows * (ch + gap) + 26,
                   `${g.broken} / ${g.floors} floors · best ${g.bestCm.toFixed(0)}cm`, C.damage, w);
     }
+  }
+
+  /** The calibration guide: a target frame, a distance arrow, and a hold ring. Never a spinner.
+   *  docs/03-UI-UX-SPEC.md §6 */
+  #calibration(state, w, h, now) {
+    const { ctx } = this;
+    const bw = Math.min(w * 0.30, 300), bh = Math.min(h * 0.78, 620);
+    const bx = (w - bw) / 2, by = (h - bh) / 2;
+
+    const ok = state.calib === 'HOLDING' || state.calib === 'READY';
+    const color = ok ? C.clean : state.calib === 'SEARCHING' ? C.mute : C.shallow;
+
+    ctx.save();
+    ctx.strokeStyle = hexA(color, 0.75);
+    ctx.lineWidth = 2;
+    ctx.setLineDash(ok ? [] : [10, 8]);
+    const corner = 36;
+    for (const [cx0, cy0, dx, dy] of [
+      [bx, by, 1, 1], [bx + bw, by, -1, 1], [bx, by + bh, 1, -1], [bx + bw, by + bh, -1, -1],
+    ]) {
+      ctx.beginPath();
+      ctx.moveTo(cx0, cy0 + dy * corner); ctx.lineTo(cx0, cy0); ctx.lineTo(cx0 + dx * corner, cy0);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // distance hint, driven by the landmark bounding box
+    if (state.framing === 'TOO_FAR' || state.framing === 'TOO_CLOSE') {
+      const up = state.framing === 'TOO_CLOSE';
+      const ax = w / 2, ay = by + bh + 34;
+      ctx.strokeStyle = C.shallow; ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay + (up ? 16 : 0)); ctx.lineTo(ax, ay + (up ? 0 : 16));
+      ctx.moveTo(ax - 8, ay + (up ? 8 : 8)); ctx.lineTo(ax, ay + (up ? 0 : 16));
+      ctx.lineTo(ax + 8, ay + 8);
+      ctx.stroke();
+    }
+
+    // hold ring — 2 seconds of stillness before the fight starts
+    if (state.calib === 'HOLDING' || state.calib === 'READY') {
+      const r = 46, cx0 = w / 2, cy0 = by + bh + 78;
+      ctx.strokeStyle = hexA(C.ink, 0.14); ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(cx0, cy0, r, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = C.clean; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(cx0, cy0, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (state.calibProgress ?? 0));
+      ctx.stroke(); ctx.lineCap = 'butt';
+    }
+    ctx.restore();
   }
 
   #bar(x, y, wid, pct, color, left, right) {

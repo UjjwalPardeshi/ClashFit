@@ -4,7 +4,7 @@
 // event build is a port rather than a redesign. docs/09-MODULE-CONTRACTS.md
 
 import { LandmarkFilter } from './oneEuro.js';
-import { primaryAngle, chooseSide, boxHeight, spanMetres, JOINT, SIDE } from './geometry.js';
+import { primaryAngle, chooseSide, boxHeight, spanMetres, missingJoints, jointPhrase, JOINT, SIDE } from './geometry.js';
 import { RepStateMachine } from './repFsm.js';
 import { scoreRep, verdict, alignmentSample } from './formScorer.js';
 import { FatigueEstimator, Band } from './fatigue.js';
@@ -13,6 +13,13 @@ import { GhostSource } from './ghost.js';
 import { summarise, coachFor } from './coach.js';
 import { makeDetector, FAMILY_GAME } from './detectors/index.js';
 import { makeFamilyGame, GameOutcome } from './games.js';
+
+/** The calibration screen is where a live demo most plausibly dies, so it gets real states and
+ *  a named cue for each rather than a spinner. docs/02-APP-FLOW.md §2 */
+export const Calib = {
+  SEARCHING: 'SEARCHING', PARTIAL: 'PARTIAL', TOO_CLOSE: 'TOO_CLOSE',
+  TOO_FAR: 'TOO_FAR', HOLDING: 'HOLDING', READY: 'READY',
+};
 
 export const Phase = { CALIBRATING: 'CALIBRATING', FIGHTING: 'FIGHTING', FRAMING_LOST: 'FRAMING_LOST', REST: 'REST', DEAD: 'DEAD' };
 export const Mode = {
@@ -89,6 +96,10 @@ export class SessionEngine {
     this.topRefSamples = [];
     this.filter.reset();
 
+    this.calib = Calib.SEARCHING;
+    this.calibHoldMs = 0;
+    this.calibSince = null;
+    this.missing = [];
     this.fightStartMs = null;
     this.ended = false;
     this.endReason = null;
@@ -163,28 +174,7 @@ export class SessionEngine {
     if (this.phase === Phase.FRAMING_LOST) { this.phase = Phase.FIGHTING; this.fatigue.unfreeze(); }
     this.invalidFrames = 0;
 
-    // Only REP_CYCLE needs a settled reference angle. The other families calibrate inside
-    // their own detector, so they start as soon as the joints are visible.
-    if (this.phase === Phase.CALIBRATING && this.family !== 'REP_CYCLE') {
-      this.phase = Phase.FIGHTING;
-      this.fightStartMs = tMs;
-      this.ghost?.start(tMs);
-    }
-
-    // Calibration: settle at rest, take the median as the reference position.
-    if (this.phase === Phase.CALIBRATING) {
-      this.topRefSamples.push(sel.angle);
-      if (this.topRefSamples.length > 30) this.topRefSamples.shift();
-      if (this.topRefSamples.length >= 30 && this.#settled()) {
-        const med = [...this.topRefSamples].sort((a, b) => a - b)[15];
-        this.fsm.setTopRef(med);
-        this.topRef = med;
-        this.phase = Phase.FIGHTING;
-        this.fightStartMs = tMs;
-        this.ghost?.start(tMs);
-      }
-      return this.state();
-    }
+    if (this.phase === Phase.CALIBRATING) return this.#calibrate(lms, sel, tMs);
 
     if (this.mode === Mode.PURSUIT && this.game && this.phase === Phase.FIGHTING) {
       const g = this.game.tick(tMs);
@@ -375,10 +365,62 @@ export class SessionEngine {
     this.onRep(rec, this.combat.state());
   }
 
+  /**
+   * Framing is gated, not hoped for: the fight does not start until every required joint has
+   * been visible AND the pose has been still for a continuous window. Each failure state has a
+   * cue that names what to change. docs/02-APP-FLOW.md §2, docs/03-UI-UX-SPEC.md §6
+   */
+  #calibrate(lms, sel, tMs) {
+    const thr = this.cfg.pose.visibilityThreshold;
+    const f = this.cfg.pose.framing;
+    this.missing = missingJoints(lms, this.jointNames, thr, sel.side ?? SIDE.LEFT);
+
+    let next;
+    if (!sel.valid && this.missing.length === this.jointNames.length) next = Calib.SEARCHING;
+    else if (this.missing.length) next = Calib.PARTIAL;
+    else if (this.framing === 'TOO_FAR') next = Calib.TOO_FAR;
+    else if (this.framing === 'TOO_CLOSE') next = Calib.TOO_CLOSE;
+    else next = Calib.HOLDING;
+
+    if (next !== Calib.HOLDING) {
+      this.calib = next;
+      this.calibSince = null;
+      this.calibHoldMs = 0;
+      this.topRefSamples = [];
+      return this.state();
+    }
+
+    // Holding: accumulate the rest pose and require stillness before starting.
+    if (this.calibSince === null) this.calibSince = tMs;
+    this.calib = Calib.HOLDING;
+    this.calibHoldMs = tMs - this.calibSince;
+
+    if (this.fsm) {
+      this.topRefSamples.push(sel.angle);
+      if (this.topRefSamples.length > 45) this.topRefSamples.shift();
+      if (!this.#settled()) { this.calibSince = tMs; this.calibHoldMs = 0; }
+    }
+
+    if (this.calibHoldMs >= (f.holdToStartMs ?? 2000)) {
+      if (this.fsm && this.topRefSamples.length >= 20) {
+        const sorted = [...this.topRefSamples].sort((a, b) => a - b);
+        const med = sorted[Math.floor(sorted.length / 2)];
+        this.fsm.setTopRef(med);
+        this.topRef = med;
+      }
+      this.calib = Calib.READY;
+      this.phase = Phase.FIGHTING;
+      this.fightStartMs = tMs;
+      this.ghost?.start(tMs);
+    }
+    return this.state();
+  }
+
   #settled() {
     const s = this.topRefSamples;
+    if (s.length < 20) return true;             // not enough yet to call it unsettled
     const min = Math.min(...s), max = Math.max(...s);
-    return max - min < 8;                       // roughly still for a second
+    return max - min < 10;                      // still, in degrees
   }
 
   #framing(image) {
@@ -414,6 +456,10 @@ export class SessionEngine {
       detectorLast: this.detectorLast ?? null,
       wave: this.wave,
       rushIndex: this.rushIndex,
+      calib: this.calib,
+      calibHoldMs: this.calibHoldMs,
+      calibProgress: Math.min(1, this.calibHoldMs / (this.cfg.pose.framing?.holdToStartMs ?? 2000)),
+      missing: this.missing,
       setIndex: this.setIndex,
       setReps: this.setReps.length,
       coach: this.coach,
@@ -433,9 +479,21 @@ export class SessionEngine {
 
   #cue() {
     const c = this.exercise.cues ?? {};
+    if (this.phase === Phase.FRAMING_LOST) {
+      const m = this.missing?.length ? `I can't see your ${jointPhrase(this.missing)}.` : null;
+      return m ?? c.framing ?? 'I lost you — step back into frame.';
+    }
+    if (this.phase === Phase.CALIBRATING) {
+      switch (this.calib) {
+        case Calib.SEARCHING: return c.enter ?? 'Step into frame.';
+        case Calib.PARTIAL:   return `I can't see your ${jointPhrase(this.missing)} — step back.`;
+        case Calib.TOO_FAR:   return 'Come closer.';
+        case Calib.TOO_CLOSE: return 'Step back.';
+        case Calib.HOLDING:   return 'Hold still…';
+        default: return c.enter ?? 'Ready.';
+      }
+    }
     if (this.detector?.last?.cue) return this.detector.last.cue;   // pose-match names the joint
-    if (this.phase === Phase.FRAMING_LOST) return c.framing ?? 'I lost you — step back into frame.';
-    if (this.phase === Phase.CALIBRATING) return c.enter ?? 'Stand still for a moment.';
     if (this.framing === 'TOO_FAR') return 'Come closer.';
     if (this.framing === 'TOO_CLOSE') return 'Step back.';
     const r = this.lastRep;

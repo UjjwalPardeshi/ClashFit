@@ -72,6 +72,31 @@ export function primaryAngle(lms, primary, jointNames, threshold) {
   return { angle, ...sel };
 }
 
+/** Which required joints are not visible enough, by name. A named cue — "I can't see your
+ *  knees" — beats "pose not detected" by a wide margin: it tells the player what to change.
+ *  docs/03-UI-UX-SPEC.md §6 */
+export function missingJoints(lms, jointNames, threshold, side) {
+  const out = [];
+  for (const j of jointNames) {
+    const v = lms[JOINT[j][side]]?.visibility ?? 0;
+    if (v < threshold) out.push(j);
+  }
+  return out;
+}
+
+const READABLE = {
+  SHOULDER: 'shoulders', ELBOW: 'elbows', WRIST: 'wrists', HIP: 'hips',
+  KNEE: 'knees', ANKLE: 'ankles', HEEL: 'heels', FOOT_INDEX: 'feet',
+};
+
+export function jointPhrase(names) {
+  const words = names.map((n) => READABLE[n] ?? n.toLowerCase());
+  if (words.length === 0) return '';
+  if (words.length === 1) return words[0];
+  if (words.length === 2) return `${words[0]} or ${words[1]}`;
+  return `${words.slice(0, -1).join(', ')} or ${words[words.length - 1]}`;
+}
+
 /** Normalised height of the landmark bounding box — drives the framing hint. */
 export function boxHeight(imageLms) {
   let min = Infinity, max = -Infinity;
