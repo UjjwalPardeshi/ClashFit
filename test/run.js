@@ -277,7 +277,11 @@ t('duel · 30% packet loss repaired by the recent tail', () => {
 });
 
 // ---------- engine, end to end ----------
-const store = { pose, combat: combatCfg, exercises: { squat, calf_raise: calf } };
+const chair = cfg('exercises/chair_squat.json');
+const clinicSts = cfg('clinic/sit_to_stand_30s.json');
+const store = { pose, combat: combatCfg,
+                exercises: { squat, calf_raise: calf, chair_squat: chair },
+                clinic: { sit_to_stand_30s: clinicSts } };
 const drive = (engine, frames) => { for (const [w, t] of frames) engine.frame(w, null, t); return engine.state(); };
 
 t('engine · calibrates then counts a clean set', () => {
@@ -353,6 +357,48 @@ t('shipped pacer ghosts are valid and ordered', () => {
     ok(g.events.every((x, i) => i === 0 || x.t > g.events[i - 1].t), name + ' unordered');
     ok(g.meta.totalDamage === g.events.reduce((a, x) => a + x.damage, 0), name + ' meta mismatch');
   }
+});
+
+t('SURVIVAL · boss respawns harder and mercy is disabled', () => {
+  const e = new SessionEngine(store, 'squat', { mode: Mode.SURVIVAL });
+  drive(e, synthWorldSet({ reps: 40, bottom: 80 }));
+  ok(e.wave > 1, `never cleared a wave (wave ${e.wave})`);
+  ok(!e.state().combat.dead, 'run ended on a boss death instead of continuing');
+  ok(e.combat.mercyDisabled, 'mercy still enabled in Survival');
+  ok(e.combat.maxHp > (combatCfg.modes.SURVIVAL.hpPerWave), 'later waves are not harder');
+});
+
+t('SURVIVAL · the clean-rep bar rises each wave', () => {
+  const e = new SessionEngine(store, 'squat', { mode: Mode.SURVIVAL });
+  drive(e, synthWorldSet({ reps: 40, bottom: 80 }));
+  ok(e.formThresholdBonus > 0, 'threshold never tightened');
+  ok(e.combat.combo.cfg.threshold > combatCfg.combo.threshold, 'combo threshold unchanged');
+});
+
+t('BOSS_RUSH · advances the sequence then ends', () => {
+  const e = new SessionEngine(store, 'squat', { mode: Mode.BOSS_RUSH });
+  drive(e, synthWorldSet({ reps: 120, bottom: 80 }));
+  const seq = combatCfg.modes.BOSS_RUSH.sequence.length;
+  ok(e.rushIndex >= 1, 'never advanced past the first boss');
+  if (e.state().ended) eq(e.rushIndex, seq, 'ended before finishing the sequence');
+});
+
+t('CLINIC_STS · runs the 30-second protocol and counts stands', () => {
+  const e = new SessionEngine(store, 'chair_squat', { mode: Mode.CLINIC_STS });
+  eq(e.durationMs, 30000);
+  const s = drive(e, synthWorldSet({ reps: 40, bottom: 118, eccSec: 0.5, pauseSec: 0.1, top: 165 }));
+  ok(s.ended, 'protocol never ended');
+  eq(s.endReason, 'TIME');
+  ok(e.reps.length > 0, 'no stands counted');
+  ok(!s.combat.dead, 'a clinical assessment killed a boss');
+});
+
+t('CLINIC_STS · ships no norms until they are cited', () => {
+  // Publishing a reference range we cannot attribute is worse than publishing none.
+  eq(clinicSts.reporting.showNormComparison, false);
+  eq(clinicSts.norms.source, null);
+  eq(clinicSts.norms.bands.length, 0);
+  ok(/not a medical device/i.test(clinicSts.notNested), 'missing the not-a-medical-device line');
 });
 
 // ---------- coaching ----------

@@ -50,6 +50,7 @@ export class CombatEngine {
     this.dead = false;
     this.events = new Map();               // duel dedupe: "player:seq" -> damage
     this.recent = [];                      // last few local damages, for the mercy estimate
+    this.mercyDisabled = this.mercyDisabled ?? false;
     this.log = [];
   }
 
@@ -125,7 +126,7 @@ export class CombatEngine {
     if (band === Band.FADING && this.staggerRepsLeft === 0) {
       this.staggerRepsLeft = this.cfg.fatigueResponse.FADING.staggerReps ?? 5;
     }
-    if (band === Band.GASSED && !this.mercyActive) {
+    if (band === Band.GASSED && !this.mercyActive && !this.mercyDisabled) {
       this.mercyActive = true;
       const n = this.cfg.fatigueResponse.GASSED.mercyRepsToFinish ?? 4;
       const cap = Math.max(1, Math.round(n * expectedDamagePerRep));

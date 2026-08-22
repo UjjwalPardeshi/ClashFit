@@ -13,7 +13,17 @@ import { GhostSource } from './ghost.js';
 import { summarise, coachFor } from './coach.js';
 
 export const Phase = { CALIBRATING: 'CALIBRATING', FIGHTING: 'FIGHTING', FRAMING_LOST: 'FRAMING_LOST', REST: 'REST', DEAD: 'DEAD' };
-export const Mode = { BOSS_FIGHT: 'BOSS_FIGHT', TIME_ATTACK: 'TIME_ATTACK', GHOST_RACE: 'GHOST_RACE' };
+export const Mode = {
+  BOSS_FIGHT: 'BOSS_FIGHT',
+  TIME_ATTACK: 'TIME_ATTACK',
+  GHOST_RACE: 'GHOST_RACE',
+  SURVIVAL: 'SURVIVAL',
+  BOSS_RUSH: 'BOSS_RUSH',
+  CLINIC_STS: 'CLINIC_STS',
+};
+
+/** Modes scored on a clock rather than on boss HP. */
+const TIMED = new Set([Mode.TIME_ATTACK, Mode.CLINIC_STS]);
 
 export class SessionEngine {
   constructor(cfg, exerciseId = 'squat', opts = {}) {
@@ -71,25 +81,35 @@ export class SessionEngine {
     this.ghostDamage = 0;
     this.ghost?.reset();
     this.spanSamples = [];
+    this.wave = 1;
+    this.rushIndex = 0;
+    this.formThresholdBonus = 0;
     this.setIndex = 1;
     this.setReps = [];
     this.lastRepEndMs = null;
     this.coach = null;
     this.ghost?.reset();
 
-    // Time Attack is scored on total damage, so the boss must not die out from under it.
-    if (this.mode === Mode.TIME_ATTACK && this.cfg.combat.modes?.TIME_ATTACK?.bossHpUncapped) {
+    // Modes scored on a clock must not have the boss die out from under them.
+    if (TIMED.has(this.mode)) {
       this.combat.maxHp = 10_000_000;
       this.combat.hp = 10_000_000;
+    }
+    if (this.mode === Mode.SURVIVAL) {
+      const w = this.cfg.combat.modes?.SURVIVAL ?? {};
+      this.combat.maxHp = w.hpPerWave ?? 900;
+      this.combat.hp = this.combat.maxHp;
     }
   }
 
   get durationMs() {
+    if (this.mode === Mode.CLINIC_STS)
+      return (this.cfg.clinic?.sit_to_stand_30s?.durationSec ?? 30) * 1000;
     return (this.cfg.combat.modes?.TIME_ATTACK?.durationSec ?? 60) * 1000;
   }
 
   get timeLeftMs() {
-    if (this.mode !== Mode.TIME_ATTACK || this.fightStartMs === null) return null;
+    if (!TIMED.has(this.mode) || this.fightStartMs === null) return null;
     return Math.max(0, this.durationMs - (this.lastTMs - this.fightStartMs));
   }
 
@@ -159,7 +179,7 @@ export class SessionEngine {
           this.ghostDamage += e.damage;
         }
       }
-      if (this.mode === Mode.TIME_ATTACK && this.timeLeftMs === 0) this.#end('TIME');
+      if (TIMED.has(this.mode) && this.timeLeftMs === 0) this.#end('TIME');
     }
 
     const raw = this.ended ? null : this.fsm.onFrame(sel.angle, tMs);
@@ -183,6 +203,33 @@ export class SessionEngine {
     const coach = await coachFor(telemetry, this.llm);
     this.coach = coach;
     this.onSetEnd(telemetry, coach, restSec);
+  }
+
+  /** Survival keeps going with a harder boss; Boss Rush advances the sequence; everything else
+   *  ends. Survival deliberately disables the mercy rule — this is the one mode where fatigue
+   *  genuinely ends the run, and that is the point of it. */
+  #onBossDown() {
+    if (this.mode === Mode.SURVIVAL) {
+      const w = this.cfg.combat.modes?.SURVIVAL ?? {};
+      this.wave += 1;
+      this.formThresholdBonus += w.formThresholdStep ?? 0.03;
+      const hp = Math.round((w.hpPerWave ?? 900) * (1 + 0.35 * (this.wave - 1)));
+      this.combat.reset({ ...this.cfg.combat.boss, maxHp: hp });
+      this.combat.mercyDisabled = !!w.mercyDisabled;
+      return;
+    }
+    if (this.mode === Mode.BOSS_RUSH) {
+      const seq = this.cfg.combat.modes?.BOSS_RUSH?.sequence ?? [];
+      this.rushIndex += 1;
+      if (this.rushIndex < seq.length) {
+        this.combat.reset({ ...this.cfg.combat.boss, id: seq[this.rushIndex],
+                            name: seq[this.rushIndex].replace(/_/g, ' ').toUpperCase(),
+                            maxHp: Math.round(this.cfg.combat.boss.maxHp * (1 + 0.2 * this.rushIndex)) });
+        return;
+      }
+    }
+    this.phase = Phase.DEAD;
+    this.#end('BOSS_DOWN');
   }
 
   #restSeconds() {
@@ -210,6 +257,10 @@ export class SessionEngine {
 
     const align = alignmentSample(lms, this.side ?? SIDE.LEFT, this.exercise.form.alignment?.type);
     const score = scoreRep(raw, this.exercise, this.romBaselineU, align);
+    if (this.formThresholdBonus > 0) {
+      this.combat.combo.cfg = { ...this.combat.combo.cfg,
+        threshold: Math.min(0.95, (this.cfg.combat.combo.threshold ?? 0.75) + this.formThresholdBonus) };
+    }
     const f = this.fatigue.onRep(raw);
 
     const prevBand = this.combatBand ?? Band.FRESH;
@@ -230,7 +281,7 @@ export class SessionEngine {
     this.lastRep = rec;
     this.lastScore = score;
     this.playerDamage += rec.damage ?? 0;
-    if (this.combat.dead) { this.phase = Phase.DEAD; this.#end('BOSS_DOWN'); }
+    if (this.combat.dead) this.#onBossDown();
     this.onRep(rec, this.combat.state());
   }
 
@@ -267,6 +318,8 @@ export class SessionEngine {
       ghostDamage: this.ghostDamage,
       ghostMeta: this.ghost?.meta ?? null,
       ghostFinished: this.ghost?.finished ?? null,
+      wave: this.wave,
+      rushIndex: this.rushIndex,
       setIndex: this.setIndex,
       setReps: this.setReps.length,
       coach: this.coach,

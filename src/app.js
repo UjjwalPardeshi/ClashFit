@@ -33,6 +33,7 @@ const el = {
   overBody: $('overBody'), again: $('again'),
   rest: $('rest'), restSet: $('restSet'), restBand: $('restBand'), restCoach: $('restCoach'),
   restBoss: $('restBoss'), restStats: $('restStats'), nextSet: $('nextSet'),
+  waveTile: $('waveTile'), wave: $('wave'),
   sum: $('sum'), sumCanvas: $('sumCanvas'), sumBtn: $('sumBtn'),
   sumPng: $('sumPng'), sumCsv: $('sumCsv'), sumClose: $('sumClose'),
 };
@@ -83,6 +84,8 @@ async function boot() {
 
 function makeEngine(id) {
   const mode = el.mode.value;
+  // The protocol prescribes the movement — you do not get to pick it.
+  if (mode === Mode.CLINIC_STS) { id = store.clinic.sit_to_stand_30s.exercise; el.exercise.value = id; }
   engine = new SessionEngine(store, id, {
     casual,
     mode,
@@ -105,10 +108,14 @@ function makeEngine(id) {
     const g = ghosts[el.ghost.value] ?? Object.values(ghosts)[0];
     if (g) engine.loadGhost(g);
   }
-  el.timerTile.style.display = mode === Mode.TIME_ATTACK ? '' : 'none';
+  const timed = mode === Mode.TIME_ATTACK || mode === Mode.CLINIC_STS;
+  el.timerTile.style.display = timed ? '' : 'none';
+  el.waveTile.style.display = mode === Mode.SURVIVAL ? '' : 'none';
   el.race.classList.toggle('show', mode === Mode.GHOST_RACE);
   el.ghost.style.display = mode === Mode.GHOST_RACE ? '' : 'none';
+  el.exercise.disabled = mode === Mode.CLINIC_STS;
   el.over.classList.remove('show');
+  el.rest.classList.remove('show');
 }
 
 function showRest(telemetry, coach) {
@@ -127,6 +134,22 @@ function showRest(telemetry, coach) {
   speech.sayPair(coach.coachLine, coach.bossLine);      // the player is on the floor, not reading
 }
 
+/** A clinical assessment gets a result card, never a victory screen. No boss, no damage, no
+ *  ranking — a count, the protocol it came from, and the line that keeps this honest.
+ *  docs/25-CLINIC-MODE.md §6 */
+function showClinicResult(s) {
+  const p = store.clinic.sit_to_stand_30s;
+  el.overKicker.textContent = p.name;
+  el.overTitle.textContent = String(s.reps);
+  el.overTitle.style.color = C.system;
+  const norms = p.reporting.showNormComparison && p.norms.source;
+  el.overBody.innerHTML =
+    `stands in ${p.durationSec} seconds · measures ${p.measures}<br>` +
+    (norms ? '' : `${p.reporting.phrasing.noNorms}<br>`) +
+    `<span style="opacity:.75">${p.notNested}</span>`;
+  el.over.classList.add('show');
+}
+
 function openSummary() {
   drawSummary(el.sumCanvas, engine.reps, store.pose.fatigue.bands, {
     exercise: el.exercise.value,
@@ -136,6 +159,7 @@ function openSummary() {
 }
 
 function showResult(reason, s) {
+  if (s.mode === Mode.CLINIC_STS) return showClinicResult(s);
   const win = s.mode === Mode.GHOST_RACE ? s.playerDamage >= s.ghostDamage : null;
   el.overKicker.textContent =
     reason === 'BOSS_DOWN' ? 'Boss down' : reason === 'TIME' ? "Time" : 'Set over';
@@ -302,7 +326,8 @@ function paintHud(s) {
   el.reps.textContent = s.reps;
   el.combo.textContent = `×${s.combat.comboMultiplier.toFixed(1)}`;
 
-  if (s.mode === Mode.TIME_ATTACK) {
+  if (s.mode === Mode.SURVIVAL) el.wave.textContent = s.wave;
+  if (s.mode === Mode.TIME_ATTACK || s.mode === Mode.CLINIC_STS) {
     const left = s.timeLeftMs ?? engine.durationMs;
     el.timer.textContent = Math.ceil(left / 1000);
     el.timer.style.color = left < 10000 ? C.damage : '';

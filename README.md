@@ -55,6 +55,18 @@ Ghosts ride the duel's own code path — a ghost is a remote player that happens
 file. That makes Ghost Race the instant fallback if two-phone pairing fails in the hall, because
 on screen it looks identical.
 
+*Survival* removes the mercy rule and raises the clean-rep bar each wave — the one mode where
+fatigue genuinely ends the run. *Clinic* runs the 30-second sit-to-stand protocol: no boss, no
+damage, no ranking. A count, the protocol it came from, and an explicit not-a-medical-device line.
+
+**Summary** draws the fatigue curve and exports it as a PNG — that image is deck slide 4 — plus a
+CSV of every rep's raw telemetry.
+
+> **Clinic norms are deliberately absent.** `config/clinic/sit_to_stand_30s.json` ships with an
+> empty reference range and `showNormComparison: false`. Publishing an age band we cannot
+> attribute is worse than publishing none. Source a real citation before it goes in the deck; the
+> raw count and the personal trend need no citation and are the defensible part anyway.
+
 ---
 
 ## What works
@@ -70,7 +82,10 @@ on screen it looks identical.
 | Duel maths | Event-sourced HP with dedupe — tested, not wired to a transport |
 | Traces | Record to JSON Lines for replay and regression |
 | 8 exercises | squat · chair squat · lunge · calf raise · glute bridge · push-up · knee push-up · sit-up |
-| Modes | Boss Fight · **Time Attack (60s)** · **Ghost Race** |
+| Modes | Boss Fight · Time Attack (60s) · Ghost Race · Survival · Boss Rush · **Clinic** |
+| Coach | Telemetry summariser, 20-line template bank, output validator, TTS |
+| Audio | Fully synthesised — rep pitch climbs with the combo |
+| Summary | Fatigue curve chart, PNG export for the deck, CSV of raw per-rep data |
 | Ghosts | Three shipped pacers, save your own run, load a friend's |
 
 ## What is deliberately absent

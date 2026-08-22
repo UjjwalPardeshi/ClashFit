@@ -13,14 +13,23 @@ async function json(path) {
   return r.json();
 }
 
+const CLINIC = ['sit_to_stand_30s'];
+
 export async function loadConfig() {
-  const [pose, combat, ...ex] = await Promise.all([
+  const [pose, combat, ...rest] = await Promise.all([
     json('config/pose.json'),
     json('config/combat.json'),
     ...EXERCISES.map((id) => json(`config/exercises/${id}.json`)),
+    ...CLINIC.map((id) => json(`config/clinic/${id}.json`)),
   ]);
-  const exercises = Object.fromEntries(ex.map((e) => [e.id, e]));
-  return { pose, combat, exercises, version: Date.now() };
+  const ex = rest.slice(0, EXERCISES.length);
+  const cl = rest.slice(EXERCISES.length);
+  return {
+    pose, combat,
+    exercises: Object.fromEntries(ex.map((e) => [e.id, e])),
+    clinic: Object.fromEntries(cl.map((c) => [c.id, c])),
+    version: Date.now(),
+  };
 }
 
 /** Re-read from disk. On the phone this is the onResume hook; here it is a button.

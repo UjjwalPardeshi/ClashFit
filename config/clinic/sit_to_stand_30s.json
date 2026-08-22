@@ -1,0 +1,28 @@
+{
+  "id": "sit_to_stand_30s",
+  "name": "30-Second Sit-to-Stand",
+  "protocol": "Sit on a standard chair, arms crossed over your chest. Stand fully and sit back down as many times as you can in 30 seconds.",
+  "exercise": "chair_squat",
+  "durationSec": 30,
+  "measures": "lower-body functional strength",
+  "notNested": "This is not a medical device and does not diagnose anything. It reports a count and your own trend over time.",
+
+  "norms": {
+    "_status": "PLACEHOLDER — DO NOT SHIP OR PUT IN THE DECK UNTIL CITED",
+    "_instruction": "Source published age- and sex-banded reference ranges for the 30-second chair stand test and record the full citation in `source` below. Until then the app shows the raw count and the personal trend only, which need no citation and are the defensible part anyway.",
+    "source": null,
+    "bands": []
+  },
+
+  "reporting": {
+    "showRawCount": true,
+    "showPersonalTrend": true,
+    "showNormComparison": false,
+    "phrasing": {
+      "belowRange": "Below the typical range for your age group — worth discussing with a physiotherapist.",
+      "inRange": "Within the typical range for your age group.",
+      "aboveRange": "Above the typical range for your age group.",
+      "noNorms": "Reference ranges are not configured. Your count and your own trend are shown."
+    }
+  }
+}

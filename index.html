@@ -122,6 +122,9 @@
         <option value="BOSS_FIGHT">Boss Fight</option>
         <option value="TIME_ATTACK">Time Attack · 60s</option>
         <option value="GHOST_RACE">Ghost Race</option>
+        <option value="SURVIVAL">Survival</option>
+        <option value="BOSS_RUSH">Boss Rush</option>
+        <option value="CLINIC_STS">Clinic · 30s sit-to-stand</option>
       </select>
       <select id="ghost" title="Ghost" style="display:none"></select>
       <button id="saveGhost" title="Save this run as a ghost">Save ghost</button>
@@ -164,6 +167,10 @@
     <div class="tile">
       <div class="lbl">Last rep</div>
       <div id="verdict" style="color:var(--mute)">—</div>
+    </div>
+    <div class="tile" id="waveTile" style="display:none">
+      <div class="lbl">Wave</div>
+      <div class="big" id="wave">1</div>
     </div>
     <div class="tile">
       <div class="lbl">Combo</div>
