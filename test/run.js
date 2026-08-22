@@ -6,6 +6,7 @@ import { makeDetector } from '../src/detectors/index.js';
 import { missingJoints, jointPhrase } from '../src/geometry.js';
 import { Haptics } from '../src/haptics.js';
 import { COMMANDS } from '../src/voice.js';
+import { Roster, RosterMode, Circuit, DEFAULT_CIRCUIT } from '../src/roster.js';
 import { DuelSession, LoopbackTransport, LinkState, newPlayerId } from '../src/duel.js';
 import { SiegeGame, PursuitGame, BreakerGame, SigilGame, GameOutcome, makeFamilyGame } from '../src/games.js';
 import { RepStateMachine } from '../src/repFsm.js';
@@ -410,6 +411,83 @@ t('CLINIC_STS · ships no norms until they are cited', () => {
   eq(clinicSts.norms.source, null);
   eq(clinicSts.norms.bands.length, 0);
   ok(/not a medical device/i.test(clinicSts.notNested), 'missing the not-a-medical-device line');
+});
+
+// ---------- group play ----------
+t('roster · pass-the-phone cycles turns and carries totals', () => {
+  const r = new Roster(['A', 'B', 'C'], { mode: RosterMode.PASS_THE_PHONE, turnSec: 30 });
+  r.startTurn(0);
+  r.record({ reps: 8, damage: 640, bestForm: 0.9 });
+  eq(r.current.name, 'A');
+  r.next(1000); r.record({ reps: 6, damage: 500 });
+  eq(r.current.name, 'B');
+  r.next(2000); r.record({ reps: 9, damage: 700 });
+  eq(r.current.name, 'C');
+  r.next(3000);
+  eq(r.current.name, 'A', 'did not wrap around');
+  eq(r.players[0].damage, 640);
+  eq(r.players[0].turns, 2, 'turn count did not increment on the second pass');
+});
+
+t('roster · a turn clock only exists where a turn is timed', () => {
+  const pass = new Roster(['A', 'B'], { mode: RosterMode.PASS_THE_PHONE, turnSec: 30 });
+  pass.startTurn(0);
+  eq(pass.turnLeftMs(10000), 20000);
+  const last = new Roster(['A', 'B'], { mode: RosterMode.LAST_STANDING });
+  last.startTurn(0);
+  eq(last.turnLeftMs(10000), null, 'last standing should not be on a clock');
+});
+
+t('roster · LAST_STANDING eliminates on fatigue, not on rep count', () => {
+  const r = new Roster(['A', 'B', 'C'], { mode: RosterMode.LAST_STANDING });
+  r.startTurn(0);
+  r.eliminateCurrent('GASSED');
+  eq(r.players[0].out, true);
+  eq(r.players[0].outReason, 'GASSED');
+  eq(r.finished, false, 'ended with two players still in');
+  r.next(1); r.eliminateCurrent('GASSED');
+  eq(r.finished, true, 'never ended');
+  eq(r.winner.name, 'C', 'wrong survivor');
+});
+
+t('roster · next() skips eliminated players', () => {
+  const r = new Roster(['A', 'B', 'C', 'D'], { mode: RosterMode.LAST_STANDING });
+  r.startTurn(0);
+  r.players[1].out = true;                     // B is out
+  eq(r.next(1).name, 'C', 'did not skip the eliminated player');
+});
+
+t('roster · the winner is decided on damage, not reps', () => {
+  const r = new Roster(['A', 'B'], { mode: RosterMode.PASS_THE_PHONE });
+  r.startTurn(0);
+  r.record({ reps: 20, damage: 900 });          // many sloppy reps
+  r.next(1);
+  r.record({ reps: 12, damage: 1100 });         // fewer, cleaner reps
+  eq(r.finish().name, 'B', 'rep count beat damage');
+  eq(r.leaderboard()[0].name, 'B');
+});
+
+t('circuit · walks a cross-family sequence and records each step', () => {
+  const c = new Circuit(DEFAULT_CIRCUIT);
+  c.start(0);
+  eq(c.current.exerciseId, 'squat');
+  eq(c.leftMs(10000), 35000);
+  c.advance(45000, { reps: 20 });
+  eq(c.current.exerciseId, 'plank');
+  while (!c.finished) c.advance(0, { reps: 1 });
+  eq(c.state().results.length, DEFAULT_CIRCUIT.length);
+  eq(c.finished, true);
+});
+
+t('circuit · the default sequence spans four movement families', () => {
+  const byId = Object.fromEntries(
+    readdirSync(join(HERE, '..', 'config/exercises'))
+      .filter(f => f.endsWith('.json') && f !== 'index.json')
+      .map(f => { const e = JSON.parse(readFileSync(join(HERE, '..', 'config/exercises', f), 'utf8'));
+                  return [e.id, e]; }));
+  const fams = new Set(DEFAULT_CIRCUIT.map(s => byId[s.exerciseId]?.family));
+  for (const s2 of DEFAULT_CIRCUIT) ok(byId[s2.exerciseId], `${s2.exerciseId} is not a shipped exercise`);
+  ok(fams.size >= 4, `only ${fams.size} families: ${[...fams].join(',')}`);
 });
 
 // ---------- haptics and voice ----------

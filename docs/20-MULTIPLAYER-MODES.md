@@ -121,6 +121,12 @@ ship offline.
 | **Raid demo** | Only if you sideload onto your own Android phones — and **confirm with organisers first**, since the rule is that the final demo must be presented on an iQOO device. | Do not discover this constraint on stage. |
 | **Deck** | The full group and community architecture | This is the retention story, and it is where the 30% lives. |
 
+**Built in the prototype:** Pass the phone, Last Standing and Circuit all work on one device,
+with the roster and turn logic in `src/roster.js` and 7 assertions covering turn cycling,
+elimination-by-fatigue, skipping eliminated players, and the winner being decided on damage rather
+than rep count. Circuit walks a cross-family sequence and a test asserts the default one spans at
+least four movement families.
+
 **The practical group demo, with two phones:**
 - **Relay** — hand the phone between judges, boss HP carries. Works with any number of people.
 - **Last Standing, pass-the-phone** — three judges take turns, fatigue eliminates them one by one.

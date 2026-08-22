@@ -14,6 +14,7 @@ import { drawSummary, exportPng, exportCsv } from './summary.js';
 import { DuelSession, BroadcastChannelTransport, LinkState, newPlayerId } from './duel.js';
 import { Haptics } from './haptics.js';
 import { Voice } from './voice.js';
+import { Roster, RosterMode, Circuit, DEFAULT_CIRCUIT } from './roster.js';
 import { Renderer, C } from './render.js';
 import { TraceRecorder } from './trace.js';
 
@@ -41,7 +42,14 @@ const el = {
   sumPng: $('sumPng'), sumCsv: $('sumCsv'), sumClose: $('sumClose'),
   link: $('link'),
   arena: $('arena'), voice: $('voice'), haptic: $('haptic'), motion: $('motion'),
+  roster: $('roster'), rosterKicker: $('rosterKicker'), rosterTitle: $('rosterTitle'),
+  rosterNames: $('rosterNames'), rosterHint: $('rosterHint'), rosterGo: $('rosterGo'),
+  turn: $('turn'), turnName: $('turnName'), turnMeta: $('turnMeta'),
 };
+
+let roster = null;
+let circuit = null;
+const GROUP_MODES = ['PASS_THE_PHONE', 'LAST_STANDING'];
 
 let haptics = null;
 let voice = null;
@@ -137,7 +145,11 @@ function makeEngine(id) {
       if (reason === 'BOSS_DOWN' || reason === 'GAME_WON') { audio.bossDeath(); haptics?.bossDown(); }
       showResult(reason, s);
     },
-    onSetEnd: (telemetry, coach) => showRest(telemetry, coach),
+    onSetEnd: (telemetry, coach) => { if (!roster) showRest(telemetry, coach); },
+    onBand: (band) => {
+      // Fatigue is the referee. Every other fitness app would eliminate on rep count.
+      if (roster?.mode === RosterMode.LAST_STANDING && band === 'GASSED') eliminateAndAdvance();
+    },
     onRep: (rep, combat) => {
       renderer.hit(rep.verdict, rep.damage);
       el.verdict.textContent = rep.verdict;
@@ -179,7 +191,25 @@ function makeEngine(id) {
   el.waveTile.style.display = mode === Mode.SURVIVAL ? '' : 'none';
   el.race.classList.toggle('show', mode === Mode.GHOST_RACE || mode === Mode.DUEL);
   el.ghost.style.display = mode === Mode.GHOST_RACE ? '' : 'none';
-  el.exercise.disabled = mode === Mode.CLINIC_STS;
+  el.exercise.disabled = mode === Mode.CLINIC_STS || mode === 'CIRCUIT';
+
+  roster = null; circuit = null;
+  el.turn.classList.remove('show');
+  if (GROUP_MODES.includes(mode)) {
+    el.rosterKicker.textContent = mode === 'LAST_STANDING' ? 'Last Standing' : 'Pass the phone';
+    el.rosterHint.textContent = mode === 'LAST_STANDING'
+      ? "Everyone does the same movement. You're out when your measured fatigue reaches GASSED — not when you run out of reps. One device, any number of people."
+      : 'Each player gets 30 seconds. The boss keeps its damage between turns, so it is one shared fight.';
+    el.roster.classList.add('show');
+  } else if (mode === 'CIRCUIT') {
+    circuit = new Circuit(DEFAULT_CIRCUIT);
+    circuit.start(performance.now());
+    el.exercise.value = circuit.current.exerciseId;
+    engine.setExercise(circuit.current.exerciseId);
+    el.turn.classList.add('show');
+  } else {
+    el.roster.classList.remove('show');
+  }
   el.over.classList.remove('show');
   el.rest.classList.remove('show');
 }
@@ -198,6 +228,41 @@ function paintLink(st) {
 }
 
 /** The player is two metres away and cannot reach the phone. Voice is the only mid-set input. */
+function eliminateAndAdvance() {
+  if (!roster) return;
+  roster.record({ reps: engine.setReps.length, damage: engine.playerDamage });
+  roster.eliminateCurrent('GASSED');
+  audio.repShallow(); haptics?.framingLost();
+  if (roster.finished) return showRosterResult();
+  advanceTurn();
+}
+
+function advanceTurn() {
+  if (!roster) return;
+  roster.record({ reps: engine.setReps.length, damage: engine.playerDamage });
+  const next = roster.next(performance.now());
+  if (!next) return showRosterResult();
+  engine.nextSet?.();
+  engine.reset();
+  speech.flush();
+  speech.say(`${next.name}, you're up.`);
+  audio.countdown(true);
+}
+
+function showRosterResult() {
+  const w = roster.finish();
+  el.overKicker.textContent = roster.mode === RosterMode.LAST_STANDING ? 'Last standing' : 'Round over';
+  el.overTitle.textContent = w ? w.name.toUpperCase() : '—';
+  el.overTitle.style.color = C.clean;
+  el.overBody.innerHTML = roster.leaderboard()
+    .map((p, i) => `${i + 1}. ${p.name} — ${p.damage} damage · ${p.reps} reps` +
+                   (p.out ? ` <span style="color:${C.damage}">out (${p.outReason})</span>` : ''))
+    .join('<br>');
+  el.over.classList.add('show');
+  el.turn.classList.remove('show');
+  openSummaryLater();
+}
+
 function onVoiceCommand(cmd) {
   if (cmd === 'stop') { engine.reset(); el.cue.textContent = 'Stopped.'; }
   if (cmd === 'next' && el.rest.classList.contains('show')) el.nextSet.click();
@@ -361,6 +426,19 @@ function wire() {
     }
   };
   el.dl.onclick = () => recorder.download();
+  el.rosterGo.onclick = () => {
+    const names = el.rosterNames.value.split(',').map((n) => n.trim()).filter(Boolean);
+    if (names.length < 2) { el.rosterHint.textContent = 'Two names minimum.'; return; }
+    roster = new Roster(names, {
+      mode: el.mode.value === 'LAST_STANDING' ? RosterMode.LAST_STANDING : RosterMode.PASS_THE_PHONE,
+      turnSec: 30,
+    });
+    roster.startTurn(performance.now());
+    engine.reset();
+    el.roster.classList.remove('show');
+    el.turn.classList.add('show');
+    audio.countdown(true);
+  };
   el.arena.onclick = async () => {
     arenaMode = !arenaMode;
     el.arena.classList.toggle('on', arenaMode);
@@ -482,6 +560,25 @@ function paintHud(s) {
   el.reps.textContent = s.reps;
   el.combo.textContent = `×${s.combat.comboMultiplier.toFixed(1)}`;
 
+  if (roster) {
+    const cur = roster.current;
+    el.turnName.textContent = cur?.name ?? '—';
+    const left = roster.turnLeftMs(performance.now());
+    el.turnMeta.textContent = roster.mode === RosterMode.LAST_STANDING
+      ? `${roster.standing.length} still in · ${s.fatigue.band}`
+      : `${Math.ceil((left ?? 0) / 1000)}s left · ${roster.standing.length} players`;
+    if (left === 0) advanceTurn();
+  }
+  if (circuit) {
+    const left = circuit.leftMs(performance.now());
+    el.turnName.textContent = circuit.current?.label ?? 'Done';
+    el.turnMeta.textContent = `step ${circuit.index + 1} of ${circuit.steps.length} · ${Math.ceil(left / 1000)}s`;
+    if (left === 0 && !circuit.finished) {
+      const nxt = circuit.advance(performance.now(), { reps: engine.setReps.length });
+      if (nxt) { el.exercise.value = nxt.exerciseId; engine.setExercise(nxt.exerciseId); engine.reset(); audio.countdown(true); }
+      else { circuit = null; el.turn.classList.remove('show'); el.cue.textContent = 'Circuit complete.'; }
+    }
+  }
   if (s.mode === Mode.SURVIVAL) el.wave.textContent = s.wave;
   if (s.mode === Mode.DUEL) {
     duel?.tick();

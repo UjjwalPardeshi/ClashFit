@@ -55,6 +55,11 @@ Ghosts ride the duel's own code path — a ghost is a remote player that happens
 file. That makes Ghost Race the instant fallback if two-phone pairing fails in the hall, because
 on screen it looks identical.
 
+**Last Standing** is the one only this product can offer: everyone does the same movement, and
+you are out when your **measured fatigue** reaches GASSED — not when you run out of reps. Every
+other fitness app would eliminate on rep count. One device, any number of people, which is
+exactly what a judging table has.
+
 *Survival* removes the mercy rule and raises the clean-rep bar each wave — the one mode where
 fatigue genuinely ends the run. *Clinic* runs the 30-second sit-to-stand protocol: no boss, no
 damage, no ranking. A count, the protocol it came from, and an explicit not-a-medical-device line.
@@ -82,7 +87,8 @@ CSV of every rep's raw telemetry.
 | Duel | Event-sourced sync with self-healing tails, live over BroadcastChannel between two tabs |
 | Traces | Record to JSON Lines for replay and regression |
 | 48 exercises | 8 reps · 9 holds · 10 cardio · 7 jumps · 14 asanas |
-| Modes | Boss Fight · Time Attack · Ghost Race · Survival · Boss Rush · Clinic · **Duel** |
+| Modes | Boss Fight · Time Attack · Ghost Race · Survival · Boss Rush · Clinic · Duel |
+| Group | **Pass the phone · Last Standing · Circuit** — one device, any number of people |
 | Families | **5 detectors** — reps · holds · cardio · jumps · yoga |
 | Family games | Siege (holds) · Pursuit (cardio) · Breaker (jumps) · Sigil (yoga) |
 | Coach | Telemetry summariser, 20-line template bank, output validator, TTS |
