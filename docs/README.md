@@ -68,6 +68,7 @@ check-in we open a fresh repository and implement against these specs.
 | [CONFIG-PACK](reference/CONFIG-PACK.md) | Complete `pose.json`, `combat.json`, `ui.json` with tuned starting values |
 | [EXERCISE-RECORDS](reference/EXERCISE-RECORDS.md) | 8 weekend exercises as JSON records with thresholds and ladders |
 | [PROMPT-PACK](reference/PROMPT-PACK.md) | System/coach/boss prompts, 25 template coach lines, 15 taunts |
+| [**KOTLIN-CORE**](reference/KOTLIN-CORE.md) | **The verified algorithms in Kotlin.** Retype at the event, do not copy. Port order at the end. |
 
 ### Decision records
 | ADR | Decision |
