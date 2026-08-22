@@ -1,0 +1,50 @@
+{
+  "id": "hollow_hold",
+  "family": "ISOMETRIC_HOLD",
+  "name": "Hollow Hold",
+  "tags": [
+    "core",
+    "isometric"
+  ],
+  "framing": "side",
+  "difficulty": 3,
+  "games": [
+    "SIEGE",
+    "CIRCUIT",
+    "DUEL"
+  ],
+  "detector": {
+    "targets": [
+      {
+        "angle": [
+          "SHOULDER",
+          "HIP",
+          "KNEE"
+        ],
+        "value": 140,
+        "tolerance": 15,
+        "weight": 1.0
+      },
+      {
+        "angle": [
+          "HIP",
+          "KNEE",
+          "ANKLE"
+        ],
+        "value": 170,
+        "tolerance": 12,
+        "weight": 0.6
+      }
+    ],
+    "breakToleranceMs": 500,
+    "targetDurationSec": 30
+  },
+  "fatigue": {
+    "signal": "TREMOR",
+    "baselineSec": 3
+  },
+  "cues": {
+    "enter": "Lie back, lift shoulders and legs.",
+    "break": "Your lower back is lifting — press it down."
+  }
+}

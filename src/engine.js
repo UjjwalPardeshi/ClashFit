@@ -11,6 +11,7 @@ import { FatigueEstimator, Band } from './fatigue.js';
 import { CombatEngine } from './combat.js';
 import { GhostSource } from './ghost.js';
 import { summarise, coachFor } from './coach.js';
+import { makeDetector, FAMILY_GAME } from './detectors/index.js';
 
 export const Phase = { CALIBRATING: 'CALIBRATING', FIGHTING: 'FIGHTING', FRAMING_LOST: 'FRAMING_LOST', REST: 'REST', DEAD: 'DEAD' };
 export const Mode = {
@@ -20,6 +21,11 @@ export const Mode = {
   SURVIVAL: 'SURVIVAL',
   BOSS_RUSH: 'BOSS_RUSH',
   CLINIC_STS: 'CLINIC_STS',
+  // family games — a game shaped like the movement. docs/19-EXERCISE-LIBRARY.md §3
+  SIEGE: 'SIEGE',
+  PURSUIT: 'PURSUIT',
+  BREAKER: 'BREAKER',
+  SIGIL: 'SIGIL',
 };
 
 /** Modes scored on a clock rather than on boss HP. */
@@ -52,13 +58,19 @@ export class SessionEngine {
 
   setExercise(id) {
     this.exercise = this.cfg.exercises[id];
-    this.jointNames = this.exercise.detector.requiredJoints;
-    this.fsm = new RepStateMachine(this.exercise.detector);
+    this.family = this.exercise.family ?? 'REP_CYCLE';
+    this.detector = makeDetector(this.exercise);          // null for REP_CYCLE
+    this.jointNames = this.exercise.detector.requiredJoints
+      ?? defaultJoints(this.exercise);
+    this.fsm = this.family === 'REP_CYCLE' ? new RepStateMachine(this.exercise.detector) : null;
     this.filter = new LandmarkFilter(this.cfg.pose.filter);
-    this.fatigue = new FatigueEstimator(this.cfg.pose.fatigue);
+    this.fatigue = new FatigueEstimator(this.cfg.pose.fatigue, this.family);
     this.romBaselineU = null;
     this.topRefSamples = [];
   }
+
+  /** The game a family's movement is naturally shaped for. */
+  get familyGame() { return FAMILY_GAME[this.family] ?? 'BOSS_FIGHT'; }
 
   reset() {
     this.phase = Phase.CALIBRATING;
@@ -142,6 +154,14 @@ export class SessionEngine {
     if (this.phase === Phase.FRAMING_LOST) { this.phase = Phase.FIGHTING; this.fatigue.unfreeze(); }
     this.invalidFrames = 0;
 
+    // Only REP_CYCLE needs a settled reference angle. The other families calibrate inside
+    // their own detector, so they start as soon as the joints are visible.
+    if (this.phase === Phase.CALIBRATING && this.family !== 'REP_CYCLE') {
+      this.phase = Phase.FIGHTING;
+      this.fightStartMs = tMs;
+      this.ghost?.start(tMs);
+    }
+
     // Calibration: settle at rest, take the median as the reference position.
     if (this.phase === Phase.CALIBRATING) {
       this.topRefSamples.push(sel.angle);
@@ -182,8 +202,18 @@ export class SessionEngine {
       if (TIMED.has(this.mode) && this.timeLeftMs === 0) this.#end('TIME');
     }
 
-    const raw = this.ended ? null : this.fsm.onFrame(sel.angle, tMs);
-    if (raw) this.#completeRep(raw, lms);
+    if (this.ended) return this.state();
+
+    if (this.fsm) {
+      const raw = this.fsm.onFrame(sel.angle, tMs);
+      if (raw) this.#completeRep(raw, lms);
+    } else if (this.detector) {
+      const ev = this.detector.family === 'BALLISTIC'
+        ? this.detector.onFrame(lms, image, tMs, sel.side)
+        : this.detector.onFrame(lms, tMs, sel.side);
+      if (ev) this.#completeEvent(ev);
+      this.detectorLast = this.detector.last ?? null;
+    }
     return this.state();
   }
 
@@ -249,6 +279,33 @@ export class SessionEngine {
     this.fsm.reset();
     this.fsm.setTopRef(this.topRef);
     this.phase = Phase.FIGHTING;
+  }
+
+  /** Non-REP_CYCLE families land here. Same downstream contract: a scored event, a fatigue
+   *  sample through the shared estimator, and damage through the same combat engine. */
+  #completeEvent(ev) {
+    const f = this.fatigue.onSignals(ev.signals ?? {});
+    const prevBand = this.combatBand ?? Band.FRESH;
+    this.combatBand = f.band;
+
+    const c = this.combat.onRep(ev.formScore, f.band);
+    if (f.band !== prevBand) { this.combat.onFatigueBand(f.band); this.onBand(f.band); }
+
+    const rec = {
+      ...ev,
+      verdict: verdict(ev.formScore, this.cfg.ui?.verdictBands),
+      depth: ev.formScore, rom: ev.formScore, tempo: ev.formScore, alignment: ev.formScore,
+      concentricVelocity: 0, uMax: 0, uMin: 0, gapSec: 0,
+      depthCm: Number.isFinite(ev.heightCm) ? ev.heightCm : NaN,
+      fatigue: f, damage: c.lastDamage, combo: c.comboMultiplier,
+    };
+    this.reps.push(rec);
+    this.setReps.push(rec);
+    this.lastRepEndMs = ev.tEndMs;
+    this.lastRep = rec;
+    this.playerDamage += rec.damage ?? 0;
+    if (this.combat.dead) this.#onBossDown();
+    this.onRep(rec, this.combat.state());
   }
 
   #completeRep(raw, lms) {
@@ -318,6 +375,9 @@ export class SessionEngine {
       ghostDamage: this.ghostDamage,
       ghostMeta: this.ghost?.meta ?? null,
       ghostFinished: this.ghost?.finished ?? null,
+      family: this.family,
+      familyGame: this.familyGame,
+      detectorLast: this.detectorLast ?? null,
       wave: this.wave,
       rushIndex: this.rushIndex,
       setIndex: this.setIndex,
@@ -339,6 +399,7 @@ export class SessionEngine {
 
   #cue() {
     const c = this.exercise.cues ?? {};
+    if (this.detector?.last?.cue) return this.detector.last.cue;   // pose-match names the joint
     if (this.phase === Phase.FRAMING_LOST) return c.framing ?? 'I lost you — step back into frame.';
     if (this.phase === Phase.CALIBRATING) return c.enter ?? 'Stand still for a moment.';
     if (this.framing === 'TOO_FAR') return 'Come closer.';
@@ -350,4 +411,15 @@ export class SessionEngine {
     }
     return null;
   }
+}
+
+
+/** Families other than REP_CYCLE declare their joints implicitly, through their targets. */
+function defaultJoints(spec) {
+  const d = spec.detector;
+  const set = new Set();
+  for (const t of d.targets ?? d.reference ?? []) t.angle.forEach((j) => set.add(j));
+  if (d.signalJoint) { set.add(d.signalJoint); set.add('HIP'); }
+  if (spec.family === 'BALLISTIC') ['HIP', 'KNEE', 'ANKLE'].forEach((j) => set.add(j));
+  return [...set];
 }

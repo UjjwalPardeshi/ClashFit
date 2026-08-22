@@ -1,0 +1,50 @@
+{
+  "id": "forearm_plank",
+  "family": "ISOMETRIC_HOLD",
+  "name": "Forearm Plank",
+  "tags": [
+    "core",
+    "isometric"
+  ],
+  "framing": "side",
+  "difficulty": 2,
+  "games": [
+    "SIEGE",
+    "CIRCUIT",
+    "DUEL"
+  ],
+  "detector": {
+    "targets": [
+      {
+        "angle": [
+          "SHOULDER",
+          "HIP",
+          "ANKLE"
+        ],
+        "value": 176,
+        "tolerance": 8,
+        "weight": 1.0
+      },
+      {
+        "angle": [
+          "SHOULDER",
+          "ELBOW",
+          "WRIST"
+        ],
+        "value": 90,
+        "tolerance": 18,
+        "weight": 0.5
+      }
+    ],
+    "breakToleranceMs": 500,
+    "targetDurationSec": 60
+  },
+  "fatigue": {
+    "signal": "TREMOR",
+    "baselineSec": 3
+  },
+  "cues": {
+    "enter": "Elbows under shoulders, straight line head to heel.",
+    "break": "Hips are sagging — squeeze and lift."
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "id": "superman_hold",
+  "family": "ISOMETRIC_HOLD",
+  "name": "Superman Hold",
+  "tags": [
+    "posterior",
+    "isometric"
+  ],
+  "framing": "side",
+  "difficulty": 2,
+  "games": [
+    "SIEGE",
+    "CIRCUIT",
+    "DUEL"
+  ],
+  "detector": {
+    "targets": [
+      {
+        "angle": [
+          "SHOULDER",
+          "HIP",
+          "KNEE"
+        ],
+        "value": 190,
+        "tolerance": 14,
+        "weight": 1.0
+      }
+    ],
+    "breakToleranceMs": 500,
+    "targetDurationSec": 25
+  },
+  "fatigue": {
+    "signal": "TREMOR",
+    "baselineSec": 3
+  },
+  "cues": {
+    "enter": "Lie face down, lift chest and legs.",
+    "break": "Lift a little higher."
+  }
+}

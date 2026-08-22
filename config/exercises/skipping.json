@@ -1,0 +1,35 @@
+{
+  "id": "skipping",
+  "family": "CADENCE",
+  "name": "Skipping (no rope)",
+  "tags": [
+    "cardio",
+    "lower"
+  ],
+  "framing": "front",
+  "difficulty": 2,
+  "games": [
+    "PURSUIT",
+    "CIRCUIT",
+    "DUEL"
+  ],
+  "detector": {
+    "signalJoint": "ANKLE",
+    "signalAxis": "y",
+    "minProminence": 0.03,
+    "refractoryMs": 260,
+    "targetCadence": {
+      "min": 110,
+      "max": 200
+    }
+  },
+  "fatigue": {
+    "signal": "CADENCE_DECAY",
+    "baselineReps": 4
+  },
+  "cues": {
+    "enter": "Face the camera, whole body in frame.",
+    "tooSmall": "Bigger range — drive higher.",
+    "tooSlow": "Pick the pace back up."
+  }
+}

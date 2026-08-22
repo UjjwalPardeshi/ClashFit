@@ -1,0 +1,35 @@
+{
+  "id": "torso_twists",
+  "family": "CADENCE",
+  "name": "Standing Torso Twists",
+  "tags": [
+    "mobility",
+    "warmup"
+  ],
+  "framing": "front",
+  "difficulty": 1,
+  "games": [
+    "PURSUIT",
+    "CIRCUIT",
+    "DUEL"
+  ],
+  "detector": {
+    "signalJoint": "WRIST",
+    "signalAxis": "x",
+    "minProminence": 0.03,
+    "refractoryMs": 260,
+    "targetCadence": {
+      "min": 60,
+      "max": 140
+    }
+  },
+  "fatigue": {
+    "signal": "CADENCE_DECAY",
+    "baselineReps": 4
+  },
+  "cues": {
+    "enter": "Face the camera, whole body in frame.",
+    "tooSmall": "Bigger range — drive higher.",
+    "tooSlow": "Pick the pace back up."
+  }
+}

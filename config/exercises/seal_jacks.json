@@ -1,0 +1,35 @@
+{
+  "id": "seal_jacks",
+  "family": "CADENCE",
+  "name": "Seal Jacks",
+  "tags": [
+    "cardio",
+    "full-body"
+  ],
+  "framing": "front",
+  "difficulty": 2,
+  "games": [
+    "PURSUIT",
+    "CIRCUIT",
+    "DUEL"
+  ],
+  "detector": {
+    "signalJoint": "WRIST",
+    "signalAxis": "x",
+    "minProminence": 0.03,
+    "refractoryMs": 260,
+    "targetCadence": {
+      "min": 80,
+      "max": 160
+    }
+  },
+  "fatigue": {
+    "signal": "CADENCE_DECAY",
+    "baselineReps": 4
+  },
+  "cues": {
+    "enter": "Face the camera, whole body in frame.",
+    "tooSmall": "Bigger range — drive higher.",
+    "tooSlow": "Pick the pace back up."
+  }
+}

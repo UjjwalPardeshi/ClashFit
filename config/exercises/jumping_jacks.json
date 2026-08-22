@@ -1,0 +1,35 @@
+{
+  "id": "jumping_jacks",
+  "family": "CADENCE",
+  "name": "Jumping Jacks",
+  "tags": [
+    "cardio",
+    "full-body"
+  ],
+  "framing": "front",
+  "difficulty": 2,
+  "games": [
+    "PURSUIT",
+    "CIRCUIT",
+    "DUEL"
+  ],
+  "detector": {
+    "signalJoint": "WRIST",
+    "signalAxis": "y",
+    "minProminence": 0.03,
+    "refractoryMs": 260,
+    "targetCadence": {
+      "min": 90,
+      "max": 180
+    }
+  },
+  "fatigue": {
+    "signal": "CADENCE_DECAY",
+    "baselineReps": 4
+  },
+  "cues": {
+    "enter": "Face the camera, whole body in frame.",
+    "tooSmall": "Bigger range — drive higher.",
+    "tooSlow": "Pick the pace back up."
+  }
+}

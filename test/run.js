@@ -1,13 +1,19 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { angle3 } from '../src/geometry.js';
+import { makeDetector } from '../src/detectors/index.js';
 import { RepStateMachine } from '../src/repFsm.js';
 import { scoreRep, verdict, clamp01 } from '../src/formScorer.js';
 import { FatigueEstimator, Band } from '../src/fatigue.js';
 import { CombatEngine, ComboTracker } from '../src/combat.js';
-import { synthRep, synthSet, synthWorldSet } from './synth.js';
+import { synthRep, synthSet, synthWorldSet, stick, holdFrames, cadenceFrames, jumpFrames } from './synth.js';
 import { SessionEngine, Mode, Phase } from '../src/engine.js';
+import { IsometricHoldDetector } from '../src/detectors/isometric.js';
+import { CadenceDetector } from '../src/detectors/cadence.js';
+import { BallisticDetector } from '../src/detectors/ballistic.js';
+import { PoseMatchDetector } from '../src/detectors/poseMatch.js';
+import { SIGNALS } from '../src/fatigue.js';
 import { GhostSource, ghostFromReps, parseGhost } from '../src/ghost.js';
 import { summarise, templateFor, validateOutput, coachFor, fill } from '../src/coach.js';
 
@@ -399,6 +405,143 @@ t('CLINIC_STS · ships no norms until they are cited', () => {
   eq(clinicSts.norms.source, null);
   eq(clinicSts.norms.bands.length, 0);
   ok(/not a medical device/i.test(clinicSts.notNested), 'missing the not-a-medical-device line');
+});
+
+// ---------- detector families ----------
+const spec = (id) => cfg(`exercises/${id}.json`);
+const SIDE_L = 0;
+
+t('stick figure produces the angles it is asked for', () => {
+  const lm = stick({ knee: 90, hipTorso: 90, elbow: 88 });
+  near(angle3(lm[23], lm[25], lm[27]), 90, 0.5, 'knee');
+  near(angle3(lm[11], lm[23], lm[25]), 90, 0.5, 'hip');
+  near(angle3(lm[11], lm[13], lm[15]), 88, 0.5, 'elbow');
+});
+
+t('F2 ISOMETRIC · a held wall sit completes with high quality', () => {
+  const d = new IsometricHoldDetector(spec('wall_sit'));
+  let ev = null;
+  for (const [lm, ms] of holdFrames({ knee: 90, hipTorso: 90 }, 47)) ev = d.onFrame(lm, ms, SIDE_L) ?? ev;
+  ok(ev, 'no hold event');
+  ok(ev.completed, 'hold not marked complete');
+  ok(ev.quality > 0.9, `quality ${ev.quality.toFixed(2)}`);
+  ok(ev.holdSec >= 44, `held only ${ev.holdSec.toFixed(1)}s`);
+  ok(ev.formScore > 0.9, `formScore ${ev.formScore.toFixed(2)}`);
+});
+
+t('F2 ISOMETRIC · breaking form ends the hold early', () => {
+  const d = new IsometricHoldDetector(spec('wall_sit'));
+  let ev = null;
+  for (const [lm, ms] of holdFrames({ knee: 90, hipTorso: 90 }, 8)) ev = d.onFrame(lm, ms, SIDE_L) ?? ev;
+  for (const [lm, ms] of holdFrames({ knee: 150, hipTorso: 160 }, 3, { t0: 8000 }))
+    ev = d.onFrame(lm, ms, SIDE_L) ?? ev;
+  ok(ev, 'no event on break');
+  ok(!ev.completed, 'break counted as completion');
+  ok(ev.holdSec > 6 && ev.holdSec < 9, `holdSec ${ev.holdSec.toFixed(1)}`);
+});
+
+t('F2 ISOMETRIC · tremor rises with wobble', () => {
+  const run = (noise) => {
+    const d = new IsometricHoldDetector(spec('plank'));
+    let last = 0;
+    for (const [lm, ms] of holdFrames({ knee: 176, hipTorso: 176, elbow: 88 }, 6, { noise }))
+      { d.onFrame(lm, ms, SIDE_L); last = d.last?.tremor ?? last; }
+    return last;
+  };
+  ok(run(0.01) > run(0) * 2, 'tremor did not respond to wobble');
+});
+
+t('F4 CADENCE · reads the rate it was given', () => {
+  const d = new CadenceDetector(spec('jumping_jacks'));
+  const got = [];
+  for (const [lm, ms] of cadenceFrames({ rpm: 120, seconds: 12, joint: 'WRIST', axis: 'y' })) {
+    const ev = d.onFrame(lm, ms, SIDE_L);
+    if (ev) got.push(ev.cadence);
+  }
+  ok(got.length >= 8, `only ${got.length} cycles detected`);
+  const mean = got.reduce((a, b) => a + b, 0) / got.length;
+  near(mean, 120, 12, 'cadence');
+});
+
+t('F4 CADENCE · tiny movements are rejected', () => {
+  const d = new CadenceDetector(spec('high_knees'));
+  let n = 0;
+  for (const [lm, ms] of cadenceFrames({ rpm: 150, seconds: 10, amplitude: 0.008, joint: 'KNEE', axis: 'y' }))
+    if (d.onFrame(lm, ms, SIDE_L)) n++;
+  eq(n, 0, 'fake high-knees counted');
+});
+
+t('F5 BALLISTIC · jump height in real centimetres, softness from the landing', () => {
+  const d = new BallisticDetector(spec('jump_squat'));
+  let ev = null;
+  for (const [w, img, ms] of jumpFrames({ heightNorm: 0.09, landKnee: 130 }))
+    ev = d.onFrame(w, img, ms, SIDE_L) ?? ev;
+  ok(ev, 'no jump detected');
+  ok(ev.heightCm > 12 && ev.heightCm < 60, `implausible height ${ev.heightCm?.toFixed(1)}cm`);
+  ok(ev.softness > 0.8, `stiff landing scored soft: ${ev.softness.toFixed(2)}`);
+});
+
+t('F5 BALLISTIC · a stiff landing scores worse than a soft one', () => {
+  const run = (landKnee) => {
+    const d = new BallisticDetector(spec('jump_squat'));
+    let ev = null;
+    for (const [w, img, ms] of jumpFrames({ heightNorm: 0.09, landKnee }))
+      ev = d.onFrame(w, img, ms, SIDE_L) ?? ev;
+    return ev;
+  };
+  const soft = run(125), stiff = run(168);
+  ok(soft && stiff, 'missing a jump');
+  ok(soft.softness > stiff.softness + 0.4, `soft ${soft.softness.toFixed(2)} vs stiff ${stiff.softness.toFixed(2)}`);
+  ok(soft.formScore > stiff.formScore, 'landing quality did not affect the score');
+});
+
+t('F3 POSE_MATCH · a correct asana is recognised and held', () => {
+  const d = new PoseMatchDetector(spec('utkatasana'));
+  let ev = null;
+  for (const [lm, ms] of holdFrames({ knee: 120, hipTorso: 130, elbow: 170 }, 28))
+    ev = d.onFrame(lm, ms, SIDE_L) ?? ev;
+  ok(ev, 'asana never recognised');
+  ok(ev.accuracy > 0.9, `accuracy ${ev.accuracy.toFixed(2)}`);
+  ok(ev.completed, 'hold not completed');
+});
+
+t('F3 POSE_MATCH · a wrong shape is not recognised', () => {
+  const d = new PoseMatchDetector(spec('utkatasana'));
+  let ev = null;
+  for (const [lm, ms] of holdFrames({ knee: 176, hipTorso: 178, elbow: 172 }, 20))
+    ev = d.onFrame(lm, ms, SIDE_L) ?? ev;
+  ok(!ev, 'standing upright was accepted as Chair pose');
+});
+
+t('F3 POSE_MATCH · names the worst joint instead of a percentage', () => {
+  const d = new PoseMatchDetector(spec('virabhadrasana_ii'));
+  for (const [lm, ms] of holdFrames({ knee: 140, hipTorso: 165, elbow: 176 }, 3)) d.onFrame(lm, ms, SIDE_L);
+  ok(d.last?.cue, 'no cue produced');
+  ok(/left|right/.test(d.last.cue), `cue does not name a side: ${d.last.cue}`);
+  ok(!/%|percent/.test(d.last.cue), `cue is a percentage: ${d.last.cue}`);
+});
+
+t('one fatigue model · every family declares its signals and weights sum sanely', () => {
+  for (const [family, sigs] of Object.entries(SIGNALS)) {
+    ok(sigs.length > 0, `${family} has no signals`);
+    const w = sigs.reduce((a, s) => a + s.weight, 0);
+    near(w, 1.0, 0.001, `${family} weights`);
+    for (const s of sigs) ok(['decay', 'growth'].includes(s.dir), `${family}.${s.key} bad dir`);
+  }
+});
+
+t('every shipped exercise config is loadable and well formed', () => {
+  const dir = readdirSync(join(HERE, '..', 'config/exercises')).filter(f => f.endsWith('.json'));
+  ok(dir.length >= 45, `only ${dir.length} exercises`);
+  const fams = {};
+  for (const f of dir) {
+    const e = JSON.parse(readFileSync(join(HERE, '..', 'config/exercises', f), 'utf8'));
+    ok(e.id && e.name && e.family && e.detector, `${f} missing fields`);
+    ok(Array.isArray(e.games) && e.games.length, `${f} has no games`);
+    fams[e.family] = (fams[e.family] ?? 0) + 1;
+    if (e.family !== 'REP_CYCLE') ok(makeDetector(e), `${f} has no detector`);
+  }
+  eq(Object.keys(fams).length, 5, `families present: ${Object.keys(fams).join(',')}`);
 });
 
 // ---------- coaching ----------
