@@ -898,29 +898,65 @@ t('calibration · names the joints it cannot see', () => {
   eq(jointPhrase(['HIP', 'KNEE', 'ANKLE']), 'hips, knees or ankles');
 });
 
-t('calibration · will not start the fight until the pose is still', () => {
+t('calibration · starts promptly and does not eat the first reps', () => {
+  // Requiring stillness looked reasonable and was wrong: a player who steps in and starts moving
+  // never holds still, so calibration dragged on for 27 seconds on a real trace and the fatigue
+  // baseline was then computed from an already-degraded part of the set.
   const e = new SessionEngine(store, 'squat');
-  // Moving at a human rate — roughly 3Hz — so it must never settle.
-  let t2 = 0;
-  for (let i = 0; i < 200; i++) {
-    e.frame(stick({ knee: 120 + (Math.floor(i / 5) % 2) * 50 }), null, t2 += 33);
+  const frames = synthWorldSet({ reps: 10, bottom: 80 });
+  let started = null;
+  for (const [w, t2] of frames) {
+    e.frame(w, null, t2);
+    if (started === null && e.state().phase === Phase.FIGHTING) started = t2;
   }
-  eq(e.state().phase, Phase.CALIBRATING, 'started while the player was still moving');
+  ok(started !== null && started <= 2600, `calibration took ${started}ms`);
+  ok(e.reps.length >= 9, `lost reps to calibration — only ${e.reps.length} of 10`);
 });
 
-t('calibration · frame-rate jitter is filtered out, human motion is not', () => {
-  // A 15Hz alternation is sensor noise, not a person, and One Euro is supposed to remove it.
-  // Anything at human speed must survive filtering and keep the gate closed.
+t('calibration · finds the top position even while the player is moving', () => {
+  // Robustness comes from the estimator, not from demanding stillness. A high percentile lands
+  // at the rest position whether or not they stood still.
   const run = (period) => {
     const e = new SessionEngine(store, 'squat');
     let t2 = 0;
     for (let i = 0; i < 200; i++)
-      e.frame(stick({ knee: 120 + (Math.floor(i / period) % 2) * 50 }), null, t2 += 33);
-    return e.state().phase;
+      e.frame(stick({ knee: 120 + (Math.floor(i / period) % 2) * 52 }), null, t2 += 33);
+    return e.topRef;
   };
-  eq(run(1), Phase.FIGHTING, 'per-frame jitter was treated as real movement');
-  eq(run(5), Phase.CALIBRATING, 'human-rate movement was filtered away');
-  eq(run(15), Phase.CALIBRATING, 'slow movement was filtered away');
+  // 1.5Hz to 0.5Hz — the range a real squat lives in.
+  for (const period of [10, 15, 30]) {
+    const ref = run(period);
+    ok(ref > 160, `moving every ${period} frame(s) gave topRef ${ref?.toFixed(1)} — should be near 172`);
+  }
+  // At 15Hz One Euro correctly smooths the signal away, so the filtered angle never reaches the
+  // top and neither does the reference. The filter doing its job on input no human produces —
+  // asserted so a future filter change cannot quietly turn noise into movement.
+  ok(run(1) < 160, 'per-frame jitter was treated as real movement');
+});
+
+t('calibration · a bad reference self-corrects the moment they stand up', () => {
+  // The one real edge: if someone happens to be holding the bottom of a squat for the whole
+  // calibration window, the reference is captured low and every score would be wrong. The rep
+  // machine tracks a better top whenever it sees one, so standing up repairs it.
+  const e = new SessionEngine(store, 'squat');
+  let t2 = 0;
+  for (let i = 0; i < 90; i++) e.frame(stick({ knee: 100 }), null, t2 += 33);   // stuck at the bottom
+  const bad = e.topRef;
+  ok(bad < 130, `expected a low captured reference, got ${bad?.toFixed(1)}`);
+  for (let i = 0; i < 60; i++) e.frame(stick({ knee: 174 }), null, t2 += 33);   // they stand up
+  ok(e.fsm.topRefU * Math.sign(e.fsm.s) > 165,
+     `reference did not recover, still ${(e.fsm.topRefU * Math.sign(e.fsm.s)).toFixed(1)}`);
+});
+
+t('calibration · a full fatiguing set reaches GASSED end to end', () => {
+  // The regression this whole fix exists for: calibration must not consume the early reps, or
+  // the fatigue baseline is taken from an already-degraded part of the set.
+  const e = new SessionEngine(store, 'squat');
+  drive(e, synthWorldSet({ reps: 14, bottom: 80, decay: 0.030, restGrowth: 0.55 }));
+  const bands = [...new Set(e.reps.map((r) => r.fatigue.band))];
+  ok(e.reps.length >= 12, `only ${e.reps.length} reps survived`);
+  ok(e.reps[0].thetaMin < 90, `first rep already shallow at ${e.reps[0].thetaMin.toFixed(0)}deg — baseline is corrupt`);
+  eq(bands[bands.length - 1], 'GASSED', `bands: ${bands.join('>')}`);
 });
 
 t('calibration · a still pose reaches READY and starts', () => {

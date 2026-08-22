@@ -424,23 +424,27 @@ export class SessionEngine {
       return this.state();
     }
 
-    // Holding: accumulate the rest pose and require stillness before starting.
+    // Holding requires VISIBILITY for two continuous seconds, not stillness.
+    //
+    // Requiring stillness looked reasonable and was wrong: a player who steps in and starts
+    // moving never holds still, so calibration drags on while they burn reps — and the fatigue
+    // baseline then gets computed from an already-degraded part of the set, which corrupts the
+    // one thing we uniquely measure. Robustness comes from the estimator instead: the reference
+    // is a high percentile of observed angles, which lands at the top position whether or not
+    // the player was standing still. docs/02-APP-FLOW.md §2
     if (this.calibSince === null) this.calibSince = tMs;
     this.calib = Calib.HOLDING;
     this.calibHoldMs = tMs - this.calibSince;
 
     if (this.fsm) {
       this.topRefSamples.push(sel.angle);
-      if (this.topRefSamples.length > 45) this.topRefSamples.shift();
-      if (!this.#settled()) { this.calibSince = tMs; this.calibHoldMs = 0; }
+      if (this.topRefSamples.length > 120) this.topRefSamples.shift();
     }
 
     if (this.calibHoldMs >= (f.holdToStartMs ?? 2000)) {
-      if (this.fsm && this.topRefSamples.length >= 20) {
-        const sorted = [...this.topRefSamples].sort((a, b) => a - b);
-        const med = sorted[Math.floor(sorted.length / 2)];
-        this.fsm.setTopRef(med);
-        this.topRef = med;
+      if (this.fsm && this.topRefSamples.length >= 15) {
+        this.topRef = this.#topPercentile();
+        this.fsm.setTopRef(this.topRef);
       }
       this.calib = Calib.READY;
       this.phase = Phase.FIGHTING;
@@ -450,11 +454,17 @@ export class SessionEngine {
     return this.state();
   }
 
-  #settled() {
-    const s = this.topRefSamples;
-    if (s.length < 20) return true;             // not enough yet to call it unsettled
-    const min = Math.min(...s), max = Math.max(...s);
-    return max - min < 10;                      // still, in degrees
+  /**
+   * The rest position, as the 90th percentile in the direction of "top" for this exercise.
+   *
+   * A person calibrating spends most of their time at or near their top position even if they
+   * are shifting about, so a high percentile finds it without demanding stillness — and unlike a
+   * plain maximum it is not thrown off by one noisy frame.
+   */
+  #topPercentile() {
+    const dec = this.exercise.detector.topEnter > this.exercise.detector.bottomEnter;
+    const sorted = [...this.topRefSamples].sort((a, b) => (dec ? a - b : b - a));
+    return sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.9))];
   }
 
   #framing(image) {
