@@ -154,3 +154,77 @@ export function exportCsv(reps, name = 'clashfit-session.csv') {
   a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
+
+
+/**
+ * Session-over-session trend. The retention story made visible: what a person actually wants to
+ * know is not how one set went, it is whether they are getting better — and that is the question
+ * a single-session chart cannot answer.
+ * docs/23-META-PROGRESSION.md
+ */
+export function drawTrend(cv, series, meta = {}) {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = 960, H = 340;
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.width = '100%'; cv.style.maxWidth = W + 'px';
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = C.ground; ctx.fillRect(0, 0, W, H);
+
+  if (series.length < 2) {
+    note(ctx, W, H, series.length ? 'One session so far — come back tomorrow.' : 'No sessions yet.');
+    return;
+  }
+
+  const pad = { l: 52, r: 52, t: 58, b: 40 };
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+  const x = (i) => pad.l + (i / (series.length - 1)) * pw;
+  const maxReps = Math.max(...series.map((s) => s.reps), 1);
+  const yForm = (v) => pad.t + ph - v * ph;
+  const yReps = (v) => pad.t + ph - (v / maxReps) * ph;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)'; ctx.lineWidth = 1;
+  for (const v of [0, 0.25, 0.5, 0.75, 1]) {
+    ctx.beginPath(); ctx.moveTo(pad.l, yForm(v)); ctx.lineTo(pad.l + pw, yForm(v)); ctx.stroke();
+  }
+
+  // reps as quiet bars behind the headline
+  const bw = Math.max(3, Math.min(22, pw / series.length - 6));
+  ctx.fillStyle = hexA(C.system, 0.22);
+  series.forEach((s, i) => ctx.fillRect(x(i) - bw / 2, yReps(s.reps), bw, pad.t + ph - yReps(s.reps)));
+
+  // form as the headline line
+  ctx.strokeStyle = C.clean; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  series.forEach((s, i) => (i ? ctx.lineTo(x(i), yForm(s.form)) : ctx.moveTo(x(i), yForm(s.form))));
+  ctx.stroke();
+  series.forEach((s, i) => {
+    ctx.fillStyle = C.clean;
+    ctx.beginPath(); ctx.arc(x(i), yForm(s.form), 3.5, 0, Math.PI * 2); ctx.fill();
+  });
+
+  const last = series[series.length - 1];
+  ctx.fillStyle = C.clean;
+  ctx.beginPath(); ctx.arc(x(series.length - 1), yForm(last.form), 6, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = C.ground; ctx.lineWidth = 2; ctx.stroke();
+
+  ctx.fillStyle = C.mute; ctx.font = '500 10px ui-monospace, monospace';
+  ctx.textAlign = 'right';
+  for (const v of [0, 0.5, 1]) ctx.fillText(`${Math.round(v * 100)}%`, pad.l - 10, yForm(v) + 3);
+  ctx.textAlign = 'left';
+  ctx.fillText(`${maxReps} reps`, pad.l + pw + 10, yReps(maxReps) + 3);
+
+  ctx.fillStyle = C.ink; ctx.font = '800 22px ui-sans-serif, system-ui, sans-serif';
+  ctx.fillText(meta.title ?? 'Session over session', pad.l, 32);
+  ctx.fillStyle = C.mute; ctx.font = '500 11px ui-monospace, monospace';
+  const first = series[0];
+  const delta = Math.round((last.form - first.form) * 100);
+  ctx.fillText(
+    `${meta.exercise ?? ''} · ${series.length} sessions · form ${delta >= 0 ? '+' : ''}${delta} points` +
+    (meta.streak ? ` · ${meta.streak}` : ''),
+    pad.l, 48);
+
+  ctx.textAlign = 'left'; ctx.font = '500 10px ui-monospace, monospace';
+  ctx.fillStyle = C.clean; ctx.fillText('— form', pad.l + pw + 10, pad.t - 20);
+  ctx.fillStyle = hexA(C.system, 0.7); ctx.fillText('bars reps', pad.l + pw + 10, pad.t - 6);
+}

@@ -10,7 +10,7 @@ import { SessionEngine, Phase, Mode } from './engine.js';
 import { ghostFromReps, parseGhost, downloadGhost } from './ghost.js';
 import { Audio } from './audio.js';
 import { Speech } from './speech.js';
-import { drawSummary, exportPng, exportCsv } from './summary.js';
+import { drawSummary, drawTrend, exportPng, exportCsv } from './summary.js';
 import { DuelSession, BroadcastChannelTransport, LinkState, newPlayerId } from './duel.js';
 import { Haptics } from './haptics.js';
 import { Voice } from './voice.js';
@@ -43,6 +43,7 @@ const el = {
   restBoss: $('restBoss'), restStats: $('restStats'), nextSet: $('nextSet'),
   waveTile: $('waveTile'), wave: $('wave'),
   sum: $('sum'), sumCanvas: $('sumCanvas'), sumBtn: $('sumBtn'),
+  tabSession: $('tabSession'), tabTrend: $('tabTrend'),
   sumPng: $('sumPng'), sumCsv: $('sumCsv'), sumClose: $('sumClose'),
   link: $('link'),
   arena: $('arena'), voice: $('voice'), haptic: $('haptic'), motion: $('motion'),
@@ -479,11 +480,21 @@ async function runPreflight() {
   return sum;
 }
 
-function openSummary() {
-  drawSummary(el.sumCanvas, engine.reps, store.pose.fatigue.bands, {
-    exercise: el.exercise.value,
-    title: engine.reps.length ? 'Fatigue across the set' : 'No reps yet',
-  });
+let sumTab = 'session';
+function openSummary(tab = sumTab) {
+  sumTab = tab;
+  el.tabSession.classList.toggle('on', tab === 'session');
+  el.tabTrend.classList.toggle('on', tab === 'trend');
+  if (tab === 'trend') {
+    drawTrend(el.sumCanvas, store2.trend(el.exercise.value), {
+      exercise: el.exercise.value, streak: store2.streakLabel(),
+    });
+  } else {
+    drawSummary(el.sumCanvas, engine.reps, store.pose.fatigue.bands, {
+      exercise: el.exercise.value,
+      title: engine.reps.length ? 'Fatigue across the set' : 'No reps yet',
+    });
+  }
   el.sum.classList.add('show');
 }
 
@@ -674,10 +685,12 @@ function wire() {
   el.preBtn.onclick = () => runPreflight();
   el.preRun.onclick = () => runPreflight();
   el.preClose.onclick = () => el.pre.classList.remove('show');
+  el.tabSession.onclick = () => openSummary('session');
+  el.tabTrend.onclick = () => openSummary('trend');
   el.sumBtn.onclick = () => openSummary();
   el.sumClose.onclick = () => el.sum.classList.remove('show');
   el.sumPng.onclick = () => exportPng(el.sumCanvas,
-    `clashfit-${el.exercise.value}-${engine.reps.length}reps.png`);
+    `clashfit-${el.exercise.value}-${sumTab}-${engine.reps.length}reps.png`);
   el.sumCsv.onclick = () => exportCsv(engine.reps,
     `clashfit-${el.exercise.value}-${engine.reps.length}reps.csv`);
   el.dbgBtn.onclick = () => {

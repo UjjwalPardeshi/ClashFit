@@ -2,7 +2,7 @@
 
 What is built and verified, what is deliberately event-only, and what is genuinely still open.
 
-**Last updated:** 22 Aug 2026 · 126 assertions passing · 28 modules · 51 exercises · 27 commits
+**Last updated:** 22 Aug 2026 · 140 assertions passing · 31 modules · 51 exercises · 33 commits
 
 ---
 
@@ -30,6 +30,11 @@ What is built and verified, what is deliberately event-only, and what is genuine
 | **Summary** — fatigue curve, PNG for the deck, CSV of raw telemetry | ✅ | [02](02-APP-FLOW.md) §2 |
 | **Traces** — record and headless replay | ✅ | [14](14-TEST-PLAN.md) §1 |
 | **Arena Mode + reduced motion + accessible rungs** | ✅ | [03](03-UI-UX-SPEC.md) §9 |
+| **Preflight** — the pre-demo ritual as a button, 11 checks | ✅ | [14](14-TEST-PLAN.md) §6 |
+| **Mode grid** — all 15 modes on one screen | ✅ | [17](17-GAME-MODES.md) §9 |
+| **Challenge codes** — a run becomes a ~300-char shareable string, no server | ✅ | [20](20-MULTIPLAYER-MODES.md) §5 |
+| **Trend chart** — session over session, form and reps | ✅ | [23](23-META-PROGRESSION.md) |
+| **The deck** — 10 slides, print-to-PDF at 16:9 | ✅ | [26](26-DECK-COPY.md), `deck/` |
 
 ---
 
@@ -80,6 +85,8 @@ Every one of these would have surfaced at hour 20 instead. This is the argument 
 | 9 | Ballistic used hip-centred world landmarks | Jump height was structurally unmeasurable — world landmarks cannot see vertical translation |
 | 10 | Streak freeze covered a month-long gap | Claimed an unbroken streak the user had not earned |
 | 11 | Ladders referenced two ungenerated exercises | Promotion would have failed silently at the top of the push ladder |
+| 12 | Challenge buttons wired but never added to the markup | Share and Accept simply would not have existed — caught by the id cross-check |
+| 13 | A deck CSS class used but never defined | The shallow-rep number would have rendered plain beside its coloured counterpart |
 
 ---
 
