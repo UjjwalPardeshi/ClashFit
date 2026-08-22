@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>ClashFit — iQOO Hackathon 2026 · Pune</title>
+<style>
+  /* Print to PDF: Chrome → Print → Landscape → Margins none → Background graphics ON.
+     Each slide is exactly one page. */
+  @page { size: 297mm 167mm; margin: 0; }
+
+  :root{
+    --ground:#07090C; --surface:#10141B; --lift:#1A2029;
+    --ink:#F2F5F8; --mute:#8A94A4; --line:#232B36;
+    --damage:#FF3B5C; --clean:#22D3A0; --shallow:#F5A524;
+    --system:#38BDF8; --fatigue:#A78BFA;
+    --mono:ui-monospace,'SF Mono',Menlo,monospace;
+    --sans:ui-sans-serif,system-ui,'Segoe UI',Helvetica,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  body{margin:0;background:#05070A;color:var(--ink);font-family:var(--sans);
+       -webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+  .slide{width:297mm;height:167mm;background:var(--ground);position:relative;
+         padding:16mm 18mm;overflow:hidden;display:flex;flex-direction:column;
+         margin:0 auto 8mm;border:1px solid var(--line)}
+  .slide:last-child{margin-bottom:0}
+  @media print{ .slide{margin:0;border:none;page-break-after:always;break-after:page} }
+
+  .num{position:absolute;right:14mm;bottom:10mm;font-family:var(--mono);font-size:9pt;
+       letter-spacing:.2em;color:var(--mute)}
+  .eyebrow{font-family:var(--mono);font-size:9pt;letter-spacing:.24em;text-transform:uppercase;
+           color:var(--system);margin:0 0 6mm}
+  h1{font-size:34pt;font-weight:800;letter-spacing:-.025em;line-height:1.02;margin:0 0 5mm}
+  h2{font-size:24pt;font-weight:800;letter-spacing:-.02em;line-height:1.08;margin:0 0 6mm}
+  h3{font-size:13pt;font-weight:700;margin:0 0 2mm}
+  p{font-size:12pt;line-height:1.55;color:#C9D1DA;margin:0 0 4mm;max-width:62ch}
+  .lead{font-size:15pt;line-height:1.45;color:var(--ink)}
+  .small{font-size:10pt;color:var(--mute);line-height:1.6}
+  strong{color:var(--ink);font-weight:700}
+  .accent{color:var(--damage)}
+  .good{color:var(--clean)}
+  .cool{color:var(--system)}
+  .vio{color:var(--fatigue)}
+  .warn{color:var(--shallow)}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:10mm;flex:1;align-content:start}
+  .cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:7mm}
+  .card{border:1px solid var(--line);background:var(--surface);padding:6mm 7mm}
+  .card h3{font-size:12pt}
+  .card p{font-size:10.5pt;margin:0;color:var(--mute)}
+
+  .kicker{font-family:var(--mono);font-size:8.5pt;letter-spacing:.18em;text-transform:uppercase;
+          color:var(--mute);margin-bottom:2mm}
+  .quote{border-left:2px solid var(--damage);padding-left:6mm;font-size:13pt;line-height:1.45;
+         font-style:italic;color:var(--ink)}
+  .quote.coach{border-left-color:var(--clean);font-style:normal}
+
+  table{width:100%;border-collapse:collapse;font-size:10.5pt}
+  th{font-family:var(--mono);font-size:8.5pt;letter-spacing:.14em;text-transform:uppercase;
+     color:var(--mute);text-align:left;padding:2mm 3mm;border-bottom:1px solid var(--line)}
+  td{padding:2.4mm 3mm;border-bottom:1px solid var(--line);color:#C9D1DA;vertical-align:top}
+  td.k{font-family:var(--mono);color:var(--ink);white-space:nowrap}
+
+  .shot{border:1px dashed var(--line);background:var(--lift);display:grid;place-items:center;
+        color:var(--mute);font-family:var(--mono);font-size:9pt;letter-spacing:.14em;
+        text-transform:uppercase;text-align:center;padding:6mm;min-height:52mm}
+  .shot img{max-width:100%;max-height:100%;display:block}
+
+  .flow{font-family:var(--mono);font-size:9.5pt;line-height:1.85;color:#B7C1CC;white-space:pre;
+        border:1px solid var(--line);background:var(--surface);padding:6mm 7mm;overflow:hidden}
+  .pill{display:inline-block;font-family:var(--mono);font-size:8.5pt;letter-spacing:.14em;
+        text-transform:uppercase;border:1px solid var(--line);padding:1.2mm 3mm;margin:0 2mm 2mm 0;
+        color:var(--mute)}
+  .pill.on{border-color:var(--clean);color:var(--clean)}
+  .foot{margin-top:auto;padding-top:5mm;border-top:1px solid var(--line);
+        font-family:var(--mono);font-size:9pt;letter-spacing:.08em;color:var(--mute)}
+  .fill{margin-top:auto}
+  .todo{color:var(--shallow);font-family:var(--mono);font-size:9.5pt}
+</style>
+</head>
+<body>
+
+<!-- 1 ─────────────────────────────────────────────── -->
+<section class="slide">
+  <p class="eyebrow">iQOO Hackathon 2026 · Pune City Battle · HealthTech</p>
+  <h1>ClashFit</h1>
+  <p class="lead" style="max-width:52ch">Offline AI fitness combat.<br>
+    Your body is the controller. Your camera is the referee.<br>
+    <strong>Nothing leaves the phone.</strong></p>
+  <div class="fill"></div>
+  <div class="foot">Omkar Kadam · Ujjwal <span class="todo">[SURNAME]</span> · working professionals</div>
+  <span class="num">01</span>
+</section>
+
+<!-- 2 ─────────────────────────────────────────────── -->
+<section class="slide">
+  <p class="eyebrow">The field</p>
+  <h2>This category is crowded.<br>Here's what nobody does.</h2>
+  <div class="cols">
+    <div>
+      <div class="kicker">What already exists</div>
+      <table>
+        <tr><td class="k">Kinect · Your Shape</td><td>Form-scored exercise with game feedback — in 2010</td></tr>
+        <tr><td class="k">Ring Fit Adventure</td><td>The best-executed thing in this space</td></tr>
+        <tr><td class="k">Onyx · Kemtai</td><td>Phone and browser form coaching</td></tr>
+        <tr><td class="k">Peloton Guide · Tempo</td><td>Camera and sensor hardware in the room</td></tr>
+      </table>
+      <p class="small" style="margin-top:5mm">Every one of them needs hardware you buy, a preset
+        difficulty curve, or a server that receives your video.</p>
+    </div>
+    <div>
+      <div class="kicker">What none of them do</div>
+      <div class="card" style="border-color:var(--damage)">
+        <h3 class="accent">Read fatigue from how you actually move</h3>
+        <p>Not a preset curve. Not a self-reported effort slider. Measured, per rep, on the device.</p>
+      </div>
+      <div class="card" style="margin-top:5mm;border-color:var(--damage)">
+        <h3 class="accent">Run the coach on the phone</h3>
+        <p>A language model on the NPU, not an API call. The camera feed never leaves the device.</p>
+      </div>
+    </div>
+  </div>
+  <span class="num">02</span>
+</section>
+
+<!-- 3 ─────────────────────────────────────────────── -->
+<section class="slide">
+  <p class="eyebrow">The loop</p>
+  <h2>Reps in. Damage out.</h2>
+  <div class="cols3" style="flex:1">
+    <div class="shot">screenshot<br>calibration + skeleton</div>
+    <div class="shot">screenshot<br>fight HUD mid-rep</div>
+    <div class="shot">screenshot<br>boss down</div>
+  </div>
+  <p style="margin-top:6mm">Damage is weighted by measured form — depth, range of motion, eccentric
+    tempo, joint alignment. A shallow rep does <strong class="warn">50</strong>.
+    A clean one does <strong class="good">85</strong>. A perfect one does <strong>100</strong>.</p>
+  <p class="small">Those numbers are computed, not estimated — they are asserted in the test suite.</p>
+  <span class="num">03</span>
+</section>
+
+<!-- 4 ─────────────────────────────────────────────── -->
+<section class="slide">
+  <p class="eyebrow">The novelty</p>
+  <h2>It knows when you're gassed.</h2>
+  <div class="cols">
+    <div>
+      <p>Concentric velocity decay. Collapsing range of motion. Growing pauses between reps.
+        Measured every rep, on-device, against <strong>your own first three</strong>.</p>
+      <p>The boss staggers when you fade. It finishes the fight when you're done.</p>
+      <div class="quote accent" style="font-style:normal;margin-top:6mm">
+        “The boss can't outlast you —<br>but it makes you earn the ending.”</div>
+      <p class="small" style="margin-top:6mm">One fatigue model, five movement families. Velocity for
+        reps, tremor for holds, cadence for cardio, height for jumps, accuracy drift for poses.</p>
+    </div>
+    <div class="shot" style="min-height:0"><span class="todo">Summary → Download PNG</span><br>
+      fatigue curve, real session</div>
+  </div>
+  <span class="num">04</span>
+</section>
+
+<!-- 5 ─────────────────────────────────────────────── -->
+<section class="slide">
+  <p class="eyebrow">The coach</p>
+  <h2>The coach and the villain<br>are the same model.</h2>
+  <p>After every set, eleven numbers describing how your movement changed go to a
+    2-billion-parameter model running on the phone. It writes the coaching. It writes the taunt.
+    <strong>It never sees your video. Nothing does.</strong></p>
+  <div class="cols" style="flex:0;margin-top:4mm">
+    <div class="quote coach"><span class="kicker good">Coach</span>
+      “Your last three reps lost four centimetres of depth. Take forty seconds, then finish it.”</div>
+    <div class="quote"><span class="kicker accent">The Pacemaker</span>
+      “Your knees are negotiating. I don't negotiate.”</div>
+  </div>
+  <p class="small" style="margin-top:6mm">Output is validated before it reaches the screen: two
+    sentences, no invented numbers, no comment on your body. If the model is slow, missing or
+    thermally throttled, a deterministic bank speaks instead and you cannot tell.</p>
+  <span class="num">05</span>
+</section>
+
+<!-- 6 ─────────────────────────────────────────────── -->
+<section class="slide">
+  <p class="eyebrow">Architecture</p>
+  <h2>No cloud box on this diagram.</h2>
+  <div class="flow">front camera · 30fps
+      │
+      ▼
+MediaPipe Pose Landmarker · GPU delegate · 33 world landmarks
+      │
+      ▼
+One Euro filter → joint angles → hysteretic rep FSM → form score
+      │                                                   │
+      ▼                                                   ▼
+fatigue estimator ──────────────► adaptive boss ◄── combat engine
+      │
+      ▼
+[between sets only] Gemma 3n E2B int4 · MediaPipe LLM Inference → speech</div>
+  <p style="margin-top:5mm">Two models, one thermal envelope, <strong>never run concurrently</strong>.
+    The release manifest has no <span class="cool">INTERNET</span> permission. You can check.</p>
+  <span class="num">06</span>
+</section>
+
+<!-- 7 ─────────────────────────────────────────────── -->
+<section class="slide">
+  <p class="eyebrow">Multiplayer</p>
+  <h2>Two phones, one boss, no server.<br>And it scales past two.</h2>
+  <div class="flow" style="font-size:11pt">bossHp = maxHp − Σ damage over the deduplicated union of all events</div>
+  <p style="margin-top:5mm">Events, not state. Order-independent and duplicate-safe by construction,
+    so two players or eight is the same arithmetic. Every message carries the sender's last eight
+    events, so a dropped packet repairs itself with no acknowledgements. Phones tap over NFC to pair.</p>
+  <div class="cols3" style="margin-top:5mm">
+    <div class="card"><h3>Ghosts are files</h3><p>A run becomes a ~300-character code. Send it through anything that carries text.</p></div>
+    <div class="card"><h3>Crews merge in a room</h3><p>Ledgers reconcile when two phones meet. Eventually consistent, no backend.</p></div>
+    <div class="card"><h3>Last Standing</h3><p>Out when your <em>measured fatigue</em> hits GASSED. One device, any number of people.</p></div>
+  </div>
+  <span class="num">07</span>
+</section>
+
+<!-- 8 ─────────────────────────────────────────────── -->
+<section class="slide">
+  <p class="eyebrow">Scope</p>
+  <h2>What shipped in 30 hours,<br>and what didn't.</h2>
+  <div class="cols">
+    <div>
+      <div class="kicker good">Shipped this weekend</div>
+      <table>
+        <tr><td>Rep detection, form scoring, fatigue model</td></tr>
+        <tr><td>Fatigue-adaptive boss with mercy resolution</td></tr>
+        <tr><td>On-device Gemma coach and speech</td></tr>
+        <tr><td>Two-phone duel over offline peer-to-peer</td></tr>
+        <tr><td class="todo">[MODES ACTUALLY BUILT]</td></tr>
+        <tr><td>30-second sit-to-stand assessment</td></tr>
+      </table>
+    </div>
+    <div>
+      <div class="kicker">Roadmap</div>
+      <table>
+        <tr><td>5 detector families → 61 exercises</td></tr>
+        <tr><td>Yoga, cardio, isometrics, ballistics</td></tr>
+        <tr><td>Nutrition via the same multimodal model</td></tr>
+        <tr><td>Sleep, recovery, heart-rate estimation</td></tr>
+        <tr><td>Group raids, seasons, crews</td></tr>
+        <tr><td>Full Clinic Mode — five validated tests</td></tr>
+      </table>
+    </div>
+  </div>
+  <p style="margin-top:6mm">We're building a gamified health platform. This weekend we shipped
+    <strong>the hardest part of it</strong> — the movement engine and the fatigue model — because
+    everything else is data entry, and that's not where the risk is.</p>
+  <span class="num">08</span>
+</section>
+
+<!-- 9 ─────────────────────────────────────────────── -->
+<section class="slide">
+  <p class="eyebrow">Team</p>
+  <h2>Two working engineers.<br>Two phones. One weekend.</h2>
+  <div class="cols">
+    <div class="card">
+      <h3>Omkar Kadam</h3>
+      <p>Android and perception.<br><span class="todo">[ONE LINE: role, strongest shipped thing]</span></p>
+    </div>
+    <div class="card">
+      <h3>Ujjwal <span class="todo">[SURNAME]</span></h3>
+      <p>Game systems and on-device inference.<br><span class="todo">[ONE LINE: same]</span></p>
+    </div>
+  </div>
+  <p style="margin-top:6mm">Both have deployed local LLMs on-device before. We built and threw away
+    a prototype before submitting, so we already know where MediaPipe breaks: oblique angles,
+    cluttered frames, and depth from a front view.</p>
+  <p class="todo">[WHY THIS PROBLEM — one honest sentence]</p>
+  <span class="num">09</span>
+</section>
+
+<!-- 10 ────────────────────────────────────────────── -->
+<section class="slide">
+  <p class="eyebrow">Impact · optional, if the jury leans clinical</p>
+  <h2>The tests a physio uses,<br>on a phone you already own.</h2>
+  <div class="cols3" style="margin-top:2mm">
+    <div class="card"><h3>30-second sit-to-stand</h3><p>Lower-body functional strength</p></div>
+    <div class="card"><h3>Single-leg balance</h3><p>Static balance</p></div>
+    <div class="card"><h3>Functional reach</h3><p>Limits of stability</p></div>
+  </div>
+  <p style="margin-top:6mm">Published protocols, real units, and your own trend over time. Everything
+    else in this app measures something we invented. <strong>This measures something a
+    physiotherapist would recognise.</strong></p>
+  <p class="small"><strong>Not a medical device.</strong> We do not diagnose and we do not
+    recommend treatment. We run the protocol, report the measurement with its unit, and show the
+    trend. The only recommendation the app makes is to speak to a professional.</p>
+  <span class="num">10</span>
+</section>
+
+</body>
+</html>
