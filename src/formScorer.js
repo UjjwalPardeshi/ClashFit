@@ -23,7 +23,10 @@ export function romScore(raw, romBaselineU) {
   return clamp01((raw.uMax - raw.uMin) / romBaselineU);
 }
 
-/** Tempo: reward a controlled eccentric and a real pause, punish bouncing. */
+/** Tempo: reward a controlled eccentric and a real pause, punish bouncing.
+ *  NOTE: tEccSec is the MEASURED window (topExit crossing -> bottomEnter crossing), which is
+ *  roughly a third of the full descent. eccentricTargetSec must be set in those terms — a 0.80s
+ *  target silently demanded a ~2.4s descent and capped tempo at ~0.6 for perfectly good reps. */
 export function tempoScore(raw, cfg) {
   const target = cfg.eccentricTargetSec ?? 0.8;
   const pauseTarget = cfg.bottomPauseSec ?? 0.12;

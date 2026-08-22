@@ -45,8 +45,9 @@
       "alignment": 0.15
     },
     "tempo": {
-      "eccentricTargetSec": 0.8,
-      "bottomPauseSec": 0.12
+      "eccentricTargetSec": 0.35,
+      "bottomPauseSec": 0.12,
+      "_note": "measured window: topExit crossing -> bottomEnter crossing, not the full descent"
     },
     "alignment": {
       "type": "TORSO_LINE",
