@@ -18,6 +18,7 @@ import { Roster, RosterMode, Circuit, DEFAULT_CIRCUIT } from './roster.js';
 import { Store } from './store.js';
 import { BoxBreathing, recoveryFraction } from './breathing.js';
 import { preflight, summariseChecks, Status } from './preflight.js';
+import { encodeChallenge, decodeChallenge, describeChallenge, challengeFromSession } from './challenge.js';
 import { Renderer, C } from './render.js';
 import { TraceRecorder } from './trace.js';
 
@@ -52,6 +53,8 @@ const el = {
   breathe: $('breathe'), breathBox: $('breathBox'), breathLabel: $('breathLabel'),
   breathFill: $('breathFill'), breathMeta: $('breathMeta'),
   modes: $('modes'), modeGrid: $('modeGrid'), modesBtn: $('modesBtn'), modesClose: $('modesClose'),
+  challengeBtn: $('challengeBtn'), acceptBtn: $('acceptBtn'),
+  challengeBox: $('challengeBox'), challengeMsg: $('challengeMsg'),
   pre: $('pre'), preList: $('preList'), preVerdict: $('preVerdict'),
   preBtn: $('preBtn'), preRun: $('preRun'), preClose: $('preClose'),
 };
@@ -632,6 +635,39 @@ function wire() {
   el.motion.onclick = () => {
     renderer.reducedMotion = !renderer.reducedMotion;
     el.motion.classList.toggle('on', renderer.reducedMotion);
+  };
+  el.challengeBtn.onclick = () => {
+    const c = challengeFromSession({
+      reps: engine.reps, exerciseId: el.exercise.value,
+      name: (store2.state?.profile?.name) || 'Me', mode: 'GHOST_RACE',
+    });
+    if (!c) { el.challengeMsg.textContent = 'Do a set first, then share it.'; return; }
+    const code = encodeChallenge(c);
+    el.challengeBox.classList.add('show');
+    el.challengeBox.value = code;
+    el.challengeBox.select();
+    navigator.clipboard?.writeText(code).catch(() => {});
+    el.challengeMsg.textContent =
+      `${describeChallenge(c)} · ${code.length} characters. Copied — send it however you like. No server involved.`;
+  };
+  el.acceptBtn.onclick = () => {
+    el.challengeBox.classList.add('show');
+    const raw = el.challengeBox.value.trim();
+    if (!raw) { el.challengeMsg.textContent = 'Paste a challenge code above, then press Accept again.'; return; }
+    try {
+      const c = decodeChallenge(raw);
+      if (c.ghost) {
+        if (store.exercises[c.exerciseId]) { el.exercise.value = c.exerciseId; }
+        el.mode.value = Mode.GHOST_RACE;
+        makeEngine(el.exercise.value);
+        engine.loadGhost(c.ghost);
+        el.sum.classList.remove('show');
+        el.challengeMsg.textContent = '';
+        el.cue.textContent = `Challenge loaded — ${describeChallenge(c)}`;
+      } else el.challengeMsg.textContent = 'That challenge has no run attached.';
+    } catch (e) {
+      el.challengeMsg.textContent = e.message;      // already written to be readable
+    }
   };
   el.modesBtn.onclick = () => openModes();
   el.modesClose.onclick = () => el.modes.classList.remove('show');

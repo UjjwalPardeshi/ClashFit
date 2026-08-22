@@ -10,6 +10,7 @@ import { Roster, RosterMode, Circuit, DEFAULT_CIRCUIT } from '../src/roster.js';
 import { Store, LADDERS } from '../src/store.js';
 import { BoxBreathing, recoveryFraction, Phase as BreathPhase } from '../src/breathing.js';
 import { preflight, summariseChecks, Status } from '../src/preflight.js';
+import { encodeChallenge, decodeChallenge, describeChallenge, challengeFromSession } from '../src/challenge.js';
 import { DuelSession, LoopbackTransport, LinkState, newPlayerId } from '../src/duel.js';
 import { SiegeGame, PursuitGame, BreakerGame, SigilGame, GameOutcome, makeFamilyGame } from '../src/games.js';
 import { RepStateMachine } from '../src/repFsm.js';
@@ -414,6 +415,81 @@ t('CLINIC_STS · ships no norms until they are cited', () => {
   eq(clinicSts.norms.source, null);
   eq(clinicSts.norms.bands.length, 0);
   ok(/not a medical device/i.test(clinicSts.notNested), 'missing the not-a-medical-device line');
+});
+
+// ---------- challenge sharing ----------
+const sampleGhost = (n = 12) => ({
+  events: Array.from({ length: n }, (_, i) => ({ t: (i + 1) * 3400 + i * 37, damage: 60 + i })),
+});
+
+t('challenge · round-trips exactly', () => {
+  const c = { kind: 'GHOST', exerciseId: 'squat', mode: 'GHOST_RACE', name: 'Omkar',
+              ghost: sampleGhost(12) };
+  const back = decodeChallenge(encodeChallenge(c));
+  eq(back.exerciseId, 'squat');
+  eq(back.name, 'Omkar');
+  eq(back.ghost.events.length, 12);
+  for (let i = 0; i < 12; i++) {
+    eq(back.ghost.events[i].t, c.ghost.events[i].t, `time drifted at ${i}`);
+    eq(back.ghost.events[i].damage, c.ghost.events[i].damage, `damage drifted at ${i}`);
+  }
+});
+
+t('challenge · a code is short enough to paste into a chat', () => {
+  const code = encodeChallenge({ exerciseId: 'squat', name: 'Omkar', ghost: sampleGhost(20) });
+  ok(code.length < 400, `${code.length} characters for a 20-rep ghost`);
+  ok(code.startsWith('CF1:'), 'no version prefix');
+});
+
+t('challenge · a truncated paste is caught, not silently accepted', () => {
+  // The failure that actually happens: a code loses its tail travelling through a chat app.
+  const code = encodeChallenge({ exerciseId: 'squat', ghost: sampleGhost(10) });
+  let threw = null;
+  try { decodeChallenge(code.slice(0, code.length - 12)); } catch (e) { threw = e.message; }
+  ok(threw, 'a truncated code decoded without complaint');
+  ok(/damaged|truncat|incomplete/i.test(threw), threw);
+});
+
+t('challenge · rejects foreign and future codes with a readable reason', () => {
+  for (const bad of ['', 'hello', 'CF1:', 'http://example.com']) {
+    let msg = null;
+    try { decodeChallenge(bad); } catch (e) { msg = e.message; }
+    ok(msg, `accepted "${bad}"`);
+    ok(!/undefined|\[object/.test(msg), `unreadable error: ${msg}`);
+  }
+});
+
+t('challenge · a ghost from a challenge is playable as a normal ghost', () => {
+  const c = decodeChallenge(encodeChallenge({ exerciseId: 'squat', ghost: sampleGhost(8) }));
+  const src = new GhostSource(c.ghost);
+  src.start(0);
+  const due = src.due(1e6);
+  eq(due.length, 8);
+  ok(due.every((e) => e.damage > 0));
+});
+
+t('challenge · built from a finished session, and described in one line', () => {
+  const e = new SessionEngine(store, 'squat');
+  drive(e, synthWorldSet({ reps: 7, bottom: 80 }));
+  const c = challengeFromSession({ reps: e.reps, exerciseId: 'squat', name: 'Ujjwal' });
+  ok(c, 'no challenge built from a real session');
+  eq(c.ghost.events.length, e.reps.length);
+  // The timeline is rebased to the START of rep 1, so the first hit lands when rep 1 COMPLETES.
+  // Rebasing to the first completion would make a ghost hit instantly, which is wrong.
+  const firstRepMs = e.reps[0].tEndMs - e.reps[0].tStartMs;
+  eq(c.ghost.events[0].t, Math.round(firstRepMs), 'first hit is not one rep in');
+  ok(c.ghost.events[0].t > 500, 'ghost lands its first hit instantly');
+  const d = describeChallenge(c);
+  ok(/Ujjwal/.test(d) && /squat/.test(d), d);
+  eq(challengeFromSession({ reps: [], exerciseId: 'squat' }), null);
+});
+
+t('challenge · needs no network, no account and no server', () => {
+  // The whole point. Encoding and decoding must be pure — if either ever reached for fetch or
+  // storage, the offline claim would quietly stop being true.
+  const src = readFileSync(join(HERE, '..', 'src/challenge.js'), 'utf8');
+  for (const forbidden of ['fetch(', 'XMLHttpRequest', 'localStorage', 'WebSocket', 'http://', 'https://'])
+    ok(!src.includes(forbidden), `challenge.js reaches for ${forbidden}`);
 });
 
 // ---------- preflight ----------

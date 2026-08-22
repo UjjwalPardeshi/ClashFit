@@ -86,6 +86,10 @@
   #sum.show{display:grid}
   .sumCard{width:min(1000px,96vw);border:1px solid var(--line);background:var(--surface);padding:20px}
   #sumCanvas{width:100%;display:block;border:1px solid var(--line)}
+  #challengeBox{display:none;width:100%;margin-top:12px;background:var(--ground);
+                border:1px solid var(--line);color:var(--ink);font-family:var(--mono);
+                font-size:12px;padding:10px;resize:vertical;word-break:break-all}
+  #challengeBox.show{display:block}
 
   /* wide overlays */
   #modes,#pre{position:fixed;inset:0;display:none;place-items:center;z-index:7;padding:24px;
@@ -306,7 +310,8 @@
         <button id="sumCsv">Download CSV</button>
         <button id="sumClose">Close</button>
       </div>
-      <p class="lbl" style="margin-top:14px;line-height:1.8">
+      <textarea id="challengeBox" rows="3" placeholder="Paste a challenge code here"></textarea>
+      <p class="lbl" id="challengeMsg" style="margin-top:10px;line-height:1.8">
         This is the evidence, not decoration. The PNG is deck slide 4.
       </p>
     </div>

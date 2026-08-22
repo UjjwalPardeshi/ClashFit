@@ -100,6 +100,7 @@ CSV of every rep's raw telemetry.
 | Progression | **Forgiving streaks** (a rest day earns it), difficulty ladders with quiet demotion |
 | Preflight | The pre-demo ritual as a button — eleven checks in two seconds |
 | Mode grid | All fifteen modes on one screen, because a dropdown is invisible to a judge |
+| Challenges | **Community without a server** — a run becomes a ~300-character code you can send anywhere |
 | Ghosts | Three shipped pacers, save your own run, load a friend's |
 
 ## What is deliberately absent

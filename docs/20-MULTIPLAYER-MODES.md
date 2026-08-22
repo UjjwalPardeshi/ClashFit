@@ -100,7 +100,7 @@ than a cloud leaderboard would:
 | Feature | How it works offline |
 |---|---|
 | **Ghost sharing** | A ghost is a small file. Share it over any channel — chat, email, a QR code for short ones. The recipient races it. Asynchronous competition, zero infrastructure. |
-| **Challenge cards** | A QR code encoding `(exercise, mode, target score, ghost)`. Scan, attempt, beat it. A viral loop that costs one QR encoder. |
+| **Challenge cards** | **Built.** A finished run encodes to a ~300-character code: `CF1:` + payload + checksum, with the timeline delta-encoded in base36. Send it through anything that carries text; the recipient races exactly what you did. A test asserts `challenge.js` never reaches for fetch, storage or a URL — if it did, the offline claim would quietly stop being true. QR is just a transport for the same string, and on Android that is one zxing call. |
 | **Crew ledger** | Each phone keeps its own crew results. Merge ledgers whenever two phones are in the same room. Eventually-consistent leaderboards, no server. |
 | **Local room leaderboard** | Persisted per device, for relay and pass-the-phone sessions. |
 
