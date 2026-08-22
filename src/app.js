@@ -211,6 +211,42 @@ function showClinicResult(s) {
   el.over.classList.add('show');
 }
 
+/** Each family game reports in its own terms. A yoga session does not get a victory screen with
+ *  a damage total on it. */
+function showFamilyResult(reason, s) {
+  const g = s.gameState;
+  const won = reason === 'GAME_WON';
+  const T = {
+    SIEGE: {
+      kicker: won ? 'Siege held' : 'Shield broken',
+      title: won ? 'HELD' : 'BROKEN',
+      body: `${g.holds} holds · ${g.totalHeldSec?.toFixed(0)}s under tension · shield ${g.playerHp}`,
+    },
+    PURSUIT: {
+      kicker: won ? 'Escaped' : 'Caught',
+      title: won ? 'ESCAPED' : 'CAUGHT',
+      body: `${g.distance?.toFixed(0)}m over ${g.cycles} cycles`,
+    },
+    BREAKER: {
+      kicker: won ? 'Tower down' : 'Run over',
+      title: `${g.broken}/${g.floors}`,
+      body: `${g.jumps} jumps · best ${g.bestCm?.toFixed(0)}cm`,
+    },
+    SIGIL: {
+      kicker: 'Sigil complete',
+      title: 'COMPLETE',
+      body: `${g.lit} of ${g.segments} lit · mean accuracy ${Math.round((g.brightness ?? 0) * 100)}%`,
+    },
+  }[g.game] ?? { kicker: 'Session', title: 'DONE', body: '' };
+
+  el.overKicker.textContent = T.kicker;
+  el.overTitle.textContent = T.title;
+  el.overTitle.style.color = g.game === 'SIGIL' ? C.fatigue : won ? C.clean : C.damage;
+  el.overBody.innerHTML = `${T.body}<br>peak fatigue ${s.fatigue.band}`;
+  el.over.classList.add('show');
+  openSummaryLater();
+}
+
 function openSummary() {
   drawSummary(el.sumCanvas, engine.reps, store.pose.fatigue.bands, {
     exercise: el.exercise.value,
@@ -221,6 +257,7 @@ function openSummary() {
 
 function showResult(reason, s) {
   if (s.mode === Mode.CLINIC_STS) return showClinicResult(s);
+  if (s.gameState) return showFamilyResult(reason, s);
   const win = s.mode === Mode.GHOST_RACE ? s.playerDamage >= s.ghostDamage : null;
   el.overKicker.textContent =
     reason === 'BOSS_DOWN' ? 'Boss down' : reason === 'TIME' ? "Time" : 'Set over';

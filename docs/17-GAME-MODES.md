@@ -45,9 +45,18 @@ Tempo Trial only if the tempo sub-score proves reliable.
 4. **Tempo Trial** — conditional
 5. Everything else — deck roadmap
 
-> **Family games.** The five modes above are all `REP_CYCLE` games. Isometric holds, yoga, cardio
-> and ballistic movements each get a game shaped like the movement — Siege, Sigil, Pursuit, Breaker.
-> Those are specified in [19-EXERCISE-LIBRARY](19-EXERCISE-LIBRARY.md) §3.
+> **Family games — built, not just specified.** The five modes above are all `REP_CYCLE` games.
+> Isometric holds, yoga, cardio and ballistic movements each get a game shaped like the movement:
+>
+> | Family | Game | Mechanic as built |
+> |---|---|---|
+> | Holds | **SIEGE** | Your hold *is* the shield. Quality drives damage to the boss; breaking form lets a hit through. You win by outlasting it. |
+> | Cardio | **PURSUIT** | Distance is the integral of cadence and amplitude. The pursuer advances on the clock whether you move or not. |
+> | Jumps | **BREAKER** | Height is force, and landing softness gates it — a stiff landing scores the jump but does not break through, because the force went into you. |
+> | Yoga | **SIGIL** | **No boss, no damage, no ranking.** Each asana lights a point of a constellation; accuracy sets its brightness. A test asserts SIGIL exposes no combat fields at all. |
+>
+> Specified in [19-EXERCISE-LIBRARY](19-EXERCISE-LIBRARY.md) §3, implemented in `src/games.js`,
+> covered by 11 assertions.
 
 ---
 

@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { angle3 } from '../src/geometry.js';
 import { makeDetector } from '../src/detectors/index.js';
 import { DuelSession, LoopbackTransport, LinkState, newPlayerId } from '../src/duel.js';
+import { SiegeGame, PursuitGame, BreakerGame, SigilGame, GameOutcome, makeFamilyGame } from '../src/games.js';
 import { RepStateMachine } from '../src/repFsm.js';
 import { scoreRep, verdict, clamp01 } from '../src/formScorer.js';
 import { FatigueEstimator, Band } from '../src/fatigue.js';
@@ -406,6 +407,108 @@ t('CLINIC_STS · ships no norms until they are cited', () => {
   eq(clinicSts.norms.source, null);
   eq(clinicSts.norms.bands.length, 0);
   ok(/not a medical device/i.test(clinicSts.notNested), 'missing the not-a-medical-device line');
+});
+
+// ---------- family games ----------
+t('SIEGE · a held plank damages the boss, a broken one costs you', () => {
+  const g = new SiegeGame({ playerHp: 100, bossHp: 600, dpsPerQuality: 20, hitOnBreak: 25 });
+  const held = g.onEvent({ holdSec: 20, quality: 0.9, completed: true });
+  ok(held.bossHp < 600, 'holding dealt no damage');
+  eq(held.playerHp, 100, 'a clean hold cost the player health');
+  const broke = g.onEvent({ holdSec: 4, quality: 0.5, completed: false });
+  eq(broke.playerHp, 75, 'breaking form did not let a hit through');
+});
+
+t('SIEGE · outlasting the boss wins, running out of health loses', () => {
+  const win = new SiegeGame({ bossHp: 300, dpsPerQuality: 20 });
+  win.onEvent({ holdSec: 20, quality: 1, completed: true });
+  eq(win.state().outcome, GameOutcome.WON);
+  const lose = new SiegeGame({ playerHp: 40, bossHp: 99999, hitOnBreak: 20 });
+  lose.onEvent({ holdSec: 2, quality: 0.3, completed: false });
+  lose.onEvent({ holdSec: 2, quality: 0.3, completed: false });
+  eq(lose.state().outcome, GameOutcome.LOST);
+});
+
+t('PURSUIT · the pursuer closes on the clock even if you stop', () => {
+  const g = new PursuitGame({ startGapM: 5, pursuerMps: 3, escapeAtM: 500 });
+  g.tick(0);
+  const before = g.gapM;
+  g.tick(1000);
+  ok(g.gapM < before, 'gap did not close while idle');
+  g.tick(3000);
+  eq(g.state().outcome, GameOutcome.LOST, 'never caught despite standing still');
+});
+
+t('PURSUIT · sustained cadence outruns it', () => {
+  const g = new PursuitGame({ startGapM: 12, pursuerMps: 2.6, escapeAtM: 40, metresPerCycle: 2 });
+  let t2 = 0;
+  for (let i = 0; i < 40 && g.state().outcome === GameOutcome.RUNNING; i++) {
+    g.tick(t2 += 400);
+    g.onEvent({ amplitude: 1.1, formScore: 0.9 });
+  }
+  eq(g.state().outcome, GameOutcome.WON, `distance ${g.distance.toFixed(1)}m`);
+});
+
+t('BREAKER · a stiff landing breaks fewer floors than a soft one', () => {
+  const soft = new BreakerGame({ floors: 50, cmPerFloor: 10 });
+  const stiff = new BreakerGame({ floors: 50, cmPerFloor: 10 });
+  soft.onEvent({ heightCm: 40, softness: 1.0 });
+  stiff.onEvent({ heightCm: 40, softness: 0.3 });
+  ok(soft.state().broken > stiff.state().broken,
+     `soft ${soft.state().broken} vs stiff ${stiff.state().broken}`);
+});
+
+t('BREAKER · clearing the tower wins', () => {
+  const g = new BreakerGame({ floors: 6, cmPerFloor: 10 });
+  for (let i = 0; i < 5 && g.state().outcome === GameOutcome.RUNNING; i++)
+    g.onEvent({ heightCm: 35, softness: 0.9 });
+  eq(g.state().outcome, GameOutcome.WON);
+});
+
+t('SIGIL · is non-combat by design — no damage, no health, no ranking', () => {
+  const g = new SigilGame({ segments: 3 });
+  const s1 = g.onEvent({ accuracy: 0.9, heldSec: 20 });
+  for (const k of ['playerHp', 'bossHp', 'damage', 'score', 'rank'])
+    ok(!(k in s1), `SIGIL exposed a combat field: ${k}`);
+  g.onEvent({ accuracy: 0.8, heldSec: 20 });
+  g.onEvent({ accuracy: 1.0, heldSec: 20 });
+  eq(g.state().outcome, GameOutcome.WON);
+  ok(g.state().brightness > 0.8, `brightness ${g.state().brightness.toFixed(2)}`);
+});
+
+t('SIGIL · a poor pose still lights its segment, just dimly', () => {
+  const g = new SigilGame({ segments: 4 });
+  g.onEvent({ accuracy: 0.05, heldSec: 3 });
+  eq(g.state().lit, 1, 'a weak pose was rejected outright');
+  ok(g.state().brightness >= 0.15, 'brightness floor not applied');
+});
+
+t('every family game is constructible from its mode name', () => {
+  for (const m of ['SIEGE', 'PURSUIT', 'BREAKER', 'SIGIL'])
+    ok(makeFamilyGame(m, combatCfg.familyGames), `${m} not constructible`);
+  eq(makeFamilyGame('BOSS_FIGHT', combatCfg.familyGames), null);
+});
+
+t('engine · SIGIL runs a yoga session without touching combat', () => {
+  const yogaStore = { ...store, exercises: { ...store.exercises, utkatasana: cfg('exercises/utkatasana.json') } };
+  const e = new SessionEngine(yogaStore, 'utkatasana', { mode: Mode.SIGIL });
+  for (const [lm, ms] of holdFrames({ knee: 120, hipTorso: 130, elbow: 170 }, 30)) e.frame(lm, null, ms);
+  const s = e.state();
+  ok(s.gameState, 'no game state');
+  eq(s.gameState.game, 'SIGIL');
+  ok(s.gameState.lit >= 1, 'no segment lit');
+  eq(s.playerDamage, 0, 'yoga dealt damage');
+  eq(s.combat.hp, s.combat.maxHp, 'yoga hurt a boss');
+});
+
+t('engine · SIEGE routes holds into the siege, not the boss fight', () => {
+  const holdStore = { ...store, exercises: { ...store.exercises, wall_sit: cfg('exercises/wall_sit.json') } };
+  const e = new SessionEngine(holdStore, 'wall_sit', { mode: Mode.SIEGE });
+  for (const [lm, ms] of holdFrames({ knee: 90, hipTorso: 90 }, 50)) e.frame(lm, null, ms);
+  const s = e.state();
+  eq(s.gameState.game, 'SIEGE');
+  ok(s.gameState.bossHp < combatCfg.familyGames.SIEGE.bossHp, 'the hold dealt no siege damage');
+  ok(s.gameState.totalHeldSec > 40, `only held ${s.gameState.totalHeldSec?.toFixed(1)}s`);
 });
 
 // ---------- duel over a real transport ----------

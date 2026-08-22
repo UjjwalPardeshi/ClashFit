@@ -15,6 +15,11 @@ const EDGES = [
   [27,31],[28,32],[27,29],[28,30],
 ];
 
+function hexA(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
 export class Renderer {
   constructor(canvas) {
     this.cv = canvas;
@@ -57,7 +62,8 @@ export class Renderer {
 
     this.#video(video, w, h);
     if (landmarks) this.#skeleton(landmarks, w, h, state);
-    this.#boss(state, w, h, now);
+    if (state.gameState) this.#familyGame(state, w, h, now);
+    else this.#boss(state, w, h, now);
     this.#pops(now, w, h);
 
     if (this.flash && now < this.flash.until) this.#edgeFlash(this.flash.color, w, h);
@@ -161,6 +167,125 @@ export class Renderer {
     ctx.fillText(c.bossName ?? 'BOSS', bx, by - 8);
     ctx.textAlign = 'right';
     ctx.fillText(`${Math.round(pct * 100)}%  ·  ${c.phase}`, bx + bw, by - 8);
+    ctx.restore();
+  }
+
+  /** A game shaped like the movement gets a visual shaped like the game. Sigil in particular
+   *  must not look like a boss fight — it is non-combat by design. */
+  #familyGame(state, w, h, now) {
+    const g = state.gameState;
+    const { ctx } = this;
+    const cx = w * 0.72, cy = h * 0.42;
+    const R = Math.min(w, h) * 0.17;
+
+    if (g.game === 'SIGIL') {
+      // A constellation, not a boss. Each asana lights one point; accuracy sets its brightness.
+      ctx.save();
+      ctx.translate(cx, cy);
+      const N = g.segments;
+      const pts = Array.from({ length: N }, (_, i) => {
+        const a = (i / N) * Math.PI * 2 - Math.PI / 2;
+        return { x: Math.cos(a) * R, y: Math.sin(a) * R };
+      });
+      ctx.strokeStyle = hexA(C.system, 0.18); ctx.lineWidth = 1;
+      ctx.beginPath();
+      pts.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+      ctx.closePath(); ctx.stroke();
+
+      ctx.strokeStyle = hexA(C.fatigue, 0.9); ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      for (let i = 0; i < g.lit; i++) (i ? ctx.lineTo(pts[i].x, pts[i].y) : ctx.moveTo(pts[i].x, pts[i].y));
+      if (g.lit > 1) ctx.stroke();
+
+      pts.forEach((p, i) => {
+        const seg = g.segmentsDetail?.[i];
+        ctx.globalAlpha = seg ? 0.35 + 0.65 * seg.brightness : 0.14;
+        ctx.fillStyle = seg ? C.fatigue : C.mute;
+        ctx.beginPath(); ctx.arc(p.x, p.y, seg ? 7 + 4 * seg.brightness : 4, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      ctx.restore();
+      this.#label(cx, cy + R + 40, `${g.lit} / ${g.segments} lit`, C.fatigue, w);
+      return;
+    }
+
+    if (g.game === 'SIEGE') {
+      this.#bar(cx - Math.min(w * 0.21, 230), cy - R - 46, Math.min(w * 0.42, 460),
+                g.bossHpPct, C.hpFull, 'SIEGE', `${Math.round(g.bossHpPct * 100)}%`);
+      this.#bar(cx - Math.min(w * 0.21, 230), cy + R + 34, Math.min(w * 0.42, 460),
+                g.playerHpPct, g.playerHpPct > 0.4 ? C.system : C.damage,
+                'YOUR SHIELD', `${g.playerHp}`);
+      this.#shieldRing(cx, cy, R, g.playerHpPct, now);
+      return;
+    }
+
+    if (g.game === 'PURSUIT') {
+      const bw = Math.min(w * 0.42, 460), bx = cx - bw / 2, by = cy;
+      ctx.save();
+      ctx.strokeStyle = hexA(C.mute, 0.35); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + bw, by); ctx.stroke();
+      const you = Math.min(1, g.progress);
+      const them = Math.max(0, Math.min(1, g.pursuer / (g.distance || 1) * you));
+      ctx.fillStyle = C.clean;
+      ctx.beginPath(); ctx.arc(bx + bw * you, by, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = C.damage;
+      ctx.beginPath(); ctx.arc(bx + bw * them, by, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      this.#label(cx, by + 42, `${g.distance.toFixed(0)}m · gap ${g.gapM.toFixed(0)}m`,
+                  g.gapM < 6 ? C.damage : C.ink, w);
+      return;
+    }
+
+    if (g.game === 'BREAKER') {
+      const cols = 4, rows = Math.ceil(g.floors / cols);
+      const cw = Math.min(w * 0.09, 62), ch = 20, gap = 6;
+      const x0 = cx - (cols * (cw + gap) - gap) / 2;
+      const y0 = cy - (rows * (ch + gap) - gap) / 2;
+      ctx.save();
+      for (let i = 0; i < g.floors; i++) {
+        const r = Math.floor(i / cols), c = i % cols;
+        const broken = i < g.broken;
+        ctx.globalAlpha = broken ? 0.15 : 0.9;
+        ctx.fillStyle = broken ? C.mute : C.damage;
+        ctx.fillRect(x0 + c * (cw + gap), y0 + r * (ch + gap), cw, ch);
+      }
+      ctx.restore();
+      this.#label(cx, y0 + rows * (ch + gap) + 26,
+                  `${g.broken} / ${g.floors} floors · best ${g.bestCm.toFixed(0)}cm`, C.damage, w);
+    }
+  }
+
+  #bar(x, y, wid, pct, color, left, right) {
+    const { ctx } = this;
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.fillRect(x, y, wid, 16);
+    ctx.fillStyle = color; ctx.fillRect(x, y, wid * Math.max(0, Math.min(1, pct)), 16);
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y + 0.5, wid - 1, 15);
+    ctx.font = '600 12px ui-monospace, monospace'; ctx.fillStyle = C.mute;
+    ctx.textAlign = 'left'; ctx.fillText(left, x, y - 8);
+    ctx.textAlign = 'right'; ctx.fillText(right, x + wid, y - 8);
+    ctx.restore();
+  }
+
+  #shieldRing(cx, cy, R, pct, now) {
+    const { ctx } = this;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.strokeStyle = hexA(pct > 0.4 ? C.system : C.damage, 0.55 + 0.25 * Math.sin(now / 400));
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(0, 0, R * 0.8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.02, pct));
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  #label(cx, y, text, color, w) {
+    const { ctx } = this;
+    ctx.save();
+    ctx.font = '600 13px ui-monospace, monospace';
+    ctx.textAlign = 'center'; ctx.fillStyle = color;
+    ctx.fillText(text, cx, y);
     ctx.restore();
   }
 

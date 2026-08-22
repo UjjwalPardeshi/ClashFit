@@ -4,7 +4,7 @@
 // event build is a port rather than a redesign. docs/09-MODULE-CONTRACTS.md
 
 import { LandmarkFilter } from './oneEuro.js';
-import { primaryAngle, boxHeight, spanMetres, JOINT, SIDE } from './geometry.js';
+import { primaryAngle, chooseSide, boxHeight, spanMetres, JOINT, SIDE } from './geometry.js';
 import { RepStateMachine } from './repFsm.js';
 import { scoreRep, verdict, alignmentSample } from './formScorer.js';
 import { FatigueEstimator, Band } from './fatigue.js';
@@ -12,6 +12,7 @@ import { CombatEngine } from './combat.js';
 import { GhostSource } from './ghost.js';
 import { summarise, coachFor } from './coach.js';
 import { makeDetector, FAMILY_GAME } from './detectors/index.js';
+import { makeFamilyGame, GameOutcome } from './games.js';
 
 export const Phase = { CALIBRATING: 'CALIBRATING', FIGHTING: 'FIGHTING', FRAMING_LOST: 'FRAMING_LOST', REST: 'REST', DEAD: 'DEAD' };
 export const Mode = {
@@ -80,7 +81,8 @@ export class SessionEngine {
     this.lastRep = null;
     this.lastScore = null;
     this.reps = [];
-    this.fsm.reset();
+    this.fsm?.reset();
+    this.detector?.reset();
     this.fatigue.reset();
     this.combat.reset();
     this.romBaselineU = null;
@@ -108,6 +110,9 @@ export class SessionEngine {
       this.combat.maxHp = 10_000_000;
       this.combat.hp = 10_000_000;
     }
+    // Family games own their own state. SIGIL in particular has no boss, no damage and no
+    // ranking — yoga framed as combat would read as a reskin.
+    this.game = makeFamilyGame(this.mode, this.cfg.combat.familyGames);
     if (this.mode === Mode.SURVIVAL) {
       const w = this.cfg.combat.modes?.SURVIVAL ?? {};
       this.combat.maxHp = w.hpPerWave ?? 900;
@@ -145,12 +150,14 @@ export class SessionEngine {
 
     const lms = this.filter.apply(world, tMs);
     const thr = this.cfg.pose.visibilityThreshold;
-    const sel = primaryAngle(lms, this.exercise.detector.primaryAngle, this.jointNames, thr);
+    const sel = this.exercise.detector.primaryAngle
+      ? primaryAngle(lms, this.exercise.detector.primaryAngle, this.jointNames, thr)
+      : { ...chooseSide(lms, this.jointNames, thr), angle: NaN };
     this.angle = sel.angle;
     this.side = sel.side;
     this.framing = image ? this.#framing(image) : 'OK';
 
-    if (!Number.isFinite(sel.angle)) return this.#lost(tMs);
+    if (this.fsm ? !Number.isFinite(sel.angle) : !sel.valid) return this.#lost(tMs);
 
     // Recovered.
     if (this.phase === Phase.FRAMING_LOST) { this.phase = Phase.FIGHTING; this.fatigue.unfreeze(); }
@@ -179,7 +186,12 @@ export class SessionEngine {
       return this.state();
     }
 
-    if (this.phase === Phase.FIGHTING || this.phase === Phase.REST) {
+    if (this.mode === Mode.PURSUIT && this.game && this.phase === Phase.FIGHTING) {
+      const g = this.game.tick(tMs);
+      if (g.outcome !== GameOutcome.RUNNING) { this.phase = Phase.DEAD; this.#end('GAME_LOST'); }
+    }
+
+    if (this.exercise.detector.primaryAngle && (this.phase === Phase.FIGHTING || this.phase === Phase.REST)) {
       const span = spanMetres(lms, this.exercise.detector.primaryAngle, sel.side);
       if (Number.isFinite(span)) {
         this.spanSamples.push([tMs, span]);
@@ -241,6 +253,9 @@ export class SessionEngine {
    *  ends. Survival deliberately disables the mercy rule — this is the one mode where fatigue
    *  genuinely ends the run, and that is the point of it. */
   #onBossDown() {
+    // Family games own their own state. SIGIL in particular has no boss, no damage and no
+    // ranking — yoga framed as combat would read as a reskin.
+    this.game = makeFamilyGame(this.mode, this.cfg.combat.familyGames);
     if (this.mode === Mode.SURVIVAL) {
       const w = this.cfg.combat.modes?.SURVIVAL ?? {};
       this.wave += 1;
@@ -278,8 +293,9 @@ export class SessionEngine {
     this.lastRepEndMs = null;
     this.coach = null;
     this.fatigue.reset();
-    this.fsm.reset();
-    this.fsm.setTopRef(this.topRef);
+    this.fsm?.reset();
+    this.fsm?.setTopRef(this.topRef);
+    this.detector?.reset();
     this.phase = Phase.FIGHTING;
   }
 
@@ -290,8 +306,23 @@ export class SessionEngine {
     const prevBand = this.combatBand ?? Band.FRESH;
     this.combatBand = f.band;
 
-    const c = this.combat.onRep(ev.formScore, f.band);
-    if (f.band !== prevBand) { this.combat.onFatigueBand(f.band); this.onBand(f.band); }
+    let c;
+    if (this.game) {
+      const g = this.game.onEvent(ev);
+      // SIGIL is non-combat by design; the others still surface a damage-shaped number for
+      // the HUD, but the mechanic that decides the outcome lives in the family game.
+      c = this.mode === Mode.SIGIL
+        ? { ...this.combat.state(), lastDamage: 0, comboMultiplier: 1 }
+        : this.combat.onRep(ev.formScore, f.band);
+      if (g.outcome && g.outcome !== GameOutcome.RUNNING) {
+        this.phase = Phase.DEAD;
+        this.#end(g.outcome === GameOutcome.WON ? 'GAME_WON' : 'GAME_LOST');
+      }
+    } else {
+      c = this.combat.onRep(ev.formScore, f.band);
+    }
+    if (f.band !== prevBand && !this.game) { this.combat.onFatigueBand(f.band); this.onBand(f.band); }
+    else if (f.band !== prevBand) this.onBand(f.band);
 
     const rec = {
       ...ev,
@@ -306,7 +337,7 @@ export class SessionEngine {
     this.lastRepEndMs = ev.tEndMs;
     this.lastRep = rec;
     this.playerDamage += rec.damage ?? 0;
-    if (this.combat.dead) this.#onBossDown();
+    if (!this.game && this.combat.dead) this.#onBossDown();
     this.onRep(rec, this.combat.state());
   }
 
@@ -340,7 +371,7 @@ export class SessionEngine {
     this.lastRep = rec;
     this.lastScore = score;
     this.playerDamage += rec.damage ?? 0;
-    if (this.combat.dead) this.#onBossDown();
+    if (!this.game && this.combat.dead) this.#onBossDown();
     this.onRep(rec, this.combat.state());
   }
 
@@ -379,6 +410,7 @@ export class SessionEngine {
       ghostFinished: this.ghost?.finished ?? null,
       family: this.family,
       familyGame: this.familyGame,
+      gameState: this.game ? this.game.state() : null,
       detectorLast: this.detectorLast ?? null,
       wave: this.wave,
       rushIndex: this.rushIndex,
@@ -388,7 +420,7 @@ export class SessionEngine {
       telemetry: this.telemetry ?? null,
       phase: this.phase,
       angle: this.angle,
-      fsmState: this.fsm.state,
+      fsmState: this.fsm?.state ?? this.detector?.family ?? null,
       framing: this.framing,
       topRef: this.topRef,
       reps: this.reps.length,
