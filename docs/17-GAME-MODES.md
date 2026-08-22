@@ -117,8 +117,13 @@ design.
 **Why it is interesting:** it demonstrates that the engine measures *how* you move, not just *that*
 you moved. It reframes the form scoring in a way the main mode does not.
 
-**Condition:** only build this if the tempo sub-score has proven reliable in testing. If tempo is
-noisy, this mode makes the noise the entire experience.
+**Condition met, and built.** The measured-window fix made tempo reliable — controlled reps now
+read 1.00 and rushed ones drop clearly, so the mode is scoring signal rather than noise.
+
+**One unit trap worth naming:** `targetEccSec` is in *measured-window* terms — the topExit to
+bottomEnter crossing, roughly a third of the full descent. Expressing it as a full-descent time is
+exactly the mistake that made the tempo sub-score unreachable the first time round, so the config
+carries the note and a test asserts the value stays sub-second.
 
 ---
 

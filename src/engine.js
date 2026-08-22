@@ -30,6 +30,7 @@ export const Mode = {
   BOSS_RUSH: 'BOSS_RUSH',
   CLINIC_STS: 'CLINIC_STS',
   DUEL: 'DUEL',
+  TEMPO_TRIAL: 'TEMPO_TRIAL',
   // family games — a game shaped like the movement. docs/19-EXERCISE-LIBRARY.md §3
   SIEGE: 'SIEGE',
   PURSUIT: 'PURSUIT',
@@ -275,6 +276,24 @@ export class SessionEngine {
     return Math.round(r.freshSeconds + (r.gassedSeconds - r.freshSeconds) * Math.min(1, v / 0.5));
   }
 
+  /**
+   * Tempo Trial: the boss sets a target eccentric and damage scales with how closely you match
+   * it. It reframes the form engine — the point stops being that you moved and becomes how you
+   * moved — and it works entirely eyes-free, driven by a metronome.
+   *
+   * The target is in MEASURED-WINDOW terms, the same units form.tempo uses. Expressing it as a
+   * full-descent time is the mistake that made tempo unreachable the first time round.
+   * docs/17-GAME-MODES.md §5
+   */
+  tempoAccuracy(raw) {
+    const c = this.cfg.combat.modes?.TEMPO_TRIAL ?? {};
+    const target = c.targetEccSec ?? 0.55;
+    const tol = c.tolerance ?? 0.35;
+    return Math.max(0, Math.min(1, 1 - Math.abs(raw.tEccSec - target) / Math.max(1e-6, tol)));
+  }
+
+  get tempoTarget() { return this.cfg.combat.modes?.TEMPO_TRIAL?.targetEccSec ?? 0.55; }
+
   /** Recover fatigue from a completed breathing session. Bounded, and it never rewrites the
    *  baselines — the set still happened. */
   recoverFatigue(fraction) {
@@ -345,6 +364,13 @@ export class SessionEngine {
 
     const align = alignmentSample(lms, this.side ?? SIDE.LEFT, this.exercise.form.alignment?.type);
     const score = scoreRep(raw, this.exercise, this.romBaselineU, align);
+    if (this.mode === Mode.TEMPO_TRIAL) {
+      const c = this.cfg.combat.modes?.TEMPO_TRIAL ?? {};
+      const acc = this.tempoAccuracy(raw);
+      score.tempoAccuracy = acc;
+      score.formScore = (c.floor ?? 0.30) + (1 - (c.floor ?? 0.30)) * acc;
+      score.reason = acc < 0.6 ? 'tempo' : score.reason;
+    }
     if (this.formThresholdBonus > 0) {
       this.combat.combo.cfg = { ...this.combat.combo.cfg,
         threshold: Math.min(0.95, (this.cfg.combat.combo.threshold ?? 0.75) + this.formThresholdBonus) };

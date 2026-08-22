@@ -91,6 +91,13 @@
     "DUEL": {
       "enabled": true,
       "rules": "TIME_ATTACK"
+    },
+    "TEMPO_TRIAL": {
+      "enabled": true,
+      "targetEccSec": 0.55,
+      "tolerance": 0.35,
+      "floor": 0.3,
+      "_note": "targetEccSec is in MEASURED-WINDOW terms (topExit -> bottomEnter), same units as form.tempo. A 1.6s full descent measures around 0.55s."
     }
   },
   "familyGames": {

@@ -415,6 +415,34 @@ t('CLINIC_STS · ships no norms until they are cited', () => {
   ok(/not a medical device/i.test(clinicSts.notNested), 'missing the not-a-medical-device line');
 });
 
+// ---------- tempo trial ----------
+t('TEMPO_TRIAL · scores how closely you match the target, not how deep you went', () => {
+  const e = new SessionEngine(store, 'squat', { mode: Mode.TEMPO_TRIAL });
+  const target = e.tempoTarget;
+  near(e.tempoAccuracy({ tEccSec: target }), 1, 1e-6, 'on-target rep did not score 1');
+  ok(e.tempoAccuracy({ tEccSec: target * 3 }) < 0.2, 'far-off rep scored well');
+  ok(e.tempoAccuracy({ tEccSec: 0 }) < 0.2, 'instant drop scored well');
+});
+
+t('TEMPO_TRIAL · a well-paced set outscores a rushed one of identical depth', () => {
+  const run = (eccSec) => {
+    const e = new SessionEngine(store, 'squat', { mode: Mode.TEMPO_TRIAL });
+    drive(e, synthWorldSet({ reps: 8, bottom: 80, eccSec, pauseSec: 0.3 }));
+    return e.reps.length ? e.reps.reduce((a, r) => a + r.formScore, 0) / e.reps.length : 0;
+  };
+  const paced = run(1.6);          // measures near the 0.55s window target
+  const rushed = run(0.35);
+  ok(paced > rushed + 0.15, `paced ${paced.toFixed(2)} vs rushed ${rushed.toFixed(2)}`);
+});
+
+t('TEMPO_TRIAL · the target is expressed in measured-window units', () => {
+  // Expressing it as a full-descent time is exactly the mistake that made tempo unreachable the
+  // first time round, so the config carries the note and the value stays sub-second.
+  const c = combatCfg.modes.TEMPO_TRIAL;
+  ok(c.targetEccSec < 1.0, 'target looks like a full-descent time, not a measured window');
+  ok(/measured-window/i.test(c._note ?? ''), 'the units are not documented at the config');
+});
+
 // ---------- breathing and recovery ----------
 t('breathing · box pattern walks its phases and completes', () => {
   const b = new BoxBreathing({ inSec: 4, holdInSec: 4, outSec: 4, holdOutSec: 4, cycles: 2 });

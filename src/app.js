@@ -205,6 +205,15 @@ function makeEngine(id) {
   el.ghost.style.display = mode === Mode.GHOST_RACE ? '' : 'none';
   el.exercise.disabled = mode === Mode.CLINIC_STS || mode === 'CIRCUIT';
 
+  // Tempo Trial is driven by a metronome you can hear and feel, so it works eyes-free.
+  haptics?.stopMetronome();
+  if (mode === Mode.TEMPO_TRIAL) {
+    const target = store.combat.modes?.TEMPO_TRIAL?.targetEccSec ?? 0.55;
+    const fullDescentSec = target * 3;                  // measured window is ~1/3 of the descent
+    haptics?.startMetronome(Math.round(60 / fullDescentSec));
+    el.cue.textContent = `Match the beat — about ${fullDescentSec.toFixed(1)}s down, every rep.`;
+  }
+
   roster = null; circuit = null;
   el.turn.classList.remove('show');
   if (GROUP_MODES.includes(mode)) {
@@ -671,6 +680,12 @@ function paintHud(s) {
       if (nxt) { el.exercise.value = nxt.exerciseId; engine.setExercise(nxt.exerciseId); engine.reset(); audio.countdown(true); }
       else { circuit = null; el.turn.classList.remove('show'); el.cue.textContent = 'Circuit complete.'; }
     }
+  }
+  if (s.mode === Mode.TEMPO_TRIAL && s.lastRep) {
+    const acc = s.lastRep.tempoAccuracy;
+    el.verdict.textContent = acc === undefined ? '—'
+      : acc > 0.8 ? 'ON BEAT' : acc > 0.5 ? 'CLOSE' : 'OFF BEAT';
+    el.verdict.style.color = acc > 0.8 ? C.clean : acc > 0.5 ? C.system : C.shallow;
   }
   if (s.mode === Mode.SURVIVAL) el.wave.textContent = s.wave;
   if (s.mode === Mode.DUEL) {
