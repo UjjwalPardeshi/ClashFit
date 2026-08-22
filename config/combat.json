@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "baseDamage": 100,
+  "formFloor": 0.35,
+  "formExponent": 1.2,
+  "combo": { "step": 0.12, "cap": 2.5, "threshold": 0.75, "graceAtStreak": 6 },
+  "boss": {
+    "id": "pacemaker",
+    "name": "THE PACEMAKER",
+    "maxHp": 3000,
+    "phases": [
+      { "fromHpPct": 1.00, "modifier": 1.00, "label": "phase1" },
+      { "fromHpPct": 0.60, "modifier": 0.90, "label": "enrage" },
+      { "fromHpPct": 0.25, "modifier": 1.15, "label": "desperation" }
+    ]
+  },
+  "fatigueResponse": {
+    "FRESH":   { "modifier": 0.92, "regenPerRep": 8 },
+    "WORKING": { "modifier": 1.00, "regenPerRep": 0 },
+    "FADING":  { "modifier": 1.20, "staggerReps": 5 },
+    "GASSED":  { "mercyRepsToFinish": 4 }
+  },
+  "casual": { "damageMultiplier": 1.6, "formFloor": 0.60, "bossHpMultiplier": 0.5 },
+  "rest": { "freshSeconds": 30, "gassedSeconds": 75 },
+  "setEnd": { "noRepTimeoutSec": 12, "noFrameTimeoutSec": 30 },
+  "modes": {
+    "BOSS_FIGHT":  { "enabled": true },
+    "TIME_ATTACK": { "enabled": true, "durationSec": 60, "bossHpUncapped": true },
+    "GHOST_RACE":  { "enabled": true, "defaultGhost": "pacer_silver" },
+    "SURVIVAL":    { "enabled": true, "hpPerWave": 900, "formThresholdStep": 0.03, "mercyDisabled": true },
+    "BOSS_RUSH":   { "enabled": true, "sequence": ["pacemaker", "pacemaker_red", "pacemaker_black"] },
+    "DUEL":        { "enabled": true, "rules": "TIME_ATTACK" }
+  }
+}

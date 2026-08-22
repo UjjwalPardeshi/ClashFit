@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "filter": {
+    "minCutoff": 1.0,
+    "beta": 0.007,
+    "dCutoff": 1.0
+  },
+  "visibilityThreshold": 0.6,
+  "framingLostFrames": 45,
+  "framing": {
+    "targetBoxHeightMin": 0.55,
+    "targetBoxHeightMax": 0.92,
+    "holdToStartMs": 2000,
+    "reacquireAfterLossMs": 2000
+  },
+  "detector": {
+    "minPoseDetectionConfidence": 0.6,
+    "minPosePresenceConfidence": 0.6,
+    "minTrackingConfidence": 0.6,
+    "model": "pose_landmarker_full.task",
+    "delegate": "GPU"
+  },
+  "fatigue": {
+    "baselineReps": 3,
+    "weights": {
+      "velocityLoss": 0.45,
+      "romLoss": 0.35,
+      "pauseGrowth": 0.2
+    },
+    "ema": 0.4,
+    "pauseGrowthNormSec": 3.0,
+    "bands": {
+      "working": 0.15,
+      "fading": 0.3,
+      "gassed": 0.5
+    },
+    "bandLatchReps": 1
+  },
+  "debugOverlay": true
+}

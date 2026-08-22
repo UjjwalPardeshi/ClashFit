@@ -1,0 +1,12 @@
+{
+  "name": "clashfit-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Throwaway prototype: camera pose -> rep detection -> form scoring -> fatigue -> boss damage. Built to tune thresholds and record the Phase 1 video. Rewritten from scratch at the event.",
+  "scripts": {
+    "start": "node serve.js",
+    "test": "node test/run.js"
+  },
+  "engines": { "node": ">=20" }
+}

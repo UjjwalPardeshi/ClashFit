@@ -1,0 +1,66 @@
+{
+  "id": "sit_up",
+  "family": "REP_CYCLE",
+  "name": "Sit-up",
+  "tags": [
+    "strength",
+    "core"
+  ],
+  "framing": "side",
+  "difficulty": 2,
+  "games": [
+    "BOSS_FIGHT",
+    "TIME_ATTACK",
+    "GHOST_RACE",
+    "SURVIVAL",
+    "BOSS_RUSH",
+    "DUEL"
+  ],
+  "detector": {
+    "primaryAngle": {
+      "a": "SHOULDER",
+      "b": "HIP",
+      "c": "KNEE"
+    },
+    "topEnter": 150,
+    "topExit": 143,
+    "bottomEnter": 110,
+    "bottomExit": 120,
+    "targetAngle": 70,
+    "minDescendMs": 200,
+    "minBottomMs": 120,
+    "minRepMs": 800,
+    "maxRepMs": 8000,
+    "requiredJoints": [
+      "SHOULDER",
+      "HIP",
+      "KNEE"
+    ]
+  },
+  "form": {
+    "weights": {
+      "depth": 0.47,
+      "rom": 0.29,
+      "tempo": 0.24,
+      "alignment": 0.0
+    },
+    "tempo": {
+      "eccentricTargetSec": 0.8,
+      "bottomPauseSec": 0.12
+    },
+    "alignment": {
+      "type": "none"
+    },
+    "depthExponent": 1.5
+  },
+  "fatigue": {
+    "signal": "VELOCITY_LOSS",
+    "baselineReps": 3
+  },
+  "cues": {
+    "enter": "Lie down side-on, knees bent.",
+    "tooHigh": "Come further up.",
+    "tooFast": "Lower under control.",
+    "framing": "I can't see your shoulders — move back."
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "id": "knee_push_up",
+  "family": "REP_CYCLE",
+  "name": "Knee Push-up",
+  "tags": [
+    "accessible",
+    "upper"
+  ],
+  "framing": "side",
+  "difficulty": 2,
+  "games": [
+    "BOSS_FIGHT",
+    "TIME_ATTACK",
+    "GHOST_RACE",
+    "SURVIVAL",
+    "BOSS_RUSH",
+    "DUEL"
+  ],
+  "detector": {
+    "primaryAngle": {
+      "a": "SHOULDER",
+      "b": "ELBOW",
+      "c": "WRIST"
+    },
+    "topEnter": 155,
+    "topExit": 148,
+    "bottomEnter": 125,
+    "bottomExit": 135,
+    "targetAngle": 95,
+    "minDescendMs": 200,
+    "minBottomMs": 120,
+    "minRepMs": 800,
+    "maxRepMs": 8000,
+    "requiredJoints": [
+      "SHOULDER",
+      "ELBOW",
+      "WRIST"
+    ]
+  },
+  "form": {
+    "weights": {
+      "depth": 0.4,
+      "rom": 0.25,
+      "tempo": 0.2,
+      "alignment": 0.15
+    },
+    "tempo": {
+      "eccentricTargetSec": 0.8,
+      "bottomPauseSec": 0.12
+    },
+    "alignment": {
+      "type": "TORSO_LINE",
+      "fullMarksDeg": 172,
+      "zeroMarksDeg": 150
+    },
+    "depthExponent": 1.5
+  },
+  "fatigue": {
+    "signal": "VELOCITY_LOSS",
+    "baselineReps": 3
+  },
+  "cues": {
+    "enter": "Knees down, side-on to the camera.",
+    "tooHigh": "Chest closer to the floor.",
+    "tooFast": "Control the way down.",
+    "framing": "I can't see your elbows — move back."
+  }
+}
