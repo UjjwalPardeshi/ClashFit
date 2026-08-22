@@ -1,12 +1,29 @@
-# ClashFit — prototype
+# ClashFit
 
-**Throwaway.** This exists to prove the pose → rep → form → fatigue → damage loop works, to tune
-thresholds against a real body, and to record the Phase 1 video. **It is not carried into the
-hackathon.** A fresh repository is created at check-in and the Android app is written from scratch
-there. This prototype is disclosed in the Phase 1 pre-existing-components field.
+**Offline AI fitness combat.** Your body is the controller, the camera is the referee, and nothing
+leaves the device.
 
-Design lives in [`../docs/`](../docs/). The core algorithms are
-[05-POSE-ENGINE-SPEC](../docs/05-POSE-ENGINE-SPEC.md) and [04-GAME-DESIGN](../docs/04-GAME-DESIGN.md).
+Built for the **iQOO Hackathon 2026 · Pune City Battle · HealthTech** — 5–6 September 2026.
+Phase 1 submission closes **1 September, 23:59 IST**.
+
+---
+
+## What is in here
+
+| | |
+|---|---|
+| [`docs/`](docs/) | The full design set — 39 documents. Start at [`docs/README.md`](docs/README.md). |
+| `src/`, `config/`, `test/` | A **runnable prototype** of the perception and combat core. |
+
+> **The prototype is a throwaway.** It exists to prove the pose → rep → form → fatigue → damage
+> loop works, to tune thresholds against a real body, and to record the Phase 1 video. **It is not
+> carried into the hackathon.** A fresh repository is created at check-in and the Android app is
+> written from scratch there. This repository is disclosed in the Phase 1
+> pre-existing-components field.
+
+The core algorithms are specified in [05-POSE-ENGINE-SPEC](docs/05-POSE-ENGINE-SPEC.md) and
+[04-GAME-DESIGN](docs/04-GAME-DESIGN.md). The one page to read during the event is
+[18-EVENT-CARD](docs/18-EVENT-CARD.md).
 
 ---
 
@@ -48,7 +65,7 @@ signals. That panel is the tuning instrument.
 ## What is deliberately absent
 
 On-device LLM coach, TTS, duel transport, NFC pairing, sensors, art, audio. All specified in
-`../docs/`, all built at the event.
+`docs/`, all built at the event.
 
 ---
 
@@ -69,7 +86,7 @@ Malformed JSON never takes the app down; it keeps the last good config and says 
 ## Tests
 
 `npm test` runs 32 assertions with no camera and no body, using synthetic angle sequences from
-`test/synth.js`. It covers the fixtures in [14-TEST-PLAN](../docs/14-TEST-PLAN.md): clean reps,
+`test/synth.js`. It covers the fixtures in [14-TEST-PLAN](docs/14-TEST-PLAN.md): clean reps,
 shallow reps, threshold jitter, too-fast and too-slow reps, framing loss mid-set, inverted-direction
 exercises, a set to failure reaching GASSED, band latching, the damage curve, combo grace, mercy
 resolution, and duel sync under duplication, reordering and 30% packet loss.
@@ -103,6 +120,6 @@ The published damage table was also wrong. The real curve, asserted in the suite
 
 **Record** → do the set → **Stop** → **Download**. Drop the `.jsonl` into `traces/`.
 
-Capture F1–F9 from [14-TEST-PLAN](../docs/14-TEST-PLAN.md) §2 — especially **F3** (a set to
+Capture F1–F9 from [14-TEST-PLAN](docs/14-TEST-PLAN.md) §2 — especially **F3** (a set to
 genuine failure, which validates the fatigue model) and **F9** (a tall and a short subject, which
 proves the ROM normalisation is fair).

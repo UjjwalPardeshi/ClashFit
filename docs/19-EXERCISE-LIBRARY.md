@@ -1,0 +1,282 @@
+# 19 · Exercise Library & Family Games
+
+**The ask:** strength, yoga, cardio — everything — with different games for different exercises.
+This document specifies the whole library. Weekend build tiering is §8, kept separate and clearly
+labelled, so scope decisions stay yours.
+
+**The architectural insight that makes this possible:** you do not build 60 exercises. You build
+**5 detectors** and then every exercise is a JSON entry. Adding an exercise becomes editing a
+config file on the phone — which means it is *Red Light work*, not laptop work.
+
+---
+
+## 1. Five movement families
+
+Exercises differ in how they are *detected*, not in what they are called. Group by detection
+mechanic and the library collapses from 60 problems to 5.
+
+| # | Family | Detection mechanic | Primary measure | Example |
+|---|---|---|---|---|
+| **F1** | `REP_CYCLE` | Hysteretic angle FSM | reps + depth | Squat, push-up, sit-up |
+| **F2** | `ISOMETRIC_HOLD` | Angle-in-range timer | time under tension | Plank, wall sit |
+| **F3** | `POSE_MATCH` | Whole-skeleton template match | angular accuracy | Yoga asanas |
+| **F4** | `CADENCE` | Periodic signal detection | cadence + amplitude | Jumping jacks, high knees |
+| **F5** | `BALLISTIC` | Airborne phase + peak displacement | jump height + landing softness | Burpee, jump squat |
+
+---
+
+## 2. One fatigue framework, five families
+
+**This is the strongest technical point in the whole project, and it only appears once you have
+more than one family.**
+
+Fatigue is always the same thing: **decay of the family's primary output, measured against the
+player's own early-set baseline.** What changes is the output.
+
+| Family | Fatigue signal | Why it's the right one |
+|---|---|---|
+| F1 `REP_CYCLE` | concentric **velocity loss** + ROM collapse + pause growth | Velocity-based training uses exactly this |
+| F2 `ISOMETRIC_HOLD` | **tremor** — rising landmark positional variance — plus angular drift | An isometric has no velocity. Fatigue shows as shake. |
+| F3 `POSE_MATCH` | **accuracy drift** across the hold | The pose degrades before it collapses |
+| F4 `CADENCE` | **cadence decay + amplitude decay** | Direct analog of velocity + ROM |
+| F5 `BALLISTIC` | **peak height decay** + landing stiffness increase | Explosive output falls first, and landings get sloppier — which is where injuries happen |
+
+> **The pitch line:** *"One fatigue model, five movement families. Whatever you're doing, we measure
+> how your output decays against your own first three reps — and the game responds."*
+
+Every family therefore feeds the same `FatigueState` contract, the same bands, and the same
+adaptive-boss behaviour. Nothing downstream changes.
+
+---
+
+## 3. A game shaped like the movement
+
+Different exercise families get different games, because a game whose shape matches the movement's
+shape feels designed rather than reskinned.
+
+| Family | Game | Mechanic |
+|---|---|---|
+| **F1** Strength reps | **BOSS FIGHT** | Discrete reps → discrete damage. Plus Time Attack, Ghost Race, Survival, Boss Rush. |
+| **F2** Isometric holds | **SIEGE** | The boss attacks continuously. Your hold *is* the shield. Shield strength = hold quality; break form and the shield drops and you take damage. Win by surviving. |
+| **F3** Yoga | **SIGIL** | No combat, deliberately. Each asana fills a segment of a constellation; accuracy determines how brightly it lights. Calm audio, no boss, no damage. |
+| **F4** Cardio | **PURSUIT** | Something chases you. Distance gained = integral of cadence. Cadence drops below threshold and it closes. Sustain and you escape. |
+| **F5** Ballistic | **BREAKER** | Each jump is an impact. Height = force, and you smash down through floors of a tower. Landing softness scores — a stiff landing costs you. |
+
+**Why Sigil has no boss.** Yoga framed as combat is tonally wrong and would read as a reskin. A
+separate, calm mode is the honest design, and having one non-combat mode makes the product look
+like a product rather than a single mechanic wearing hats.
+
+**Cross-family modes:** **CIRCUIT** (a sequence mixing families — 10 squats, 30s plank, 30s high
+knees, one asana), **DUEL** (any family, head to head), **DAILY** (one prescribed sequence per day).
+
+---
+
+## 4. Detector specifications
+
+### F1 · `REP_CYCLE` — specified in full in [05-POSE-ENGINE-SPEC](05-POSE-ENGINE-SPEC.md)
+
+Hysteretic four-state FSM on one primary joint angle, with dwell guards. Form = depth + ROM +
+tempo + alignment. This is the shipping detector.
+
+### F2 · `ISOMETRIC_HOLD`
+
+```
+target      = vector of joint angles + per-angle tolerance
+inRange(t)  = every target angle within its tolerance
+holdTime    = Σ dt where inRange
+quality(t)  = 1 − mean( |θᵢ(t) − targetᵢ| / toleranceᵢ )
+break       = out of range continuously for > 0.5 s
+score       = holdTime × mean(quality)
+```
+
+**Fatigue = tremor.** Compute a rolling variance of the filtered landmark positions over a 1-second
+window. Variance in the first 3 seconds is the baseline; rising variance is fatigue. Elegant,
+cheap, and it is what actually happens to a human holding a plank.
+
+**Siege mapping:** `shieldHp = holdTime × quality`. A break drops the shield and the boss lands a
+hit. Damage dealt to the boss accrues per second held.
+
+### F3 · `POSE_MATCH`
+
+```
+reference   = ~12 joint angles (both elbows, shoulders, hips, knees, torso lean, spine proxy)
+accuracy    = 1 − Σ wᵢ·|θᵢ − refᵢ| / Σ wᵢ·tolᵢ
+enter pose  = accuracy > 0.70 held for 1.5 s
+completion  = accuracy sustained for the asana's target duration
+```
+
+- **Mirror-tolerant**: accept left/right symmetric matches so a tree pose on either leg counts.
+- **The cue is the worst joint**: surface the single largest angular deviation as the spoken hint —
+  *"straighten your left arm"* — rather than a generic accuracy percentage. This is the difference
+  between a yoga feature and a yoga toy.
+- **Fatigue = accuracy drift** across the hold.
+
+### F4 · `CADENCE`
+
+```
+signal      = one landmark axis per exercise (jacks → wrist Y; high knees → knee Y;
+              mountain climbers → knee X)
+detrend     → peak detection with min-prominence + refractory period
+cadence     = 60 / median(inter-peak interval)     [reps per minute]
+amplitude   = peak-to-trough, normalised to the calibration rep
+```
+
+`amplitude` is the form analog: it is what catches someone doing tiny fake high-knees. Score =
+cadence held in the target band × amplitude quality.
+
+**Fatigue = cadence decay + amplitude decay** against the first 10 seconds.
+
+**Pursuit mapping:** `distance += cadence × amplitude × dt`. Pursuer speed is constant. Drop below
+the threshold and the gap closes visibly.
+
+### F5 · `BALLISTIC`
+
+```
+grounded    = both ankles within ε of their standing baseline Y
+airborne    = not grounded, for ≥ 2 consecutive frames
+jumpHeight  = peak hip Y displacement, in metres (world landmarks give this directly)
+landing     = knee flexion within 300 ms of regaining ground
+softness    = clamp((θ_stand − θ_landMin) / 35°, 0, 1)   — stiff landing scores low
+```
+
+**Landing softness is a genuine injury-prevention measure**, not a game gimmick, and it is a strong
+line in the pitch. World landmarks being metric is what makes jump height a real number in
+centimetres rather than a pixel count.
+
+**Fatigue = peak height decay + softness decline.**
+
+---
+
+## 5. The catalogue
+
+Every entry is a config record, not code. `framing` = where the phone must be.
+
+### F1 · `REP_CYCLE` — 21 exercises
+
+| Exercise | Primary angle | Framing | Tags |
+|---|---|---|---|
+| Squat | hip–knee–ankle | side | strength, lower |
+| Chair squat | hip–knee–ankle | side | accessible, lower |
+| Sumo squat | hip–knee–ankle | front | strength, lower |
+| Split squat | hip–knee–ankle | side | strength, lower, balance |
+| Forward lunge | hip–knee–ankle | side | strength, lower |
+| Reverse lunge | hip–knee–ankle | side | strength, lower |
+| Calf raise | knee–ankle–toe | side | strength, lower |
+| Glute bridge | shoulder–hip–knee | side | strength, posterior |
+| Good morning | shoulder–hip–knee | side | strength, posterior |
+| Push-up | shoulder–elbow–wrist | side | strength, upper |
+| Knee push-up | shoulder–elbow–wrist | side | accessible, upper |
+| Wall push-up | shoulder–elbow–wrist | side | accessible, upper |
+| Incline push-up | shoulder–elbow–wrist | side | strength, upper |
+| Pike push-up | shoulder–elbow–wrist | side | strength, shoulders |
+| Chair dip | shoulder–elbow–wrist | side | strength, triceps |
+| Sit-up | shoulder–hip–knee | side | strength, core |
+| Crunch | shoulder–hip–knee | side | strength, core |
+| Leg raise | shoulder–hip–knee | side | strength, core |
+| Dead bug | shoulder–hip–knee | side | core, control |
+| Bird dog | shoulder–hip–knee | side | core, control |
+| Superman | shoulder–hip–knee | side | posterior, control |
+
+### F2 · `ISOMETRIC_HOLD` — 9 holds
+
+Plank · Forearm plank · Side plank (L) · Side plank (R) · Wall sit · Hollow hold · Squat hold ·
+Glute bridge hold · Superman hold
+
+### F3 · `POSE_MATCH` — 14 asanas
+
+**Standing:** Tadasana (Mountain) · Vrikshasana (Tree) · Virabhadrasana I (Warrior I) ·
+Virabhadrasana II (Warrior II) · Trikonasana (Triangle) · Utkatasana (Chair) · Garudasana (Eagle) ·
+Natarajasana (Dancer)
+**Floor:** Adho Mukha Svanasana (Downward Dog) · Bhujangasana (Cobra) · Balasana (Child's) ·
+Setu Bandha (Bridge) · Ustrasana (Camel) · Marjaryasana (Cat–Cow, treated as a slow F1 rep cycle)
+
+> Use the Sanskrit names with English in parentheses. It is correct, and for an Indian jury it reads
+> as respect rather than decoration.
+
+### F4 · `CADENCE` — 10 movements
+
+Jumping jacks · Seal jacks · High knees · Butt kicks · Mountain climbers · Running in place ·
+Skater hops · Skipping (no rope) · Shadow boxing (jabs) · Standing torso twists
+
+### F5 · `BALLISTIC` — 7 movements
+
+Burpee · Squat thrust · Jump squat · Tuck jump · Star jump · Lateral bound · Broad jump
+
+**Total: 61 exercises across 5 detectors.**
+
+---
+
+## 6. Exercise as data
+
+An exercise is a JSON record in `config/exercises/`. Adding one requires no code.
+
+```json
+{
+  "id": "wall_sit",
+  "family": "ISOMETRIC_HOLD",
+  "name": "Wall Sit",
+  "tags": ["strength", "lower", "accessible", "no-equipment"],
+  "framing": "side",
+  "difficulty": 2,
+  "games": ["SIEGE", "CIRCUIT", "DUEL"],
+  "detector": {
+    "targets": [
+      { "angle": ["HIP","KNEE","ANKLE"], "value": 90, "tolerance": 12, "weight": 1.0 },
+      { "angle": ["SHOULDER","HIP","KNEE"], "value": 90, "tolerance": 15, "weight": 0.6 }
+    ],
+    "breakToleranceMs": 500,
+    "targetDurationSec": 45
+  },
+  "fatigue": { "signal": "TREMOR", "baselineSec": 3 },
+  "cues": {
+    "enter": "Slide down until your knees are at ninety.",
+    "break": "Your hips are rising — slide back down."
+  }
+}
+```
+
+**Consequences of this design:**
+- New exercises are Red Light work — edit a file on the phone, background/foreground the app
+- The library grows without a rebuild
+- A detector bug is fixed once for 21 exercises, not 21 times
+- Test fixtures attach per exercise, not per code path
+
+---
+
+## 7. Progression and difficulty ladders
+
+Ladders are the retention mechanic that a large library unlocks, and they are the honest answer to
+inclusion: an accessible variant is a **rung**, never an "easy mode".
+
+```
+PUSH   wall push-up → incline push-up → knee push-up → push-up → pike push-up
+SQUAT  chair squat  → squat          → split squat  → jump squat
+CORE   dead bug     → crunch         → sit-up       → leg raise → hollow hold
+CARDIO march in place → jumping jacks → high knees   → burpee
+YOGA   Tadasana     → Utkatasana     → Vrikshasana  → Natarajasana
+```
+
+The system promotes you when your rolling form score at a rung exceeds 0.85 across three sessions,
+and quietly offers a lower rung when it drops below 0.5 — **without ever saying you failed.**
+
+---
+
+## 8. Weekend reality — read this before planning the build
+
+Everything above is the product. Here is what 19 hours actually holds.
+
+| | Weekend | Rationale |
+|---|---|---|
+| **Detectors shipped** | **F1 only.** F2 if genuinely ahead. | F1 is specced, tested and understood. F2 is the cheapest second family (~1.5h) and unlocks Siege. |
+| **Exercises shipped** | **6–8 F1 exercises via config** — squat, chair squat, push-up, knee push-up, sit-up, glute bridge, lunge, calf raise | Once the FSM is generic, each is thresholds plus a fixture. Cheap. |
+| **Games shipped** | Boss Fight, Time Attack, Ghost Race, Survival, Boss Rush | All rep-based, all confirmed. Siege only if F2 lands. |
+| **Demoed** | **Squats. Time Attack, 60 seconds.** | Eval R2 is at tables. No floor space. |
+| **Deck** | The full 5-family, 61-exercise architecture as the product vision | This is where the library earns its 30% |
+
+**One firm recommendation.** Do not ship a library screen listing 61 exercises where 53 do not
+work. A judge who taps a dead entry is worse off than one who never saw it. Ship the 6–8 that work,
+and put the full taxonomy on a slide — the architecture is the impressive part, and a slide
+communicates it better than a broken menu.
+
+**The line for the deck:** *"Five detectors, sixty-one exercises, one fatigue model. Adding an
+exercise is a config file, not a release."*
