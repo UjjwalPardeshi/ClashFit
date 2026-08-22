@@ -96,6 +96,8 @@ CSV of every rep's raw telemetry.
 | Accessibility | Reduced-motion toggle · verdict word always shown with the flash · accessible exercise rungs |
 | Audio | Fully synthesised — rep pitch climbs with the combo |
 | Summary | Fatigue curve chart, PNG export for the deck, CSV of raw per-rep data |
+| Persistence | Local only — sessions, per-rep telemetry, calibration, personal bests, trends |
+| Progression | **Forgiving streaks** (a rest day earns it), difficulty ladders with quiet demotion |
 | Ghosts | Three shipped pacers, save your own run, load a friend's |
 
 ## What is deliberately absent

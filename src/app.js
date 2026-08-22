@@ -15,6 +15,7 @@ import { DuelSession, BroadcastChannelTransport, LinkState, newPlayerId } from '
 import { Haptics } from './haptics.js';
 import { Voice } from './voice.js';
 import { Roster, RosterMode, Circuit, DEFAULT_CIRCUIT } from './roster.js';
+import { Store } from './store.js';
 import { Renderer, C } from './render.js';
 import { TraceRecorder } from './trace.js';
 
@@ -45,7 +46,11 @@ const el = {
   roster: $('roster'), rosterKicker: $('rosterKicker'), rosterTitle: $('rosterTitle'),
   rosterNames: $('rosterNames'), rosterHint: $('rosterHint'), rosterGo: $('rosterGo'),
   turn: $('turn'), turnName: $('turnName'), turnMeta: $('turnMeta'),
+  streak: $('streak'),
 };
+
+const store2 = new Store();
+let sessionStartMs = null;
 
 let roster = null;
 let circuit = null;
@@ -101,6 +106,7 @@ async function boot() {
     .map(([id, g]) => `<option value="${id}">${g.meta.name} · ${g.meta.reps} reps</option>`).join('')
     + '<option value="__file">Load ghost file…</option>';
 
+  paintStreak();
   haptics = new Haptics(store.ui?.haptics);
   el.haptic.classList.toggle('on', haptics.available && haptics.enabled);
   el.haptic.disabled = !haptics.available;
@@ -347,7 +353,36 @@ function openSummary() {
   el.sum.classList.add('show');
 }
 
+function paintStreak() {
+  const st = store2.streak;
+  const last = store2.lastSession;
+  el.streak.textContent = st.current
+    ? `${store2.streakLabel()} · best ${st.best}` +
+      (last ? ` · last ${last.totalReps} reps` : '')
+    : '';
+}
+
+/** Persist on every completed session. Everything stays on the device, same as the rest. */
+function persistSession(reason, s) {
+  if (!engine.reps.length) return null;
+  const rec = store2.saveSession({
+    startedAt: sessionStartMs ?? Date.now() - 60000,
+    endedAt: Date.now(),
+    mode: s.mode,
+    exerciseId: el.exercise.value,
+    outcome: reason,
+    reps: engine.reps,
+  });
+  if (engine.topRef) {
+    store2.saveCalibration(el.exercise.value,
+      { topRef: engine.topRef, romBaseline: engine.romBaselineU });
+  }
+  paintStreak();
+  return rec;
+}
+
 function showResult(reason, s) {
+  persistSession(reason, s);
   if (s.mode === Mode.CLINIC_STS) return showClinicResult(s);
   if (s.gameState) return showFamilyResult(reason, s);
   const win = s.mode === Mode.GHOST_RACE ? s.playerDamage >= s.ghostDamage : null;
@@ -360,10 +395,12 @@ function showResult(reason, s) {
   el.overTitle.style.color = win === false ? C.damage : C.clean;
   const mean = engine.reps.length
     ? engine.reps.reduce((a, r) => a + r.formScore, 0) / engine.reps.length : 0;
+  const bests = store2.lastSession ? store2.personalBestsIn(store2.lastSession) : [];
   el.overBody.innerHTML =
     `${s.reps} reps · mean form ${mean.toFixed(2)} · ${s.playerDamage} damage<br>` +
     `peak fatigue ${s.fatigue.band}` +
-    (s.mode === Mode.GHOST_RACE ? ` · ghost ${s.ghostDamage}` : '');
+    (s.mode === Mode.GHOST_RACE ? ` · ghost ${s.ghostDamage}` : '') +
+    (bests.length ? `<br><span style="color:${C.clean}">personal best: ${bests.map(b => b.key).join(' and ')}</span>` : '');
   el.over.classList.add('show');
   openSummaryLater();
 }
@@ -520,6 +557,7 @@ function tick() {
 
   if (running && landmarker && el.cam.readyState >= 2 && el.cam.currentTime !== lastVideoTime) {
     lastVideoTime = el.cam.currentTime;
+    sessionStartMs ??= Date.now();
     const t0 = performance.now();
     const res = landmarker.detectForVideo(el.cam, now);
     inferMs = inferMs * 0.9 + (performance.now() - t0) * 0.1;

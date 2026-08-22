@@ -7,6 +7,7 @@ import { missingJoints, jointPhrase } from '../src/geometry.js';
 import { Haptics } from '../src/haptics.js';
 import { COMMANDS } from '../src/voice.js';
 import { Roster, RosterMode, Circuit, DEFAULT_CIRCUIT } from '../src/roster.js';
+import { Store, LADDERS } from '../src/store.js';
 import { DuelSession, LoopbackTransport, LinkState, newPlayerId } from '../src/duel.js';
 import { SiegeGame, PursuitGame, BreakerGame, SigilGame, GameOutcome, makeFamilyGame } from '../src/games.js';
 import { RepStateMachine } from '../src/repFsm.js';
@@ -411,6 +412,137 @@ t('CLINIC_STS · ships no norms until they are cited', () => {
   eq(clinicSts.norms.source, null);
   eq(clinicSts.norms.bands.length, 0);
   ok(/not a medical device/i.test(clinicSts.notNested), 'missing the not-a-medical-device line');
+});
+
+// ---------- persistence and progression ----------
+/** In-memory backend, so persistence is testable without a DOM. */
+const memBackend = () => {
+  const m = new Map();
+  return { getItem: (k) => m.get(k) ?? null, setItem: (k, v) => m.set(k, v), _map: m };
+};
+const DAY = 86_400_000;
+const mkSession = (endedAt, exerciseId = 'squat', reps = 8, form = 0.8) => ({
+  startedAt: endedAt - 120000, endedAt, mode: 'BOSS_FIGHT', exerciseId, outcome: 'victory',
+  reps: Array.from({ length: reps }, (_, i) => ({
+    repIndex: i + 1, formScore: form, verdict: 'CLEAN', damage: 80, depthCm: 40,
+    fatigue: { value: 0.2 + i * 0.02, band: 'WORKING' },
+  })),
+});
+
+t('store · survives corrupt storage instead of taking the app down', () => {
+  const b = memBackend();
+  b.setItem('clashfit:v1', '{ this is not json');
+  const s2 = new Store(b);
+  eq(s2.sessions.length, 0);
+  s2.saveSession(mkSession(Date.now()));
+  eq(s2.sessions.length, 1, 'could not recover after corruption');
+});
+
+t('store · survives a backend that refuses to write', () => {
+  const s2 = new Store({ getItem: () => null, setItem: () => { throw new Error('quota'); } });
+  s2.saveSession(mkSession(Date.now()));
+  eq(s2.sessions.length, 1, 'a failed write lost the session in memory too');
+});
+
+t('store · works with no backend at all', () => {
+  const s2 = new Store(null);
+  s2.saveSession(mkSession(Date.now()));
+  eq(s2.sessions.length, 1);
+});
+
+t('store · round-trips a session through the backend', () => {
+  const b = memBackend();
+  new Store(b).saveSession(mkSession(Date.now(), 'squat', 9, 0.82));
+  const reloaded = new Store(b);
+  eq(reloaded.sessions.length, 1);
+  eq(reloaded.lastSession.totalReps, 9);
+  near(reloaded.lastSession.formMean, 0.82, 0.001);
+});
+
+t('store · compacts old sessions but keeps the recent ones whole', () => {
+  const s2 = new Store(memBackend());
+  for (let i = 0; i < 25; i++) s2.saveSession(mkSession(Date.now() - (25 - i) * DAY));
+  ok(!s2.sessions[0].reps, 'oldest session still carries full telemetry');
+  ok(s2.sessions[0].repCount > 0, 'compaction lost the rep count');
+  ok(s2.sessions[24].reps?.length > 0, 'newest session was compacted');
+});
+
+t('streak · a rest day EARNS the streak rather than breaking it', () => {
+  const s2 = new Store(memBackend());
+  const base = Date.parse('2026-08-03T10:00:00Z');
+  s2.saveSession(mkSession(base));
+  s2.saveSession(mkSession(base + DAY));
+  s2.saveSession(mkSession(base + 3 * DAY));      // skipped one day
+  eq(s2.streak.current, 3, 'a single rest day broke the streak');
+  eq(s2.streak.restDaysUsedThisWeek, 1);
+});
+
+t('streak · two sessions on one day do not double-count', () => {
+  const s2 = new Store(memBackend());
+  const base = Date.parse('2026-08-03T08:00:00Z');
+  s2.saveSession(mkSession(base));
+  s2.saveSession(mkSession(base + 3600_000));
+  eq(s2.streak.current, 1);
+});
+
+t('streak · a long gap resets, and never reports a number you lost', () => {
+  const s2 = new Store(memBackend());
+  const base = Date.parse('2026-08-03T10:00:00Z');
+  s2.saveSession(mkSession(base));
+  s2.saveSession(mkSession(base + 30 * DAY));
+  eq(s2.streak.current, 1, 'a month off did not reset');
+  ok(s2.streak.best >= 1);
+  const label = new Store(memBackend()).streakLabel();
+  eq(label, 'Back at it');
+  ok(!/0|lost|broke/i.test(label), `discouraging label: ${label}`);
+});
+
+t('bests · track per exercise and do not leak across exercises', () => {
+  const s2 = new Store(memBackend());
+  s2.saveSession(mkSession(Date.now(), 'squat', 12, 0.9));
+  s2.saveSession(mkSession(Date.now(), 'push_up', 5, 0.6));
+  eq(s2.bestsFor('squat').reps, 12);
+  eq(s2.bestsFor('push_up').reps, 5);
+  eq(s2.bestsFor('plank').reps, undefined);
+});
+
+t('trend · returns a per-session series for one exercise, oldest first', () => {
+  const s2 = new Store(memBackend());
+  const base = Date.now() - 5 * DAY;
+  for (let i = 0; i < 5; i++) s2.saveSession(mkSession(base + i * DAY, 'squat', 6 + i, 0.7 + i * 0.03));
+  s2.saveSession(mkSession(Date.now(), 'plank', 3, 0.9));
+  const tr = s2.trend('squat');
+  eq(tr.length, 5, 'other exercises leaked into the trend');
+  ok(tr[0].at < tr[4].at, 'not oldest first');
+  ok(tr[4].reps > tr[0].reps);
+});
+
+t('ladder · promotes on a sustained average, not one good day', () => {
+  const s2 = new Store(memBackend());
+  s2.saveSession(mkSession(Date.now() - 2 * DAY, 'squat', 10, 0.95));
+  let r = s2.ladderCheck('SQUAT', LADDERS.SQUAT, 'squat');
+  eq(r.changed, false, 'promoted on a single session');
+  s2.saveSession(mkSession(Date.now() - DAY, 'squat', 10, 0.95));
+  s2.saveSession(mkSession(Date.now(), 'squat', 10, 0.95));
+  r = s2.ladderCheck('SQUAT', LADDERS.SQUAT, 'squat');
+  eq(r.changed, true, 'never promoted despite three strong sessions');
+  eq(r.promoted, true);
+  eq(r.rung, 'lunge');
+});
+
+t('ladder · quietly offers a lower rung when form collapses', () => {
+  const s2 = new Store(memBackend());
+  for (let i = 0; i < 3; i++) s2.saveSession(mkSession(Date.now() - i * DAY, 'squat', 4, 0.3));
+  const r = s2.ladderCheck('SQUAT', LADDERS.SQUAT, 'squat');
+  eq(r.promoted, false);
+  eq(r.rung, 'chair_squat', 'did not step down to an accessible rung');
+});
+
+t('every ladder rung is a shipped exercise', () => {
+  const ids = new Set(readdirSync(join(HERE, '..', 'config/exercises'))
+    .filter(f => f.endsWith('.json') && f !== 'index.json').map(f => f.replace('.json', '')));
+  for (const [name, rungs] of Object.entries(LADDERS))
+    for (const r of rungs) ok(ids.has(r), `ladder ${name} references missing exercise ${r}`);
 });
 
 // ---------- group play ----------

@@ -1,0 +1,69 @@
+{
+  "id": "pike_push_up",
+  "family": "REP_CYCLE",
+  "name": "Pike Push-up",
+  "tags": [
+    "strength",
+    "shoulders"
+  ],
+  "framing": "side",
+  "difficulty": 4,
+  "games": [
+    "BOSS_FIGHT",
+    "TIME_ATTACK",
+    "GHOST_RACE",
+    "SURVIVAL",
+    "BOSS_RUSH",
+    "DUEL"
+  ],
+  "detector": {
+    "primaryAngle": {
+      "a": "SHOULDER",
+      "b": "ELBOW",
+      "c": "WRIST"
+    },
+    "topEnter": 160,
+    "topExit": 152,
+    "bottomEnter": 110,
+    "bottomExit": 120,
+    "targetAngle": 80,
+    "minDescendMs": 200,
+    "minBottomMs": 120,
+    "minRepMs": 800,
+    "maxRepMs": 8000,
+    "requiredJoints": [
+      "SHOULDER",
+      "ELBOW",
+      "WRIST"
+    ]
+  },
+  "form": {
+    "weights": {
+      "depth": 0.4,
+      "rom": 0.25,
+      "tempo": 0.2,
+      "alignment": 0.15
+    },
+    "depthExponent": 1.5,
+    "tempo": {
+      "eccentricTargetSec": 0.35,
+      "bottomPauseSec": 0.12,
+      "_note": "measured window: topExit crossing -> bottomEnter crossing, not the full descent"
+    },
+    "alignment": {
+      "type": "TORSO_LINE",
+      "fullMarksDeg": 172,
+      "zeroMarksDeg": 150
+    }
+  },
+  "fatigue": {
+    "signal": "VELOCITY_LOSS",
+    "baselineReps": 3
+  },
+  "cues": {
+    "enter": "Hips high, head toward the floor, side-on to the camera.",
+    "tooHigh": "Chest closer.",
+    "tooFast": "Control the way down.",
+    "framing": "I can't see your elbows — move back."
+  }
+}

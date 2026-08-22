@@ -1,6 +1,6 @@
 {
   "generated": true,
-  "count": 48,
+  "count": 50,
   "exercises": [
     {
       "id": "calf_raise",
@@ -77,6 +77,25 @@
       ]
     },
     {
+      "id": "wall_push_up",
+      "name": "Wall Push-up",
+      "family": "REP_CYCLE",
+      "difficulty": 1,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "accessible",
+        "upper",
+        "no-equipment"
+      ]
+    },
+    {
       "id": "lunge",
       "name": "Forward Lunge",
       "family": "REP_CYCLE",
@@ -146,6 +165,24 @@
       "tags": [
         "strength",
         "upper"
+      ]
+    },
+    {
+      "id": "pike_push_up",
+      "name": "Pike Push-up",
+      "family": "REP_CYCLE",
+      "difficulty": 4,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "shoulders"
       ]
     },
     {
