@@ -9,6 +9,7 @@ import { CombatEngine, ComboTracker } from '../src/combat.js';
 import { synthRep, synthSet, synthWorldSet } from './synth.js';
 import { SessionEngine, Mode, Phase } from '../src/engine.js';
 import { GhostSource, ghostFromReps, parseGhost } from '../src/ghost.js';
+import { summarise, templateFor, validateOutput, coachFor, fill } from '../src/coach.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const cfg = (p) => JSON.parse(readFileSync(join(HERE, '..', 'config', p), 'utf8'));
@@ -19,9 +20,16 @@ const calf = cfg('exercises/calf_raise.json');
 
 let pass = 0, fail = 0;
 const results = [];
+const pending = [];
 function t(name, fn) {
-  try { fn(); pass++; results.push(['PASS', name, '']); }
-  catch (e) { fail++; results.push(['FAIL', name, e.message]); }
+  try {
+    const r = fn();
+    if (r && typeof r.then === 'function') {
+      pending.push(r.then(
+        () => { pass++; results.push(['PASS', name, '']); },
+        (e) => { fail++; results.push(['FAIL', name, e.message]); }));
+    } else { pass++; results.push(['PASS', name, '']); }
+  } catch (e) { fail++; results.push(['FAIL', name, e.message]); }
 }
 const eq = (a, b, m = '') => { if (a !== b) throw new Error(`${m} expected ${b}, got ${a}`); };
 const near = (a, b, tol, m = '') => { if (!(Math.abs(a - b) <= tol)) throw new Error(`${m} expected ~${b} (±${tol}), got ${a}`); };
@@ -347,7 +355,136 @@ t('shipped pacer ghosts are valid and ordered', () => {
   }
 });
 
+// ---------- coaching ----------
+const setOf = (n, opts = {}) => {
+  const e = new SessionEngine(store, 'squat');
+  drive(e, synthWorldSet({ reps: n, bottom: 80, ...opts }));
+  return e;
+};
+
+t('telemetry · summarises a set into the model payload', () => {
+  const e = setOf(8);
+  const tel = summarise(e.setReps, e.combat.state(), squat, 1, 45);
+  for (const k of ['exercise','reps','form_mean','fatigue_band','worst_rep','best_rep','trend','boss_hp_pct'])
+    ok(tel[k] !== undefined, `missing ${k}`);
+  eq(tel.reps, e.setReps.length);
+  ok(['depth','rom','tempo','alignment'].includes(tel.worst_rep.reason), tel.worst_rep.reason);
+});
+
+t('telemetry · depth is measured in real centimetres', () => {
+  const e = setOf(6);
+  const cm = e.setReps.map(r => r.depthCm).filter(Number.isFinite);
+  ok(cm.length >= 5, `only ${cm.length} reps had a depth measurement`);
+  ok(cm.every(v => v > 5 && v < 120), `implausible depth values: ${cm.map(v=>v.toFixed(1)).join(',')}`);
+});
+
+t('templates · never leak an unresolved placeholder', () => {
+  // every band x reason x trend combination, against a telemetry with holes in it
+  for (const band of ['FRESH','WORKING','FADING','GASSED'])
+    for (const reason of ['depth','rom','tempo','alignment'])
+      for (const trend of ['improving','flat','declining'])
+        for (const holes of [{}, { depth_drop_cm: null, depth_cm: null }]) {
+          const tel = { exercise:'squat', reps:9, form_mean:0.7, form_first3:0.8, form_last3:0.6,
+            form_mean_pct:70, form_first3_pct:80, form_last3_pct:60,
+            depth_cm: 42, depth_drop_cm: 4, velocity_loss_pct: 30, rom_loss_pct: 18,
+            fatigue_band: band, best_rep:{index:2,form:0.9}, worst_rep:{index:8,form:0.4,reason},
+            combo_max:1.6, combo_reps:5, boss_hp_pct:55, session_set_index:2, rest_sec:45,
+            trend, ...holes };
+          const out = templateFor(tel);
+          ok(!/[{}]/.test(out.coachLine), `coach leaked: ${out.coachLine}`);
+          ok(!/[{}]/.test(out.bossLine), `boss leaked: ${out.bossLine}`);
+          ok(out.coachLine.length > 0 && out.bossLine.length > 0, 'empty line');
+        }
+});
+
+t('templates · cite numbers that are actually in the telemetry', () => {
+  const e = setOf(10);
+  const tel = summarise(e.setReps, e.combat.state(), squat, 2, 45);
+  const out = templateFor(tel);
+  ok(validateOutput(out.coachLine, tel).ok, `coach failed its own validator: ${out.coachLine}`);
+  ok(validateOutput(out.bossLine, tel).ok, `boss failed its own validator: ${out.bossLine}`);
+});
+
+t('templates · every line in the bank passes our own validator', () => {
+  // The bank is what ships if Gemma does not land, so it must obey the same rules we impose
+  // on the model. Reads the module source so a new line cannot be added without being checked.
+  const src = readFileSync(join(HERE, '..', 'src/coach.js'), 'utf8');
+  const lines = [...src.matchAll(/line: "([^"]+)"/g)].map(m => m[1])
+    .concat([...src.matchAll(/^  "([^"]+)",$/gm)].map(m => m[1]))
+    .concat([...src.matchAll(/(?:coach|boss): "([^"]+)"/g)].map(m => m[1]));
+  ok(lines.length >= 30, `only found ${lines.length} template lines to check`);
+  const tel = { exercise:'squat', reps:9, form_mean:0.7, form_first3:0.8, form_last3:0.6,
+    form_mean_pct:70, form_first3_pct:80, form_last3_pct:60,
+    depth_cm:42, depth_drop_cm:4, velocity_loss_pct:30, rom_loss_pct:18, fatigue_band:'FADING',
+    best_rep:{index:2,form:0.9}, worst_rep:{index:8,form:0.4,reason:'depth'},
+    combo_max:1.6, combo_reps:5, boss_hp_pct:55, session_set_index:2, rest_sec:45, trend:'declining' };
+  for (const raw of lines) {
+    const filled = fill(raw.replace(/\\'/g, "'"), tel);
+    ok(filled !== null, `unfillable: ${raw}`);
+    const v = validateOutput(filled, tel);
+    ok(v.ok, `"${filled}" -> ${v.why}`);
+  }
+});
+
+t('validator · rejects hallucinated numbers, blocklist, length, sentence count', () => {
+  const tel = { reps: 9, velocity_loss_pct: 30 };
+  ok(!validateOutput('You did 47 reps.', tel).ok, 'hallucinated number allowed');
+  ok(!validateOutput('You look fat.', tel).ok, 'blocklist term allowed');
+  ok(!validateOutput('a'.repeat(200), tel).ok, 'over-long allowed');
+  ok(!validateOutput('One. Two. Three. Four.', tel).ok, 'four sentences allowed');
+  ok(!validateOutput('   ', tel).ok, 'empty allowed');
+  ok(validateOutput('You did 9 reps and lost 30 percent.', tel).ok, 'valid line rejected');
+});
+
+t('coachFor · falls back silently when the model times out', async () => {
+  const tel = summarise(setOf(6).setReps, null, squat, 1, 40);
+  const slow = () => new Promise((r) => setTimeout(r, 200));
+  const out = await coachFor(tel, slow, 20);
+  eq(out.source, 'TEMPLATE');
+  ok(out.coachLine.length > 0, 'no fallback line');
+});
+
+t('coachFor · falls back when the model hallucinates', async () => {
+  const tel = summarise(setOf(6).setReps, null, squat, 1, 40);
+  const liar = async () => ({ coachLine: 'You did 9999 perfect reps.', bossLine: 'ok' });
+  eq((await coachFor(tel, liar)).source, 'TEMPLATE');
+});
+
+t('coachFor · uses the model when its output is clean', async () => {
+  const tel = summarise(setOf(6).setReps, null, squat, 1, 40);
+  const good = async (x) => ({ coachLine: `Solid set of ${x.reps}.`, bossLine: 'Again.' });
+  const out = await coachFor(tel, good);
+  eq(out.source, 'LLM');
+});
+
+// ---------- set flow ----------
+t('set ends after the idle timeout and produces a coach line', async () => {
+  const e = new SessionEngine(store, 'squat');
+  drive(e, synthWorldSet({ reps: 5, bottom: 80 }));
+  const last = e.lastRepEndMs;
+  const still = synthWorldSet({ reps: 0 })[0][0];
+  for (let i = 0; i < 500; i++) e.frame(still, null, last + 1000 + i * 33);
+  eq(e.state().phase, Phase.REST);
+  await new Promise((r) => setTimeout(r, 10));
+  ok(e.coach && e.coach.coachLine.length > 0, 'no coach line on rest');
+  ok(!/[{}]/.test(e.coach.coachLine), `leaked placeholder: ${e.coach.coachLine}`);
+});
+
+t('nextSet resets fatigue but carries boss HP', async () => {
+  const e = new SessionEngine(store, 'squat');
+  drive(e, synthWorldSet({ reps: 5, bottom: 80 }));
+  const still = synthWorldSet({ reps: 0 })[0][0];
+  for (let i = 0; i < 500; i++) e.frame(still, null, e.lastRepEndMs + 1000 + i * 33);
+  const hpBefore = e.combat.hp;
+  e.nextSet();
+  eq(e.state().phase, Phase.FIGHTING);
+  eq(e.setIndex, 2);
+  eq(e.combat.hp, hpBefore, 'boss healed between sets');
+  eq(e.fatigue.state().band, 'FRESH');
+});
+
 // ---------- report ----------
+await Promise.all(pending);
 const w = Math.max(...results.map(r => r[1].length));
 for (const [s, n, m] of results) {
   const mark = s === 'PASS' ? '\x1b[32m✓\x1b[0m' : '\x1b[31m✗\x1b[0m';

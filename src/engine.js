@@ -4,14 +4,15 @@
 // event build is a port rather than a redesign. docs/09-MODULE-CONTRACTS.md
 
 import { LandmarkFilter } from './oneEuro.js';
-import { primaryAngle, boxHeight, JOINT, SIDE } from './geometry.js';
+import { primaryAngle, boxHeight, spanMetres, JOINT, SIDE } from './geometry.js';
 import { RepStateMachine } from './repFsm.js';
 import { scoreRep, verdict, alignmentSample } from './formScorer.js';
 import { FatigueEstimator, Band } from './fatigue.js';
 import { CombatEngine } from './combat.js';
 import { GhostSource } from './ghost.js';
+import { summarise, coachFor } from './coach.js';
 
-export const Phase = { CALIBRATING: 'CALIBRATING', FIGHTING: 'FIGHTING', FRAMING_LOST: 'FRAMING_LOST', DEAD: 'DEAD' };
+export const Phase = { CALIBRATING: 'CALIBRATING', FIGHTING: 'FIGHTING', FRAMING_LOST: 'FRAMING_LOST', REST: 'REST', DEAD: 'DEAD' };
 export const Mode = { BOSS_FIGHT: 'BOSS_FIGHT', TIME_ATTACK: 'TIME_ATTACK', GHOST_RACE: 'GHOST_RACE' };
 
 export class SessionEngine {
@@ -22,6 +23,8 @@ export class SessionEngine {
     this.onRep = opts.onRep ?? (() => {});
     this.onBand = opts.onBand ?? (() => {});
     this.onEnd = opts.onEnd ?? (() => {});
+    this.onSetEnd = opts.onSetEnd ?? (() => {});
+    this.llm = opts.llm ?? null;              // the seam Gemma slots into at the event
     this.mode = opts.mode ?? Mode.BOSS_FIGHT;
     this.ghost = null;
     this.reset();
@@ -66,6 +69,12 @@ export class SessionEngine {
     this.endReason = null;
     this.playerDamage = 0;
     this.ghostDamage = 0;
+    this.ghost?.reset();
+    this.spanSamples = [];
+    this.setIndex = 1;
+    this.setReps = [];
+    this.lastRepEndMs = null;
+    this.coach = null;
     this.ghost?.reset();
 
     // Time Attack is scored on total damage, so the boss must not die out from under it.
@@ -128,6 +137,20 @@ export class SessionEngine {
       return this.state();
     }
 
+    if (this.phase === Phase.FIGHTING || this.phase === Phase.REST) {
+      const span = spanMetres(lms, this.exercise.detector.primaryAngle, sel.side);
+      if (Number.isFinite(span)) {
+        this.spanSamples.push([tMs, span]);
+        if (this.spanSamples.length > 900) this.spanSamples.shift();   // ~30s at 30fps
+      }
+    }
+
+    // A set ends when the player stops, not on a timer they have to beat.
+    if (this.phase === Phase.FIGHTING && this.setReps.length && this.lastRepEndMs !== null) {
+      const idleSec = (tMs - this.lastRepEndMs) / 1000;
+      if (idleSec >= (this.cfg.combat.setEnd?.noRepTimeoutSec ?? 12)) this.#endSet();
+    }
+
     if (!this.ended) {
       // A ghost's damage enters through the same idempotent path a remote player's does.
       if (this.mode === Mode.GHOST_RACE && this.ghost) {
@@ -142,6 +165,43 @@ export class SessionEngine {
     const raw = this.ended ? null : this.fsm.onFrame(sel.angle, tMs);
     if (raw) this.#completeRep(raw, lms);
     return this.state();
+  }
+
+  /** Depth travel for one rep, in centimetres, from the metric span samples. */
+  #depthCm(raw) {
+    const win = this.spanSamples.filter(([t]) => t >= raw.tStartMs && t <= raw.tEndMs).map(([, v]) => v);
+    if (win.length < 3) return NaN;
+    return (Math.max(...win) - Math.min(...win)) * 100;
+  }
+
+  async #endSet() {
+    if (this.phase !== Phase.FIGHTING || !this.setReps.length) return;
+    this.phase = Phase.REST;
+    const restSec = this.#restSeconds();
+    const telemetry = summarise(this.setReps, this.combat.state(), this.exercise, this.setIndex, restSec);
+    this.telemetry = telemetry;
+    const coach = await coachFor(telemetry, this.llm);
+    this.coach = coach;
+    this.onSetEnd(telemetry, coach, restSec);
+  }
+
+  #restSeconds() {
+    const r = this.cfg.combat.rest ?? { freshSeconds: 30, gassedSeconds: 75 };
+    const v = this.fatigue.state().value;
+    return Math.round(r.freshSeconds + (r.gassedSeconds - r.freshSeconds) * Math.min(1, v / 0.5));
+  }
+
+  /** Begin the next set. Fatigue baselines reset; boss HP and combo carry. */
+  nextSet() {
+    if (this.phase !== Phase.REST) return;
+    this.setIndex += 1;
+    this.setReps = [];
+    this.lastRepEndMs = null;
+    this.coach = null;
+    this.fatigue.reset();
+    this.fsm.reset();
+    this.fsm.setTopRef(this.topRef);
+    this.phase = Phase.FIGHTING;
   }
 
   #completeRep(raw, lms) {
@@ -160,10 +220,13 @@ export class SessionEngine {
 
     const rec = {
       ...raw, ...score,
+      depthCm: this.#depthCm(raw),
       verdict: verdict(score.formScore, this.cfg.ui?.verdictBands),
       fatigue: f, damage: c.lastDamage, combo: c.comboMultiplier,
     };
     this.reps.push(rec);
+    this.setReps.push(rec);
+    this.lastRepEndMs = raw.tEndMs;
     this.lastRep = rec;
     this.lastScore = score;
     this.playerDamage += rec.damage ?? 0;
@@ -204,6 +267,10 @@ export class SessionEngine {
       ghostDamage: this.ghostDamage,
       ghostMeta: this.ghost?.meta ?? null,
       ghostFinished: this.ghost?.finished ?? null,
+      setIndex: this.setIndex,
+      setReps: this.setReps.length,
+      coach: this.coach,
+      telemetry: this.telemetry ?? null,
       phase: this.phase,
       angle: this.angle,
       fsmState: this.fsm.state,

@@ -87,6 +87,14 @@ export function kneeTracking(lms, side) {
   return Math.abs(knee.x - ankle.x) / shin;
 }
 
+/** Straight-line distance in metres between the outer two joints of the primary angle.
+ *  Shortens as the rep deepens, so max-minus-min across a rep is depth travel in real units. */
+export function spanMetres(lms, primary, side) {
+  const a = lms[JOINT[primary.a][side]], c = lms[JOINT[primary.c][side]];
+  if (!a || !c) return NaN;
+  return Math.hypot(a.x - c.x, a.y - c.y, (a.z ?? 0) - (c.z ?? 0));
+}
+
 /** Torso line angle shoulder-hip-ankle. Push-up sag. */
 export function torsoLine(lms, side) {
   return angle3(lms[JOINT.SHOULDER[side]], lms[JOINT.HIP[side]], lms[JOINT.ANKLE[side]]);
