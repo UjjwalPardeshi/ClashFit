@@ -28,6 +28,9 @@ export class Renderer {
     this.pops = [];             // floating damage numerals
     this.shake = 0;
     this.mirror = true;
+    // Someone with vestibular sensitivity should still be able to play, and it is a good answer
+    // if a judge asks about accessibility. docs/03-UI-UX-SPEC.md §7
+    this.reducedMotion = false;
   }
 
   resize() {
@@ -41,9 +44,9 @@ export class Renderer {
 
   hit(verdictName, damage) {
     const color = verdictName === 'SHALLOW' ? C.shallow : C.clean;
-    this.flash = { color, until: performance.now() + 120 };
+    this.flash = { color, until: performance.now() + 120, border: this.reducedMotion };
     this.pops.push({ text: String(damage), t0: performance.now(), color: C.damage });
-    this.shake = verdictName === 'SHALLOW' ? 2 : 6;
+    this.shake = this.reducedMotion ? 0 : (verdictName === 'SHALLOW' ? 2 : 6);
   }
 
   draw(video, state, landmarks) {
@@ -67,7 +70,10 @@ export class Renderer {
     else this.#boss(state, w, h, now);
     this.#pops(now, w, h);
 
-    if (this.flash && now < this.flash.until) this.#edgeFlash(this.flash.color, w, h);
+    if (this.flash && now < this.flash.until) {
+      if (this.flash.border) this.#borderPulse(this.flash.color, w, h);
+      else this.#edgeFlash(this.flash.color, w, h);
+    }
     ctx.restore();
   }
 
@@ -354,6 +360,16 @@ export class Renderer {
       ctx.fillText(p.text, 0, 0);
       ctx.restore();
     }
+  }
+
+  /** Reduced-motion substitute for the full-screen flash: a border pulse carries the same
+   *  information without the vestibular hit. */
+  #borderPulse(color, w, h) {
+    const { ctx } = this;
+    ctx.save();
+    ctx.strokeStyle = color; ctx.lineWidth = 8; ctx.globalAlpha = 0.85;
+    ctx.strokeRect(4, 4, w - 8, h - 8);
+    ctx.restore();
   }
 
   #edgeFlash(color, w, h) {

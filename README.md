@@ -86,6 +86,8 @@ CSV of every rep's raw telemetry.
 | Families | **5 detectors** — reps · holds · cardio · jumps · yoga |
 | Family games | Siege (holds) · Pursuit (cardio) · Breaker (jumps) · Sigil (yoga) |
 | Coach | Telemetry summariser, 20-line template bank, output validator, TTS |
+| Sensors | Haptics · offline voice commands · Arena Mode (rear camera) |
+| Accessibility | Reduced-motion toggle · verdict word always shown with the flash · accessible exercise rungs |
 | Audio | Fully synthesised — rep pitch climbs with the combo |
 | Summary | Fatigue curve chart, PNG export for the deck, CSV of raw per-rep data |
 | Ghosts | Three shipped pacers, save your own run, load a friend's |

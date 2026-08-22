@@ -4,6 +4,8 @@ import { dirname, join } from 'node:path';
 import { angle3 } from '../src/geometry.js';
 import { makeDetector } from '../src/detectors/index.js';
 import { missingJoints, jointPhrase } from '../src/geometry.js';
+import { Haptics } from '../src/haptics.js';
+import { COMMANDS } from '../src/voice.js';
 import { DuelSession, LoopbackTransport, LinkState, newPlayerId } from '../src/duel.js';
 import { SiegeGame, PursuitGame, BreakerGame, SigilGame, GameOutcome, makeFamilyGame } from '../src/games.js';
 import { RepStateMachine } from '../src/repFsm.js';
@@ -408,6 +410,49 @@ t('CLINIC_STS · ships no norms until they are cited', () => {
   eq(clinicSts.norms.source, null);
   eq(clinicSts.norms.bands.length, 0);
   ok(/not a medical device/i.test(clinicSts.notNested), 'missing the not-a-medical-device line');
+});
+
+// ---------- haptics and voice ----------
+t('haptics · degrade silently when the device has no vibration motor', () => {
+  const h = new Haptics();
+  // No navigator.vibrate in Node — every call must be a no-op, not a crash.
+  h.repClean(); h.repShallow(); h.comboMilestone(); h.framingLost(); h.bossDown();
+  h.startMetronome(40); h.stopMetronome(); h.breathe();
+  eq(h.available, false);
+});
+
+t('haptics · a mock motor receives distinct patterns per event', () => {
+  const seen = [];
+  const h = new Haptics({}, (p) => { seen.push(JSON.stringify(p)); return true; });
+  ok(h.available, 'injected motor not detected');
+  h.repClean(); h.repShallow(); h.framingLost(); h.bossDown();
+  eq(seen.length, 4, 'not every event buzzed');
+  eq(new Set(seen).size, 4, 'events share a pattern and are indistinguishable by feel');
+});
+
+t('haptics · the metronome stops cleanly', () => {
+  const h = new Haptics({}, () => true);
+  h.startMetronome(60);
+  ok(h.metronome, 'metronome did not start');
+  h.stopMetronome();
+  eq(h.metronome, null, 'metronome handle leaked');
+  h.startMetronome(60); h.setEnabled(false);
+  eq(h.metronome, null, 'disabling did not stop the metronome');
+});
+
+t('haptics · a broken motor never takes the app down', () => {
+  const h = new Haptics({}, () => { throw new Error('motor on fire'); });
+  h.repClean(); h.bossDown();
+  ok(true, 'a throwing motor propagated');
+});
+
+t('voice · every command has distinct trigger phrases', () => {
+  const all = Object.values(COMMANDS).flat();
+  eq(new Set(all).size, all.length, 'two commands share a trigger phrase');
+  for (const [cmd, words] of Object.entries(COMMANDS)) {
+    ok(words.length >= 2, `${cmd} has too few phrasings to be reliable`);
+    ok(words.every((w) => w === w.toLowerCase()), `${cmd} has a non-lowercase trigger`);
+  }
 });
 
 // ---------- calibration ----------

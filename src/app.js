@@ -12,6 +12,8 @@ import { Audio } from './audio.js';
 import { Speech } from './speech.js';
 import { drawSummary, exportPng, exportCsv } from './summary.js';
 import { DuelSession, BroadcastChannelTransport, LinkState, newPlayerId } from './duel.js';
+import { Haptics } from './haptics.js';
+import { Voice } from './voice.js';
 import { Renderer, C } from './render.js';
 import { TraceRecorder } from './trace.js';
 
@@ -38,7 +40,12 @@ const el = {
   sum: $('sum'), sumCanvas: $('sumCanvas'), sumBtn: $('sumBtn'),
   sumPng: $('sumPng'), sumCsv: $('sumCsv'), sumClose: $('sumClose'),
   link: $('link'),
+  arena: $('arena'), voice: $('voice'), haptic: $('haptic'), motion: $('motion'),
 };
+
+let haptics = null;
+let voice = null;
+let arenaMode = false;
 
 let duel = null;
 const MY_ID = newPlayerId();
@@ -86,6 +93,14 @@ async function boot() {
     .map(([id, g]) => `<option value="${id}">${g.meta.name} · ${g.meta.reps} reps</option>`).join('')
     + '<option value="__file">Load ghost file…</option>';
 
+  haptics = new Haptics(store.ui?.haptics);
+  el.haptic.classList.toggle('on', haptics.available && haptics.enabled);
+  el.haptic.disabled = !haptics.available;
+
+  voice = new Voice({ onCommand: onVoiceCommand });
+  el.voice.disabled = !voice.available;
+  if (!voice.available) el.voice.title = 'This browser has no speech recognition.';
+
   renderer = new Renderer(el.stage);
   renderer.resize();
   addEventListener('resize', () => renderer.resize());
@@ -118,7 +133,10 @@ function makeEngine(id) {
   engine = new SessionEngine(store, id, {
     casual,
     mode,
-    onEnd: (reason, s) => { if (reason === 'BOSS_DOWN') audio.bossDeath(); showResult(reason, s); },
+    onEnd: (reason, s) => {
+      if (reason === 'BOSS_DOWN' || reason === 'GAME_WON') { audio.bossDeath(); haptics?.bossDown(); }
+      showResult(reason, s);
+    },
     onSetEnd: (telemetry, coach) => showRest(telemetry, coach),
     onRep: (rep, combat) => {
       renderer.hit(rep.verdict, rep.damage);
@@ -128,10 +146,10 @@ function makeEngine(id) {
 
       duel?.sendRep({ damage: rep.damage, formScore: rep.formScore,
                       exercise: el.exercise.value, fatigueBand: rep.fatigue.band });
-      if (rep.verdict === 'SHALLOW') audio.repShallow();
-      else audio.repClean(combat.comboMultiplier);
+      if (rep.verdict === 'SHALLOW') { audio.repShallow(); haptics?.repShallow(); }
+      else { audio.repClean(combat.comboMultiplier); haptics?.repClean(); }
       const m = combat.comboMultiplier;
-      if (Math.floor(m) > Math.floor(lastCombo) && m > 1) audio.comboMilestone(m);
+      if (Math.floor(m) > Math.floor(lastCombo) && m > 1) { audio.comboMilestone(m); haptics?.comboMilestone(); }
       lastCombo = m;
     },
   });
@@ -177,6 +195,15 @@ function paintLink(st) {
   el.link.textContent = TXT[st] ?? '';
   el.link.style.color = st === LinkState.LINKED ? C.clean : st === LinkState.LOST ? C.damage : C.mute;
   if (st === LinkState.LOST) el.cue.textContent = 'Opponent disconnected — scoring locally.';
+}
+
+/** The player is two metres away and cannot reach the phone. Voice is the only mid-set input. */
+function onVoiceCommand(cmd) {
+  if (cmd === 'stop') { engine.reset(); el.cue.textContent = 'Stopped.'; }
+  if (cmd === 'next' && el.rest.classList.contains('show')) el.nextSet.click();
+  if (cmd === 'next' && el.over.classList.contains('show')) el.again.click();
+  if (cmd === 'rest') { el.cue.textContent = 'Resting.'; }
+  if (cmd === 'start' && !running) el.start.click();
 }
 
 function showRest(telemetry, coach) {
@@ -334,6 +361,28 @@ function wire() {
     }
   };
   el.dl.onclick = () => recorder.download();
+  el.arena.onclick = async () => {
+    arenaMode = !arenaMode;
+    el.arena.classList.toggle('on', arenaMode);
+    renderer.mirror = !arenaMode;          // only a selfie view should be mirrored
+    if (running) { stopCam(); await startCam(); }
+    el.cue.textContent = arenaMode
+      ? 'Arena Mode — rear camera, wider view. Mirror the phone to a laptop for the demo.'
+      : 'Solo Mode — front camera.';
+  };
+  el.voice.onclick = () => {
+    const on = voice.toggle();
+    el.voice.classList.toggle('on', on);
+    el.cue.textContent = on ? 'Listening — say stop, next, or rest.' : 'Voice off.';
+  };
+  el.haptic.onclick = () => {
+    haptics.setEnabled(!haptics.enabled);
+    el.haptic.classList.toggle('on', haptics.enabled);
+  };
+  el.motion.onclick = () => {
+    renderer.reducedMotion = !renderer.reducedMotion;
+    el.motion.classList.toggle('on', renderer.reducedMotion);
+  };
   el.sumBtn.onclick = () => openSummary();
   el.sumClose.onclick = () => el.sum.classList.remove('show');
   el.sumPng.onclick = () => exportPng(el.sumCanvas,
@@ -362,7 +411,12 @@ async function startCam() {
       });
     }
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+      video: {
+        width: { ideal: 1280 }, height: { ideal: 720 },
+        // Arena Mode: rear camera, wider field of view, phone low and mirrored to a laptop.
+        // Solo needs the screen facing the player; Arena buys framing at a table.
+        facingMode: arenaMode ? { ideal: 'environment' } : 'user',
+      },
       audio: false,
     });
     el.cam.srcObject = stream;
@@ -414,7 +468,7 @@ function paintHud(s) {
     s.phase === Phase.CALIBRATING ? C.shallow : C.clean;
 
   if (s.phase === Phase.FRAMING_LOST && !paintHud.lostAnnounced) {
-    audio.framingLost(); paintHud.lostAnnounced = true;
+    audio.framingLost(); haptics?.framingLost(); paintHud.lostAnnounced = true;
   } else if (s.phase !== Phase.FRAMING_LOST) paintHud.lostAnnounced = false;
 
   if (s.cue) el.cue.textContent = s.cue;
