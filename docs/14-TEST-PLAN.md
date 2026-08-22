@@ -22,6 +22,11 @@ no body, and no floor space. It gives you:
 Build the recorder in the eleven days. Trace format: JSON lines, one frame per line, timestamp plus
 33 world landmarks plus visibility.
 
+**And tune against them offline.** `tools/tune.js` replays every trace across a grid of thresholds
+and ranks candidates by *robustness* — how many nearby settings also count correctly — rather than
+by a single exact hit. A setting that works but sits one degree from miscounting will fail on a
+real body in different light, and you will not find that out until a judge is watching.
+
 ---
 
 ## 2. Fixtures — record these before the event

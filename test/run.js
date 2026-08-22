@@ -1308,6 +1308,28 @@ t('the generated manifest matches what is on disk', () => {
   for (const id of onDisk) ok(ids.has(id), id + ' missing from the manifest — run npm run manifest');
 });
 
+t('every REP_CYCLE config has its thresholds in order', () => {
+  // In the exercise's own direction the order is topEnter > topExit > bottomExit > bottomEnter.
+  // An inverted pair is meaningless and would count nothing, or count everything — and it is
+  // invisible by inspection because half the library runs in the opposite direction.
+  const dir = readdirSync(join(HERE, '..', 'config/exercises'))
+    .filter(f => f.endsWith('.json') && f !== 'index.json');
+  let checked = 0;
+  for (const f of dir) {
+    const e = JSON.parse(readFileSync(join(HERE, '..', 'config/exercises', f), 'utf8'));
+    if (e.family !== 'REP_CYCLE') continue;
+    const d = e.detector;
+    const dec = d.topEnter > d.bottomEnter;
+    const u = (v) => (dec ? v : -v);
+    ok(u(d.topEnter) > u(d.topExit), `${e.id}: topExit is not inside topEnter`);
+    ok(u(d.topExit) > u(d.bottomExit), `${e.id}: topExit and bottomExit overlap`);
+    ok(u(d.bottomExit) > u(d.bottomEnter), `${e.id}: bottomExit is not inside bottomEnter`);
+    ok(u(d.bottomEnter) >= u(d.targetAngle), `${e.id}: targetAngle is easier to reach than bottomEnter`);
+    checked++;
+  }
+  ok(checked >= 10, `only checked ${checked} rep-cycle exercises`);
+});
+
 t('every shipped exercise config is loadable and well formed', () => {
   const dir = readdirSync(join(HERE, '..', 'config/exercises')).filter(f => f.endsWith('.json') && f !== 'index.json');
   ok(dir.length >= 45, `only ${dir.length} exercises`);

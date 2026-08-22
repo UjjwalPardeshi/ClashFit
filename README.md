@@ -112,6 +112,20 @@ On-device LLM coach, TTS, duel transport, NFC pairing, sensors, art, audio. All 
 
 ## Tuning
 
+**Record once, sweep offline.** The naive loop — do fifteen squats, edit JSON, do fifteen more —
+is slow, inconsistent because you never repeat a set exactly, and impossible at the event when
+your legs are gone.
+
+```bash
+node tools/tune.js traces/f1-clean.jsonl --expect 10
+node tools/tune.js traces/*.jsonl --exercise squat --expect 10 --apply
+```
+
+`--expect` is ground truth: how many reps you actually did. The sweep replays every trace against
+a grid of thresholds and ranks by **robustness** — how many nearby settings also count correctly —
+rather than by a single exact hit. A setting that works but sits one degree from miscounting will
+fail on a real body in different light.
+
 **`config/` is the source of truth for every threshold.** Edit the JSON, hit **Reload config** in
 the page — no restart. These exact files are copied to the phone at check-in, so tuning done here
 is not thrown away even though the code is.

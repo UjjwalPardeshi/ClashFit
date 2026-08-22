@@ -84,16 +84,44 @@ for (const te of teRange)
     for (const hy of hystRange) {
       const topEnter = step(d0.topEnter, -te);
       const bottomEnter = step(d0.bottomEnter, be);
+      // Hysteresis pulls each exit threshold INTO the middle of the range: topExit sits between
+      // topEnter and bottomEnter, and bottomExit does too. Getting these signs backwards
+      // proposes topExit above topEnter, which is meaningless — hence the validity gate below.
       grid.push({
         ...d0,
-        topEnter, topExit: step(topEnter, hy),
-        bottomEnter, bottomExit: step(bottomEnter, -hy),
+        topEnter, topExit: step(topEnter, -hy),
+        bottomEnter, bottomExit: step(bottomEnter, hy),
       });
     }
 
+/**
+ * A candidate is only meaningful if the thresholds stay in order. In the exercise's own
+ * direction: topEnter is the outermost, then topExit, then bottomExit, then bottomEnter. A grid
+ * that quietly proposes an inverted candidate wastes a sweep and can "recommend" nonsense.
+ */
+function valid(d) {
+  const u = (v) => (dec ? v : -v);
+  return u(d.topEnter) > u(d.topExit)
+      && u(d.topExit) > u(d.bottomExit)
+      && u(d.bottomExit) > u(d.bottomEnter);
+}
+
+const invalid = grid.filter((d) => !valid(d)).length;
+const seen = new Set();
+const candidates = grid.filter((d) => {
+  if (!valid(d)) return false;
+  const k = `${d.topEnter}/${d.topExit}/${d.bottomEnter}/${d.bottomExit}`;
+  if (seen.has(k)) return false;
+  seen.add(k);
+  return true;
+});
+grid.length = 0; grid.push(...candidates);
+
 console.log(`\n  ${exerciseId} · ${traces.length} trace(s) · ${grid.length} candidates` +
             (expect ? ` · expecting ${expect} reps` : ' · no --expect, reporting counts only'));
-console.log(`  baseline: top ${d0.topEnter}/${d0.topExit}  bottom ${d0.bottomEnter}/${d0.bottomExit}\n`);
+console.log(`  baseline: top ${d0.topEnter}/${d0.topExit}  bottom ${d0.bottomEnter}/${d0.bottomExit}` +
+            (invalid ? `  ·  ${invalid} out-of-order candidates skipped` : '') + '\n');
+if (!valid(d0)) console.log('  \x1b[33mThe current config has its thresholds out of order.\x1b[0m\n');
 
 const baselineRuns = run(d0);
 for (const r of baselineRuns) {

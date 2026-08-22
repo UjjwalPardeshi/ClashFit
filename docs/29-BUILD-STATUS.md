@@ -35,6 +35,7 @@ What is built and verified, what is deliberately event-only, and what is genuine
 | **Challenge codes** — a run becomes a ~300-char shareable string, no server | ✅ | [20](20-MULTIPLAYER-MODES.md) §5 |
 | **Trend chart** — session over session, form and reps | ✅ | [23](23-META-PROGRESSION.md) |
 | **The deck** — 10 slides, print-to-PDF at 16:9 | ✅ | [26](26-DECK-COPY.md), `deck/` |
+| **Tuning harness** — record once, sweep thresholds offline, rank by robustness | ✅ | `tools/tune.js` |
 
 ---
 
@@ -87,6 +88,8 @@ Every one of these would have surfaced at hour 20 instead. This is the argument 
 | 11 | Ladders referenced two ungenerated exercises | Promotion would have failed silently at the top of the push ladder |
 | 12 | Challenge buttons wired but never added to the markup | Share and Accept simply would not have existed — caught by the id cross-check |
 | 13 | A deck CSS class used but never defined | The shallow-rep number would have rendered plain beside its coloured counterpart |
+| 14 | **Calibration required stillness, not visibility** | Took 27s on a real trace and ate 6 of 13 reps — and the fatigue baseline was then computed from an already-degraded part of the set, silently corrupting the one thing we uniquely measure |
+| 15 | Tuning harness generated inverted hysteresis | Proposed `topExit` above `topEnter`, and would have "recommended" nonsense |
 
 ---
 
