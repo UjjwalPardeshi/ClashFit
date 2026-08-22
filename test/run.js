@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { angle3 } from '../src/geometry.js';
 import { makeDetector } from '../src/detectors/index.js';
+import { DuelSession, LoopbackTransport, LinkState, newPlayerId } from '../src/duel.js';
 import { RepStateMachine } from '../src/repFsm.js';
 import { scoreRep, verdict, clamp01 } from '../src/formScorer.js';
 import { FatigueEstimator, Band } from '../src/fatigue.js';
@@ -405,6 +406,91 @@ t('CLINIC_STS · ships no norms until they are cited', () => {
   eq(clinicSts.norms.source, null);
   eq(clinicSts.norms.bands.length, 0);
   ok(/not a medical device/i.test(clinicSts.notNested), 'missing the not-a-medical-device line');
+});
+
+// ---------- duel over a real transport ----------
+/** Loopback with controllable loss and a fake clock, so the protocol is exercised end to end
+ *  rather than only through CombatEngine.onRemoteDamage. */
+function duelPair({ loss = 0 } = {}) {
+  const bus = new Set();
+  let clock = 0;
+  const now = () => clock;
+  const lossy = (t) => ({
+    send(m) { if (Math.random() >= loss) t.send(m); },
+    onMessage: (f) => t.onMessage(f), close: () => t.close(), available: true,
+  });
+  const ta = new LoopbackTransport(bus), tb = new LoopbackTransport(bus);
+  const hitsA = [], hitsB = [];
+  const a = new DuelSession(lossy(ta), { playerId: 'AAAA', now,
+    onRemote: (p, s2, d) => hitsA.push([p, s2, d]) });
+  const b = new DuelSession(lossy(tb), { playerId: 'BBBB', now,
+    onRemote: (p, s2, d) => hitsB.push([p, s2, d]) });
+  return { a, b, hitsA, hitsB, advance: (ms) => { clock += ms; } };
+}
+
+const sumOf = (hits) => hits.reduce((acc, [, , d]) => acc + d, 0);
+
+t('duel · two sessions converge on the same total', () => {
+  const { a, b, hitsA, hitsB } = duelPair();
+  for (let i = 0; i < 12; i++) {
+    a.sendRep({ damage: 70 + i, formScore: 0.8, exercise: 'squat', fatigueBand: 'WORKING' });
+    b.sendRep({ damage: 60 + i, formScore: 0.7, exercise: 'squat', fatigueBand: 'WORKING' });
+  }
+  eq(sumOf(hitsA), b.sent.length ? 12 * 60 + 66 : 0, 'A did not receive all of B');
+  eq(sumOf(hitsB), 12 * 70 + 66, 'B did not receive all of A');
+});
+
+t('duel · a duplicate flood changes nothing', () => {
+  const { a, hitsB } = duelPair();
+  a.sendRep({ damage: 100, formScore: 0.9, exercise: 'squat', fatigueBand: 'FRESH' });
+  const before = sumOf(hitsB);
+  for (let i = 0; i < 30; i++) a.tick();          // heartbeats carry no new events
+  eq(sumOf(hitsB), before, 'duplicates changed the total');
+  eq(before, 100);
+});
+
+t('duel · 30 percent packet loss is repaired by the recent tail', () => {
+  // Deterministic loss so the assertion is not flaky.
+  let n = 0;
+  const realRandom = Math.random;
+  Math.random = () => ((n++ % 10) < 3 ? 0 : 1);
+  try {
+    const { a, hitsB } = duelPair({ loss: 0.3 });
+    let expected = 0;
+    for (let i = 0; i < 24; i++) {
+      const d = 50 + i;
+      expected += d;
+      a.sendRep({ damage: d, formScore: 0.8, exercise: 'squat', fatigueBand: 'WORKING' });
+    }
+    eq(sumOf(hitsB), expected, 'tail did not repair the dropped messages');
+  } finally { Math.random = realRandom; }
+});
+
+t('duel · link goes LINKED then LOST when a peer goes quiet', () => {
+  const { a, b, advance } = duelPair();
+  a.tick(); b.tick();
+  eq(a.tick(), LinkState.LINKED, 'never linked');
+  advance(6000);
+  eq(a.tick(), LinkState.LOST, 'silent peer not detected');
+});
+
+t('duel · a late joiner is caught up by the tail', () => {
+  const bus = new Set();
+  let clock = 0; const now = () => clock;
+  const ta = new LoopbackTransport(bus);
+  const a = new DuelSession(ta, { playerId: 'AAAA', now });
+  for (let i = 0; i < 5; i++) a.sendRep({ damage: 40, formScore: 0.8, exercise: 'squat', fatigueBand: 'FRESH' });
+
+  const got = [];
+  const tb = new LoopbackTransport(bus);
+  new DuelSession(tb, { playerId: 'BBBB', now, onRemote: (p, s2, d) => got.push(d) });
+  eq(got.reduce((x, y) => x + y, 0), 200, 'late joiner did not receive the backlog');
+});
+
+t('duel · player ids are distinct and short', () => {
+  const ids = new Set(Array.from({ length: 200 }, () => newPlayerId()));
+  ok(ids.size > 150, `only ${ids.size} distinct ids in 200`);
+  for (const id of ids) eq(id.length, 4);
 });
 
 // ---------- detector families ----------

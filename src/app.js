@@ -11,6 +11,7 @@ import { ghostFromReps, parseGhost, downloadGhost } from './ghost.js';
 import { Audio } from './audio.js';
 import { Speech } from './speech.js';
 import { drawSummary, exportPng, exportCsv } from './summary.js';
+import { DuelSession, BroadcastChannelTransport, LinkState, newPlayerId } from './duel.js';
 import { Renderer, C } from './render.js';
 import { TraceRecorder } from './trace.js';
 
@@ -36,7 +37,11 @@ const el = {
   waveTile: $('waveTile'), wave: $('wave'),
   sum: $('sum'), sumCanvas: $('sumCanvas'), sumBtn: $('sumBtn'),
   sumPng: $('sumPng'), sumCsv: $('sumCsv'), sumClose: $('sumClose'),
+  link: $('link'),
 };
+
+let duel = null;
+const MY_ID = newPlayerId();
 
 const audio = new Audio();
 const speech = new Speech();
@@ -121,6 +126,8 @@ function makeEngine(id) {
       el.verdict.style.color =
         rep.verdict === 'CLEAN' ? C.clean : rep.verdict === 'OK' ? C.system : C.shallow;
 
+      duel?.sendRep({ damage: rep.damage, formScore: rep.formScore,
+                      exercise: el.exercise.value, fatigueBand: rep.fatigue.band });
       if (rep.verdict === 'SHALLOW') audio.repShallow();
       else audio.repClean(combat.comboMultiplier);
       const m = combat.comboMultiplier;
@@ -132,15 +139,44 @@ function makeEngine(id) {
     const g = ghosts[el.ghost.value] ?? Object.values(ghosts)[0];
     if (g) engine.loadGhost(g);
   }
+
+  duel?.close();
+  duel = null;
+  if (mode === Mode.DUEL) {
+    const t = new BroadcastChannelTransport();
+    if (!t.available) { el.cue.textContent = 'This browser has no BroadcastChannel.'; }
+    else {
+      duel = new DuelSession(t, {
+        playerId: MY_ID,
+        onRemote: (pid, seq, dmg) => { engine.combat.onRemoteDamage(pid, seq, dmg); engine.ghostDamage += dmg; },
+        onState: (st) => paintLink(st),
+      });
+      paintLink(LinkState.SEARCHING);
+    }
+  }
+  el.link.textContent = mode === Mode.DUEL ? '' : '';
   el.exercise.title = `${family.replace('_', ' ').toLowerCase()} · ${forced ?? mode}`;
-  const timed = mode === Mode.TIME_ATTACK || mode === Mode.CLINIC_STS;
+  const timed = mode === Mode.TIME_ATTACK || mode === Mode.CLINIC_STS || mode === Mode.DUEL;
   el.timerTile.style.display = timed ? '' : 'none';
   el.waveTile.style.display = mode === Mode.SURVIVAL ? '' : 'none';
-  el.race.classList.toggle('show', mode === Mode.GHOST_RACE);
+  el.race.classList.toggle('show', mode === Mode.GHOST_RACE || mode === Mode.DUEL);
   el.ghost.style.display = mode === Mode.GHOST_RACE ? '' : 'none';
   el.exercise.disabled = mode === Mode.CLINIC_STS;
   el.over.classList.remove('show');
   el.rest.classList.remove('show');
+}
+
+/** Never a bare spinner. A judge watching an unexplained spinner assumes it is broken, and they
+ *  are usually right. docs/07-MULTIPLAYER-SPEC.md §7 */
+function paintLink(st) {
+  const TXT = {
+    [LinkState.SEARCHING]: 'searching for opponent…',
+    [LinkState.LINKED]: 'linked',
+    [LinkState.LOST]: 'opponent disconnected — scoring locally',
+  };
+  el.link.textContent = TXT[st] ?? '';
+  el.link.style.color = st === LinkState.LINKED ? C.clean : st === LinkState.LOST ? C.damage : C.mute;
+  if (st === LinkState.LOST) el.cue.textContent = 'Opponent disconnected — scoring locally.';
 }
 
 function showRest(telemetry, coach) {
@@ -356,7 +392,14 @@ function paintHud(s) {
   el.combo.textContent = `×${s.combat.comboMultiplier.toFixed(1)}`;
 
   if (s.mode === Mode.SURVIVAL) el.wave.textContent = s.wave;
-  if (s.mode === Mode.TIME_ATTACK || s.mode === Mode.CLINIC_STS) {
+  if (s.mode === Mode.DUEL) {
+    duel?.tick();
+    const you = s.playerDamage, them = duel?.remoteDamage ?? 0, tot = you + them;
+    el.raceYou.textContent = `YOU ${you}`;
+    el.raceThem.textContent = `${them} OPPONENT`;
+    el.raceFill.style.width = `${tot ? (you / tot) * 100 : 50}%`;
+  }
+  if (s.mode === Mode.TIME_ATTACK || s.mode === Mode.CLINIC_STS || s.mode === Mode.DUEL) {
     const left = s.timeLeftMs ?? engine.durationMs;
     el.timer.textContent = Math.ceil(left / 1000);
     el.timer.style.color = left < 10000 ? C.damage : '';

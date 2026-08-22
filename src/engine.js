@@ -21,6 +21,7 @@ export const Mode = {
   SURVIVAL: 'SURVIVAL',
   BOSS_RUSH: 'BOSS_RUSH',
   CLINIC_STS: 'CLINIC_STS',
+  DUEL: 'DUEL',
   // family games — a game shaped like the movement. docs/19-EXERCISE-LIBRARY.md §3
   SIEGE: 'SIEGE',
   PURSUIT: 'PURSUIT',
@@ -29,7 +30,7 @@ export const Mode = {
 };
 
 /** Modes scored on a clock rather than on boss HP. */
-const TIMED = new Set([Mode.TIME_ATTACK, Mode.CLINIC_STS]);
+const TIMED = new Set([Mode.TIME_ATTACK, Mode.CLINIC_STS, Mode.DUEL]);
 
 export class SessionEngine {
   constructor(cfg, exerciseId = 'squat', opts = {}) {
@@ -117,6 +118,7 @@ export class SessionEngine {
   get durationMs() {
     if (this.mode === Mode.CLINIC_STS)
       return (this.cfg.clinic?.sit_to_stand_30s?.durationSec ?? 30) * 1000;
+    // A duel runs Time Attack rules: bounded, so it cannot drag while a jury waits.
     return (this.cfg.combat.modes?.TIME_ATTACK?.durationSec ?? 60) * 1000;
   }
 
