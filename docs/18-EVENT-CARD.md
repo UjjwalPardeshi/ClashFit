@@ -120,4 +120,5 @@ everything that matters on the day. Print it, or keep it open on the laptop.
 
 ## Contacts
 
-Organisers: sameera@reskilll.com · Team code issues: +91 82240 99125
+Organisers: sameera@reskilll.com (published on iqoo.reskilll.com)
+Team-code issues: the support number shared in the participant WhatsApp group — kept out of this repo deliberately, since it is a personal mobile and this is public.
