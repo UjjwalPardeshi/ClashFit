@@ -25,8 +25,13 @@ createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
     let p = decodeURIComponent(url.pathname);
     if (p === '/') p = '/index.html';
-    const full = join(ROOT, normalize(p).replace(/^(\.\.[/\\])+/, ''));
+    let full = join(ROOT, normalize(p).replace(/^(\.\.[/\\])+/, ''));
     if (!full.startsWith(ROOT)) { res.writeHead(403).end('forbidden'); return; }
+
+    // Match Vercel's cleanUrls: /app serves app.html, so local and deployed agree.
+    if (!extname(full)) {
+      try { await stat(`${full}.html`); full += '.html'; } catch { /* fall through to 404 */ }
+    }
 
     const s = await stat(full);
     if (s.isDirectory()) { res.writeHead(404).end('not found'); return; }
@@ -41,7 +46,8 @@ createServer(async (req, res) => {
     res.writeHead(404, { 'Content-Type': 'text/plain' }).end('not found');
   }
 }).listen(PORT, () => {
-  console.log(`\n  ClashFit prototype  ->  http://localhost:${PORT}\n`);
+  console.log(`\n  Site       ->  http://localhost:${PORT}`);
+  console.log(`  Prototype  ->  http://localhost:${PORT}/app\n`);
   console.log('  Stand side-on, 2–2.5m back, whole body in frame.');
   console.log('  Hit Debug to watch the angle, the FSM state and the sub-scores live.\n');
 });

@@ -12,8 +12,10 @@ Phase 1 submission closes **1 September, 23:59 IST**.
 
 | | |
 |---|---|
+| [`index.html`](index.html) | The **product site** — what ClashFit is, feature by feature. Deployed at the root of the Vercel project. |
+| [`app.html`](app.html) | The **runnable prototype**, served at `/app`. |
 | [`docs/`](docs/) | The full design set — 39 documents. Start at [`docs/README.md`](docs/README.md). |
-| `src/`, `config/`, `test/` | A **runnable prototype** of the perception and combat core. |
+| `src/`, `config/`, `test/` | The perception and combat core the prototype runs on. |
 
 > **The prototype is a throwaway.** It exists to prove the pose → rep → form → fatigue → damage
 > loop works, to tune thresholds against a real body, and to record the Phase 1 video. **It is not
@@ -30,14 +32,18 @@ The core algorithms are specified in [05-POSE-ENGINE-SPEC](docs/05-POSE-ENGINE-S
 ## Run
 
 ```bash
-npm start          # http://localhost:8080
-npm test           # 32 tests, no camera or browser needed
+npm start          # site at http://localhost:8080, prototype at /app
+npm test           # no camera or browser needed
 ```
 
 No install step — no dependencies. MediaPipe loads from a CDN, so the first run needs internet.
 
-> Open it through `npm start`, not by double-clicking `index.html`. The camera API requires a
-> secure context, and `http://localhost` is one; `file://` is not.
+> Open the prototype through `npm start`, not by double-clicking `app.html`. The camera API
+> requires a secure context, and `http://localhost` is one; `file://` is not.
+
+**Deploying.** [`vercel.json`](vercel.json) configures a plain static deploy with no build step —
+`cleanUrls` is on, so `/app` serves `app.html` both locally and on Vercel. The local server matches
+that behaviour so the two never disagree.
 
 **Setup for a squat:** stand **side-on**, 2–2.5 m back, whole body in frame. Stand still for a
 second — that captures your rest angle — then start. First completed rep sets your range-of-motion
