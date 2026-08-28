@@ -1,0 +1,20 @@
+# Only the product site is public.
+#
+# Everything below is engineering material that has no business on a marketing
+# URL — docs/ in particular holds the risk register and the judge-proofing
+# notes, which were readable at clash-fit.vercel.app/docs/ until this file
+# existed. None of it is deleted; it is simply not deployed.
+#
+# The prototype still runs locally: `npm start`, then /app.
+
+docs/
+deck/
+test/
+tools/
+traces/
+src/
+config/
+app.html
+serve.js
+package.json
+README.md
