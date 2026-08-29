@@ -1580,6 +1580,27 @@ t('page · the library rows sum to the hero total', () => {
   eq(sum, allExercises.length, 'library rows vs config:');
 });
 
+t('page · the device section counts its own callouts correctly', () => {
+  // "Five pieces of the phone" over a list of six is the same self-contradiction
+  // the exercise library shipped with. Count it rather than trust it.
+  const WORDS = { three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8 };
+  const sec = page.slice(page.indexOf('id="device"'), page.indexOf('id="privacy"'));
+  const callouts = (sec.match(/class="iq__part"/g) || []).length;
+  const said = sec.match(/<h2>(\w+) pieces of the phone/);
+  ok(said, 'the device heading no longer names a number of pieces');
+  eq(WORDS[said[1].toLowerCase()], callouts, 'device heading vs its own list:');
+});
+
+t('page · names no hardware we could not verify', () => {
+  // A wrong part number in front of iQOO's own judges is worse than saying
+  // nothing. The GPU name, the NPU and the vapour-chamber area all failed
+  // independent verification on 29 Aug and must stay off the page.
+  const banned = [/adreno/i, /hexagon/i, /\b\d+\s*TOPS\b/i, /1[0-9],?000\s*mm/i,
+                  /8\s*Gen\s*3/i, /40\s*W\s*wireless/i];
+  const hit = banned.filter((re) => re.test(page)).map(String);
+  eq(hit.join(', '), '', 'unverified hardware claims on the page:');
+});
+
 t('page · the telemetry field count it prints is the real one', () => {
   // The page used to say "eleven numbers". summarise() returns 23 fields, and the
   // claim had been wrong long enough that nobody was counting. Now it is counted.
