@@ -13,6 +13,7 @@ import { GhostSource } from './ghost.js';
 import { summarise, coachFor } from './coach.js';
 import { makeDetector, FAMILY_GAME } from './detectors/index.js';
 import { makeFamilyGame, GameOutcome } from './games.js';
+import { AsymmetryTracker, summariseAsymmetry } from './asymmetry.js';
 
 /** The calibration screen is where a live demo most plausibly dies, so it gets real states and
  *  a named cue for each rather than a spinner. docs/02-APP-FLOW.md §2 */
@@ -75,6 +76,7 @@ export class SessionEngine {
     this.fsm = this.family === 'REP_CYCLE' ? new RepStateMachine(this.exercise.detector) : null;
     this.filter = new LandmarkFilter(this.cfg.pose.filter);
     this.fatigue = new FatigueEstimator(this.cfg.pose.fatigue, this.family);
+    this.asym = new AsymmetryTracker();
     this.romBaselineU = null;
     this.topRefSamples = [];
   }
@@ -91,6 +93,7 @@ export class SessionEngine {
     this.reps = [];
     this.fsm?.reset();
     this.detector?.reset();
+    this.asym?.reset();
     this.fatigue.reset();
     this.combat.reset();
     this.romBaselineU = null;
@@ -181,6 +184,8 @@ export class SessionEngine {
       const g = this.game.tick(tMs);
       if (g.outcome !== GameOutcome.RUNNING) { this.phase = Phase.DEAD; this.#end('GAME_LOST'); }
     }
+
+    if (this.phase === Phase.FIGHTING) this.asym.onFrame(sel.left, sel.right, tMs);
 
     if (this.exercise.detector.primaryAngle && (this.phase === Phase.FIGHTING || this.phase === Phase.REST)) {
       const span = spanMetres(lms, this.exercise.detector.primaryAngle, sel.side);
@@ -386,6 +391,7 @@ export class SessionEngine {
     const rec = {
       ...raw, ...score,
       depthCm: this.#depthCm(raw),
+      asymmetry: this.asym.forRep(raw.tStartMs, raw.tEndMs),
       verdict: verdict(score.formScore, this.cfg.ui?.verdictBands),
       fatigue: f, damage: c.lastDamage, combo: c.comboMultiplier,
     };
@@ -508,6 +514,7 @@ export class SessionEngine {
       setReps: this.setReps.length,
       coach: this.coach,
       telemetry: this.telemetry ?? null,
+      asymmetry: summariseAsymmetry(this.reps),
       phase: this.phase,
       angle: this.angle,
       fsmState: this.fsm?.state ?? this.detector?.family ?? null,

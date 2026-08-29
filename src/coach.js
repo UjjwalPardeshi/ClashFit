@@ -6,6 +6,7 @@
 // docs/06-AI-COACH-SPEC.md §3, §5, §6
 
 import { Band } from './fatigue.js';
+import { summariseAsymmetry } from './asymmetry.js';
 
 // ---------------------------------------------------------------- telemetry
 
@@ -51,6 +52,9 @@ export function summarise(reps, combatState, exercise, setIndex = 1, restSec = 4
     session_set_index: setIndex,
     rest_sec: restSec,
     trend: trendOf(reps),
+    // The model gets the ratio, never a verdict. It phrases an observation we measured.
+    asymmetry_pct: (() => { const a = summariseAsymmetry(reps); return a.enough && a.consistent ? Math.round(a.deficitPct) : null; })(),
+    weaker_side: (() => { const a = summariseAsymmetry(reps); return a.enough && a.consistent ? a.weakerSide : null; })(),
   };
 }
 
@@ -118,6 +122,11 @@ const BOSS = [
   "Fine. That one hurt.",
 ];
 
+const ASYM = {
+  coach: "Your {weaker_side} side moved through {asymmetry_pct} percent less range than the other, across the whole set.",
+  boss: "One of your sides is carrying the other. I noticed.",
+};
+
 const SPECIAL = {
   zero: { coach: "Nothing counted that time. Check your framing and go again.", boss: "I felt nothing." },
   first: { coach: "Baseline set. {reps} reps at {form_mean_pct} percent — that's the number everything else is measured against.",
@@ -133,6 +142,13 @@ export function templateFor(t) {
   // Priority order matters. Real fatigue always outranks a progress nudge — it is the thing we
   // uniquely measure, and it is the thing the player most needs to hear.
   const tired = t.fatigue_band === Band.FADING || t.fatigue_band === Band.GASSED;
+
+  // A consistent bilateral lean outranks a depth or tempo nudge. Depth you can fix next rep; a
+  // side carrying the other is the thing that leads somewhere worse, and it is the observation a
+  // physiotherapist would actually want. It still yields to real fatigue, which is more urgent.
+  if (!tired && t.asymmetry_pct != null && t.asymmetry_pct >= 10)
+    return out(ASYM.coach, ASYM.boss, t);
+
   if (!tired && t.session_set_index === 1 && t.fatigue_band === Band.FRESH)
     return out(SPECIAL.first.coach, pickBoss(t), t);
   if (!tired && t.boss_hp_pct <= 20) return out(SPECIAL.lowHp.coach, SPECIAL.lowHp.boss, t);
@@ -159,6 +175,7 @@ function fillable(line, t) {
 
 function resolve(key, t) {
   const map = {
+    asymmetry_pct: t.asymmetry_pct, weaker_side: t.weaker_side,
     reps: t.reps, form_mean: t.form_mean, form_last3: t.form_last3, form_first3: t.form_first3,
     form_mean_pct: t.form_mean_pct, form_last3_pct: t.form_last3_pct, form_first3_pct: t.form_first3_pct,
     depth_cm: t.depth_cm, depth_drop_cm: t.depth_drop_cm,

@@ -10,6 +10,7 @@ import { Roster, RosterMode, Circuit, DEFAULT_CIRCUIT } from '../src/roster.js';
 import { Store, LADDERS } from '../src/store.js';
 import { BoxBreathing, recoveryFraction, Phase as BreathPhase } from '../src/breathing.js';
 import { preflight, summariseChecks, Status } from '../src/preflight.js';
+import { AsymmetryTracker, summariseAsymmetry, describeAsymmetry, Confidence } from '../src/asymmetry.js';
 import { encodeChallenge, decodeChallenge, describeChallenge, challengeFromSession } from '../src/challenge.js';
 import { DuelSession, LoopbackTransport, LinkState, newPlayerId } from '../src/duel.js';
 import { SiegeGame, PursuitGame, BreakerGame, SigilGame, GameOutcome, makeFamilyGame } from '../src/games.js';
@@ -490,6 +491,70 @@ t('challenge · needs no network, no account and no server', () => {
   const src = readFileSync(join(HERE, '..', 'src/challenge.js'), 'utf8');
   for (const forbidden of ['fetch(', 'XMLHttpRequest', 'localStorage', 'WebSocket', 'http://', 'https://'])
     ok(!src.includes(forbidden), `challenge.js reaches for ${forbidden}`);
+});
+
+// ---------- bilateral asymmetry ----------
+t('asymmetry · a symmetric set reports no lean', () => {
+  const e = new SessionEngine(store, 'squat');
+  drive(e, synthWorldSet({ reps: 8, bottom: 80 }));
+  const a = summariseAsymmetry(e.reps);
+  ok(a.enough, 'not enough usable reps');
+  ok(a.deficitPct < 5, `saw a ${a.deficitPct.toFixed(1)}% deficit on a symmetric set`);
+  ok(!a.consistent || a.deficitPct < 5, 'invented a consistent lean where there is none');
+});
+
+t('asymmetry · a guarded limb is detected, and the correct side is named', () => {
+  const e = new SessionEngine(store, 'squat');
+  // right side travels through 30% less of the rep's depth — someone favouring one leg
+  drive(e, synthWorldSet({ reps: 8, bottom: 80, rightBias: 0.30 }));
+  const a = summariseAsymmetry(e.reps);
+  ok(a.enough, 'not enough usable reps');
+  ok(a.consistent, 'lean was not flagged as consistent across the set');
+  eq(a.weakerSide, 'right', `named the wrong side (deficit ${a.deficitPct.toFixed(1)}%)`);
+  ok(a.deficitPct > 15, `deficit only ${a.deficitPct.toFixed(1)}% for a 30% guard`);
+});
+
+t('asymmetry · scales with how much the limb is guarded', () => {
+  const run = (bias) => {
+    const e = new SessionEngine(store, 'squat');
+    drive(e, synthWorldSet({ reps: 8, bottom: 80, rightBias: bias }));
+    return summariseAsymmetry(e.reps).deficitPct ?? 0;
+  };
+  const light = run(0.12), heavy = run(0.35);
+  ok(heavy > light + 8, `light ${light.toFixed(1)}% vs heavy ${heavy.toFixed(1)}% — not responsive`);
+});
+
+t('asymmetry · refuses to speak when it cannot see both sides', () => {
+  const tr = new AsymmetryTracker();
+  for (let i = 0; i < 4; i++) tr.onFrame(170 - i, 170 - i, i * 33);   // too few frames
+  eq(tr.forRep(0, 200), null, 'reported a ratio from four frames');
+  const tr2 = new AsymmetryTracker();
+  for (let i = 0; i < 40; i++) tr2.onFrame(NaN, 170, i * 33);          // one side invisible
+  eq(tr2.forRep(0, 2000), null, 'reported a ratio with one side missing');
+});
+
+t('asymmetry · never diagnoses, never clears anyone', () => {
+  // The whole feature is a liability the moment it starts making medical claims.
+  const phrases = [
+    describeAsymmetry({ enough: false, note: 'x' }),
+    describeAsymmetry({ enough: true, consistent: false, deficitPct: 3, weakerSide: 'left' }),
+    describeAsymmetry({ enough: true, consistent: true, deficitPct: 22, weakerSide: 'left' }),
+  ];
+  for (const p of phrases) {
+    ok(!/injur|risk|diagnos|cleared|abnormal|damage|tear|should not/i.test(p), `clinical claim: ${p}`);
+  }
+  ok(/physiotherapist/i.test(phrases[2]), 'a real deficit should point at a professional');
+});
+
+t('asymmetry · reaches the coach as an observation, not a verdict', () => {
+  const e = new SessionEngine(store, 'squat');
+  drive(e, synthWorldSet({ reps: 8, bottom: 80, rightBias: 0.30 }));
+  const tel = summarise(e.setReps, e.combat.state(), squat, 1, 45);
+  ok(tel.asymmetry_pct >= 10, `telemetry carried ${tel.asymmetry_pct}`);
+  eq(tel.weaker_side, 'right');
+  const out = templateFor(tel);
+  ok(/right/.test(out.coachLine), out.coachLine);
+  ok(validateOutput(out.coachLine, tel).ok, `failed its own validator: ${out.coachLine}`);
 });
 
 // ---------- preflight ----------
@@ -1378,7 +1443,7 @@ t('templates · never leak an unresolved placeholder', () => {
             depth_cm: 42, depth_drop_cm: 4, velocity_loss_pct: 30, rom_loss_pct: 18,
             fatigue_band: band, best_rep:{index:2,form:0.9}, worst_rep:{index:8,form:0.4,reason},
             combo_max:1.6, combo_reps:5, boss_hp_pct:55, session_set_index:2, rest_sec:45,
-            trend, ...holes };
+            asymmetry_pct:14, weaker_side:'left', trend, ...holes };
           const out = templateFor(tel);
           ok(!/[{}]/.test(out.coachLine), `coach leaked: ${out.coachLine}`);
           ok(!/[{}]/.test(out.bossLine), `boss leaked: ${out.bossLine}`);
@@ -1406,7 +1471,8 @@ t('templates · every line in the bank passes our own validator', () => {
     form_mean_pct:70, form_first3_pct:80, form_last3_pct:60,
     depth_cm:42, depth_drop_cm:4, velocity_loss_pct:30, rom_loss_pct:18, fatigue_band:'FADING',
     best_rep:{index:2,form:0.9}, worst_rep:{index:8,form:0.4,reason:'depth'},
-    combo_max:1.6, combo_reps:5, boss_hp_pct:55, session_set_index:2, rest_sec:45, trend:'declining' };
+    combo_max:1.6, combo_reps:5, boss_hp_pct:55, session_set_index:2, rest_sec:45, trend:'declining',
+    asymmetry_pct:14, weaker_side:'left' };
   for (const raw of lines) {
     const filled = fill(raw.replace(/\\'/g, "'"), tel);
     ok(filled !== null, `unfillable: ${raw}`);

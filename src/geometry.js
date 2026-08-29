@@ -65,11 +65,15 @@ export function chooseSide(lms, jointNames, threshold) {
 /** Primary angle for an exercise, in degrees. NaN if the frame is unusable. */
 export function primaryAngle(lms, primary, jointNames, threshold) {
   const sel = chooseSide(lms, jointNames, threshold);
-  if (!sel.valid) return { angle: NaN, ...sel };
+  if (!sel.valid) return { angle: NaN, left: NaN, right: NaN, ...sel };
   const at = (name, side) => lms[JOINT[name][side]];
   const one = (side) => angle3(at(primary.a, side), at(primary.b, side), at(primary.c, side));
-  const angle = sel.both ? (one(SIDE.LEFT) + one(SIDE.RIGHT)) / 2 : one(sel.side);
-  return { angle, ...sel };
+  const left = one(SIDE.LEFT);
+  const right = one(SIDE.RIGHT);
+  const angle = sel.both ? (left + right) / 2 : one(sel.side);
+  // Both sides were always being computed and then averaged away. The DIFFERENCE between them is
+  // the single most clinically meaningful thing this pipeline can see, and it was being discarded.
+  return { angle, left, right, ...sel };
 }
 
 /** Which required joints are not visible enough, by name. A named cue — "I can't see your

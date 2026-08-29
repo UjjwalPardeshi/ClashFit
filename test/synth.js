@@ -39,11 +39,12 @@ export function synthSet({ reps, top, bottom, fps = 30, decay = 0, gapSec = 0.4,
 
 /** Synthetic WORLD landmarks for a given hip-knee-ankle angle. Drives the full SessionEngine,
  *  not just the FSM — so mode logic, calibration and ghost sync are all covered too. */
-export function synthWorldFrame(angleDeg) {
+export function synthWorldFrame(angleDeg, rightBiasDeg = 0) {
   const P = (x, y, z = 0, v = 0.95) => ({ x, y, z, visibility: v });
   const lm = Array.from({ length: 33 }, () => P(0, 0, 0, 0));
-  const a = (angleDeg * Math.PI) / 180;
   for (const side of [0, 1]) {
+    // side 1 is the right; a bias lets us synthesise a limb moving through less range
+    const a = (((side === 1 ? angleDeg + rightBiasDeg : angleDeg)) * Math.PI) / 180;
     const sx = side ? 0.12 : -0.12;
     lm[11 + side] = P(sx, -0.45);
     lm[13 + side] = P(sx, -0.25, 0, 0.9);
@@ -59,12 +60,17 @@ export function synthWorldFrame(angleDeg) {
 
 /** A full set as (worldLandmarks, tMs) frames, ready to push into SessionEngine.frame(). */
 export function synthWorldSet(opts) {
-  const { top = 172 } = opts;
+  const { top = 172, rightBias = 0 } = opts;
   const frames = [];
   let t = 0;
   const step = 1000 / (opts.fps ?? 30);
-  for (let i = 0; i < 45; i++) { frames.push([synthWorldFrame(top), t]); t += step; }  // settle
-  for (const [angle, ms] of synthSet({ ...opts, top })) frames.push([synthWorldFrame(angle), ms + t]);
+  for (let i = 0; i < 45; i++) { frames.push([synthWorldFrame(top, 0), t]); t += step; }  // settle
+  // rightBias shortens the right side's travel by a fraction of the rep's depth, which is what a
+  // person guarding one leg actually does.
+  for (const [angle, ms] of synthSet({ ...opts, top })) {
+    const bias = rightBias ? (top - angle) * rightBias : 0;
+    frames.push([synthWorldFrame(angle, bias), ms + t]);
+  }
   return frames;
 }
 
