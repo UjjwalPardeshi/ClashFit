@@ -4,14 +4,20 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>ClashFit — prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
   :root{
-    --ground:#07090C; --surface:#10141B; --lift:#1A2029;
-    --ink:#F2F5F8; --mute:#8A94A4; --line:#222A35;
-    --damage:#FF3B5C; --clean:#22D3A0; --shallow:#F5A524;
-    --system:#38BDF8; --fatigue:#A78BFA;
-    --mono:ui-monospace,'SF Mono',Menlo,monospace;
-    --sans:ui-sans-serif,system-ui,'Segoe UI',sans-serif;
+    /* Same tokens as the landing page (index.html). One product, one identity. */
+    --ground:#0b0b0c; --surface:#111113; --lift:#17171a;
+    --ink:#f3efe8; --mute:#a4a19d; --line:#302f2f;
+    --damage:#ff4f1f; --ember:#ff6b40; --brass:#ffb59b;
+    --clean:#8fd18a; --shallow:#f2c14e; --heavy:#ff8a3d;
+    --system:#ffb59b; --fatigue:#ff8a3d;
+    --display:"Big Shoulders Display",Impact,"Arial Narrow","Helvetica Neue",sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,'SF Mono',Menlo,monospace;
+    --sans:"Barlow",ui-sans-serif,system-ui,'Segoe UI',sans-serif;
   }
   *,*::before,*::after{box-sizing:border-box}
   html,body{height:100%}
@@ -23,7 +29,7 @@
 
   /* top-left status */
   #status{position:fixed;top:16px;left:16px;display:flex;flex-direction:column;gap:6px;z-index:3}
-  #cue{font-size:20px;font-weight:600;letter-spacing:-.01em;max-width:22ch;line-height:1.25;
+  #cue{font-size:30px;font-weight:600;letter-spacing:-.015em;max-width:20ch;line-height:1.18;
        text-shadow:0 2px 18px rgba(0,0,0,.9)}
   #phase{display:inline-flex;align-items:center;gap:7px}
   #dot{width:9px;height:9px;border-radius:50%;background:var(--mute)}
@@ -33,8 +39,9 @@
        justify-content:space-between;gap:16px;z-index:3;pointer-events:none}
   .tile{background:rgba(16,20,27,.82);border:1px solid var(--line);padding:10px 16px;
         backdrop-filter:blur(8px);min-width:104px}
-  .big{font-size:44px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-  #verdict{font-size:22px;font-weight:800;letter-spacing:.06em}
+  .big{font-family:var(--display);font-size:56px;font-weight:900;line-height:.92;
+       font-variant-numeric:tabular-nums;letter-spacing:.01em}
+  #verdict{font-family:var(--display);font-size:30px;font-weight:900;letter-spacing:.04em}
   #pips{display:flex;gap:5px;margin:7px 0 4px}
   .pip{width:26px;height:7px;background:rgba(255,255,255,.14)}
   .pip.on{background:var(--fatigue)}
@@ -125,7 +132,7 @@
   #turn{position:fixed;top:16px;left:50%;transform:translateX(-50%);text-align:center;
         display:none;z-index:3}
   #turn.show{display:block}
-  #turnName{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.1;
+  #turnName{font-family:var(--display);font-size:42px;font-weight:800;letter-spacing:-.02em;line-height:1.1;
             text-shadow:0 2px 18px rgba(0,0,0,.9)}
 
   /* breathing */
@@ -140,7 +147,7 @@
   #over{position:fixed;inset:0;display:none;place-items:center;text-align:center;z-index:8;
         background:rgba(7,9,12,.86);backdrop-filter:blur(6px)}
   #over.show{display:grid}
-  #overTitle{font-size:clamp(38px,7vw,84px);font-weight:800;letter-spacing:-.03em;line-height:1;
+  #overTitle{font-family:var(--display);font-size:clamp(44px,8vw,96px);font-weight:900;letter-spacing:-.03em;line-height:1;
              margin:10px 0 12px}
   #overBody{font-size:13px;letter-spacing:.1em;line-height:2}
 

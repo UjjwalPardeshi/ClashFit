@@ -3,9 +3,29 @@
 // fallback in docs/15-ASSET-BRIEF.md §1, and exactly right for a throwaway prototype.
 
 export const C = {
-  ground: '#07090C', surface: '#10141B', ink: '#F2F5F8', mute: '#8A94A4',
-  damage: '#FF3B5C', clean: '#22D3A0', shallow: '#F5A524', system: '#38BDF8', fatigue: '#A78BFA',
-  hpFull: '#34D399', hpMid: '#FBBF24', hpLow: '#F43F5E',
+  // One identity across the landing page and the product. These are the site's own tokens
+  // (index.html :root) rather than a second palette that happens to look similar — a judge
+  // clicking through from the site must not feel they have landed somewhere else.
+  ground:  '#0b0b0c',   // site --paper
+  surface: '#111113',   // site --paper-2
+  lift:    '#17171a',   // site --panel
+  ink:     '#f3efe8',   // site --ink
+  mute:    '#a4a19d',   // site --muted, composited to a solid
+  line:    '#302f2f',   // site --rule, composited to a solid
+
+  damage:  '#ff4f1f',   // site --ember. The accent, and the GASSED state.
+  ember:   '#ff6b40',   // site --ember-lift
+  brass:   '#ffb59b',   // site --brass — warm chrome, replaces the old cool cyan
+  system:  '#ffb59b',   // alias of brass, so existing call sites keep working
+  fatigue: '#ff8a3d',   // site --heavy
+
+  // The fatigue ramp, identical to the site's. Every step clears 5.9:1 on this ground, and
+  // the band NAME is always rendered beside the colour — the ramp is warm end to end, which
+  // is confusable under red-green colour blindness, so colour never travels alone.
+  clean:   '#8fd18a',   // site --fresh
+  shallow: '#f2c14e',   // site --working
+  heavy:   '#ff8a3d',   // site --heavy
+  hpFull:  '#8fd18a', hpMid: '#f2c14e', hpLow: '#ff4f1f',
 };
 
 const EDGES = [
@@ -355,7 +375,7 @@ export class Renderer {
       ctx.globalAlpha = 1 - k;
       ctx.translate(w * 0.72, h * 0.42 - k * 70);
       ctx.scale(scale, scale);
-      ctx.font = '800 46px ui-sans-serif, system-ui, sans-serif';
+      ctx.font = '900 62px "Big Shoulders Display", Impact, "Arial Narrow", sans-serif';
       ctx.textAlign = 'center'; ctx.fillStyle = p.color;
       ctx.fillText(p.text, 0, 0);
       ctx.restore();

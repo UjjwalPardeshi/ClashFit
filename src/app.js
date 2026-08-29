@@ -109,7 +109,10 @@ let landmarker = null, engine = null, renderer = null, recorder = new TraceRecor
 let running = false, lastVideoTime = -1, latest = null, casual = false;
 let fps = 0, fpsT0 = performance.now(), fpsN = 0, inferMs = 0;
 
-const BAND_COLOR = { FRESH: C.clean, WORKING: C.system, FADING: C.shallow, GASSED: C.damage };
+// The site's ramp exactly: fresh > working > heavy > gassed. The band name is rendered
+// alongside everywhere this is used, because a warm ramp is confusable under red-green
+// colour blindness and colour must never be the only channel.
+const BAND_COLOR = { FRESH: C.clean, WORKING: C.shallow, FADING: C.heavy, GASSED: C.damage };
 
 async function boot() {
   try {
