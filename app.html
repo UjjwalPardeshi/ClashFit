@@ -98,6 +98,13 @@
                 font-size:12px;padding:10px;resize:vertical;word-break:break-all}
   #challengeBox.show{display:block}
 
+  /* a judge who enters at /app must be able to get back out */
+  #home{position:fixed;left:16px;bottom:16px;z-index:5;font-family:var(--mono);font-size:11px;
+        letter-spacing:.14em;text-transform:uppercase;color:var(--mute);text-decoration:none;
+        border:1px solid var(--line);padding:8px 12px;background:rgba(17,17,19,.82);
+        backdrop-filter:blur(8px)}
+  #home:hover{color:var(--ink);border-color:var(--brass)}
+
   /* wide overlays */
   #modes,#pre{position:fixed;inset:0;display:none;place-items:center;z-index:7;padding:24px;
               overflow:auto;background:rgba(7,9,12,.94);backdrop-filter:blur(8px)}
@@ -162,6 +169,8 @@
 <body>
   <canvas id="stage"></canvas>
   <video id="cam" playsinline muted></video>
+
+  <a id="home" href="/" title="Back to clashfit.app">&larr; ClashFit</a>
 
   <div id="status">
     <span id="phase" class="lbl"><i id="dot"></i><span id="phaseText">idle</span></span>
