@@ -16,4 +16,5 @@ All photographs via Wikimedia Commons, used under the licence shown.
 | [Man lifting a heavy barbell](https://commons.wikimedia.org/wiki/File:Man_lifting_a_heavy_barbell.jpg) | Binyamin Mellish | CC0 |
 | [Fitness training improves run times (8276716)](https://commons.wikimedia.org/wiki/File:Fitness_training_improves_run_times_(8276716).jpg) | U.S. Air Force photo by Airman 1st Class Eve Daugherty | Public domain |
 | [District Crossfit Class Warfare-244](https://commons.wikimedia.org/wiki/File:District_Crossfit_Class_Warfare-244.jpg) | ROSE PHYSICAL THERAPY GROUP (photos · photo sets) | CC BY 2.0 |
-| [Traditional Wrestling Match](https://commons.wikimedia.org/wiki/File:Traditional_Wrestling_Match.jpg) | Amdadphoto | CC BY-SA 4.0 |
+| [110707-F-HJ603-015](https://commons.wikimedia.org/wiki/File:110707-F-HJ603-015_(5912797170).jpg) | U.S. Air Force | Public domain |
+| [160516-N-HW977-030](https://commons.wikimedia.org/wiki/File:160516-N-HW977-030_160516-N-HW977-030.jpg) | Greg Vojtko, U.S. Navy | Public domain |
