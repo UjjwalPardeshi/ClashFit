@@ -78,7 +78,7 @@ most important image in the deck** — it is the one thing on screen that no oth
 
 > # Gemma 3n. On the NPU. Airplane mode.
 
-> After every set, eleven numbers describing how your movement changed go to a 2-billion-parameter
+> After every set, a twenty-three-field summary of how your movement changed goes to a 2-billion-parameter
 > model running on the phone. It writes the coaching. It writes the taunt.
 >
 > It never sees your video. Nothing does.

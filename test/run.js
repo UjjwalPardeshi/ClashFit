@@ -1580,6 +1580,20 @@ t('page · the library rows sum to the hero total', () => {
   eq(sum, allExercises.length, 'library rows vs config:');
 });
 
+t('page · the telemetry field count it prints is the real one', () => {
+  // The page used to say "eleven numbers". summarise() returns 23 fields, and the
+  // claim had been wrong long enough that nobody was counting. Now it is counted.
+  const src = readFileSync(join(HERE, '..', 'src', 'coach.js'), 'utf8');
+  const start = src.indexOf('export function summarise');
+  const body = src.slice(start, src.indexOf('\nfunction trendOf', start));
+  const ret = body.slice(body.lastIndexOf('  return {'));
+  const fields = (ret.match(/^ {4}([a-z_0-9]+):/gm) || []).length;
+  eq(fields, 23, 'summarise() field count:');
+  ok(/twenty[\u2011-]three[\u2011-]field|twenty-three-field/.test(page),
+     'the page no longer states the telemetry field count');
+  ok(!/eleven numbers/i.test(page), 'the page still says "eleven numbers"');
+});
+
 t('page · every mode it names exists in the code', () => {
   const src = readdirSync(join(HERE, '..', 'src'))
     .filter(f => f.endsWith('.js'))

@@ -211,7 +211,7 @@ Specified in [21-SENSOR-PLAYBOOK](21-SENSOR-PLAYBOOK.md) §5. Summary:
 ## 9. What we say about it in the pitch
 
 > "The coach and the villain are the same model, running on the phone's NPU. It never sees your
-> video — it sees eleven numbers describing how your movement changed across a set. And it works
+> video — it sees a twenty-three-field summary of how your movement changed across a set. And it works
 > in airplane mode, which we can show you right now."
 
 Then show airplane mode on in the status bar while a fight runs. Do not narrate the icon — let them
