@@ -1,0 +1,60 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>ClashFit · fatigue curve</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Barlow:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<!--
+  The fatigue curve, plotted from the shipping engine's own output.
+  Reproduce every number with:  node test/replay.js traces/synthetic-f3-to-failure.jsonl
+  The trace is synthetic landmark data; the engine, the thresholds and the bands are the
+  ones that ship. This is how thresholds get tuned without doing four hundred squats.
+-->
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1600px;height:900px;background:#0b0b0c;color:#f3efe8;font-family:"Barlow",sans-serif;padding:56px 64px;display:flex;flex-direction:column}
+.k{font-family:"IBM Plex Mono",monospace;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#ff4f1f}
+h1{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:62px;line-height:.9;text-transform:uppercase;margin-top:14px}
+h1 em{font-style:normal;color:#ff4f1f}
+.sub{margin-top:16px;color:rgba(243,239,232,.66);font-size:19px;max-width:96ch}
+svg{flex:1;margin-top:26px;width:100%}
+.legend{display:flex;gap:30px;margin-top:8px;font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(243,239,232,.6)}
+.legend i{display:inline-block;width:22px;height:3px;vertical-align:middle;margin-right:8px}
+.foot{margin-top:16px;font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.1em;color:rgba(243,239,232,.45)}
+</style></head><body>
+<p class="k">The fatigue model</p>
+<h1>Thirteen reps. <em>Nobody told it when to stop.</em></h1>
+<p class="sub">Velocity against the athlete&rsquo;s own first three reps. The bands are not a difficulty setting &mdash; they are where the movement actually changed.</p>
+<svg id="c" viewBox="0 0 1472 470" preserveAspectRatio="none"></svg>
+<div class="legend">
+  <span><i style="background:#ff4f1f"></i>Fatigue index</span>
+  <span><i style="background:rgba(243,239,232,.55)"></i>Rep velocity &deg;/s</span>
+  <span><i style="background:#6c8b58"></i>Fresh</span><span><i style="background:#a5842f"></i>Working</span>
+  <span><i style="background:#b3612a"></i>Fading</span><span><i style="background:#c2330f"></i>Gassed</span>
+</div>
+<p class="foot">Produced by the shipping engine &middot; node test/replay.js traces/synthetic-f3-to-failure.jsonl &middot; synthetic trace, real thresholds</p>
+<script>
+const D = [{"rep": 1, "form": 0.85, "verdict": "CLEAN", "depth": 1.0, "rom": 1.0, "tempo": 0.7, "align": 0.37, "vel": 107, "fatigue": 0.0, "band": "FRESH", "dmg": 81}, {"rep": 2, "form": 0.89, "verdict": "CLEAN", "depth": 1.0, "rom": 0.96, "tempo": 1.0, "align": 0.35, "vel": 93, "fatigue": 0.0, "band": "FRESH", "dmg": 95}, {"rep": 3, "form": 0.88, "verdict": "CLEAN", "depth": 1.0, "rom": 0.93, "tempo": 1.0, "align": 0.35, "vel": 78, "fatigue": 0.13, "band": "FRESH", "dmg": 104}, {"rep": 4, "form": 0.87, "verdict": "CLEAN", "depth": 0.99, "rom": 0.88, "tempo": 1.0, "align": 0.31, "vel": 68, "fatigue": 0.17, "band": "FRESH", "dmg": 112}, {"rep": 5, "form": 0.83, "verdict": "CLEAN", "depth": 0.95, "rom": 0.85, "tempo": 1.0, "align": 0.29, "vel": 59, "fatigue": 0.23, "band": "WORKING", "dmg": 129}, {"rep": 6, "form": 0.81, "verdict": "CLEAN", "depth": 0.9, "rom": 0.81, "tempo": 1.0, "align": 0.3, "vel": 51, "fatigue": 0.31, "band": "WORKING", "dmg": 137}, {"rep": 7, "form": 0.78, "verdict": "OK", "depth": 0.85, "rom": 0.78, "tempo": 1.0, "align": 0.29, "vel": 45, "fatigue": 0.38, "band": "FADING", "dmg": 172}, {"rep": 8, "form": 0.75, "verdict": "OK", "depth": 0.81, "rom": 0.75, "tempo": 1.0, "align": 0.29, "vel": 41, "fatigue": 0.44, "band": "FADING", "dmg": 180}, {"rep": 9, "form": 0.73, "verdict": "OK", "depth": 0.76, "rom": 0.72, "tempo": 1.0, "align": 0.31, "vel": 36, "fatigue": 0.49, "band": "FADING", "dmg": 176}, {"rep": 10, "form": 0.7, "verdict": "OK", "depth": 0.72, "rom": 0.67, "tempo": 1.0, "align": 0.27, "vel": 32, "fatigue": 0.53, "band": "FADING", "dmg": 93}, {"rep": 11, "form": 0.68, "verdict": "OK", "depth": 0.68, "rom": 0.64, "tempo": 1.0, "align": 0.29, "vel": 29, "fatigue": 0.57, "band": "GASSED", "dmg": 82}, {"rep": 12, "form": 0.65, "verdict": "OK", "depth": 0.64, "rom": 0.61, "tempo": 1.0, "align": 0.27, "vel": 26, "fatigue": 0.6, "band": "GASSED", "dmg": 101}, {"rep": 13, "form": 0.62, "verdict": "OK", "depth": 0.6, "rom": 0.57, "tempo": 1.0, "align": 0.26, "vel": 24, "fatigue": 0.63, "band": "GASSED", "dmg": 82}];
+const W=1472,H=470,L=64,R=52,T=14,B=40, iw=W-L-R, ih=H-T-B;
+const x=i=>L+(iw*i)/(D.length-1);
+const yF=v=>T+ih-(ih*v)/0.75;                       // fatigue index axis, 0..0.75
+const vmax=Math.max(...D.map(d=>d.vel));
+const yV=v=>T+ih-(ih*v)/(vmax*1.06);
+const bands=[[0,0.15,'#6c8b58'],[0.15,0.30,'#a5842f'],[0.30,0.50,'#b3612a'],[0.50,0.75,'#c2330f']];
+let s='';
+for(const [a,b,c] of bands) s+=`<rect x="${L}" y="${yF(b)}" width="${iw}" height="${yF(a)-yF(b)}" fill="${c}" fill-opacity=".22"/>`;
+for(const [a,b,c] of bands) s+=`<line x1="${L}" x2="${W-R}" y1="${yF(b)}" y2="${yF(b)}" stroke="${c}" stroke-opacity=".5" stroke-width="1"/>`;
+// velocity bars
+D.forEach((d,i)=>{ const bw=iw/D.length*0.34; s+=`<rect x="${x(i)-bw/2}" y="${yV(d.vel)}" width="${bw}" height="${T+ih-yV(d.vel)}" fill="#f3efe8" fill-opacity=".2"/>`; });
+// fatigue line
+s+=`<polyline fill="none" stroke="#ff4f1f" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round" points="${D.map((d,i)=>x(i)+','+yF(d.fatigue)).join(' ')}"/>`;
+D.forEach((d,i)=>{ s+=`<circle cx="${x(i)}" cy="${yF(d.fatigue)}" r="5" fill="#0b0b0c" stroke="#ff4f1f" stroke-width="3"/>`; });
+// first crossing labels
+const seen=new Set();
+D.forEach((d,i)=>{ if(!seen.has(d.band)){ seen.add(d.band);
+  if(i>0) s+=`<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${T+ih}" stroke="#f3efe8" stroke-opacity=".22" stroke-dasharray="3 4"/>`;
+  s+=`<text x="${x(i)+7}" y="${T+16}" fill="#f3efe8" fill-opacity=".8" font-family="IBM Plex Mono" font-size="12" letter-spacing="1.6">${d.band}</text>`; }});
+// axes
+D.forEach((d,i)=>{ s+=`<text x="${x(i)}" y="${H-16}" text-anchor="middle" fill="#f3efe8" fill-opacity=".5" font-family="IBM Plex Mono" font-size="12">${d.rep}</text>`; });
+[0,0.25,0.5,0.75].forEach(v=>{ s+=`<text x="${L-12}" y="${yF(v)+4}" text-anchor="end" fill="#f3efe8" fill-opacity=".5" font-family="IBM Plex Mono" font-size="12">${v.toFixed(2)}</text>`; });
+s+=`<text x="${W-R+10}" y="${yV(vmax)+4}" fill="#f3efe8" fill-opacity=".4" font-family="IBM Plex Mono" font-size="12">${vmax}&#176;/s</text>`;
+document.getElementById('c').innerHTML=s;
+</script></body></html>

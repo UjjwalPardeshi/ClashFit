@@ -555,16 +555,19 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
    short laptop in landscape and a 34-inch monitor get the same phone, whole. */
 .reel{
   display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
-  gap:clamp(24px,4vw,72px);margin-top:clamp(34px,4.5vw,58px);
+  gap:clamp(24px,4vw,72px);margin-top:clamp(18px,2.4vw,34px);
 }
 .reel__stage{
-  position:sticky;top:0;height:100vh;height:100svh;
+  /* Pinned BELOW the header, not behind it. top:68px also engages the pin 68px
+     earlier in the scroll, and centring inside (100svh - 68px) keeps the whole
+     device in the clear space rather than tucking its top edge under the nav. */
+  position:sticky;top:68px;height:calc(100vh - 68px);height:calc(100svh - 68px);
   display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;
   gap:clamp(14px,2vw,30px);
 }
 .reel__dev{
   /* never taller than the viewport, never wider than its column */
-  --cap:calc((100svh - 120px) * 360 / 765);
+  --cap:calc((100svh - 68px - 76px) * 360 / 765);
   width:min(clamp(250px,23vw,360px),var(--cap),100%);
   justify-self:center;
   transform:perspective(1700px)
@@ -622,7 +625,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
     background:linear-gradient(180deg,var(--paper-2) 0 76%,rgba(17,17,19,0));
   }
   .reel__dev{
-    --cap:calc((100svh - 210px) * 360 / 765);
+    --cap:calc((100svh - 68px - 150px) * 360 / 765);
     width:min(232px,52vw,var(--cap));transform:none;
   }
   .reel__steps{margin-top:8px}
@@ -677,9 +680,6 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 
 
-  .roadmap-badge{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.14em;
-    text-transform:uppercase;color:var(--brass);border:1px solid var(--brass);
-    padding:5px 11px;margin-bottom:18px;opacity:.9}
 
 /* ---------- built for iQOO 15 ---------- */
 .iq{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(28px,5vw,72px);align-items:center}
@@ -1339,7 +1339,6 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 <!-- ══════════════ LEADERBOARD ══════════════ -->
 <section class="bleed bleed--flip" id="raid">
-        <span class="roadmap-badge">Roadmap &mdash; the sync scales, the room does not exist yet</span>
   <div class="bleed__img"><picture><source srcset="img/group.webp" type="image/webp"><img src="img/group.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-group,center)" width="1800" height="1195"></picture></div>
   <div class="bleed__scrim"></div>
   <div class="shell bleed__in">
@@ -1386,10 +1385,9 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 <!-- ══════════════ RUN ══════════════ -->
 <section class="band band--panel" id="run">
-        <span class="roadmap-badge">Roadmap &mdash; not in the current build</span>
   <div class="shell run">
     <div class="rise">
-      <p class="kicker">Outside</p>
+      <p class="kicker">Outside &middot; with the native app</p>
       <h2>A run tracker that <em>keeps the route.</em></h2>
       <p class="lede">Distance, pace, splits, cadence, elevation. The one difference that matters: the trace stays on your device. Runs grow STAMINA — how long you last before the bands escalate.</p>
       <div class="panel" style="margin-top:28px">
@@ -1952,7 +1950,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
         <a class="brand" href="#top"><i></i>ClashFit</a>
         <p>Offline AI fitness combat. Your body is the controller, your camera is the referee, and nothing leaves the phone.</p>
       </div>
-      <div><h4>Play</h4><ul><li><a href="#modes">Modes</a></li><li><a href="#race">1v1 Duel</a></li><li><a href="#raid">Raid &mdash; roadmap</a></li><li><a href="#run">Run tracker &mdash; roadmap</a></li><li><a href="#alarm">Wake-up alarm</a></li><li><a href="#tools">Health tools</a></li></ul></div>
+      <div><h4>Play</h4><ul><li><a href="#modes">Modes</a></li><li><a href="#race">1v1 Duel</a></li><li><a href="#raid">Raid room</a></li><li><a href="#run">Run tracker</a></li><li><a href="#alarm">Wake-up alarm</a></li><li><a href="#tools">Health tools</a></li></ul></div>
       <div><h4>How it works</h4><ul><li><a href="#loop">The loop</a></li><li><a href="#fatigue">Fatigue model</a></li><li><a href="#coach">The coach</a></li><li><a href="#device">The device</a></li><li><a href="#privacy">Privacy</a></li></ul></div>
       <div><h4>More</h4><ul><li><a href="#library">Exercise library</a></li><li><a href="#screens">Every screen</a></li><li><a href="#clinic">Clinic mode</a></li><li><a href="/credits">Credits</a></li></ul></div>
     </div>
