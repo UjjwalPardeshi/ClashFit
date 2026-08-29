@@ -704,7 +704,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .wl__x{position:absolute;top:10px;right:10px;margin:0}
 .wl__x button{
   background:none;border:0;color:var(--faint);font-size:24px;line-height:1;cursor:pointer;
-  width:34px;height:34px;border-radius:2px
+  width:44px;height:44px;border-radius:2px
 }
 .wl__x button:hover{color:var(--ink);background:var(--rule-soft)}
 .wl__form{margin-top:24px;display:grid;gap:10px}
@@ -714,7 +714,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   border:1px solid var(--rule);border-radius:2px;font:inherit;font-size:15px
 }
 .wl__input::placeholder{color:rgba(243,239,232,.34)}
-.wl__input:focus{outline:none;border-color:var(--ember)}
+.wl__input:focus{border-color:var(--ember)}
 .wl__form .btn{width:100%;justify-content:center;margin-top:4px}
 .wl__fine{margin-top:16px;font-size:12.5px;line-height:1.5;color:var(--faint)}
 .wl__done{text-align:left}
@@ -816,9 +816,28 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   .tool{grid-template-columns:40px minmax(0,1fr);gap:12px 14px}
   .tool__t{grid-column:2;justify-self:start;text-align:left;padding-top:12px}
 }
+
+/* ---------- focus ----------
+   One visible ring for everything that can take focus. :where() keeps the
+   specificity at zero so a component can still override it, and the ring flips
+   to ink on the orange band where ember would vanish. */
+:where(a,button,input,summary,[tabindex]):focus-visible{
+  outline:2px solid var(--ember);outline-offset:3px;border-radius:1px;
+}
+.band--ember :where(a,button,input,[tabindex]):focus-visible{outline-color:#0b0b0c}
+.wl__input:focus-visible{outline-offset:1px}
+
+.skip{
+  position:absolute;left:12px;top:-60px;z-index:60;
+  padding:12px 18px;background:var(--ember);color:#0b0b0c;text-decoration:none;
+  font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  transition:top .18s ease;
+}
+.skip:focus{top:12px}
 </style>
 </head>
 <body>
+<a class="skip" href="#top">Skip to content</a>
 
 <header class="nav">
   <div class="shell nav__in">
