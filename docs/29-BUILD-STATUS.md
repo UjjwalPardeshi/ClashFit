@@ -65,7 +65,9 @@ None of these can exist outside the venue. All are specified and their seams are
 | **Clinic reference norms** — shipped empty on purpose, `showNormComparison: false` | Needs a citation |
 | **Yoga reference angles** — approximate, flagged for capture from a reference performer | Needs a session |
 | **Credentials for the Phase 1 team fields** | You |
+| **Which problem statement is locked** — visible on the dashboard, and the leader must lock one before the idea form opens | You |
 | **Grand Finale scope question** with the organisers | Email |
+| **A Windows or macOS laptop for Office Kit** — deferred 29 Aug, still R0 | You |
 
 ---
 

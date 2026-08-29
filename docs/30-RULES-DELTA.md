@@ -13,6 +13,9 @@ written before them. One is existential. Checked against the live site on 29 Aug
 
 Confirmed on the site: Office Kit's `desktopReq` is *"Windows 10 or later · macOS 10.14.6 or later"*.
 
+**Status, 29 Aug: deferred by the team — being handled separately.** It stays as R0 in the risk
+register because nothing about the underlying constraint has changed.
+
 **Omkar's machine is Ubuntu 24.04, single disk, two partitions — 1 GB EFI and 475 GB ext4. There
 is no Windows partition.** The `Windows Boot Manager` EFI entry is stale: `bootmgfw.efi` is not on
 the EFI partition, so that install was wiped.
@@ -57,9 +60,16 @@ window."*
 - Disclose the prototype on the Phase-1 form regardless. Disclosure costs nothing and removes the
   entire question.
 
-**Ask the organisers to confirm in writing** before relying on the looser reading for anything
-substantial. Until they do, [KOTLIN-CORE](reference/KOTLIN-CORE.md)'s "retype, do not copy" stands
-— it is a few hours, and it is cheap insurance against the stricter rule being the one enforced.
+**Team decision, 29 Aug: building on the submitted prototype is treated as allowed.**
+
+So the plan is now: continue from the prototype on-site rather than retyping the core, and disclose
+it on the Phase-1 form regardless. The Android app is still new work written at the event, so
+nothing pre-built is being shipped as the deliverable either way.
+
+One caveat worth keeping visible: **the site's Guide still says the opposite**, and it is the
+formal published rule. Disclosure is what makes this safe — a disclosed prototype that an organiser
+has permitted in writing in the group is defensible; an undisclosed one is not, under either
+reading. Getting the confirmation by email would remove the last of the doubt and costs one line.
 
 ---
 
@@ -90,7 +100,11 @@ a feature bolted to it — but the copy has to lead with that rather than with t
 
 [16-PRE-EVENT-CHECKLIST](16-PRE-EVENT-CHECKLIST.md) previously suggested registering Hyderabad with
 "the same prep carries over." **That advice was wrong** and has been corrected. A second city needs
-a second idea, which is real work — treat Hyderabad as a separate project or skip it.
+a second idea, which is real work.
+
+**Team decision, 29 Aug: Hyderabad is dropped.** Pune is the only city. That is the right call
+three days out — a second idea built properly is a fortnight of work, and a weak one costs more in
+reputation than the extra shot is worth.
 
 ---
 
