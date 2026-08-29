@@ -19,7 +19,7 @@
    ============================================================ */
 :root{
   --paper:#0b0b0c;   --paper-2:#111113;  --panel:#17171a;
-  --ink:#f3efe8;     --muted:rgba(243,239,232,.66); --faint:rgba(243,239,232,.42);
+  --ink:#f3efe8;     --muted:rgba(243,239,232,.66); --faint:rgba(243,239,232,.55);
   --rule:rgba(243,239,232,.16); --rule-soft:rgba(243,239,232,.08);
   --ember:#ff4f1f;   --ember-lift:#ff6b40; --brass:#ffb59b; --sand:rgba(255,79,31,.14);
   --dark:#0a0a0b;    --dark-2:#141416;
@@ -593,7 +593,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
       <a href="#library">Library</a>
       <a href="#privacy">Privacy</a>
     </nav>
-    <a class="btn btn--ember" href="#get">Get the app</a>
+    <a class="btn btn--ember" href="/app">Try it now</a>
   </div>
 </header>
 
@@ -601,7 +601,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 <!-- ══════════════ HERO ══════════════ -->
 <section class="hero">
-  <div class="hero__img"><img src="img/hero.jpg" alt="" fetchpriority="high" decoding="async" style="--focal:var(--f-hero,center)"></div>
+  <div class="hero__img"><picture><source srcset="img/hero.webp" type="image/webp"><img src="img/hero.jpg" alt="" fetchpriority="high" decoding="async" style="--focal:var(--f-hero,center)" width="2200" height="1467"></picture></div>
   <div class="hero__scrim"></div>
   <svg class="stamp" viewBox="0 0 120 120" aria-hidden="true">
     <defs><path id="ring" d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0"/></defs>
@@ -615,7 +615,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
       <h1>Your body is<br>the controller.<br><em>Your camera is<br>the referee.</em></h1>
       <p class="lede">Real, camera-verified effort in. Boss damage out. Every rep is graded on depth, range, tempo and alignment — and none of it leaves your phone.</p>
       <div class="hero__cta">
-        <a class="btn btn--ember" href="#get">Get the app</a>
+        <a class="btn btn--ember" href="/app">Try it now</a>
         <a class="btn btn--line" href="#loop">How it works</a>
       </div>
       <div class="hero__meta"><span>No account</span><span>No equipment</span><span>Works in airplane mode</span></div>
@@ -638,7 +638,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 <!-- ══════════════ THE LOOP ══════════════ -->
 <section class="band" id="loop">
   <div class="shell story">
-    <figure class="ph ph--45 ph--bw rise" style="margin:0"><img src="img/squat.jpg" alt="A squat at depth, seen from the side" loading="lazy" decoding="async" style="--focal:var(--f-squat,center)"></figure>
+    <figure class="ph ph--45 ph--bw rise" style="margin:0"><picture><source srcset="img/squat.webp" type="image/webp"><img src="img/squat.jpg" alt="A squat at depth, seen from the side" loading="lazy" decoding="async" style="--focal:var(--f-squat,center)" width="1800" height="1198"></picture></figure>
     <div class="rise">
       <p class="kicker">The loop</p>
       <h2>Reps in.<br><em>Damage out.</em></h2>
@@ -663,10 +663,10 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
       <p class="lede">Reps, holds, cardio, jumps and asanas — five detectors, one fatigue model, a game shaped like each movement.</p>
     </div>
     <div class="strip rise">
-      <figure class="ph ph--34" style="margin:0"><img src="img/pushup.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-pushup,right center)"><figcaption class="ph__cap"><b>Boss Fight</b><span>Reps</span></figcaption></figure>
-      <figure class="ph ph--34" style="margin:0"><img src="img/plank.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-plank,center)"><figcaption class="ph__cap"><b>Siege</b><span>Holds</span></figcaption></figure>
-      <figure class="ph ph--34" style="margin:0"><img src="img/cardio.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-cardio,left center)"><figcaption class="ph__cap"><b>Pursuit</b><span>Cardio</span></figcaption></figure>
-      <figure class="ph ph--34" style="margin:0"><img src="img/jump.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-jump,42% 25%)"><figcaption class="ph__cap"><b>Breaker</b><span>Jumps</span></figcaption></figure>
+      <figure class="ph ph--34" style="margin:0"><picture><source srcset="img/pushup.webp" type="image/webp"><img src="img/pushup.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-pushup,right center)" width="1800" height="1200"></picture><figcaption class="ph__cap"><b>Boss Fight</b><span>Reps</span></figcaption></figure>
+      <figure class="ph ph--34" style="margin:0"><picture><source srcset="img/plank.webp" type="image/webp"><img src="img/plank.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-plank,center)" width="1800" height="1200"></picture><figcaption class="ph__cap"><b>Siege</b><span>Holds</span></figcaption></figure>
+      <figure class="ph ph--34" style="margin:0"><picture><source srcset="img/cardio.webp" type="image/webp"><img src="img/cardio.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-cardio,left center)" width="1800" height="1200"></picture><figcaption class="ph__cap"><b>Pursuit</b><span>Cardio</span></figcaption></figure>
+      <figure class="ph ph--34" style="margin:0"><picture><source srcset="img/jump.webp" type="image/webp"><img src="img/jump.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-jump,42% 25%)" width="1800" height="1196"></picture><figcaption class="ph__cap"><b>Breaker</b><span>Jumps</span></figcaption></figure>
     </div>
   </div>
 </section>
@@ -743,7 +743,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
       </ul>
     </div>
     <div class="alarm__vis rise">
-      <figure class="ph ph--45" style="margin:0"><img src="img/pushup.jpg" alt="A push-up, side-on, at the bottom of the rep" loading="lazy" decoding="async" style="--focal:var(--f-pushup,right center)"></figure>
+      <figure class="ph ph--45" style="margin:0"><picture><source srcset="img/pushup.webp" type="image/webp"><img src="img/pushup.jpg" alt="A push-up, side-on, at the bottom of the rep" loading="lazy" decoding="async" style="--focal:var(--f-pushup,right center)" width="1800" height="1200"></picture></figure>
       <div class="alarm__phone"><div class="phone">
             <div class="phone__notch"></div>
             <div class="phone__screen">
@@ -801,7 +801,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
     </div>
     <div class="plans rise">
       <article class="plan">
-        <figure class="ph ph--1610" style="margin:0"><img src="img/jump.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-jump,42% 25%)"></figure>
+        <figure class="ph ph--1610" style="margin:0"><picture><source srcset="img/jump.webp" type="image/webp"><img src="img/jump.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-jump,42% 25%)" width="1800" height="1196"></picture></figure>
         <div class="plan__body">
           <span class="plan__k">Alone</span>
           <h3>Solo</h3>
@@ -813,11 +813,11 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             <li>Tempo Trial <span>Eyes-free</span></li>
             <li>Ghost Race <span>Vs a file</span></li>
           </ul>
-          <a class="btn btn--ember" href="#get">Fight</a>
+          <a class="btn btn--ember" href="/app">Fight now</a>
         </div>
       </article>
       <article class="plan">
-        <figure class="ph ph--1610" style="margin:0"><img src="img/pair.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-pair,center)"></figure>
+        <figure class="ph ph--1610" style="margin:0"><picture><source srcset="img/pair.webp" type="image/webp"><img src="img/pair.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-pair,center)" width="1800" height="1200"></picture></figure>
         <div class="plan__body">
           <span class="plan__k">Head to head</span>
           <h3>Versus</h3>
@@ -828,11 +828,11 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             <li>Mirror Match <span>Tempo</span></li>
             <li>Ghost Race <span>Async</span></li>
           </ul>
-          <a class="btn btn--ember" href="#race">Challenge</a>
+          <a class="btn btn--ember" href="/app">Race a ghost</a>
         </div>
       </article>
       <article class="plan">
-        <figure class="ph ph--1610" style="margin:0"><img src="img/group.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-group,center)"></figure>
+        <figure class="ph ph--1610" style="margin:0"><picture><source srcset="img/group.webp" type="image/webp"><img src="img/group.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-group,center)" width="1800" height="1195"></picture></figure>
         <div class="plan__body">
           <span class="plan__k">A room</span>
           <h3>Group</h3>
@@ -843,7 +843,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             <li>Team vs Team <span>Two bosses</span></li>
             <li>Circuit <span>Four families</span></li>
           </ul>
-          <a class="btn btn--ember" href="#raid">Raid</a>
+          <a class="btn btn--ember" href="/app">Play together</a>
         </div>
       </article>
     </div>
@@ -852,7 +852,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 <!-- ══════════════ 1v1 REP RACE ══════════════ -->
 <section class="bleed" id="race">
-  <div class="bleed__img"><img src="img/pair.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-pair,center)"></div>
+  <div class="bleed__img"><picture><source srcset="img/pair.webp" type="image/webp"><img src="img/pair.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-pair,center)" width="1800" height="1200"></picture></div>
   <div class="bleed__scrim"></div>
   <div class="shell bleed__in">
     <div class="rise">
@@ -919,7 +919,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 <!-- ══════════════ LEADERBOARD ══════════════ -->
 <section class="bleed bleed--flip" id="raid">
-  <div class="bleed__img"><img src="img/group.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-group,center)"></div>
+  <div class="bleed__img"><picture><source srcset="img/group.webp" type="image/webp"><img src="img/group.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-group,center)" width="1800" height="1195"></picture></div>
   <div class="bleed__scrim"></div>
   <div class="shell bleed__in">
     <div class="rise"><div class="phone">
@@ -990,7 +990,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
       </div>
     </div>
     <div class="run__vis rise">
-      <figure class="ph ph--45" style="margin:0"><img src="img/run.jpg" alt="A runner alone on a road in early light" loading="lazy" decoding="async" style="--focal:var(--f-run,center)"></figure>
+      <figure class="ph ph--45" style="margin:0"><picture><source srcset="img/run.webp" type="image/webp"><img src="img/run.jpg" alt="A runner alone on a road in early light" loading="lazy" decoding="async" style="--focal:var(--f-run,center)" width="1605" height="1049"></picture></figure>
       <div class="run__phone"><div class="phone">
             <div class="phone__notch"></div>
             <div class="phone__screen">
@@ -1049,35 +1049,35 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
     <div class="fam rise">
       <div class="fam__row">
         <span class="fam__no">F1</span>
-        <figure class="ph fam__th" style="margin:0"><img src="img/squat.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-squat,center)"></figure>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/squat.webp" type="image/webp"><img src="img/squat.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-squat,center)" width="1800" height="1198"></picture></figure>
         <div class="fam__game">Boss Fight<em>Strength reps</em></div>
         <p class="fam__how">Squats, push-ups, lunges, sit-ups, bridges. Fatigue reads as velocity loss and collapsing depth.</p>
         <div class="fam__n"><b>21</b>exercises</div>
       </div>
       <div class="fam__row">
         <span class="fam__no">F2</span>
-        <figure class="ph fam__th" style="margin:0"><img src="img/plank.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-plank,center)"></figure>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/plank.webp" type="image/webp"><img src="img/plank.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-plank,center)" width="1800" height="1200"></picture></figure>
         <div class="fam__game">Siege<em>Holds</em></div>
         <p class="fam__how">Your plank <em>is</em> the shield. A hold has no velocity, so fatigue is read as tremor.</p>
         <div class="fam__n"><b>9</b>holds</div>
       </div>
       <div class="fam__row">
         <span class="fam__no">F3</span>
-        <figure class="ph fam__th" style="margin:0"><img src="img/yoga.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-yoga,center)"></figure>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/yoga.webp" type="image/webp"><img src="img/yoga.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-yoga,center)" width="1800" height="1440"></picture></figure>
         <div class="fam__game">Sigil<em>Yoga</em></div>
         <p class="fam__how">No boss, no damage, no ranking. Each asana lights a constellation point; the cue names the worst joint.</p>
         <div class="fam__n"><b>14</b>asanas</div>
       </div>
       <div class="fam__row">
         <span class="fam__no">F4</span>
-        <figure class="ph fam__th" style="margin:0"><img src="img/cardio.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-cardio,left center)"></figure>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/cardio.webp" type="image/webp"><img src="img/cardio.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-cardio,left center)" width="1800" height="1200"></picture></figure>
         <div class="fam__game">Pursuit<em>Cardio</em></div>
         <p class="fam__how">Cadence and amplitude from one landmark axis. Something chases you; the gap closes when you slow.</p>
         <div class="fam__n"><b>10</b>movements</div>
       </div>
       <div class="fam__row">
         <span class="fam__no">F5</span>
-        <figure class="ph fam__th" style="margin:0"><img src="img/jump.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-jump,42% 25%)"></figure>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/jump.webp" type="image/webp"><img src="img/jump.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-jump,42% 25%)" width="1800" height="1196"></picture></figure>
         <div class="fam__game">Breaker<em>Jumps</em></div>
         <p class="fam__how">Jump height in real centimetres. A stiff landing scores but doesn't break through — that force went into you.</p>
         <div class="fam__n"><b>7</b>jumps</div>
@@ -1380,7 +1380,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 <!-- ══════════════ COACH ══════════════ -->
 <section class="band" id="coach">
   <div class="shell story">
-    <figure class="ph ph--45 ph--bw rise" style="margin:0"><img src="img/portrait.jpg" alt="An athlete's face, close, between sets" loading="lazy" decoding="async" style="--focal:var(--f-portrait,center 70%)"></figure>
+    <figure class="ph ph--45 ph--bw rise" style="margin:0"><picture><source srcset="img/portrait.webp" type="image/webp"><img src="img/portrait.jpg" alt="An athlete's face, close, between sets" loading="lazy" decoding="async" style="--focal:var(--f-portrait,center 70%)" width="1200" height="1800"></picture></figure>
     <div class="rise">
       <p class="kicker">The coach</p>
       <h2>The coach and the villain are the <em>same model.</em></h2>
@@ -1428,7 +1428,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
       </div>
       <p class="lede">The app already measures joint angles thirty times a second. Running a published protocol is a scoring change, not a new product.</p>
     </div>
-    <figure class="ph ph--169 rise" style="margin:clamp(28px,4vw,48px) 0 0"><img src="img/clinic.jpg" alt="An older adult exercising with a physiotherapist" loading="lazy" decoding="async" style="--focal:var(--f-clinic,center)"><figcaption class="ph__cap"><b>Balance · reach · sit-to-stand</b><span>Not a medical device</span></figcaption></figure>
+    <figure class="ph ph--169 rise" style="margin:clamp(28px,4vw,48px) 0 0"><picture><source srcset="img/clinic.webp" type="image/webp"><img src="img/clinic.jpg" alt="An older adult exercising with a physiotherapist" loading="lazy" decoding="async" style="--focal:var(--f-clinic,center)" width="1800" height="1201"></picture><figcaption class="ph__cap"><b>Balance · reach · sit-to-stand</b><span>Not a medical device</span></figcaption></figure>
     <div class="grid grid--3 rise">
       <article class="card"><span class="card__k">30 seconds</span><h3>Sit-to-stand</h3><p>How many times you can rise from a chair in thirty seconds. A count, its protocol, and your own trend.</p></article>
       <article class="card"><span class="card__k">Monthly</span><h3>Balance and reach</h3><p>Single-leg balance and functional reach, in real units, at home in two minutes.</p></article>
@@ -1453,14 +1453,14 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 <!-- ══════════════ CTA ══════════════ -->
 <section class="cta" id="get">
-  <div class="cta__img"><img src="img/gym.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-gym,center)"></div>
+  <div class="cta__img"><picture><source srcset="img/gym.webp" type="image/webp"><img src="img/gym.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-gym,center)" width="1800" height="1200"></picture></div>
   <div class="cta__scrim"></div>
   <div class="shell"><div class="cta__in rise">
     <p class="kicker">Coming to Android and iOS</p>
     <h2>Prop your phone.<br><em>Fight it out.</em></h2>
     <p class="lede">One download. No account, no equipment, nothing to subscribe to.</p>
     <div class="hero__cta">
-      <a class="btn btn--ember" href="#top">Join the waitlist</a>
+      <a class="btn btn--ember" href="/app">Open the prototype</a>
       <a class="btn btn--line" href="#loop">How it works</a>
     </div>
     <div class="stores"><span class="tag">Android · Play Store</span><span class="tag">iOS · App Store</span><span class="tag">Free core, forever</span></div>

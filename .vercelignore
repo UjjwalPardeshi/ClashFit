@@ -1,20 +1,18 @@
-# Only the product site is public.
+# Only the product site and the working prototype are public.
 #
-# Everything below is engineering material that has no business on a marketing
-# URL — docs/ in particular holds the risk register and the judge-proofing
-# notes, which were readable at clash-fit.vercel.app/docs/ until this file
-# existed. None of it is deleted; it is simply not deployed.
+# docs/ in particular holds the risk register and the judge-proofing notes, which
+# were readable at clash-fit.vercel.app/docs/ until this file existed. None of it
+# is deleted; it is simply not deployed.
 #
-# The prototype still runs locally: `npm start`, then /app.
+# app.html, src/ and config/ MUST ship. The Phase 1 submission gives judges this
+# URL as the prototype, so /app has to actually run — it was 404 before, and every
+# CTA on the landing page pointed at an anchor rather than at the product.
 
 docs/
 deck/
 test/
 tools/
 traces/
-src/
-config/
-app.html
 serve.js
 package.json
 README.md
