@@ -1,9 +1,13 @@
 # 31 · Wake-up alarm — feature spec
 
-Status: **specified, not in the current build.** The landing page carries it under a
-"Roadmap — not in the current build" badge and it must keep that badge until the
-code exists. See [30-RULES-DELTA.md](30-RULES-DELTA.md) for why we badge rather
-than quietly claim.
+Status: **specified, not in the current build.** Decided 29 Aug 2026: the page
+presents it as a product feature rather than a badged roadmap item, because the
+page is now a pre-launch waitlist page — every call to action is "join the
+waitlist", the whole product is dated 2026, and nothing invites a reader to try
+it today. The section kicker carries the one thing that is not obvious: it needs
+the native app. See [30-RULES-DELTA.md](30-RULES-DELTA.md) for the claims policy
+this sits under, and [32-FEATURE-BEYOND-THE-GAME.md](32-FEATURE-BEYOND-THE-GAME.md)
+for the four tools built on the same idea.
 
 ## What it is
 

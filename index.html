@@ -793,6 +793,29 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   .hero__in{grid-template-columns:minmax(0,1fr)}
   .hero__dev{display:none}
 }
+
+/* ---------- beyond the game ---------- */
+.tools{list-style:none;margin:clamp(34px,4.5vw,58px) 0 0;padding:0;border-top:1px solid var(--rule-soft)}
+.tool{
+  display:grid;grid-template-columns:56px minmax(0,1fr) 148px;
+  gap:clamp(14px,2.4vw,34px);align-items:start;
+  padding:clamp(20px,2.6vw,32px) 0;border-bottom:1px solid var(--rule-soft);
+}
+.tool__n{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--ember);padding-top:5px}
+.tool__b h3{margin:0;font-family:var(--display);font-weight:700;font-size:clamp(21px,2.1vw,29px);line-height:1.04;letter-spacing:-.004em}
+.tool__b p{margin:11px 0 0;color:var(--muted);font-size:15px;line-height:1.6;max-width:62ch}
+.tool__t{
+  justify-self:end;text-align:right;padding-top:6px;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);
+}
+.tools__foot{
+  margin:26px 0 0;font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--faint);
+}
+@media(max-width:760px){
+  .tool{grid-template-columns:40px minmax(0,1fr);gap:12px 14px}
+  .tool__t{grid-column:2;justify-self:start;text-align:left;padding-top:12px}
+}
 </style>
 </head>
 <body>
@@ -806,6 +829,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
       <a href="#modes">Modes</a>
       <a href="#race">1v1</a>
       <a href="#alarm">Alarm</a>
+      <a href="#tools">Tools</a>
       <a href="#run">Run</a>
       <a href="#library">Library</a>
       <a href="#device">Device</a>
@@ -985,10 +1009,9 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 <!-- ══════════════ ALARM (orange) ══════════════ -->
 <section class="band band--ember" id="alarm">
-        <span class="roadmap-badge">Roadmap &mdash; not in the current build</span>
   <div class="shell alarm">
     <div class="rise">
-      <p class="kicker">Wake-up</p>
+      <p class="kicker">Wake-up &middot; with the native app</p>
       <h2>The alarm stops when the <em>reps</em> stop it.</h2>
       <p class="lede">Set the alarm, then set its price: five push-ups. At 6:30 the camera comes on, and only the movement silences it. A wiggle under the blanket counts as nothing.</p>
       <ul class="alarm__pts">
@@ -1041,6 +1064,64 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             </div>
           </div></div>
     </div>
+  </div>
+</section>
+
+<!-- ══════════════ BEYOND THE GAME ══════════════ -->
+<section class="band band--line" id="tools">
+  <div class="shell">
+    <div class="head head--split rise">
+      <div>
+        <p class="kicker">Beyond the game</p>
+        <h2>Not everything<br>here is <em>a fight.</em></h2>
+      </div>
+      <p class="lede">The camera that referees a boss fight is only a camera that can see a body. Four of the five below never involve a boss at all &mdash; and none of them ask you to wear anything.</p>
+    </div>
+
+    <ul class="tools rise">
+      <li class="tool">
+        <span class="tool__n">01</span>
+        <div class="tool__b">
+          <h3>The alarm you cannot dismiss from bed</h3>
+          <p>Set the alarm, then set its price: five push-ups, fifteen squats, a thirty-second plank. It keeps ringing until the camera has counted them, graded the way a boss fight is graded. A wiggle under the blanket counts as nothing. An emergency dismiss is always there, held five seconds and logged.</p>
+        </div>
+        <span class="tool__t">Needs the native app</span>
+      </li>
+      <li class="tool">
+        <span class="tool__n">02</span>
+        <div class="tool__b">
+          <h3>A daily budget for the app you keep opening</h3>
+          <p>Give one app a budget &mdash; twenty minutes of the feed you lose evenings to. Past it, it stays shut until you pay in reps. Same grading, so the price cannot be faked, and the budget is yours to set or delete on any day you want it gone.</p>
+        </div>
+        <span class="tool__t">Needs the native app</span>
+      </li>
+      <li class="tool">
+        <span class="tool__n">03</span>
+        <div class="tool__b">
+          <h3>Sixty seconds, every fifty minutes</h3>
+          <p>A desk timer for the eight hours nobody trains in. It asks for one minute: ten squats, or a stretch held long enough to count. It is the smallest honest unit of movement, and the camera is the only thing standing between you and skipping it.</p>
+        </div>
+        <span class="tool__t">Camera only</span>
+      </li>
+      <li class="tool">
+        <span class="tool__n">04</span>
+        <div class="tool__b">
+          <h3>What your neck did all day</h3>
+          <p>While you work, a single frame every few minutes, scored for neck flexion and shoulder height. One number at the end of the day and a curve across the week. The frames are read and discarded &mdash; nothing is stored, and nothing is a diagnosis.</p>
+        </div>
+        <span class="tool__t">Camera only</span>
+      </li>
+      <li class="tool">
+        <span class="tool__n">05</span>
+        <div class="tool__b">
+          <h3>Breathing you do not have to be trusted on</h3>
+          <p>After the set, six breaths a minute for two minutes. The phone watches your chest and shoulders rather than asking whether you kept to the pace, and tells you the rate you actually held. Recovery, measured the same way the training is.</p>
+        </div>
+        <span class="tool__t">Camera only</span>
+      </li>
+    </ul>
+
+    <p class="tools__foot">Nothing here uploads. Nothing here is a diagnosis.</p>
   </div>
 </section>
 
@@ -1787,7 +1868,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
         <a class="brand" href="#top"><i></i>ClashFit</a>
         <p>Offline AI fitness combat. Your body is the controller, your camera is the referee, and nothing leaves the phone.</p>
       </div>
-      <div><h4>Play</h4><ul><li><a href="#modes">Modes</a></li><li><a href="#race">1v1 Duel</a></li><li><a href="#raid">Raid &mdash; roadmap</a></li><li><a href="#run">Run tracker &mdash; roadmap</a></li><li><a href="#alarm">Wake-up alarm &mdash; roadmap</a></li></ul></div>
+      <div><h4>Play</h4><ul><li><a href="#modes">Modes</a></li><li><a href="#race">1v1 Duel</a></li><li><a href="#raid">Raid &mdash; roadmap</a></li><li><a href="#run">Run tracker &mdash; roadmap</a></li><li><a href="#alarm">Wake-up alarm</a></li><li><a href="#tools">Health tools</a></li></ul></div>
       <div><h4>How it works</h4><ul><li><a href="#loop">The loop</a></li><li><a href="#fatigue">Fatigue model</a></li><li><a href="#coach">The coach</a></li><li><a href="#device">The device</a></li><li><a href="#privacy">Privacy</a></li></ul></div>
       <div><h4>More</h4><ul><li><a href="#library">Exercise library</a></li><li><a href="#screens">Every screen</a></li><li><a href="#clinic">Clinic mode</a></li><li><a href="/credits">Credits</a></li></ul></div>
     </div>
