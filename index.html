@@ -851,6 +851,25 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   transition:top .18s ease;
 }
 .skip:focus{top:12px}
+
+/* ---------- the three answers ---------- */
+.ans{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(22px,3.4vw,58px)}
+.ans__c{display:flex;flex-direction:column;padding-top:22px;border-top:2px solid var(--ember)}
+.ans__n{margin:0;font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ember)}
+.ans__h{
+  margin:16px 0 0;font-family:var(--display);font-weight:700;text-transform:none;
+  font-size:clamp(21px,1.9vw,27px);line-height:1.06;letter-spacing:-.004em;color:var(--ink);
+}
+.ans__p{margin:14px 0 0;color:var(--muted);font-size:15px;line-height:1.62}
+.ans__l{
+  margin-top:auto;padding-top:18px;text-decoration:none;
+  font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
+}
+.ans__l::after{content:" \2192"}
+.ans__l:hover{color:var(--ember)}
+@media(max-width:900px){.ans{grid-template-columns:minmax(0,1fr);gap:0}
+  .ans__c{padding:22px 0 28px}.ans__c+.ans__c{border-top-width:1px;border-top-color:var(--rule-soft)}
+  .ans__l{padding-top:14px}}
 </style>
 </head>
 <body>
@@ -948,6 +967,35 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
     <div class="tape__seq"><span>Boss Fight</span><i></i><span>Time Attack</span><i></i><span>Ghost Race</span><i></i><span>Duel</span><i></i><span>Survival</span><i></i><span>Boss Rush</span><i></i><span>Tempo Trial</span><i></i><span>Pass the Phone</span><i></i><span>Last Standing</span><i></i><span>Circuit</span><i></i><span>Siege</span><i></i><span>Pursuit</span><i></i><span>Breaker</span><i></i><span>Sigil</span><i></i><span>Clinic</span><i></i></div>
   </div>
 </div>
+
+<!-- ══════════════ THE THREE ANSWERS ══════════════
+     A judge gets ninety seconds. The problem, the AI and the reason for this
+     phone were all on the page already — at 30%, 75% and 85% down it. They are
+     the three things shortlisting actually asks about, so they are here now. -->
+<section class="band band--tight" id="answers">
+  <div class="shell">
+    <ol class="ans rise">
+      <li class="ans__c">
+        <p class="ans__n">01</p>
+        <h2 class="ans__h">Nothing on your phone can see the rep.</h2>
+        <p class="ans__p">Every fitness app counts what you tell it. Tap ten, it logs ten. So the log goes up while the movement quietly falls apart, and the number stops meaning anything. The problem was never motivation. It is that no one is watching.</p>
+        <a class="ans__l" href="#loop">How the loop closes</a>
+      </li>
+      <li class="ans__c">
+        <p class="ans__n">02</p>
+        <h2 class="ans__h">Three things run, and none of them phone home.</h2>
+        <p class="ans__p">MediaPipe Pose on the GPU at camera rate, thirty&#8209;three joints. A fatigue estimator reading velocity loss against your own first three reps. Gemma&nbsp;3n on the phone&rsquo;s silicon, writing the coaching between sets from eleven numbers. The shipping app requests no internet permission at all.</p>
+        <a class="ans__l" href="#privacy">The whole diagram</a>
+      </li>
+      <li class="ans__c">
+        <p class="ans__n">03</p>
+        <h2 class="ans__h">Two hard jobs, one battery.</h2>
+        <p class="ans__p">Grading a body at camera rate and running a language model between sets are not the same problem, and a phone that does one badly does neither. The 15&rsquo;s GPU takes the pose so the CPU can run the fight; its silicon takes the model with the radio off. That is the whole reason for the device.</p>
+        <a class="ans__l" href="#device">What it uses</a>
+      </li>
+    </ol>
+  </div>
+</section>
 
 <!-- ══════════════ THE LOOP ══════════════ -->
 <section class="band" id="loop">
