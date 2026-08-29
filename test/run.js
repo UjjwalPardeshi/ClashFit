@@ -1538,6 +1538,72 @@ t('nextSet resets fatigue but carries boss HP', async () => {
   eq(e.fatigue.state().band, 'FRESH');
 });
 
+// ---------- the landing page must not out-claim the config ----------
+// The page is the submission. Every number printed on it is checkable by a judge
+// in thirty seconds, and one of them was wrong for a week: the exercise library
+// still showed the pre-correction family counts, which summed to 61 while the
+// hero on the same page said 51. These tests pin the page to config so that
+// particular embarrassment cannot come back.
+
+const page = readFileSync(join(HERE, '..', 'index.html'), 'utf8');
+const roster = cfg('exercises/index.json');
+const allExercises = roster.exercises || roster;
+
+const familyCounts = allExercises.reduce((acc, e) => {
+  acc[e.family] = (acc[e.family] || 0) + 1;
+  return acc;
+}, {});
+
+// The library table, in page order: F1..F5.
+const FAMILY_ROWS = [
+  ['REP_CYCLE', 'exercises'],
+  ['ISOMETRIC_HOLD', 'holds'],
+  ['POSE_MATCH', 'asanas'],
+  ['CADENCE', 'movements'],
+  ['BALLISTIC', 'jumps'],
+];
+
+for (const [family, noun] of FAMILY_ROWS) {
+  t(`page · ${family} count matches config`, () => {
+    const m = page.match(new RegExp(`<b>(\\d+)</b>${noun}`));
+    ok(m, `no "<b>N</b>${noun}" row found on the page`);
+    eq(Number(m[1]), familyCounts[family], `${family} on the page:`);
+  });
+}
+
+t('page · the library rows sum to the hero total', () => {
+  const rows = FAMILY_ROWS.map(([, noun]) =>
+    Number(page.match(new RegExp(`<b>(\\d+)</b>${noun}`))[1]));
+  const sum = rows.reduce((a, b) => a + b, 0);
+  const hero = Number(page.match(/<div><b>(\d+)<\/b><span>Exercises<\/span><\/div>/)[1]);
+  eq(sum, hero, 'library rows vs hero stat:');
+  eq(sum, allExercises.length, 'library rows vs config:');
+});
+
+t('page · every mode it names exists in the code', () => {
+  const src = readdirSync(join(HERE, '..', 'src'))
+    .filter(f => f.endsWith('.js'))
+    .map(f => readFileSync(join(HERE, '..', 'src', f), 'utf8')).join('\n');
+  const declared = Object.keys(combatCfg.modes || {})
+    .concat(Object.keys(combatCfg.familyGames || {})).join(' ');
+  const named = [
+    'BOSS_FIGHT', 'TIME_ATTACK', 'GHOST_RACE', 'DUEL', 'SURVIVAL', 'BOSS_RUSH',
+    'TEMPO_TRIAL', 'PASS_THE_PHONE', 'LAST_STANDING', 'CIRCUIT', 'SIEGE',
+    'PURSUIT', 'BREAKER', 'SIGIL', 'CLINIC',
+  ];
+  const missing = named.filter(m => !declared.includes(m) && !src.includes(m));
+  eq(missing.join(','), '', 'modes named on the page but absent from the code:');
+});
+
+t('page · the hero mode count matches the modes it names', () => {
+  const hero = Number(page.match(/<div><b>(\d+)<\/b><span>Ways to play<\/span><\/div>/)[1]);
+  const tape = page.slice(page.indexOf('class="tape__seq"'));  // not the CSS rule of the same name
+  const names = new Set(
+    (tape.slice(0, tape.indexOf('</div>')).match(/<span>([^<]+)<\/span>/g) || [])
+      .map(x => x.replace(/<\/?span>/g, '')));
+  eq(names.size, hero, 'distinct modes in the tape vs the hero stat:');
+});
+
 // ---------- report ----------
 await Promise.all(pending);
 const w = Math.max(...results.map(r => r[1].length));
