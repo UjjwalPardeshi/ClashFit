@@ -1,643 +1,1962 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>ClashFit — the phone watches you train. Nothing leaves it.</title>
-<meta name="description" content="Two AI models on the iQOO 15. A pose model grades every rep on four measured quantities; a language model on the NPU writes the coaching. It reads fatigue, it reads left-right asymmetry, and it works in airplane mode." />
-<meta name="theme-color" content="#08090C" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClashFit</title>
+<meta name="description" content="Offline AI fitness combat for Android and iOS. Your body is the controller, your camera is the referee, and nothing leaves the phone.">
+<meta name="theme-color" content="#0b0b0c">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHJlY3Qgd2lkdGg9JzMyJyBoZWlnaHQ9JzMyJyBmaWxsPScjZmY0ZjFmJy8+PHRleHQgeD0nMTYnIHk9JzIyJyBmb250LWZhbWlseT0nSW1wYWN0LEFyaWFsIE5hcnJvdyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzE1JyBmaWxsPScjMGIwYjBjJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5DRjwvdGV4dD48L3N2Zz4=">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* ── iQOO Legend ─────────────────────────────────────────────────────────────
-   The identity comes off the device itself. The Legend colourway carries a
-   blue/red racing stripe, and the two accents map onto the two halves of the
-   product: EFFORT is the fight, MEASURE is the instrument. Colour that means
-   something rather than one hue used everywhere.                            */
+/* ============================================================
+   ClashFit — gym-template treatment
+   Black ground, off-white type, one burnt-orange accent.
+   Condensed uppercase display, full-bleed exercise photography.
+   Single theme by design: this is a poster, not a document.
+   ============================================================ */
 :root{
-  --void:#08090C; --carbon:#0E1116; --steel:#161A22; --slab:#1D222C;
-  --chalk:#F2F5F9; --ash:#96A0B0; --dim:#848DA0;
-  --rule:rgba(242,245,249,.10); --rule-hi:rgba(242,245,249,.20);
-
-  --effort:#FF4A1C;   --effort-lo:rgba(255,74,28,.13);
-  --measure:#3B7BFF;  --measure-lo:rgba(59,123,255,.13);
-  --legend:#E8232B;
-
-  --fresh:#6FD08C; --working:#F2C14E; --fading:#FF8A3D; --gassed:#FF4A1C;
-
-  --shell:1200px; --gut:clamp(20px,5vw,64px);
-  --display:"Big Shoulders Display",Impact,"Arial Narrow",sans-serif;
-  --body:"Barlow",system-ui,-apple-system,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --paper:#0b0b0c;   --paper-2:#111113;  --panel:#17171a;
+  --ink:#f3efe8;     --muted:rgba(243,239,232,.66); --faint:rgba(243,239,232,.55);
+  --rule:rgba(243,239,232,.16); --rule-soft:rgba(243,239,232,.08);
+  --ember:#ff4f1f;   --ember-lift:#ff6b40; --brass:#ffb59b; --sand:rgba(255,79,31,.14);
+  --dark:#0a0a0b;    --dark-2:#141416;
+  --on-dark:#f3efe8; --on-dark-muted:rgba(243,239,232,.66); --on-dark-faint:rgba(243,239,232,.55); --on-dark-rule:rgba(243,239,232,.16);
+  --dark-accent:#ff4f1f; --dark-brass:#ffb59b;
+  --fresh:#8fd18a;   --working:#f2c14e;  --heavy:#ff8a3d;  --gassed:#ff4f1f;
+  --shell:1280px;    --gut:clamp(18px,4.5vw,56px);
+  --display:"Big Shoulders Display",Impact,"Arial Narrow","Helvetica Neue",sans-serif;
+  --body:"Barlow","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono","SFMono-Regular",Menlo,Consolas,monospace;
 }
 *,*::before,*::after{box-sizing:border-box}
-html{scroll-behavior:smooth}
-@media (prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto}
-  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
-    transition-duration:.01ms!important}
-}
-body{margin:0;background:var(--void);color:var(--chalk);font-family:var(--body);
-  font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-img{max-width:100%;display:block}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
 a{color:inherit}
-:focus-visible{outline:2px solid var(--measure);outline-offset:3px}
+p{margin:0}
+:focus-visible{outline:2px solid var(--ember);outline-offset:3px}
 
-.wrap{max-width:var(--shell);margin:0 auto;padding-inline:var(--gut)}
-.kick{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.24em;
-  text-transform:uppercase;color:var(--dim);margin:0 0 14px;display:flex;align-items:center;gap:10px}
-.kick::before{content:"";width:22px;height:2px;background:var(--effort);flex:none}
-.kick--m::before{background:var(--measure)}
-h1,h2,h3{font-family:var(--display);font-weight:900;text-transform:uppercase;
-  letter-spacing:.005em;line-height:.88;margin:0;text-wrap:balance}
-h1{font-size:clamp(58px,11vw,148px)}
-h2{font-size:clamp(38px,6.6vw,84px)}
-h3{font-size:clamp(22px,2.6vw,32px);line-height:.95}
-p{margin:0 0 18px;max-width:60ch;color:#C6CEDA}
-.lede{font-size:clamp(18px,2vw,23px);line-height:1.45;color:var(--chalk);max-width:44ch}
-strong{color:#fff;font-weight:600}
-em{font-style:normal;color:var(--effort);font-weight:600}
-em.m{color:var(--measure)}
+/* ---------- shell / rhythm ---------- */
+.shell{width:100%;max-width:var(--shell);margin:0 auto;padding-inline:var(--gut)}
+.band{padding-block:clamp(64px,8vw,120px)}
+.band--tight{padding-block:clamp(44px,5vw,72px)}
+.band--panel{background:var(--paper-2)}
+.band--ember{background:var(--ember);color:#0b0b0c}
+.band--line{border-top:1px solid var(--rule)}
+
+/* ---------- type ---------- */
+.kicker{
+  font-family:var(--body);font-weight:600;font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ember);margin:0 0 18px;display:flex;align-items:center;gap:12px;
+}
+.kicker::before{content:"";width:22px;height:2px;background:currentColor;flex:none}
+.band--ember .kicker{color:#0b0b0c}
+h1,h2,h3{font-family:var(--display);font-weight:900;text-transform:uppercase;margin:0;text-wrap:balance}
+h1{font-size:clamp(58px,10vw,138px);line-height:.88;letter-spacing:-.005em}
+h2{font-size:clamp(42px,6.2vw,88px);line-height:.9;letter-spacing:-.003em}
+h3{font-size:clamp(26px,2.6vw,36px);line-height:.95;font-weight:700}
+h1 em,h2 em{font-style:normal;color:var(--ember)}
+.band--ember h2 em{color:var(--ink)}
+.lede{font-size:clamp(17px,1.3vw,19px);line-height:1.55;color:var(--muted);max-width:58ch;margin-top:22px}
+.band--ember .lede{color:rgba(11,11,12,.78)}
+.muted{color:var(--muted)}
 .mono{font-family:var(--mono)}
-.num{font-family:var(--display);font-weight:900;font-variant-numeric:tabular-nums;line-height:.82}
 
-/* the Legend stripe — used deliberately, not as wallpaper */
-.stripe{display:flex;height:4px;width:100%}
-.stripe i{flex:1}
-.stripe i:nth-child(1){background:var(--measure)}
-.stripe i:nth-child(2){background:#fff}
-.stripe i:nth-child(3){background:var(--legend)}
+/* ---------- controls ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:12px;padding:16px 22px;
+  font-family:var(--body);font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;
+  text-decoration:none;border:1px solid transparent;transition:background .15s,color .15s,border-color .15s,transform .15s;
+}
+.btn::after{content:"↗";font-weight:500;font-size:15px}
+.btn--ember{background:var(--ember);color:#0b0b0c}
+.btn--ember:hover{background:var(--ink)}
+.btn--line{border-color:var(--rule);color:var(--ink)}
+.btn--line:hover{border-color:var(--ink)}
+.btn--ink{background:#0b0b0c;color:var(--ink)}
+.btn--ink:hover{background:var(--ink);color:#0b0b0c}
+.btn--ink-line{border-color:rgba(11,11,12,.5);color:#0b0b0c}
+.btn--ink-line:hover{border-color:#0b0b0c}
+.tag{
+  display:inline-block;font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  border:1px solid var(--rule);padding:6px 10px;color:var(--muted);
+}
+.tag--ember{border-color:var(--ember);color:var(--ember)}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
 
-.btn{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;
-  font-weight:600;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;
-  padding:16px 24px;border:1px solid var(--rule-hi);color:var(--chalk);
-  transition:background .18s ease,border-color .18s ease,color .18s ease}
-.btn:hover{border-color:var(--chalk)}
-.btn--go{background:var(--effort);border-color:var(--effort);color:#0A0406}
-.btn--go:hover{background:#ff6438;border-color:#ff6438}
-.btn--m{border-color:var(--measure);color:#BBD0FF}
-.btn--m:hover{background:var(--measure-lo)}
+/* ---------- nav ---------- */
+.nav{position:sticky;top:0;z-index:40;background:rgba(11,11,12,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--rule-soft)}
+.nav__in{display:flex;align-items:center;gap:32px;height:68px}
+.brand{font-family:var(--display);font-weight:900;font-size:30px;letter-spacing:.01em;text-transform:uppercase;text-decoration:none;line-height:1;display:flex;align-items:center;gap:10px}
+.brand i{width:12px;height:12px;background:var(--ember);display:inline-block}
+.nav__links{display:flex;gap:26px;margin-left:auto;font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
+.nav__links a{text-decoration:none;color:var(--muted)}
+.nav__links a:hover{color:var(--ink)}
+.nav .btn{padding:12px 18px;margin-left:8px}
+@media(max-width:960px){.nav__links{display:none}.nav .btn{margin-left:auto}}
 
-/* ── section rhythm: deliberately NOT one repeated band ───────────────────── */
-.band{padding:clamp(72px,10vw,140px) 0;position:relative}
-.band--steel{background:var(--carbon);border-block:1px solid var(--rule)}
-.band--tight{padding:clamp(46px,6vw,78px) 0}
-.split{display:grid;gap:clamp(34px,5vw,72px);align-items:center}
-@media(min-width:900px){.split{grid-template-columns:1.05fr .95fr}
-  .split--flip>*:first-child{order:2}}
+/* ---------- photo primitives ---------- */
+.ph{position:relative;overflow:hidden;background:var(--panel)}
+.ph img{width:100%;height:100%;object-fit:cover;object-position:var(--focal,center);transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+.ph--bw img{filter:grayscale(1) contrast(1.08)}
+.ph:hover img{transform:scale(1.035)}
+.ph--45{aspect-ratio:4/5}
+.ph--34{aspect-ratio:3/4}
+.ph--11{aspect-ratio:1/1}
+.ph--169{aspect-ratio:16/9}
+.ph--1610{aspect-ratio:16/10}
+.ph__cap{
+  position:absolute;left:0;right:0;bottom:0;padding:18px 20px;
+  background:linear-gradient(180deg,transparent,rgba(0,0,0,.82));
+  display:flex;justify-content:space-between;align-items:end;gap:12px;
+}
+.ph__cap b{font-family:var(--display);font-weight:900;font-size:30px;line-height:.9;text-transform:uppercase}
+.ph__cap span{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass)}
 
-/* ── HERO ─────────────────────────────────────────────────────────────────── */
-.hero{position:relative;min-height:100svh;display:flex;flex-direction:column;
-  justify-content:center;padding:110px 0 44px;overflow:hidden}
-.hero__bg{position:absolute;inset:0;z-index:0}
-.hero__bg img{width:100%;height:100%;object-fit:cover;object-position:38% 30%;
-  filter:grayscale(.62) contrast(1.16) brightness(.42)}
-.hero__bg::after{content:"";position:absolute;inset:0;
-  background:linear-gradient(105deg,var(--void) 22%,rgba(8,9,12,.86) 48%,rgba(8,9,12,.42) 100%),
-             linear-gradient(0deg,var(--void),transparent 42%)}
-.hero__in{position:relative;z-index:2;display:grid;gap:clamp(34px,5vw,60px);align-items:center}
-@media(min-width:960px){.hero__in{grid-template-columns:1.12fr .88fr}}
-.hero__badge{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:11px;
-  letter-spacing:.18em;text-transform:uppercase;color:var(--chalk);
-  border:1px solid var(--rule-hi);padding:7px 13px;margin-bottom:22px}
-.hero__badge b{color:var(--measure);font-weight:600}
-.hero h1 em{color:var(--effort)}
-.hero__meta{display:flex;flex-wrap:wrap;gap:8px;margin:26px 0 30px}
-.hero__meta span{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--ash);border:1px solid var(--rule);padding:7px 12px}
-.hero__cta{display:flex;flex-wrap:wrap;gap:12px}
+/* full-bleed photo section */
+.bleed{position:relative;isolation:isolate;overflow:hidden;color:var(--ink)}
+.bleed__img{position:absolute;inset:0;z-index:-2}
+.bleed__img img{width:100%;height:100%;object-fit:cover;object-position:var(--focal,center)}
+.bleed__scrim{position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(11,11,12,.9) 0%,rgba(11,11,12,.62) 48%,rgba(11,11,12,.22) 100%)}
+.bleed--flip .bleed__scrim{background:linear-gradient(270deg,rgba(11,11,12,.9) 0%,rgba(11,11,12,.62) 48%,rgba(11,11,12,.22) 100%)}
+.bleed__in{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:clamp(32px,5vw,80px);align-items:center;padding-block:clamp(72px,9vw,128px)}
+.bleed--flip .bleed__in{grid-template-columns:auto minmax(0,1fr)}
+.bleed--flip .bleed__in>*:first-child{order:2}
+@media(max-width:900px){
+  .bleed__in,.bleed--flip .bleed__in{grid-template-columns:1fr}
+  .bleed--flip .bleed__in>*:first-child{order:0}
+  .bleed__scrim,.bleed--flip .bleed__scrim{background:linear-gradient(180deg,rgba(11,11,12,.92) 0%,rgba(11,11,12,.72) 100%)}
+}
 
-/* ── the device, drawn ────────────────────────────────────────────────────── */
-.rig{position:relative;display:flex;justify-content:center;align-items:center;
-  min-height:clamp(430px,56vw,610px)}
-.dev{position:absolute;border-radius:34px;background:linear-gradient(160deg,#23262E,#0C0E12 46%,#191C22);
-  padding:7px;box-shadow:0 44px 90px -30px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.07)}
-.dev--back{width:clamp(168px,23vw,214px);aspect-ratio:9/19.5;
-  transform:rotate(-9deg) translate(-46%,-4%);z-index:1}
-.dev--front{width:clamp(196px,27vw,248px);aspect-ratio:9/19.5;
-  transform:rotate(4deg) translate(22%,3%);z-index:3}
-.dev__panel{height:100%;border-radius:28px;overflow:hidden;position:relative;
-  background:linear-gradient(172deg,#101319,#08090C 60%,#0E1116)}
-/* back: camera island, Legend stripe, wordmark */
-.dev__back{height:100%;border-radius:28px;position:relative;overflow:hidden;
-  background:linear-gradient(150deg,#F4F6F9 0%,#E4E8EF 40%,#CFD6E1 100%)}
-.dev__stripe{position:absolute;top:0;bottom:0;left:26%;width:26%;display:flex;flex-direction:column;
-  transform:skewX(-9deg)}
-.dev__stripe i{flex:1}
-.dev__stripe i:nth-child(1){background:var(--measure)}
-.dev__stripe i:nth-child(2){background:var(--legend)}
-.dev__cam{position:absolute;top:12px;left:12px;width:56%;aspect-ratio:1.02;border-radius:20px;
-  background:linear-gradient(150deg,#15181E,#05060A);box-shadow:0 3px 12px rgba(0,0,0,.42);
-  display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:11px;align-content:start}
-.dev__lens{aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 34% 30%,#3D4756,#080A0E 62%);
-  box-shadow:0 0 0 2px rgba(255,255,255,.09),inset 0 0 7px rgba(0,0,0,.85)}
-.dev__lens--f{background:radial-gradient(circle at 50% 50%,#FFE9C4,#8A6A2E);width:56%;justify-self:center;
-  align-self:center;box-shadow:0 0 9px rgba(255,220,150,.35)}
-.dev__logo{position:absolute;bottom:15px;left:0;right:0;text-align:center;font-family:var(--display);
-  font-weight:900;font-size:15px;letter-spacing:.2em;color:#0B0D12}
-.dev__tag{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-family:var(--mono);
-  font-size:7px;letter-spacing:.24em;color:rgba(11,13,18,.5)}
-.dev__hole{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:9px;height:9px;
-  border-radius:50%;background:#030406;z-index:6;box-shadow:0 0 0 1.5px rgba(0,0,0,.6)}
-.dev__cap{position:absolute;left:-1px;right:-1px;bottom:-30px;text-align:center;font-family:var(--mono);
-  font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+/* ---------- hero ---------- */
+.hero{position:relative;isolation:isolate;min-height:min(92vh,980px);display:flex;align-items:end;overflow:hidden}
+.hero__img{position:absolute;inset:0;z-index:-2}
+.hero__img img{width:100%;height:100%;object-fit:cover;object-position:var(--focal,60% center)}
+.hero__scrim{position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(90deg,rgba(11,11,12,.86) 0%,rgba(11,11,12,.5) 42%,rgba(11,11,12,.12) 100%),
+             linear-gradient(180deg,rgba(11,11,12,.35) 0%,transparent 30%,rgba(11,11,12,.85) 100%)}
+.hero__in{width:100%;padding-block:clamp(64px,8vw,112px) clamp(34px,4vw,54px);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:clamp(28px,4vw,64px);align-items:end}
+.hero .kicker{margin-bottom:24px}
+.hero__cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+.hero__meta{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:26px;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.hero__stats{display:flex;flex-wrap:wrap;gap:clamp(24px,3.2vw,50px);margin-top:30px;text-align:left}
+.hero__stats b{display:block;font-family:var(--display);font-weight:900;font-size:clamp(34px,3.4vw,50px);line-height:.9;color:var(--ink)}
+.hero__stats span{display:block;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-top:6px}
+@media(max-width:900px){
+  .hero__in{grid-template-columns:1fr}
+  .hero__stats{grid-template-columns:repeat(3,1fr);text-align:left}
+  .hero__scrim,.cta__scrim{background:linear-gradient(180deg,rgba(11,11,12,.55) 0%,rgba(11,11,12,.8) 45%,rgba(11,11,12,.94) 100%)}
+}
+.stamp{position:absolute;right:var(--gut);top:clamp(88px,11vw,140px);width:118px;height:118px;animation:spin 22s linear infinite;z-index:1}
+.stamp text{font-family:var(--body);font-weight:600;font-size:10.5px;letter-spacing:.2em;fill:var(--ink)}
+.stamp .cf{font-family:var(--display);font-weight:900;font-size:24px;letter-spacing:0;fill:#0b0b0c}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:900px){.stamp{display:none}}
 
-/* the live screen inside the front device */
-.scr{height:100%;padding:26px 13px 13px;display:flex;flex-direction:column;font-size:11px}
-.scr__bar{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8.5px;
-  letter-spacing:.1em;color:var(--dim)}
-.scr__hp{margin-top:14px}
-.scr__hprow{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);
-  font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
-.scr__track{height:5px;background:rgba(255,255,255,.09);margin-top:5px}
-.scr__fill{height:100%;width:62%;background:var(--effort)}
-.scr__stage{flex:1;margin:12px -3px;border-radius:13px;position:relative;overflow:hidden;
-  background:radial-gradient(120% 74% at 50% 6%,rgba(255,74,28,.2),transparent 62%),#0A0C11;
-  display:grid;place-items:center}
-.scr__boss{width:52%;aspect-ratio:1;border:2px solid var(--effort);
-  clip-path:polygon(50% 0,100% 26%,100% 74%,50% 100%,0 74%,0 26%);opacity:.9}
-.scr__dmg{position:absolute;top:19%;left:50%;transform:translateX(-50%);font-family:var(--display);
-  font-weight:900;font-size:31px;color:var(--effort);line-height:1}
-.scr__verd{position:absolute;bottom:11%;left:50%;transform:translateX(-50%);font-family:var(--mono);
-  font-size:8.5px;letter-spacing:.2em;color:var(--fresh)}
-.scr__foot{display:flex;justify-content:space-between;align-items:flex-end}
-.scr__stat{font-family:var(--mono);font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--dim)}
-.scr__stat b{display:block;font-family:var(--display);font-weight:900;font-size:23px;color:var(--chalk);
-  letter-spacing:0;line-height:1}
-.scr__pips{display:flex;gap:3px;margin-top:4px}
-.scr__pips i{width:13px;height:4px;background:rgba(255,255,255,.14)}
-.scr__pips i.on{background:var(--fading)}
+/* ---------- tape (marquee) ---------- */
+.tape{background:var(--ember);color:#0b0b0c;overflow:hidden;padding-block:14px;border-block:1px solid #0b0b0c}
+.tape__in{display:flex;width:max-content;animation:tape 46s linear infinite}
+.tape__seq{display:flex;align-items:center;gap:34px;padding-right:34px;font-family:var(--display);font-weight:900;font-size:30px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap}
+.tape__seq i{width:12px;height:12px;background:#0b0b0c;transform:rotate(45deg);flex:none;font-style:normal}
+@keyframes tape{to{transform:translateX(-50%)}}
 
-/* ── proof strip: monospace facts, a different rhythm to everything else ──── */
-.proof{border-block:1px solid var(--rule);background:var(--carbon)}
-.proof__in{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--rule)}
-@media(min-width:760px){.proof__in{grid-template-columns:repeat(4,1fr)}}
-.proof__c{background:var(--carbon);padding:24px clamp(16px,3vw,30px)}
-.proof__c b{display:block;font-family:var(--display);font-weight:900;font-size:clamp(38px,5vw,60px);
-  line-height:.86;color:var(--chalk)}
-.proof__c span{display:block;margin-top:7px;font-family:var(--mono);font-size:10.5px;
-  letter-spacing:.15em;text-transform:uppercase;color:var(--dim)}
-.proof__c.is-m b{color:var(--measure)}
+/* ---------- heads ---------- */
+.head{max-width:820px}
+.head--split{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:clamp(24px,4vw,64px);align-items:end;max-width:none}
+.head--split .lede{margin-top:0}
+@media(max-width:860px){.head--split{grid-template-columns:1fr;gap:18px}}
 
-/* ── measurement block: a real readout, not a card grid ──────────────────── */
-.meter{border:1px solid var(--rule);background:var(--carbon)}
-.meter__row{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;
-  padding:15px clamp(15px,2.4vw,24px);border-bottom:1px solid var(--rule)}
-.meter__row:last-child{border-bottom:0}
-.meter__k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--ash)}
-.meter__k small{display:block;text-transform:none;letter-spacing:0;font-family:var(--body);
-  font-size:13px;color:var(--dim);margin-top:3px;max-width:42ch}
-.meter__v{font-family:var(--display);font-weight:900;font-size:29px;color:var(--measure);
-  font-variant-numeric:tabular-nums;line-height:1}
-.meter__bar{grid-column:1/-1;height:3px;background:rgba(255,255,255,.07)}
-.meter__bar i{display:block;height:100%;background:var(--measure)}
+/* ---------- story (photo + copy) ---------- */
+.story{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(28px,5vw,80px);align-items:center}
+@media(max-width:900px){.story{grid-template-columns:1fr}}
+.steps{list-style:none;margin:36px 0 0;padding:0;border-top:1px solid var(--rule)}
+.steps li{display:grid;grid-template-columns:64px 1fr;gap:18px;padding:20px 0;border-bottom:1px solid var(--rule);align-items:baseline}
+.steps b{font-family:var(--display);font-weight:900;font-size:40px;line-height:.9;color:var(--ember)}
+.steps strong{display:block;font-family:var(--display);font-weight:700;font-size:26px;text-transform:uppercase;line-height:1;margin-bottom:6px}
+.steps span{color:var(--muted);font-size:15.5px}
 
-/* ── fatigue: full-bleed, the curve is the hero of its own section ───────── */
-.curve{position:relative;border:1px solid var(--rule);background:var(--carbon);padding:22px 20px 16px}
-.curve svg{width:100%;height:auto;display:block}
-.ramp{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--rule);
-  border:1px solid var(--rule);margin-top:18px}
-.ramp div{background:var(--carbon);padding:13px 14px}
-.ramp b{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.16em;margin-bottom:5px}
-.ramp span{font-family:var(--mono);font-size:10.5px;color:var(--dim)}
-.ramp div:nth-child(1) b{color:var(--fresh)} .ramp div:nth-child(2) b{color:var(--working)}
-.ramp div:nth-child(3) b{color:var(--fading)} .ramp div:nth-child(4) b{color:var(--gassed)}
+/* ---------- photo strip ---------- */
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:clamp(32px,4vw,48px)}
+@media(max-width:900px){.strip{grid-template-columns:repeat(2,1fr)}}
 
-/* ── asymmetry ───────────────────────────────────────────────────────────── */
-.lsi{border:1px solid var(--measure);background:linear-gradient(160deg,var(--measure-lo),transparent 70%);
-  padding:clamp(22px,3vw,34px)}
-.lsi__big{font-family:var(--display);font-weight:900;font-size:clamp(66px,11vw,124px);line-height:.8;
-  color:var(--measure);font-variant-numeric:tabular-nums}
-.lsi__legs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px}
-.lsi__leg span{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--dim);display:block;margin-bottom:6px}
-.lsi__leg i{display:block;height:9px;background:var(--measure)}
-.lsi__leg.w i{background:var(--fading);width:78%}
+/* ---------- signals + chart ---------- */
+.feature{display:grid;grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);gap:clamp(28px,5vw,72px);align-items:center}
+.feature--flip{grid-template-columns:minmax(0,1.14fr) minmax(0,.86fr)}
+@media(max-width:960px){.feature,.feature--flip{grid-template-columns:1fr;gap:36px}.feature>.m-last{order:2}}
+.signals{list-style:none;padding:0;margin:30px 0 0;border-top:1px solid var(--rule)}
+.signals li{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:16px 0;border-bottom:1px solid var(--rule)}
+.signals b{font-family:var(--display);font-weight:700;font-size:22px;text-transform:uppercase;color:var(--ember);line-height:1;padding-top:2px}
+.signals span{color:var(--muted);font-size:15.5px}
+@media(max-width:560px){.signals li{grid-template-columns:1fr;gap:6px}}
+.panel{background:var(--panel);border:1px solid var(--rule);padding:clamp(18px,2.2vw,28px)}
+.panel__head{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px}
+.panel__title{font-family:var(--body);font-weight:600;font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ember)}
+.panel__note{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--faint)}
+.chart{width:100%;height:auto;display:block;overflow:visible}
+.chart .grid-line{stroke:var(--rule);stroke-width:1}
+.chart .axis-txt{font-family:var(--mono);font-size:14px;fill:var(--faint);letter-spacing:.06em}
+.chart .band-txt{font-family:var(--body);font-weight:600;font-size:14px;letter-spacing:.16em}
+.chart .thresh{font-family:var(--mono);font-size:14px;fill:var(--faint)}
+.chart .curve{fill:none;stroke:var(--ember);stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.chart .dot{fill:var(--panel);stroke:var(--ember);stroke-width:2.4}
+.chart .mark{stroke:var(--ink);stroke-width:1.4;stroke-dasharray:4 5;opacity:.5}
+.chart .mark-txt{font-family:var(--mono);font-size:14px;fill:var(--ink)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:13px 14px;border-bottom:1px solid var(--rule)}
+th{font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);border-bottom-color:var(--ink)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.bar{display:block;height:8px;background:var(--ember);min-width:2px}
+.bar--dim{opacity:.35}
+.verdict{font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:.16em;text-transform:uppercase}
 
-/* ── families: a matrix, not cards ───────────────────────────────────────── */
-.matrix{width:100%;border-collapse:collapse;font-size:15px}
-.matrix th{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--dim);text-align:left;padding:12px 14px;border-bottom:1px solid var(--rule-hi);font-weight:600}
-.matrix td{padding:15px 14px;border-bottom:1px solid var(--rule);vertical-align:top;color:#C6CEDA}
-.matrix tr:last-child td{border-bottom:0}
-.matrix td:first-child{font-family:var(--display);font-weight:900;font-size:23px;color:var(--chalk);
-  text-transform:uppercase;white-space:nowrap}
-.matrix td.n{font-family:var(--mono);color:var(--measure);text-align:right;white-space:nowrap}
-.matrix td.g{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--effort);white-space:nowrap}
+/* ---------- orange alarm band ---------- */
+.alarm{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:clamp(28px,5vw,72px);align-items:center}
+@media(max-width:960px){.alarm{grid-template-columns:1fr}}
+.alarm__pts{list-style:none;padding:0;margin:30px 0 0;border-top:1px solid rgba(11,11,12,.35)}
+.alarm__pts li{display:grid;grid-template-columns:auto 1fr;gap:18px;padding:16px 0;border-bottom:1px solid rgba(11,11,12,.35);align-items:baseline}
+.alarm__pts b{font-family:var(--display);font-weight:900;font-size:34px;line-height:.9;color:#0b0b0c;min-width:54px}
+.alarm__pts span{color:rgba(11,11,12,.8);font-size:15.5px}
+.alarm__vis{position:relative;padding-bottom:64px;padding-left:24px}
+.alarm__vis .ph{border:6px solid #0b0b0c}
+.alarm__phone{position:absolute;left:0;bottom:0;transform:scale(.62);transform-origin:bottom left;filter:drop-shadow(0 30px 40px rgba(0,0,0,.5))}
+@media(max-width:600px){.alarm__vis{padding:0}.alarm__phone{display:none}}
 
-/* ── coach quotes ────────────────────────────────────────────────────────── */
-.quote{border-left:3px solid var(--fresh);padding:4px 0 4px 22px;margin-bottom:26px}
-.quote--boss{border-left-color:var(--effort)}
-.quote b{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
-  color:var(--dim);margin-bottom:9px}
-.quote p{font-size:clamp(19px,2.3vw,26px);line-height:1.34;color:var(--chalk);margin:0;max-width:34ch}
+/* ---------- plan cards ---------- */
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,1.6vw,22px);margin-top:clamp(36px,4vw,56px)}
+@media(max-width:900px){.plans{grid-template-columns:1fr}}
+.plan{background:var(--panel);border:1px solid var(--rule);display:flex;flex-direction:column}
+.plan__body{padding:24px 22px 22px;display:flex;flex-direction:column;gap:14px;flex:1}
+.plan__k{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--ember)}
+.plan h3{font-size:44px;font-weight:900}
+.plan ul{list-style:none;margin:6px 0 0;padding:0;border-top:1px solid var(--rule)}
+.plan li{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--rule);font-size:15px}
+.plan li span{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);white-space:nowrap;padding-top:3px}
+.plan .btn{margin-top:auto;justify-content:center}
 
-/* ── generic image frame ─────────────────────────────────────────────────── */
-.shot{position:relative;overflow:hidden;border:1px solid var(--rule)}
-.shot img{width:100%;height:100%;object-fit:cover;filter:grayscale(.5) contrast(1.1) brightness(.72)}
-.shot--tall{aspect-ratio:3/4}
-.shot--wide{aspect-ratio:16/10}
-.bleed{position:relative;min-height:clamp(360px,52vw,560px);display:grid;align-items:end;overflow:hidden}
-.bleed img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  filter:grayscale(.6) contrast(1.13) brightness(.44)}
-.bleed::after{content:"";position:absolute;inset:0;
-  background:linear-gradient(0deg,var(--void) 4%,rgba(8,9,12,.55) 46%,rgba(8,9,12,.2))}
-.bleed__in{position:relative;z-index:2;padding-bottom:clamp(34px,5vw,60px)}
+/* ---------- run ---------- */
+.run{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(28px,5vw,72px);align-items:start}
+@media(max-width:960px){.run{grid-template-columns:1fr}}
+.run__vis{position:relative;padding-bottom:70px;padding-right:20px}
+.run__phone{position:absolute;right:0;bottom:0;transform:scale(.6);transform-origin:bottom right;filter:drop-shadow(0 30px 40px rgba(0,0,0,.6))}
+@media(max-width:600px){.run__vis{padding:0}.run__phone{display:none}}
+.splits{margin-top:26px;padding-top:20px;border-top:1px solid var(--rule)}
+.splits__k{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
+.split-row{display:grid;grid-template-columns:46px 1fr 52px;gap:14px;align-items:center;padding:6px 0}
+.split-row__km{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.split-row__bar{display:block;height:9px;background:var(--rule-soft)}
+.split-row__bar i{display:block;height:100%;background:var(--ember);opacity:.55}
+.split-row--best .split-row__bar i{opacity:1}
+.split-row--best .split-row__t{color:var(--ember)}
+.split-row--part{opacity:.6}
+.split-row__t{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;text-align:right}
+.run__big{font-family:var(--display);font-weight:900;font-size:clamp(56px,6vw,84px);line-height:.9}
+.run__big small{font-family:var(--body);font-weight:600;font-size:12px;letter-spacing:.2em;color:var(--faint);margin-left:10px;text-transform:uppercase}
+.run__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px;padding-top:18px;border-top:1px solid var(--rule)}
+.run__k{font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
+.run__v{font-family:var(--mono);font-size:20px;margin-top:4px;font-variant-numeric:tabular-nums}
 
-/* ── modes ───────────────────────────────────────────────────────────────── */
-.modes{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:1px;
-  background:var(--rule);border:1px solid var(--rule)}
-.modes div{background:var(--carbon);padding:15px 16px}
-.modes b{display:block;font-family:var(--display);font-weight:800;font-size:19px;text-transform:uppercase;
-  color:var(--chalk);line-height:1}
-.modes span{display:block;margin-top:5px;font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;
-  text-transform:uppercase;color:var(--dim)}
+/* ---------- library (schedule-style rows) ---------- */
+.fam{border-top:2px solid var(--ink);margin-top:clamp(32px,4vw,52px)}
+.fam__row{display:grid;grid-template-columns:64px 96px minmax(0,1fr) minmax(0,1.5fr) 110px;gap:clamp(14px,2vw,28px);align-items:center;padding:16px 0;border-bottom:1px solid var(--rule)}
+.fam__no{font-family:var(--display);font-weight:900;font-size:40px;color:var(--ember);line-height:1}
+.fam__th{width:96px;height:96px}
+.fam__game{font-family:var(--display);font-weight:900;font-size:34px;line-height:.9;text-transform:uppercase}
+.fam__game em{display:block;font-style:normal;font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:.18em;color:var(--faint);margin-top:8px}
+.fam__how{color:var(--muted);font-size:15px}
+.fam__n{text-align:right;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.fam__n b{display:block;font-family:var(--display);font-weight:900;font-size:40px;color:var(--ink);line-height:.9;margin-bottom:6px}
+@media(max-width:860px){
+  .fam__row{grid-template-columns:64px 72px 1fr auto;gap:12px}
+  .fam__th{width:72px;height:72px}
+  .fam__how{grid-column:1/-1}
+  .fam__n{text-align:left}
+}
 
-.roadmap{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--working);border:1px solid var(--working);padding:5px 11px;
-  margin-bottom:16px;opacity:.85}
+/* ---------- quotes ---------- */
+.quotes{display:grid;gap:14px;margin-top:30px}
+.quote{border:1px solid var(--rule);padding:24px 22px;background:var(--panel)}
+.quote__who{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--ember);margin-bottom:12px}
+.quote p{font-family:var(--display);font-weight:700;font-size:28px;line-height:1;text-transform:uppercase}
+.quote--boss p{color:var(--ember)}
 
-/* ── footer ──────────────────────────────────────────────────────────────── */
-footer{border-top:1px solid var(--rule);background:var(--carbon);padding:clamp(46px,6vw,80px) 0 34px}
-.foot{display:grid;gap:30px}
-@media(min-width:800px){.foot{grid-template-columns:1.4fr 1fr 1fr}}
-.foot h4{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
-  color:var(--dim);margin:0 0 13px;font-weight:600}
-.foot ul{list-style:none;margin:0;padding:0;display:grid;gap:9px}
-.foot a{font-size:14.5px;color:var(--ash);text-decoration:none}
-.foot a:hover{color:var(--chalk)}
-.foot__legal{margin-top:38px;padding-top:20px;border-top:1px solid var(--rule);
-  font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--dim);
-  display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:space-between}
+/* ---------- grid cards ---------- */
+.grid{display:grid;gap:clamp(12px,1.6vw,22px);margin-top:clamp(32px,4vw,52px)}
+.grid--3{grid-template-columns:repeat(3,1fr)}
+.grid--4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:940px){.grid--3,.grid--4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.grid--3,.grid--4{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--rule);padding:24px 22px;display:flex;flex-direction:column;gap:10px}
+.card__k{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--ember)}
+.card h3{font-size:28px}
+.card p{color:var(--muted);font-size:15px}
+.band--ember .card{background:#0b0b0c;border-color:#0b0b0c;color:var(--ink)}
+.band--ember .card p{color:var(--muted)}
 
-/* ── nav ─────────────────────────────────────────────────────────────────── */
-.nav{position:fixed;top:0;left:0;right:0;z-index:50;backdrop-filter:blur(14px);
-  background:rgba(8,9,12,.76);border-bottom:1px solid var(--rule)}
-.nav__in{display:flex;align-items:center;justify-content:space-between;gap:20px;
-  padding-block:13px}
-.nav__brand{font-family:var(--display);font-weight:900;font-size:22px;letter-spacing:.04em;
-  text-transform:uppercase;text-decoration:none;color:var(--chalk)}
-.nav__brand i{color:var(--effort);font-style:normal}
-.nav__links{display:none;gap:26px}
-@media(min-width:900px){.nav__links{display:flex}}
-.nav__links a{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--ash);text-decoration:none}
-.nav__links a:hover{color:var(--chalk)}
+/* ---------- arch ---------- */
+.arch{font-family:var(--mono);font-size:13px;line-height:2;color:var(--muted);white-space:pre;overflow-x:auto;margin:0;padding:clamp(20px,2.4vw,30px);border:1px solid var(--rule);background:var(--panel)}
+.arch b{color:var(--ink);font-weight:500}
+.arch u{color:var(--ember);text-decoration:none}
+
+/* ---------- metrics ---------- */
+.metrics{display:grid;grid-template-columns:repeat(5,1fr);border-top:2px solid var(--ink);border-bottom:1px solid var(--rule);margin-top:clamp(32px,4vw,48px)}
+@media(max-width:1000px){.metrics{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.metrics{grid-template-columns:1fr}}
+.metric{padding:28px 22px 26px;border-right:1px solid var(--rule)}
+.metric:last-child{border-right:0}
+.metric__v{font-family:var(--display);font-weight:900;font-size:clamp(52px,5.4vw,76px);line-height:.9;color:var(--ember)}
+.metric__k{margin-top:12px;font-family:var(--display);font-weight:700;font-size:24px;text-transform:uppercase;line-height:1}
+.metric__s{margin-top:6px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+
+/* ---------- cta ---------- */
+.cta{position:relative;isolation:isolate;overflow:hidden}
+.cta__img{position:absolute;inset:0;z-index:-2}
+.cta__img img{width:100%;height:100%;object-fit:cover;object-position:var(--focal,center);filter:grayscale(.3)}
+.cta__scrim{position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(11,11,12,.92),rgba(11,11,12,.55) 60%,rgba(11,11,12,.3))}
+.cta__in{padding-block:clamp(96px,12vw,170px);max-width:900px}
+.stores{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+
+/* ---------- footer ---------- */
+.foot{border-top:1px solid var(--rule);padding-block:52px 40px}
+.foot__grid{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr));gap:clamp(22px,3vw,44px)}
+@media(max-width:860px){.foot__grid{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.foot__grid{grid-template-columns:1fr}}
+.foot p{color:var(--muted);font-size:14.5px;max-width:36ch;margin-top:14px}
+.foot h4{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin:0 0 14px}
+.foot ul{list-style:none;margin:0;padding:0;display:grid;gap:9px;font-size:14.5px}
+.foot a{color:var(--muted);text-decoration:none}
+.foot a:hover{color:var(--ink)}
+.foot__base{margin-top:36px;padding-top:20px;border-top:1px solid var(--rule);display:flex;flex-wrap:wrap;gap:10px 26px;justify-content:space-between;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+
+/* ---------- reveal + motion ---------- */
+.rise{opacity:0;transform:translateY(18px);transition:opacity .7s cubic-bezier(.22,.61,.36,1),transform .7s cubic-bezier(.22,.61,.36,1)}
+.rise.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rise{opacity:1;transform:none;transition:none}
+  .tape__in,.stamp{animation:none}
+  .ph:hover img{transform:none}
+}
+
+/* ---------- phone ---------- */
+.stage{display:flex;justify-content:center;position:relative}
+.stage::after{
+  content:"";position:absolute;inset:auto 0 -6% 0;height:56%;
+  background:radial-gradient(60% 100% at 50% 100%,rgba(0,0,0,.10),transparent 72%);
+  z-index:0;pointer-events:none;
+}
+/* The frame is the manufacturer's own render of the iQOO 15, with the display
+   punched out. The screen is live markup sitting behind that hole, so the UI
+   stays sharp at any density while the hardware stays honest.
+   Geometry measured off the render: body 360x765, display inset 3.333% / 1.438%
+   / 3.333% / 1.699%, punch-hole centred at 49.86% x, 4.38% y, 6.67% wide. */
+.phone{
+  position:relative;z-index:1;
+  width:min(310px,80vw);aspect-ratio:360/765;
+  filter:drop-shadow(0 34px 46px rgba(0,0,0,.55)) drop-shadow(0 4px 10px rgba(0,0,0,.35));
+}
+.phone::after{
+  content:"";position:absolute;inset:0;z-index:4;pointer-events:none;
+  background:url("img/iqoo15-front.png") center/100% 100% no-repeat;
+  background-image:image-set(url("img/iqoo15-front.webp") type("image/webp"),
+                             url("img/iqoo15-front.png") type("image/png"));
+}
+.phone__screen{
+  position:absolute;top:1.438%;left:3.333%;right:3.333%;bottom:1.699%;z-index:2;
+  overflow:hidden;border-radius:11px;
+  background:linear-gradient(178deg,#121214,#0a0a0b 62%,#101012);
+  color:var(--on-dark);display:flex;flex-direction:column;
+}
+.phone__notch{
+  /* The punch-hole is part of the display, so it is drawn over the screen. */
+  position:absolute;top:4.38%;left:49.86%;transform:translate(-50%,-50%);
+  width:5.2%;aspect-ratio:1;border-radius:50%;background:#050506;z-index:5;
+  box-shadow:0 0 0 1px rgba(0,0,0,.55);
+}
+.scr{padding:13px 15px;display:flex;flex-direction:column;height:100%;gap:0}
+.scr__status{
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--on-dark-faint);
+  height:20px;
+}
+.scr__boss{margin-top:16px}
+.scr__bossrow{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase}
+.scr__bossrow b{font-weight:500;color:var(--on-dark)}
+.scr__bossrow span{color:var(--dark-accent)}
+.hp{margin-top:7px;height:7px;border-radius:999px;background:rgba(243,239,232,.11);overflow:hidden}
+.hp__fill{height:100%;width:62%;border-radius:999px;background:linear-gradient(90deg,var(--gassed),#ff6b40)}
+.hp__num{margin-top:6px;font-family:var(--mono);font-size:9.5px;color:var(--on-dark-faint);letter-spacing:.08em}
+
+.scr__view{position:relative;flex:1;margin:14px -3px;border-radius:16px;overflow:hidden;
+  background:
+    radial-gradient(90% 70% at 50% 30%,rgba(255,122,82,.07),transparent 70%),
+    repeating-linear-gradient(0deg,rgba(243,239,232,.028) 0 1px,transparent 1px 4px),
+    #08080a;
+  border:1px solid rgba(243,239,232,.07);
+}
+.scr__verdict{
+  position:absolute;top:12px;left:12px;font-family:var(--mono);font-size:10px;letter-spacing:.2em;
+  color:#8fd18a;
+}
+.scr__dmg{
+  position:absolute;top:26px;right:14px;text-align:right;
+  font-family:var(--display);font-size:38px;line-height:1;color:var(--dark-accent);
+  font-variation-settings:"opsz" 100;letter-spacing:-.02em;
+}
+.scr__dmg small{display:block;font-family:var(--mono);font-size:8.5px;letter-spacing:.18em;color:var(--on-dark-faint);margin-top:5px}
+.scr__fig{position:absolute;inset:0;display:grid;place-items:end center;padding-bottom:8px}
+.scr__fig svg{width:74%;height:auto;display:block}
+
+.scr__stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding-bottom:4px}
+.stat{border:1px solid rgba(243,239,232,.1);border-radius:11px;padding:9px 10px;background:rgba(243,239,232,.026)}
+.stat__k{font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--on-dark-faint)}
+.stat__v{font-family:var(--display);font-size:22px;line-height:1.1;margin-top:3px;font-variation-settings:"opsz" 60}
+.stat__v--sm{font-size:13px;font-family:var(--mono);letter-spacing:.06em;padding-block:5px 2px;color:var(--working)}
+.pips{display:flex;gap:3px;margin-top:6px}
+.pips i{height:3px;flex:1;border-radius:2px;background:rgba(243,239,232,.14)}
+.pips i.on{background:var(--working)}
+.caption{
+  margin-top:22px;text-align:center;font-family:var(--mono);font-size:10px;
+  letter-spacing:.17em;text-transform:uppercase;color:var(--faint);
+}
+
+
+/* ---------- phone screens · shared ---------- */
+.scr__label{font-family:var(--mono);font-size:9.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--dark-brass)}
+.scr__foot{
+  margin-top:auto;padding-top:12px;text-align:center;
+  font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--on-dark-faint);
+}
+
+/* ---------- phone screen · rep race ---------- */
+.duel__clock{
+  font-family:var(--display);font-size:56px;line-height:1;letter-spacing:-.035em;
+  text-align:center;margin-top:14px;font-variation-settings:"opsz" 130;
+}
+.duel__clock small{
+  display:block;font-family:var(--mono);font-size:9px;letter-spacing:.2em;
+  color:var(--on-dark-faint);margin-top:9px;
+}
+.duel__side{margin-top:18px}
+.duel__side+.duel__side{margin-top:14px}
+.duel__row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.duel__who{font-size:12.5px;font-weight:500;letter-spacing:.01em}
+.duel__who em{font-style:normal;font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-dark-faint);margin-left:7px}
+.duel__n{font-family:var(--display);font-size:24px;line-height:1;font-variation-settings:"opsz" 60}
+.duel__n span{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;color:var(--on-dark-faint);margin-left:5px}
+.duel__bar{margin-top:7px;height:8px;border-radius:999px;background:rgba(243,239,232,.1);overflow:hidden}
+.duel__bar i{display:block;height:100%;border-radius:999px;background:var(--dark-accent)}
+.duel__bar--them i{background:rgba(243,239,232,.34)}
+.duel__lead{
+  margin-top:18px;text-align:center;padding:9px;border-radius:999px;
+  background:rgba(143,209,138,.14);color:#a6dc9c;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+}
+
+/* ---------- phone screen · leaderboard ---------- */
+.plb{display:grid;gap:1px;margin-top:12px}
+.plb__r{
+  display:grid;grid-template-columns:12px 1fr auto auto;gap:9px;align-items:center;
+  padding:7px 8px;border-radius:8px;font-size:12px;
+}
+.plb__r--me{background:rgba(255,122,82,.14)}
+.plb__r--out{opacity:.4}
+.plb__n{font-family:var(--mono);font-size:9px;color:var(--on-dark-faint)}
+.plb__who{font-weight:500;letter-spacing:.005em}
+.plb__d{font-family:var(--mono);font-size:11.5px;font-variant-numeric:tabular-nums}
+.plb__c{font-family:var(--mono);font-size:7.5px;letter-spacing:.1em;padding:3px 6px;border-radius:999px;text-transform:uppercase}
+.plb__c--f{background:rgba(143,209,138,.18);color:#a6dc9c}
+.plb__c--w{background:rgba(242,193,78,.18);color:#f2c14e}
+.plb__c--h{background:rgba(255,138,61,.18);color:#ff8a3d}
+.plb__c--g{background:rgba(255,79,31,.18);color:#ff6b40}
+.pfeed{margin-top:16px;padding-top:14px;border-top:1px solid rgba(243,239,232,.09)}
+.pfeed__r{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:baseline;padding:5px 0;font-size:11.5px}
+.pfeed__who{color:var(--on-dark-muted)}
+.pfeed__d{font-family:var(--mono);font-size:11px;color:var(--dark-accent);font-variant-numeric:tabular-nums}
+.pfeed__v{font-family:var(--mono);font-size:7.5px;letter-spacing:.12em;color:var(--on-dark-faint);min-width:44px;text-align:right}
+.plb__boss{margin-top:auto;padding-top:14px}
+.plb__bossrow{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:var(--on-dark-faint)}
+.plb__track{margin-top:7px;height:7px;border-radius:999px;background:rgba(243,239,232,.1);overflow:hidden}
+.plb__track i{display:block;height:100%;width:69%;border-radius:999px;background:linear-gradient(90deg,#c2330f,#ff6b40)}
+
+/* ---------- phone screen · alarm ---------- */
+.alm__time{
+  font-family:var(--display);font-size:62px;line-height:1;letter-spacing:-.04em;
+  margin-top:18px;font-variation-settings:"opsz" 140;
+}
+.alm__meta{
+  font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--on-dark-faint);margin-top:9px;
+}
+.alm__task{
+  margin-top:18px;border:1px solid rgba(255,122,82,.34);border-radius:14px;
+  padding:15px 14px;background:rgba(255,122,82,.07);
+}
+.alm__task b{display:block;font-family:var(--display);font-size:20px;line-height:1.15;letter-spacing:-.012em;font-weight:400}
+.alm__pips{display:flex;gap:5px;margin-top:14px}
+.alm__pips i{flex:1;height:5px;border-radius:3px;background:rgba(243,239,232,.15)}
+.alm__pips i.on{background:var(--dark-accent)}
+.alm__count{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dark-accent);margin-top:11px;
+}
+.alm__cam{
+  position:relative;flex:1;min-height:0;margin:14px -3px 0;border-radius:14px;overflow:hidden;
+  background:
+    radial-gradient(85% 70% at 50% 34%,rgba(255,122,82,.08),transparent 70%),
+    repeating-linear-gradient(0deg,rgba(243,239,232,.026) 0 1px,transparent 1px 4px),
+    #08080a;
+  border:1px solid rgba(243,239,232,.07);
+  display:grid;place-items:center;
+}
+.alm__cam svg{width:76%;height:auto;display:block}
+.alm__lock{
+  margin-top:12px;text-align:center;padding:10px;border:1px dashed rgba(243,239,232,.2);border-radius:999px;
+  font-family:var(--mono);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--on-dark-faint);
+}
+
+/* ---------- phone screen · run ---------- */
+.rns__map{
+  position:relative;flex:1;min-height:0;margin:12px -3px;border-radius:14px;overflow:hidden;
+  background:#08080a;border:1px solid rgba(243,239,232,.07);
+}
+.rns__map svg{position:absolute;inset:0;width:100%;height:100%}
+.rns__big{font-family:var(--display);font-size:42px;line-height:1;letter-spacing:-.032em;font-variation-settings:"opsz" 110}
+.rns__big small{font-family:var(--mono);font-size:11px;letter-spacing:.14em;color:var(--on-dark-faint);margin-left:7px}
+.rns__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:13px}
+.rns__k{font-family:var(--mono);font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-dark-faint)}
+.rns__v{font-family:var(--mono);font-size:14px;margin-top:4px;font-variant-numeric:tabular-nums}
+
+/* ---------- screen gallery ---------- */
+/* ---------- the reel: one phone, the screens change as you scroll ----------
+   The stage sticks for the length of the steps beside it. A step crossing the
+   middle of the viewport becomes the active one and swaps the screen. Every
+   size here is bounded by BOTH the width and the height of the viewport, so a
+   short laptop in landscape and a 34-inch monitor get the same phone, whole. */
+.reel{
+  display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
+  gap:clamp(24px,4vw,72px);margin-top:clamp(34px,4.5vw,58px);
+}
+.reel__stage{
+  position:sticky;top:0;height:100vh;height:100svh;
+  display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;
+  gap:clamp(14px,2vw,30px);
+}
+.reel__dev{
+  /* never taller than the viewport, never wider than its column */
+  --cap:calc((100svh - 120px) * 360 / 765);
+  width:min(clamp(250px,23vw,360px),var(--cap),100%);
+  justify-self:center;
+  transform:perspective(1700px)
+            rotateY(calc((var(--p,.5) - .5) * -12deg))
+            rotateX(calc((var(--p,.5) - .5) * 4deg));
+  will-change:transform;
+}
+.reel__dev .phone{width:100%}
+
+.reel__scn{
+  position:absolute;inset:0;opacity:0;pointer-events:none;
+  transform:translateY(8px);transition:opacity .4s ease,transform .4s ease;
+}
+.reel__scn.is-on{opacity:1;transform:none;pointer-events:auto}
+.reel__scn .scr{height:100%}
+
+.reel__rail{list-style:none;margin:0;padding:0;display:grid;gap:1px;align-content:center}
+.reel__rail button{
+  display:flex;align-items:center;gap:11px;width:100%;padding:7px 0;
+  background:none;border:0;cursor:pointer;text-align:left;color:var(--faint);
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;
+  transition:color .25s;
+}
+.reel__rail i{width:14px;height:1px;background:currentColor;flex:none;transition:width .3s ease}
+.reel__rail button:hover{color:var(--ink)}
+.reel__rail button:focus-visible{outline:1px solid var(--ember);outline-offset:3px}
+.reel__rail button[aria-current="true"]{color:var(--ember)}
+.reel__rail button[aria-current="true"] i{width:30px}
+
+.reel__steps{list-style:none;margin:0;padding:0}
+.reel__step{
+  min-height:74vh;min-height:74svh;display:flex;flex-direction:column;justify-content:center;
+  padding-block:clamp(24px,4vh,56px);opacity:.28;transition:opacity .45s ease;
+}
+.reel__step.is-on{opacity:1}
+.reel__n{margin:0;font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ember)}
+.reel__n span{color:var(--faint);margin-left:7px}
+.reel__step h3{
+  margin:15px 0 0;font-family:var(--display);font-weight:900;text-transform:uppercase;
+  font-size:clamp(30px,4vw,52px);line-height:.94;letter-spacing:-.006em;
+}
+.reel__sub{margin:13px 0 0;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass)}
+.reel__txt{margin:19px 0 0;color:var(--muted);font-size:clamp(15px,1.05vw,17px);line-height:1.62;max-width:46ch}
+
+@media(max-width:1080px){
+  .reel__rail{display:none}
+  .reel__stage{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:900px){
+  /* Stacked: the phone pins under the header and the steps run beneath it. */
+  .reel{grid-template-columns:minmax(0,1fr);gap:0}
+  .reel__stage{
+    position:sticky;top:68px;height:auto;z-index:3;justify-items:center;
+    padding:14px 0 20px;
+    background:linear-gradient(180deg,var(--paper-2) 0 76%,rgba(17,17,19,0));
+  }
+  .reel__dev{
+    --cap:calc((100svh - 210px) * 360 / 765);
+    width:min(232px,52vw,var(--cap));transform:none;
+  }
+  .reel__steps{margin-top:8px}
+  .reel__step{min-height:auto;opacity:1;padding-block:clamp(26px,7vh,58px)}
+  .reel__txt{max-width:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .reel__dev{transform:none}
+  .reel__scn{transition:none}
+  .reel__step{transition:none;opacity:1}
+}
+
+/* small-screen primitives shared by the gallery phones */
+.sx__hd{display:flex;justify-content:space-between;align-items:baseline;margin-top:16px;font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase}
+.sx__hd b{font-weight:500;color:var(--on-dark)}
+.sx__hd span{color:var(--dark-accent)}
+.sx__big{font-family:var(--display);font-size:46px;line-height:1;letter-spacing:-.032em;margin-top:14px;font-variation-settings:"opsz" 120}
+.sx__big small{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--on-dark-faint);margin-left:7px}
+.sx__sub{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--on-dark-faint);margin-top:8px}
+.sx__art{position:relative;flex:1;min-height:0;margin:14px -3px;border-radius:14px;overflow:hidden;background:#08080a;border:1px solid rgba(243,239,232,.07);display:grid;place-items:center}
+.sx__art svg{width:100%;height:100%;display:block}
+.sx__bar{margin-top:8px;height:8px;border-radius:999px;background:rgba(243,239,232,.1);overflow:hidden}
+.sx__bar i{display:block;height:100%;border-radius:999px;background:var(--dark-accent)}
+.sx__row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-top:14px;font-size:12.5px}
+.sx__row em{font-style:normal;font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
+.sx__tri{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.sx__tri div{border:1px solid rgba(243,239,232,.1);border-radius:10px;padding:9px 8px;text-align:center}
+.sx__tri span{display:block;font-family:var(--mono);font-size:7.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--on-dark-faint)}
+.sx__tri b{display:block;font-family:var(--display);font-size:20px;font-weight:400;margin-top:3px}
+
+/* mode grid screen */
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:14px}
+.mtile{
+  border:1px solid rgba(243,239,232,.12);border-radius:10px;padding:12px 9px;
+  font-family:var(--mono);font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--on-dark-muted);
+}
+.mtile--on{border-color:var(--dark-accent);color:var(--dark-accent);background:rgba(255,122,82,.09)}
+
+/* coach card screen */
+.cch{margin-top:16px;border:1px solid rgba(243,239,232,.12);border-radius:14px;padding:16px 15px;background:rgba(243,239,232,.03)}
+.cch p{font-family:var(--display);font-size:17px;line-height:1.32;letter-spacing:-.008em;margin-top:10px}
+.cch__chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.cch__chips span{font-family:var(--mono);font-size:8px;letter-spacing:.1em;padding:4px 8px;border-radius:999px;background:rgba(255,122,82,.13);color:var(--dark-accent)}
+
+/* streak calendar screen */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px}
+.cal i{aspect-ratio:1;border-radius:5px;background:rgba(243,239,232,.09);display:block}
+.cal i.on{background:var(--dark-accent)}
+.cal i.rest{background:rgba(143,209,138,.5)}
+.cal i.today{box-shadow:0 0 0 2px var(--dark-accent) inset;background:transparent}
+
+
+
+  .roadmap-badge{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--brass);border:1px solid var(--brass);
+    padding:5px 11px;margin-bottom:18px;opacity:.9}
+
+/* ---------- built for iQOO 15 ---------- */
+.iq{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(28px,5vw,72px);align-items:center}
+@media(max-width:900px){.iq{grid-template-columns:1fr;gap:38px}}
+.iq__dev{
+  position:relative;justify-self:center;display:flex;justify-content:center;width:100%;
+  --cap:calc((100svh - 190px) * 360 / 765);
+}
+.iq__dev .phone{width:min(298px,72vw,var(--cap))}
+.iqq{padding:15px 13px;display:flex;flex-direction:column;justify-content:center;height:100%}
+.iqq__who{margin:0;font-family:var(--mono);font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--on-dark-faint)}
+.iqq__who--boss{color:var(--dark-accent);margin-top:18px}
+.iqq__line{margin:7px 0 0;font-size:12.5px;line-height:1.46;color:var(--on-dark)}
+.iq__dev::before{
+  content:"";position:absolute;left:8%;right:8%;bottom:-4%;height:14%;z-index:-1;
+  background:radial-gradient(ellipse at center,rgba(255,79,31,.34),transparent 68%);filter:blur(26px)
+}
+.iq__lab{
+  display:flex;gap:10px;align-items:baseline;justify-content:center;margin-top:20px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)
+}
+.iq__lab b{color:var(--ink);font-weight:500}
+.iq__use{list-style:none;margin:26px 0 0;padding:0;border-top:1px solid var(--rule-soft)}
+.iq__use li{display:grid;grid-template-columns:132px 1fr;gap:clamp(12px,2vw,26px);padding:16px 0;border-bottom:1px solid var(--rule-soft)}
+@media(max-width:560px){.iq__use li{grid-template-columns:1fr;gap:5px}}
+.iq__part{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ember);padding-top:3px}
+.iq__what{color:var(--muted);font-size:15px;line-height:1.5}
+.iq__what b{color:var(--ink);font-weight:600;display:block;margin-bottom:2px;font-size:16px}
+
+/* ---------- waitlist ---------- */
+.wl{
+  border:1px solid var(--rule);background:var(--panel);color:var(--ink);
+  padding:0;width:min(480px,calc(100vw - 32px));border-radius:2px;box-shadow:0 40px 90px rgba(0,0,0,.6)
+}
+.wl::backdrop{background:rgba(6,6,7,.76);backdrop-filter:blur(3px)}
+.wl__in{padding:clamp(26px,4vw,40px)}
+.wl h3{font-family:var(--display);font-weight:900;font-size:clamp(30px,4.6vw,42px);line-height:.94;text-transform:uppercase;letter-spacing:-.01em;margin:10px 0 0}
+.wl__lede{color:var(--muted);font-size:15px;line-height:1.55;margin-top:14px}
+.wl__x{position:absolute;top:10px;right:10px;margin:0}
+.wl__x button{
+  background:none;border:0;color:var(--faint);font-size:24px;line-height:1;cursor:pointer;
+  width:34px;height:34px;border-radius:2px
+}
+.wl__x button:hover{color:var(--ink);background:var(--rule-soft)}
+.wl__form{margin-top:24px;display:grid;gap:10px}
+.wl__label{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.wl__input{
+  width:100%;padding:14px 15px;background:var(--paper);color:var(--ink);
+  border:1px solid var(--rule);border-radius:2px;font:inherit;font-size:15px
+}
+.wl__input::placeholder{color:rgba(243,239,232,.34)}
+.wl__input:focus{outline:none;border-color:var(--ember)}
+.wl__form .btn{width:100%;justify-content:center;margin-top:4px}
+.wl__fine{margin-top:16px;font-size:12.5px;line-height:1.5;color:var(--faint)}
+.wl__done{text-align:left}
+.wl__done .tags{margin-top:22px}
+
+/* ---------- the device, front and back, with a live screen ----------
+   Same trick as .phone: the render carries a punched-out display and the
+   markup behind it is the app. Geometry measured off the render:
+   1314x1530, display inset 46.727% / 2.131% / 1.438% / 1.699%. */
+.hero__dev{
+  /* Bounded by the column AND by the viewport, so it is never clipped. */
+  --cap:calc((100svh - 200px) * 1314 / 1530);
+  width:min(432px,32vw,var(--cap));justify-self:end;align-self:end;margin-bottom:2px;
+}
+/* The hero headline shares its row with the device, so it is sized for the
+   column it actually gets, not for the whole viewport. */
+.hero h1{font-size:clamp(44px,6.2vw,100px)}
+@media(max-width:860px){.hero h1{font-size:clamp(46px,10vw,120px)}}
+
+.duo{
+  position:relative;width:100%;aspect-ratio:1314/1530;
+  filter:drop-shadow(0 44px 60px rgba(0,0,0,.62)) drop-shadow(0 6px 14px rgba(0,0,0,.4));
+}
+.duo::after{
+  content:"";position:absolute;inset:0;z-index:4;pointer-events:none;
+  background:url("img/iqoo15-duo.png") center/100% 100% no-repeat;
+  background-image:image-set(url("img/iqoo15-duo.webp") type("image/webp"),
+                             url("img/iqoo15-duo.png") type("image/png"));
+}
+.duo__screen{
+  position:absolute;top:1.438%;left:46.727%;right:2.131%;bottom:1.699%;z-index:2;
+  overflow:hidden;border-radius:9px;
+  background:linear-gradient(178deg,#121214,#0a0a0b 62%,#101012);
+  color:var(--on-dark);display:flex;flex-direction:column;
+}
+.duo__hole{
+  position:absolute;top:4.38%;left:72.22%;transform:translate(-50%,-50%);
+  width:3.65%;aspect-ratio:1;border-radius:50%;background:#050506;z-index:5;
+}
+
+/* The hero display is about three-quarters the width the .scr primitives were
+   drawn for, so the few things that would overflow are tightened here only. */
+.duo__screen .scr{padding:10px 11px}
+.duo__screen .scr__status{font-size:8px;height:16px}
+.duo__screen .scr__boss{margin-top:11px}
+.duo__screen .scr__bossrow{font-size:8.5px;letter-spacing:.11em}
+.duo__screen .hp{height:5px;margin-top:5px}
+.duo__screen .hp__num{font-size:8px;margin-top:5px}
+.duo__screen .scr__view{margin:10px -2px;border-radius:12px}
+.duo__screen .scr__verdict{font-size:8.5px;top:9px;left:9px;letter-spacing:.16em}
+.duo__screen .scr__dmg{font-size:30px;top:20px;right:10px}
+.duo__screen .scr__dmg small{font-size:7px;letter-spacing:.14em;margin-top:3px}
+.duo__screen .scr__fig svg{width:62%}
+.duo__screen .scr__stats{gap:6px}
+.duo__screen .stat{padding:6px 7px;border-radius:9px}
+.duo__screen .stat__k{font-size:7px;letter-spacing:.1em}
+.duo__screen .stat__v{font-size:17px}
+.duo__screen .stat__v--sm{font-size:9px;letter-spacing:.02em;padding-block:4px 1px}
+.duo__screen .pips{gap:2px;margin-top:4px}
+
+/* Short viewports — a 720p laptop, a phone in landscape — get a tighter hero
+   so the device is never cut in half by the fold. */
+@media(max-height:840px) and (min-width:861px){
+  .hero{min-height:min(96svh,980px)}
+  .hero__in{padding-block:clamp(40px,6svh,80px) clamp(22px,3svh,40px)}
+  .hero h1{font-size:clamp(38px,4.9vw,74px)}
+  .lede{margin-top:16px}
+  .hero__cta{margin-top:24px}
+  .hero__stats{margin-top:20px;gap:clamp(20px,2.6vw,38px)}
+  .hero__stats b{font-size:clamp(26px,2.5vw,38px)}
+  .hero__stats span{font-size:10px;margin-top:3px}
+}
+@media(max-width:1460px){.stamp{display:none}}
+@media(max-width:1080px){.hero__dev{width:min(348px,34vw,var(--cap))}}
+@media(max-width:860px){
+  .hero__in{grid-template-columns:minmax(0,1fr)}
+  .hero__dev{display:none}
+}
 </style>
 </head>
 <body>
-<nav class="nav"><div class="wrap nav__in">
-  <a class="nav__brand" href="#top">CLASH<i>FIT</i></a>
-  <div class="nav__links">
-    <a href="#measure">Measurement</a><a href="#fatigue">Fatigue</a><a href="#asym">Asymmetry</a>
-    <a href="#clinic">Clinic</a><a href="#play">Play</a><a href="#ships">What ships</a>
+
+<header class="nav">
+  <div class="shell nav__in">
+    <a class="brand" href="#top"><i></i>ClashFit</a>
+    <nav class="nav__links">
+      <a href="#loop">The loop</a>
+      <a href="#fatigue">Fatigue</a>
+      <a href="#modes">Modes</a>
+      <a href="#race">1v1</a>
+      <a href="#alarm">Alarm</a>
+      <a href="#run">Run</a>
+      <a href="#library">Library</a>
+      <a href="#device">Device</a>
+      <a href="#privacy">Privacy</a>
+    </nav>
+    <button class="btn btn--ember" data-waitlist type="button">Join the waitlist</button>
   </div>
-  <a class="btn btn--go" href="/app">Open the app</a>
-</div></nav>
-
-<!-- ═══ HERO — problem, AI-first and the device, in one screen ═══ -->
-<header class="hero" id="top">
-  <div class="hero__bg"><picture><source srcset="img/squat.webp" type="image/webp">
-    <img src="img/squat.jpg" alt="" width="1800" height="1198" fetchpriority="high" decoding="async"></picture></div>
-  <div class="wrap hero__in">
-    <div>
-      <span class="hero__badge">Built for <b>iQOO&nbsp;15</b> &nbsp;·&nbsp; Snapdragon NPU</span>
-      <h1>The phone<br>watches you<br><em>train.</em></h1>
-      <p class="lede" style="margin-top:24px">Two AI models run on the device. A pose model grades
-        every rep on four measured quantities. A language model on the NPU writes the coaching.
-        <strong>Nothing is uploaded — there is no internet permission in the build.</strong></p>
-      <div class="hero__meta">
-        <span>On-device inference</span><span>No account</span><span>No equipment</span>
-        <span>Works in airplane mode</span>
-      </div>
-      <div class="hero__cta">
-        <a class="btn btn--go" href="/app">Try it now &nbsp;→</a>
-        <a class="btn" href="#measure">What it measures</a>
-      </div>
-    </div>
-
-    <div class="rig" aria-label="iQOO 15, front and back">
-      <div class="dev dev--back"><div class="dev__back">
-        <div class="dev__stripe"><i></i><i></i></div>
-        <div class="dev__cam"><i class="dev__lens"></i><i class="dev__lens"></i>
-          <i class="dev__lens"></i><i class="dev__lens dev__lens--f"></i></div>
-        <div class="dev__logo">iQOO</div><div class="dev__tag">15 · LEGEND</div>
-      </div><span class="dev__cap">The device</span></div>
-
-      <div class="dev dev--front"><div class="dev__panel">
-        <i class="dev__hole"></i>
-        <div class="scr">
-          <div class="scr__bar"><span>07:14</span><span>✈ OFFLINE ▮▮▮</span></div>
-          <div class="scr__hp"><div class="scr__hprow"><b>THE PACEMAKER</b><span>62%</span></div>
-            <div class="scr__track"><i class="scr__fill"></i></div></div>
-          <div class="scr__stage"><div class="scr__boss"></div>
-            <div class="scr__dmg">+85</div><div class="scr__verd">CLEAN · DEPTH 0.94</div></div>
-          <div class="scr__foot">
-            <div class="scr__stat">Reps<b>17</b></div>
-            <div class="scr__stat">Fatigue<div class="scr__pips"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>FADING</div>
-            <div class="scr__stat">Combo<b>×2.1</b></div>
-          </div>
-        </div>
-      </div><span class="dev__cap">The referee</span></div>
-    </div>
-  </div>
-  <div class="stripe" style="position:absolute;bottom:0;left:0;right:0;z-index:3"><i></i><i></i><i></i></div>
 </header>
 
-<!-- ═══ PROOF — feasibility, in numbers ═══ -->
-<section class="proof"><div class="wrap proof__in">
-  <div class="proof__c"><b>2</b><span>models on the NPU</span></div>
-  <div class="proof__c is-m"><b>51</b><span>exercises · 5 detectors</span></div>
-  <div class="proof__c is-m"><b>149</b><span>tests passing</span></div>
-  <div class="proof__c"><b>0</b><span>bytes uploaded</span></div>
-</div></section>
+<main id="top">
 
-<!-- ═══ PROBLEM — clarity ═══ -->
-<section class="band band--tight"><div class="wrap">
-  <div class="split">
+<!-- ══════════════ HERO ══════════════ -->
+<section class="hero">
+  <div class="hero__img"><picture><source srcset="img/hero.webp" type="image/webp"><img src="img/hero.jpg" alt="" fetchpriority="high" decoding="async" style="--focal:var(--f-hero,center)" width="2200" height="1467"></picture></div>
+  <div class="hero__scrim"></div>
+  <svg class="stamp" viewBox="0 0 120 120" aria-hidden="true">
+    <defs><path id="ring" d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0"/></defs>
+    <text><textPath href="#ring">Offline · On-device · No account · No upload · </textPath></text>
+    <circle cx="60" cy="60" r="20" fill="var(--ember)"/>
+    <text class="cf" x="60" y="68" text-anchor="middle">CF</text>
+  </svg>
+  <div class="shell hero__in">
     <div>
-      <p class="kick">The problem</p>
-      <h2>Counting reps is<br>not coaching.</h2>
-    </div>
-    <div>
-      <p>Every rep counter on a phone tells you <em>that</em> you moved. None of them tell you
-        <strong>how</strong> — whether you reached depth, whether you controlled the descent,
-        whether one side is quietly carrying the other, or whether the set you just did was
-        actually hard for you today.</p>
-      <p>And every camera-based product that tries sends the video to a server. That is the most
-        intimate sensor a phone has, pointed at you on your bedroom floor.</p>
-      <p style="margin:0"><strong>ClashFit measures all four, on the device, and uploads nothing.</strong></p>
-    </div>
-  </div>
-</div></section>
-
-<!-- ═══ MEASUREMENT — AI-first ═══ -->
-<section class="band band--steel" id="measure"><div class="wrap">
-  <div class="split split--flip">
-    <div>
-      <div class="meter">
-        <div class="meter__row"><div class="meter__k">Depth
-          <small>Against your own calibrated rest position, superlinear — a quarter rep is worth far less than a quarter.</small></div>
-          <div class="meter__v">0.94</div><i class="meter__bar"><i style="width:94%"></i></i></div>
-        <div class="meter__row"><div class="meter__k">Range of motion
-          <small>Against your own baseline rep, so a tall player and a short one are each measured against themselves.</small></div>
-          <div class="meter__v">0.88</div><i class="meter__bar"><i style="width:88%"></i></i></div>
-        <div class="meter__row"><div class="meter__k">Eccentric tempo
-          <small>Seconds on the way down. Bouncing out of the hole scores badly, and it should.</small></div>
-          <div class="meter__v">0.71</div><i class="meter__bar"><i style="width:71%"></i></i></div>
-        <div class="meter__row"><div class="meter__k">Joint alignment
-          <small>Knee tracking on a squat, torso line on a push-up. Degrees, not opinion.</small></div>
-          <div class="meter__v">0.62</div><i class="meter__bar"><i style="width:62%"></i></i></div>
+      <p class="kicker">Android &amp; iOS · 2026</p>
+      <h1>Your body is<br>the controller.<br><em>Your camera is<br>the referee.</em></h1>
+      <p class="lede">Real, camera-verified effort in. Boss damage out. Every rep is graded on depth, range, tempo and alignment — and none of it leaves your phone.</p>
+      <div class="hero__cta">
+        <button class="btn btn--ember" data-waitlist type="button">Join the waitlist</button>
+        <a class="btn btn--line" href="#loop">How it works</a>
+      </div>
+      <div class="hero__meta"><span>Built for iQOO 15</span><span>No account</span><span>No equipment</span><span>Works in airplane mode</span></div>
+      <div class="hero__stats">
+        <div><b>51</b><span>Exercises</span></div>
+        <div><b>15</b><span>Ways to play</span></div>
+        <div><b>0</b><span>Bytes uploaded</span></div>
       </div>
     </div>
-    <div>
-      <p class="kick kick--m">What the phone measures</p>
-      <h2>Four numbers,<br>not a verdict.</h2>
-      <p style="margin-top:22px">MediaPipe Pose reads 33 metric landmarks at 30 frames a second on
-        the Snapdragon GPU. A hysteretic state machine over joint angles counts the rep; four
-        geometric sub-scores grade it.</p>
-      <p>We never claim to measure “good form” — that is not a well-defined quantity. We measure
-        four named things in degrees and centimetres, and we say exactly which one was worst.</p>
-      <p style="margin:0"><em class="m">A shallow rep does 50 damage. A clean one does 85. A perfect one does 100.</em></p>
-    </div>
-  </div>
-</div></section>
 
-<!-- ═══ FATIGUE — the novelty ═══ -->
-<section class="band" id="fatigue"><div class="wrap">
-  <p class="kick">The part nobody else has</p>
-  <h2>It knows when<br>you're <em>gassed.</em></h2>
-  <p class="lede" style="margin:26px 0 34px">Concentric velocity decay, collapsing range of motion,
-    growing pauses between reps — measured every rep against <strong>your own first three</strong>.
-    The boss adapts in real time.</p>
-
-  <div class="curve">
-    <svg viewBox="0 0 900 260" role="img" aria-label="Fatigue rising from FRESH through WORKING and FADING to GASSED across 13 reps">
-      <rect x="52" y="14"  width="836" height="52" fill="#6FD08C" fill-opacity=".08"/>
-      <rect x="52" y="66"  width="836" height="46" fill="#F2C14E" fill-opacity=".08"/>
-      <rect x="52" y="112" width="836" height="62" fill="#FF8A3D" fill-opacity=".08"/>
-      <rect x="52" y="174" width="836" height="62" fill="#FF4A1C" fill-opacity=".10"/>
-      <g font-family="IBM Plex Mono, monospace" font-size="10" letter-spacing="1.6">
-        <text x="62" y="34"  fill="#6FD08C">FRESH</text><text x="62" y="86"  fill="#F2C14E">WORKING</text>
-        <text x="62" y="132" fill="#FF8A3D">FADING</text><text x="62" y="194" fill="#FF4A1C">GASSED</text>
-      </g>
-      <polyline fill="none" stroke="#3B7BFF" stroke-width="3" stroke-linejoin="round"
-        points="72,30 136,34 200,46 264,62 328,78 392,96 456,118 520,140 584,158 648,178 712,196 776,210 840,222"/>
-      <g fill="#3B7BFF">
-        <circle cx="72" cy="30" r="3.5"/><circle cx="200" cy="46" r="3.5"/><circle cx="328" cy="78" r="3.5"/>
-        <circle cx="456" cy="118" r="3.5"/><circle cx="584" cy="158" r="3.5"/><circle cx="712" cy="196" r="3.5"/>
-        <circle cx="840" cy="222" r="6"/>
-      </g>
-      <line x1="52" y1="236" x2="888" y2="236" stroke="rgba(242,245,249,.14)"/>
-      <g font-family="IBM Plex Mono, monospace" font-size="9.5" fill="#69738A">
-        <text x="66" y="252">REP 1</text><text x="440" y="252">REP 7</text><text x="820" y="252">REP 13</text>
-      </g>
-    </svg>
-  </div>
-
-  <div class="ramp">
-    <div><b>FRESH</b><span>boss regenerates<br>“go harder”</span></div>
-    <div><b>WORKING</b><span>neutral<br>the normal fight</span></div>
-    <div><b>FADING</b><span>boss staggers<br>a window opens</span></div>
-    <div><b>GASSED</b><span>mercy resolution<br>the fight ends</span></div>
-  </div>
-  <p style="margin-top:26px;max-width:52ch"><em>The boss cannot outlast you — but it makes you
-    earn the ending.</em> One fatigue model covers all five movement families: velocity for reps,
-    tremor for holds, cadence for cardio, jump height for ballistics, accuracy drift for poses.</p>
-</div></section>
-
-<!-- ═══ ASYMMETRY — novelty + impact ═══ -->
-<section class="band band--steel" id="asym"><div class="wrap">
-  <div class="split">
-    <div>
-      <p class="kick kick--m">The signal a physio looks for</p>
-      <h2>An average is<br>blind to this.</h2>
-      <p style="margin-top:22px">We compute the joint angle on <strong>both sides of your body</strong>,
-        every frame. Most trackers average the two and throw the difference away.</p>
-      <p>That difference is the thing a physiotherapist actually looks at. Someone favouring one
-        leg still produces a perfectly good average — they hit depth, tempo and range on the
-        combined reading while loading one side noticeably less. <em class="m">That is the pattern
-        that leads back to injury, and an averaged score cannot see it by construction.</em></p>
-      <p style="margin:0;font-size:14.5px;color:var(--dim)">Reported as a measured ratio with a
-        confidence grade, never a diagnosis. A thin or one-sided view returns nothing rather than
-        a number.</p>
-    </div>
-    <div class="lsi">
-      <p class="kick kick--m" style="margin-bottom:8px">Limb symmetry index</p>
-      <div class="lsi__big">82<span style="font-size:.32em">%</span></div>
-      <div class="lsi__legs">
-        <div class="lsi__leg"><span>Left · 92°</span><i></i></div>
-        <div class="lsi__leg w"><span>Right · 72°</span><i></i></div>
+    <div class="hero__dev">
+      <div class="duo">
+        <i class="duo__hole"></i>
+        <div class="duo__screen">
+          <div class="scr">
+            <div class="scr__status"><span>19:12</span><span>&#9992; &nbsp;OFFLINE&nbsp; &#9646;&#9646;&#9646;</span></div>
+            <div class="scr__boss">
+              <div class="scr__bossrow"><b>The Pacemaker</b><span>Boss &middot; 2</span></div>
+              <div class="hp"><div class="hp__fill"></div></div>
+              <div class="hp__num">4 820 / 7 800 HP</div>
+            </div>
+            <div class="scr__view">
+              <span class="scr__verdict">CLEAN</span>
+              <div class="scr__dmg">312<small>DAMAGE</small></div>
+              <div class="scr__fig">
+                <svg viewBox="0 0 200 150" aria-hidden="true">
+                  <g stroke="#f3efe8" stroke-opacity=".85" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                    <path d="M74 40 L88 78"/><path d="M88 78 L120 100"/><path d="M120 100 L106 132"/>
+                    <path d="M97 134 L122 134"/><path d="M78 50 L106 58 L128 47"/>
+                  </g>
+                  <circle cx="70" cy="28" r="10" stroke="#f3efe8" stroke-opacity=".85" stroke-width="3.4" fill="none"/>
+                  <g fill="#ff7a52"><circle cx="88" cy="78" r="4.5"/><circle cx="120" cy="100" r="4.5"/><circle cx="106" cy="132" r="4.5"/></g>
+                </svg>
+              </div>
+            </div>
+            <div class="scr__stats">
+              <div class="stat"><div class="stat__k">Reps</div><div class="stat__v">14</div></div>
+              <div class="stat"><div class="stat__k">Depth</div><div class="stat__v">92</div></div>
+              <div class="stat"><div class="stat__k">Fatigue</div><div class="stat__v stat__v--sm">Working</div>
+                <div class="pips"><i class="on"></i><i class="on"></i><i></i><i></i></div></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <p style="margin:22px 0 0;font-size:15px;color:#C6CEDA">“Your right side moved through
-        18 percent less range than the other, consistently across the set. Worth mentioning to a
-        physiotherapist if it persists.”</p>
     </div>
-  </div>
-</div></section>
-
-<!-- ═══ FAMILIES — technical depth, as a matrix not cards ═══ -->
-<section class="band"><div class="wrap">
-  <p class="kick">One engine</p>
-  <h2>Five detectors.<br>Fifty-one exercises.</h2>
-  <p class="lede" style="margin:24px 0 36px">Exercises are config records, not code. Adding one is
-    a JSON file. Every family reports fatigue through the same estimator, so nothing downstream
-    knows which one is running.</p>
-  <div style="overflow-x:auto">
-  <table class="matrix">
-    <thead><tr><th>Family</th><th>How it detects</th><th>Fatigue signal</th><th>Game</th><th style="text-align:right">Count</th></tr></thead>
-    <tbody>
-      <tr><td>Reps</td><td>Hysteretic angle state machine with dwell guards</td><td>Velocity &amp; range decay</td><td class="g">Boss Fight</td><td class="n">10</td></tr>
-      <tr><td>Holds</td><td>Angle-in-range timer</td><td>Tremor — an isometric has no velocity</td><td class="g">Siege</td><td class="n">9</td></tr>
-      <tr><td>Cardio</td><td>Peak detection with refractory gate</td><td>Cadence &amp; amplitude decay</td><td class="g">Pursuit</td><td class="n">11</td></tr>
-      <tr><td>Jumps</td><td>Airborne phase, height in real centimetres</td><td>Peak height &amp; landing softness</td><td class="g">Breaker</td><td class="n">7</td></tr>
-      <tr><td>Yoga</td><td>Whole-skeleton template match, mirror tolerant</td><td>Accuracy drift across the hold</td><td class="g">Sigil</td><td class="n">14</td></tr>
-    </tbody>
-  </table></div>
-</div></section>
-
-<!-- ═══ COACH — AI-first ═══ -->
-<section class="band band--steel" id="coach"><div class="wrap">
-  <div class="split split--flip">
-    <div class="shot shot--tall"><picture><source srcset="img/portrait.webp" type="image/webp">
-      <img src="img/portrait.jpg" alt="" width="1200" height="1800" loading="lazy" decoding="async"></picture></div>
-    <div>
-      <p class="kick">The second model</p>
-      <h2>The coach and<br>the villain are<br>the same model.</h2>
-      <p style="margin-top:22px">After every set, eleven numbers describing how your movement
-        changed go to <strong>Gemma 3n</strong> — a two-billion-parameter language model running on
-        the phone's NPU. It writes the coaching. It also writes the boss.</p>
-      <div class="quote"><b>Coach</b><p>“Your last three reps lost four centimetres of depth.
-        Take forty seconds, then finish it.”</p></div>
-      <div class="quote quote--boss"><b>The Pacemaker</b><p>“Your knees are negotiating.
-        I don't negotiate.”</p></div>
-      <p style="margin:0;font-size:14.5px;color:var(--dim)">Output is validated before it reaches
-        the screen — two sentences, no invented numbers, nothing about your body. If the model is
-        slow, missing or thermally throttled, a deterministic bank speaks instead and you cannot
-        tell which fired.</p>
-    </div>
-  </div>
-</div></section>
-
-<!-- ═══ CLINIC — impact ═══ -->
-<section class="bleed" id="clinic">
-  <picture><source srcset="img/clinic.webp" type="image/webp">
-    <img src="img/clinic.jpg" alt="" width="1800" height="1201" loading="lazy" decoding="async"></picture>
-  <div class="wrap bleed__in">
-    <p class="kick kick--m">Clinic</p>
-    <h2>The tests a physio uses,<br>on a phone you own.</h2>
-    <p class="lede" style="margin-top:22px">The 30-second sit-to-stand is a published functional
-      assessment. On our side it is a timed chair squat on the detector that already ships.</p>
-    <p style="max-width:56ch"><strong>Not a medical device.</strong> It does not diagnose and it
-      does not recommend treatment. It runs the protocol, reports the count with its unit, and
-      shows your own trend. The only recommendation it makes is to speak to a professional —
-      and reference ranges ship deliberately empty until they can be properly cited.</p>
   </div>
 </section>
 
-<!-- ═══ OFFLINE — headline claim ═══ -->
-<section class="band"><div class="wrap" style="text-align:center">
-  <p class="kick" style="justify-content:center">Privacy</p>
-  <h2 style="max-width:16ch;margin-inline:auto">Zero bytes<br>leave the phone.</h2>
-  <p class="lede" style="margin:26px auto 0;max-width:54ch">The camera is the most intimate sensor
-    a phone has. Every other camera-based fitness product sends that video to a server.</p>
-  <p style="margin:20px auto 0;max-width:54ch">Both models run on the device. There is
-    <strong>no INTERNET permission in the release manifest</strong> — so the claim is checkable,
-    not asserted. Open the manifest and look.</p>
-  <div style="max-width:420px;margin:34px auto 0"><div class="stripe"><i></i><i></i><i></i></div></div>
-</div></section>
+<div class="tape" aria-hidden="true">
+  <div class="tape__in">
+    <div class="tape__seq"><span>Boss Fight</span><i></i><span>Time Attack</span><i></i><span>Ghost Race</span><i></i><span>Duel</span><i></i><span>Survival</span><i></i><span>Boss Rush</span><i></i><span>Tempo Trial</span><i></i><span>Pass the Phone</span><i></i><span>Last Standing</span><i></i><span>Circuit</span><i></i><span>Siege</span><i></i><span>Pursuit</span><i></i><span>Breaker</span><i></i><span>Sigil</span><i></i><span>Clinic</span><i></i></div>
+    <div class="tape__seq"><span>Boss Fight</span><i></i><span>Time Attack</span><i></i><span>Ghost Race</span><i></i><span>Duel</span><i></i><span>Survival</span><i></i><span>Boss Rush</span><i></i><span>Tempo Trial</span><i></i><span>Pass the Phone</span><i></i><span>Last Standing</span><i></i><span>Circuit</span><i></i><span>Siege</span><i></i><span>Pursuit</span><i></i><span>Breaker</span><i></i><span>Sigil</span><i></i><span>Clinic</span><i></i></div>
+  </div>
+</div>
 
-<!-- ═══ PLAY — the game, now where it belongs ═══ -->
-<section class="band band--steel" id="play"><div class="wrap">
-  <div class="split">
-    <div>
-      <p class="kick">Why anyone does the reps</p>
-      <h2>Measurement is<br>the product.<br>The fight is<br>the <em>reason.</em></h2>
-      <p style="margin-top:22px">None of the above matters if nobody trains. So every clean rep
-        lands a hit on a boss that reads your fatigue and answers it — and a shallow one visibly
-        does less.</p>
-      <p style="margin:0">Fifteen ways to play, on one engine. Two phones, one boss, no server.
-        A run you recorded becomes a ~300-character code you can send to anyone.</p>
-    </div>
-    <div class="modes">
-      <div><b>Boss Fight</b><span>Solo</span></div><div><b>Time Attack</b><span>60 seconds</span></div>
-      <div><b>Ghost Race</b><span>Versus</span></div><div><b>Duel</b><span>Two phones</span></div>
-      <div><b>Survival</b><span>No mercy</span></div><div><b>Boss Rush</b><span>Three bosses</span></div>
-      <div><b>Tempo Trial</b><span>Match the beat</span></div><div><b>Last Standing</b><span>Fatigue eliminates</span></div>
-      <div><b>Pass the Phone</b><span>One device</span></div><div><b>Circuit</b><span>Cross-family</span></div>
-      <div><b>Siege</b><span>Holds</span></div><div><b>Pursuit</b><span>Cardio</span></div>
-      <div><b>Breaker</b><span>Jumps</span></div><div><b>Sigil</b><span>Yoga</span></div>
-      <div><b>Clinic</b><span>Sit-to-stand</span></div>
+<!-- ══════════════ THE LOOP ══════════════ -->
+<section class="band" id="loop">
+  <div class="shell story">
+    <figure class="ph ph--45 ph--bw rise" style="margin:0"><picture><source srcset="img/squat.webp" type="image/webp"><img src="img/squat.jpg" alt="A squat at depth, seen from the side" loading="lazy" decoding="async" style="--focal:var(--f-squat,center)" width="1800" height="1198"></picture></figure>
+    <div class="rise">
+      <p class="kicker">The loop</p>
+      <h2>Reps in.<br><em>Damage out.</em></h2>
+      <p class="lede">One still second calibrates you. The first rep sets your baseline, so everything after is scored against <em>you</em>.</p>
+      <ol class="steps">
+        <li><b>01</b><div><strong>Prop the phone</strong><span>Side-on, whole body in frame. A rep the camera could not see is never counted.</span></div></li>
+        <li><b>02</b><div><strong>Every rep lands a hit</strong><span>Four sub-scores grade every rep. The hit lands inside 100 ms, with a sound — so it works face-down.</span></div></li>
+        <li><b>03</b><div><strong>It reads the fade</strong><span>Your output decays as you tire. The boss reads the decay and answers it.</span></div></li>
+      </ol>
     </div>
   </div>
-</div></section>
+</section>
 
-<!-- ═══ WHAT SHIPS — feasibility, stated honestly ═══ -->
-<section class="band" id="ships"><div class="wrap">
-  <p class="kick">Scope</p>
-  <h2>What runs today.<br>What doesn't.</h2>
-  <p class="lede" style="margin:24px 0 34px">A hackathon round asks for a rudimentary prototype.
-    This is further along than that — so it is worth being exact about where the line is.</p>
-  <div class="split" style="align-items:start">
-    <div>
-      <h3 style="color:var(--fresh);margin-bottom:16px">Running now</h3>
-      <table class="matrix"><tbody>
-        <tr><td style="font-size:16px;font-family:var(--body);font-weight:600;text-transform:none;color:#C6CEDA">Pose engine, rep detection, four-part form scoring</td></tr>
-        <tr><td style="font-size:16px;font-family:var(--body);font-weight:600;text-transform:none;color:#C6CEDA">Fatigue model across five movement families</td></tr>
-        <tr><td style="font-size:16px;font-family:var(--body);font-weight:600;text-transform:none;color:#C6CEDA">Bilateral asymmetry with confidence grading</td></tr>
-        <tr><td style="font-size:16px;font-family:var(--body);font-weight:600;text-transform:none;color:#C6CEDA">51 exercises · 15 modes · offline duel · challenge codes</td></tr>
-        <tr><td style="font-size:16px;font-family:var(--body);font-weight:600;text-transform:none;color:#C6CEDA">30-second sit-to-stand · 149 tests passing</td></tr>
-      </tbody></table>
+<!-- ══════════════ FAMILIES STRIP ══════════════ -->
+<section class="band band--tight band--line">
+  <div class="shell">
+    <div class="head head--split rise">
+      <div>
+        <p class="kicker">Five families</p>
+        <h2>One engine.<br><em>Every movement.</em></h2>
+      </div>
+      <p class="lede">Reps, holds, cardio, jumps and asanas — five detectors, one fatigue model, a game shaped like each movement.</p>
     </div>
-    <div>
-      <h3 style="color:var(--working);margin-bottom:16px">Roadmap</h3>
-      <table class="matrix"><tbody>
-        <tr><td style="font-size:16px;font-family:var(--body);font-weight:600;text-transform:none;color:var(--ash)">Gemma 3n on the NPU — built at the hackathon, on the device</td></tr>
-        <tr><td style="font-size:16px;font-family:var(--body);font-weight:600;text-transform:none;color:var(--ash)">Physiotherapist prescription and adherence reports</td></tr>
-        <tr><td style="font-size:16px;font-family:var(--body);font-weight:600;text-transform:none;color:var(--ash)">Vision-grounded critique from the worst rep's frame</td></tr>
-        <tr><td style="font-size:16px;font-family:var(--body);font-weight:600;text-transform:none;color:var(--ash)">Wake-up alarm · run tracker · multi-phone raid</td></tr>
-        <tr><td style="font-size:16px;font-family:var(--body);font-weight:600;text-transform:none;color:var(--ash)">Nutrition, sleep and recovery on the same character sheet</td></tr>
-      </tbody></table>
+    <div class="strip rise">
+      <figure class="ph ph--34" style="margin:0"><picture><source srcset="img/pushup.webp" type="image/webp"><img src="img/pushup.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-pushup,right center)" width="1800" height="1200"></picture><figcaption class="ph__cap"><b>Boss Fight</b><span>Reps</span></figcaption></figure>
+      <figure class="ph ph--34" style="margin:0"><picture><source srcset="img/plank.webp" type="image/webp"><img src="img/plank.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-plank,center)" width="1800" height="1200"></picture><figcaption class="ph__cap"><b>Siege</b><span>Holds</span></figcaption></figure>
+      <figure class="ph ph--34" style="margin:0"><picture><source srcset="img/cardio.webp" type="image/webp"><img src="img/cardio.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-cardio,left center)" width="1800" height="1200"></picture><figcaption class="ph__cap"><b>Pursuit</b><span>Cardio</span></figcaption></figure>
+      <figure class="ph ph--34" style="margin:0"><picture><source srcset="img/jump.webp" type="image/webp"><img src="img/jump.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-jump,42% 25%)" width="1800" height="1196"></picture><figcaption class="ph__cap"><b>Breaker</b><span>Jumps</span></figcaption></figure>
     </div>
   </div>
-</div></section>
+</section>
 
-<!-- ═══ CTA ═══ -->
-<section class="band band--steel" style="text-align:center"><div class="wrap">
-  <h2 style="max-width:14ch;margin-inline:auto">Prop your phone.<br>Fight it out.</h2>
-  <p class="lede" style="margin:24px auto 30px;max-width:46ch">It runs in a browser right now.
-    Stand side-on, two metres back, and squat.</p>
-  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-    <a class="btn btn--go" href="/app">Open the prototype &nbsp;→</a>
-    <a class="btn btn--m" href="https://github.com/omkarrr88/ClashFit">Read the code</a>
-  </div>
-</div></section>
-
-<footer><div class="wrap">
-  <div class="foot">
-    <div>
-      <a class="nav__brand" href="#top">CLASH<i>FIT</i></a>
-      <p style="margin-top:14px;font-size:15px;max-width:36ch">Offline AI fitness combat, built for
-        the iQOO Hackathon 2026 · Pune City Battle · HealthTech.</p>
-      <div class="stripe" style="max-width:180px;margin-top:18px"><i></i><i></i><i></i></div>
+<!-- ══════════════ FATIGUE ══════════════ -->
+<section class="band band--panel" id="fatigue">
+  <div class="shell">
+    <div class="feature">
+      <div class="rise">
+        <p class="kicker">The part nobody else has</p>
+        <h2>It knows when you're <em>gassed.</em></h2>
+        <p class="lede">Not a difficulty slider. Not a self-reported effort rating. Three measured quantities, per rep, on the phone, against your own first three reps.</p>
+        <ul class="signals">
+          <li><b>Velocity loss</b><span>How much slower the lifting half of the rep has become.</span></li>
+          <li><b>ROM collapse</b><span>Range of motion shrinking rep over rep — depth going away before you notice.</span></li>
+          <li><b>Pause growth</b><span>The gap between reps stretching out. The most human tell there is.</span></li>
+        </ul>
+        <p class="lede" style="margin-top:24px"><strong style="color:var(--ink);font-weight:600">And it never punishes you for it.</strong> The boss staggers as you fade, and the mercy rule guarantees you an ending.</p>
+      </div>
+      <div class="panel rise">
+        <div class="panel__head"><span class="panel__title">Session · squat · 16 reps</span><span class="panel__note">on-device</span></div>
+        <svg class="chart" viewBox="0 0 760 372" role="img" aria-label="Fatigue rising across sixteen squats, from FRESH through WORKING and HEAVY into GASSED at rep fifteen, where the mercy rule arms.">
+          <rect x="46" y="40" width="644" height="60" fill="var(--fresh)" fill-opacity=".14"/>
+          <rect x="46" y="100" width="644" height="60" fill="var(--working)" fill-opacity=".14"/>
+          <rect x="46" y="160" width="644" height="80" fill="var(--heavy)" fill-opacity=".14"/>
+          <rect x="46" y="240" width="644" height="70" fill="var(--gassed)" fill-opacity=".16"/>
+          <g class="grid-line"><path d="M46 40h644M46 310h644"/></g>
+          <g class="band-txt"><text x="58" y="66" fill="var(--fresh)">FRESH</text><text x="58" y="126" fill="var(--working)">WORKING</text><text x="58" y="186" fill="var(--heavy)">HEAVY</text><text x="58" y="266" fill="var(--gassed)">GASSED</text></g>
+          <g class="thresh"><text x="756" y="105" text-anchor="end">0.15</text><text x="756" y="165" text-anchor="end">0.30</text><text x="756" y="245" text-anchor="end">0.50</text></g>
+          <polyline class="curve" points="58,40 100,44 142,48 184,60 226,68 268,84 310,96 352,112 394,124 436,144 478,164 520,180 562,200 604,224 646,248 688,272"/>
+          <g class="dot"><circle cx="58" cy="40" r="4"/><circle cx="184" cy="60" r="4"/><circle cx="310" cy="96" r="4"/><circle cx="436" cy="144" r="4"/><circle cx="562" cy="200" r="4"/><circle cx="688" cy="272" r="5.4"/></g>
+          <path class="mark" d="M646 32v286"/><text class="mark-txt" x="638" y="24" text-anchor="end">mercy rule arms</text>
+          <g class="axis-txt"><text x="46" y="336">rep 1</text><text x="368" y="336" text-anchor="middle">rep 8</text><text x="690" y="336" text-anchor="end">rep 16</text><text x="46" y="364" fill="var(--ember)">measured against your own first three reps</text></g>
+        </svg>
+      </div>
     </div>
-    <div><h4>Product</h4><ul>
-      <li><a href="#measure">What it measures</a></li><li><a href="#fatigue">Fatigue</a></li>
-      <li><a href="#asym">Asymmetry</a></li><li><a href="#clinic">Clinic</a></li>
-      <li><a href="#play">Modes</a></li><li><a href="#ships">What ships</a></li></ul></div>
-    <div><h4>Open it</h4><ul>
-      <li><a href="/app">The prototype</a></li>
-      <li><a href="https://github.com/omkarrr88/ClashFit">Source on GitHub</a></li>
-      <li><a href="/credits">Photography credits</a></li></ul></div>
+
+    <div class="feature feature--flip" style="margin-top:clamp(48px,6vw,88px)">
+      <div class="panel rise m-last">
+        <div class="panel__head"><span class="panel__title">Damage curve</span><span class="panel__note">base 100 · combo ×1</span></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Form score</th><th>Verdict</th><th style="width:38%">Damage</th><th style="text-align:right">Hit</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.00</td><td class="verdict" style="color:var(--heavy)">Shallow</td><td><i class="bar bar--dim" style="width:35%"></i></td><td class="num" style="text-align:right">35</td></tr>
+            <tr><td class="num">0.30</td><td class="verdict" style="color:var(--heavy)">Shallow</td><td><i class="bar bar--dim" style="width:50%"></i></td><td class="num" style="text-align:right">50</td></tr>
+            <tr><td class="num">0.55</td><td class="verdict" style="color:var(--working)">OK</td><td><i class="bar" style="width:67%"></i></td><td class="num" style="text-align:right">67</td></tr>
+            <tr><td class="num">0.80</td><td class="verdict" style="color:var(--fresh)">Clean</td><td><i class="bar" style="width:85%"></i></td><td class="num" style="text-align:right">85</td></tr>
+            <tr><td class="num">0.95</td><td class="verdict" style="color:var(--fresh)">Clean</td><td><i class="bar" style="width:96%"></i></td><td class="num" style="text-align:right">96</td></tr>
+            <tr><td class="num">1.00</td><td class="verdict" style="color:var(--fresh)">Clean</td><td><i class="bar" style="width:100%"></i></td><td class="num" style="text-align:right">100</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="rise">
+        <p class="kicker">The referee is honest</p>
+        <h2>A bad rep <em>visibly</em> does less.</h2>
+        <p class="lede">Depth, range, tempo, alignment. A bad rep still does 35 — zero damage teaches nothing. Chain clean ones and the combo climbs to ×2.5.</p>
+        <div class="tags"><span class="tag tag--ember">Depth</span><span class="tag tag--ember">Range</span><span class="tag tag--ember">Tempo</span><span class="tag tag--ember">Alignment</span></div>
+      </div>
+    </div>
   </div>
-  <div class="foot__legal">
-    <span>Not a medical device · nothing here diagnoses</span>
-    <span>Photography — public domain and Creative Commons · <a href="/credits" style="color:var(--ash)">credits</a></span>
+</section>
+
+<!-- ══════════════ ALARM (orange) ══════════════ -->
+<section class="band band--ember" id="alarm">
+        <span class="roadmap-badge">Roadmap &mdash; not in the current build</span>
+  <div class="shell alarm">
+    <div class="rise">
+      <p class="kicker">Wake-up</p>
+      <h2>The alarm stops when the <em>reps</em> stop it.</h2>
+      <p class="lede">Set the alarm, then set its price: five push-ups. At 6:30 the camera comes on, and only the movement silences it. A wiggle under the blanket counts as nothing.</p>
+      <ul class="alarm__pts">
+        <li><b>01</b><span>Any exercise, any count. Start at three chair squats if that is honest.</span></li>
+        <li><b>02</b><span>The same scoring that runs a boss fight runs the alarm. Too shallow doesn't count.</span></li>
+        <li><b>03</b><span>An emergency dismiss, held five seconds and logged. Strict, never a trap.</span></li>
+      </ul>
+    </div>
+    <div class="alarm__vis rise">
+      <figure class="ph ph--45" style="margin:0"><picture><source srcset="img/pushup.webp" type="image/webp"><img src="img/pushup.jpg" alt="A push-up, side-on, at the bottom of the rep" loading="lazy" decoding="async" style="--focal:var(--f-pushup,right center)" width="1800" height="1200"></picture></figure>
+      <div class="alarm__phone"><div class="phone">
+            <div class="phone__notch"></div>
+            <div class="phone__screen">
+              <div class="scr">
+                <div class="scr__status"><span>6:30</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="alm__time">6:30</div>
+                <div class="alm__meta">Alarm · weekdays · ringing</div>
+
+                <div class="alm__task">
+                  <span class="scr__label">To dismiss</span>
+                  <b>5 push-ups</b>
+                  <div class="alm__pips"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>
+                  <div class="alm__count">2 of 5 counted</div>
+                </div>
+
+                <div class="alm__cam">
+                  <!-- side-on push-up, mid-descent -->
+                  <svg viewBox="0 0 200 110" fill="none" aria-hidden="true">
+                    <g stroke="#f3efe8" stroke-opacity=".85" stroke-width="3" stroke-linecap="round">
+                      <path d="M56 46 L52 52"/>
+                      <path d="M52 52 L104 60"/>
+                      <path d="M104 60 L152 78"/>
+                      <path d="M152 78 L166 84"/>
+                      <path d="M52 52 L48 74 L44 84"/>
+                      <path d="M104 60 L108 80"/>
+                      <path d="M40 88 L172 88"/>
+                    </g>
+                    <circle cx="58" cy="40" r="9" stroke="#f3efe8" stroke-opacity=".85" stroke-width="3"/>
+                    <g fill="#ff7a52">
+                      <circle cx="52" cy="52" r="4"/><circle cx="104" cy="60" r="4"/>
+                      <circle cx="152" cy="78" r="4"/><circle cx="48" cy="74" r="3.4"/>
+                    </g>
+                    <path d="M40 70 A14 14 0 0 0 52 66" stroke="#ff7a52" stroke-width="2" stroke-dasharray="2.5 3.5"/>
+                    <text x="8" y="66" font-family="IBM Plex Mono, monospace" font-size="11" fill="#ff7a52" letter-spacing="1">84°</text>
+                  </svg>
+                </div>
+
+                <div class="alm__lock">Snooze used · 1 of 1</div>
+              </div>
+            </div>
+          </div></div>
+    </div>
   </div>
-</div></footer>
+</section>
+
+<!-- ══════════════ MODES ══════════════ -->
+<section class="band" id="modes">
+  <div class="shell">
+    <div class="head head--split rise">
+      <div>
+        <p class="kicker">Fifteen ways in</p>
+        <h2>Pick your <em>fight.</em></h2>
+      </div>
+      <p class="lede">Every mode runs on one camera, one rep machine, one fatigue estimator — different rules on one honest stream of reps.</p>
+    </div>
+    <div class="plans rise">
+      <article class="plan">
+        <figure class="ph ph--1610" style="margin:0"><picture><source srcset="img/jump.webp" type="image/webp"><img src="img/jump.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-jump,42% 25%)" width="1800" height="1196"></picture></figure>
+        <div class="plan__body">
+          <span class="plan__k">Alone</span>
+          <h3>Solo</h3>
+          <ul>
+            <li>Boss Fight <span>2–4 min</span></li>
+            <li>Time Attack <span>60 s</span></li>
+            <li>Survival <span>Waves</span></li>
+            <li>Boss Rush <span>×3</span></li>
+            <li>Tempo Trial <span>Eyes-free</span></li>
+            <li>Ghost Race <span>Vs a file</span></li>
+          </ul>
+          <button class="btn btn--ember" data-waitlist type="button">Join the waitlist</button>
+        </div>
+      </article>
+      <article class="plan">
+        <figure class="ph ph--1610" style="margin:0"><picture><source srcset="img/pair.webp" type="image/webp"><img src="img/pair.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-pair,center)" width="1800" height="1200"></picture></figure>
+        <div class="plan__body">
+          <span class="plan__k">Head to head</span>
+          <h3>Versus</h3>
+          <ul>
+            
+            <li>Duel <span>Most damage</span></li>
+            
+            
+            <li>Ghost Race <span>Async</span></li>
+          </ul>
+          <button class="btn btn--ember" data-waitlist type="button">Join the waitlist</button>
+        </div>
+      </article>
+      <article class="plan">
+        <figure class="ph ph--1610" style="margin:0"><picture><source srcset="img/group.webp" type="image/webp"><img src="img/group.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-group,center)" width="1800" height="1195"></picture></figure>
+        <div class="plan__body">
+          <span class="plan__k">A room</span>
+          <h3>Group</h3>
+          <ul>
+            <li>Raid <span>3–8 · co-op</span></li>
+            <li>Last Standing <span>Fatigue KO</span></li>
+            <li>Pass the Phone <span>One device</span></li>
+            <li>Team vs Team <span>Two bosses</span></li>
+            <li>Circuit <span>Four families</span></li>
+          </ul>
+          <button class="btn btn--ember" data-waitlist type="button">Join the waitlist</button>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 1v1 REP RACE ══════════════ -->
+<section class="bleed" id="race">
+  <div class="bleed__img"><picture><source srcset="img/pair.webp" type="image/webp"><img src="img/pair.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-pair,center)" width="1800" height="1200"></picture></div>
+  <div class="bleed__scrim"></div>
+  <div class="shell bleed__in">
+    <div class="rise">
+      <p class="kicker">1v1 with a friend</p>
+      <h2>Same clock.<br>Same movement.<br><em>Most reps wins.</em></h2>
+      <p class="lede">Pick an exercise, set the timer, go at the same time. Both phones grade every rep, so a half-rep buys nothing — the person who cheats the movement loses.</p>
+      <div class="tags"><span class="tag tag--ember">30 s</span><span class="tag tag--ember">60 s</span><span class="tag tag--ember">3 min</span><span class="tag">Any exercise</span></div>
+    </div>
+    <div class="rise"><div class="phone">
+            <div class="phone__notch"></div>
+            <div class="phone__screen">
+              <div class="scr">
+                <div class="scr__status"><span>07:14</span><span>⚡ &nbsp;LINKED&nbsp; ▮▮▮</span></div>
+                <div class="scr__bossrow" style="margin-top:16px"><b>Duel</b><span>Push-ups</span></div>
+
+                <div class="duel__clock">0:38<small>LEFT OF 1:00</small></div>
+
+                <div class="scr__view" style="margin-top:16px">
+                  <span class="scr__verdict">CLEAN</span>
+                  <span class="scr__verdict" style="left:auto;right:12px;color:var(--on-dark-faint)">REP 14 · 0.91</span>
+                  <div class="scr__fig" style="place-items:center">
+                    <svg viewBox="0 0 200 110" fill="none" aria-hidden="true">
+                      <g stroke="#f3efe8" stroke-opacity=".85" stroke-width="3" stroke-linecap="round">
+                        <path d="M56 46 L52 52"/>
+                        <path d="M52 52 L104 60"/>
+                        <path d="M104 60 L152 78"/>
+                        <path d="M152 78 L166 84"/>
+                        <path d="M52 52 L48 74 L44 84"/>
+                        <path d="M104 60 L108 80"/>
+                        <path d="M40 88 L172 88"/>
+                      </g>
+                      <circle cx="58" cy="40" r="9" stroke="#f3efe8" stroke-opacity=".85" stroke-width="3"/>
+                      <g fill="#ff7a52">
+                        <circle cx="52" cy="52" r="4"/><circle cx="104" cy="60" r="4"/>
+                        <circle cx="152" cy="78" r="4"/><circle cx="48" cy="74" r="3.4"/>
+                      </g>
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="duel__side" style="margin-top:4px">
+                  <div class="duel__row">
+                    <span class="duel__who">You<em>on this phone</em></span>
+                    <span class="duel__n">14<span>REPS</span></span>
+                  </div>
+                  <div class="duel__bar"><i style="width:88%"></i></div>
+                </div>
+
+                <div class="duel__side">
+                  <div class="duel__row">
+                    <span class="duel__who">Arjun<em>2 m away</em></span>
+                    <span class="duel__n">12<span>REPS</span></span>
+                  </div>
+                  <div class="duel__bar duel__bar--them"><i style="width:75%"></i></div>
+                </div>
+
+                <div class="duel__lead">You lead by 2</div>
+                <div class="scr__foot" style="margin-top:12px;padding-top:0">2 shallow reps did not count</div>
+              </div>
+            </div>
+          </div></div>
+  </div>
+</section>
+
+<!-- ══════════════ LEADERBOARD ══════════════ -->
+<section class="bleed bleed--flip" id="raid">
+        <span class="roadmap-badge">Roadmap &mdash; the sync scales, the room does not exist yet</span>
+  <div class="bleed__img"><picture><source srcset="img/group.webp" type="image/webp"><img src="img/group.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-group,center)" width="1800" height="1195"></picture></div>
+  <div class="bleed__scrim"></div>
+  <div class="shell bleed__in">
+    <div class="rise"><div class="phone">
+            <div class="phone__notch"></div>
+            <div class="phone__screen">
+              <div class="scr">
+                <div class="scr__status"><span>07:16</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="scr__bossrow" style="margin-top:16px"><b>Raid room</b><span>● 6 in</span></div>
+
+                <div class="plb">
+                  <div class="plb__r"><span class="plb__n">1</span><span class="plb__who">Omkar</span><span class="plb__d">4 820</span><span class="plb__c plb__c--w">Working</span></div>
+                  <div class="plb__r"><span class="plb__n">2</span><span class="plb__who">Priya</span><span class="plb__d">4 455</span><span class="plb__c plb__c--h">Heavy</span></div>
+                  <div class="plb__r plb__r--me"><span class="plb__n">3</span><span class="plb__who">You</span><span class="plb__d">4 190</span><span class="plb__c plb__c--w">Working</span></div>
+                  <div class="plb__r"><span class="plb__n">4</span><span class="plb__who">Aditi</span><span class="plb__d">3 604</span><span class="plb__c plb__c--f">Fresh</span></div>
+                  <div class="plb__r plb__r--out"><span class="plb__n">5</span><span class="plb__who">Rahul</span><span class="plb__d">3 122</span><span class="plb__c plb__c--g">Out</span></div>
+                  <div class="plb__r plb__r--out"><span class="plb__n">6</span><span class="plb__who">Sameer</span><span class="plb__d">2 809</span><span class="plb__c plb__c--g">Out</span></div>
+                </div>
+
+                <div class="pfeed">
+                  <span class="scr__label">Incoming</span>
+                  <div class="pfeed__r"><span class="pfeed__who">Omkar</span><span class="pfeed__d">+96</span><span class="pfeed__v">CLEAN</span></div>
+                  <div class="pfeed__r"><span class="pfeed__who">You</span><span class="pfeed__d">+85</span><span class="pfeed__v">CLEAN</span></div>
+                  <div class="pfeed__r"><span class="pfeed__who">Aditi</span><span class="pfeed__d">+50</span><span class="pfeed__v">SHALLOW</span></div>
+                  <div class="pfeed__r"><span class="pfeed__who">Priya</span><span class="pfeed__d">+67</span><span class="pfeed__v">OK</span></div>
+                </div>
+
+                <div class="plb__boss">
+                  <div class="plb__bossrow"><span>The Pacemaker</span><span>12 400 / 18 000</span></div>
+                  <div class="plb__track"><i></i></div>
+                  <div class="scr__foot" style="margin-top:12px;padding-top:0">Same standings on all six phones</div>
+                </div>
+              </div>
+            </div>
+          </div></div>
+    <div class="rise">
+      <p class="kicker">Playing together</p>
+      <h2>A live leaderboard.<br><em>No server.</em></h2>
+      <p class="lede">Phones sync <em>events</em>, not state. Ranks, damage and every player's fatigue band, live on every screen in the room — in airplane mode.</p>
+      <div class="tags"><span class="tag tag--ember">Last Standing</span><span class="tag tag--ember">Pass the Phone</span><span class="tag">Circuit</span><span class="tag">Circuit</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ RUN ══════════════ -->
+<section class="band band--panel" id="run">
+        <span class="roadmap-badge">Roadmap &mdash; not in the current build</span>
+  <div class="shell run">
+    <div class="rise">
+      <p class="kicker">Outside</p>
+      <h2>A run tracker that <em>keeps the route.</em></h2>
+      <p class="lede">Distance, pace, splits, cadence, elevation. The one difference that matters: the trace stays on your device. Runs grow STAMINA — how long you last before the bands escalate.</p>
+      <div class="panel" style="margin-top:28px">
+        <div class="panel__head"><span class="panel__title">Morning run</span><span class="panel__note">illustrative &mdash; not a recorded session</span></div>
+        <div class="run__big">5.24<small>km</small></div>
+        <div class="run__grid">
+          <div><div class="run__k">Moving</div><div class="run__v">28:31</div></div>
+          <div><div class="run__k">Pace</div><div class="run__v">5:27</div></div>
+          <div><div class="run__k">Cadence</div><div class="run__v">172</div></div>
+        </div>
+        <div class="splits">
+          <div class="splits__k">Splits · pace per kilometre</div>
+          <div class="split-row"><span class="split-row__km">1 km</span><span class="split-row__bar"><i style="width:77%"></i></span><span class="split-row__t">5:31</span></div>
+          <div class="split-row"><span class="split-row__km">2 km</span><span class="split-row__bar"><i style="width:93%"></i></span><span class="split-row__t">5:22</span></div>
+          <div class="split-row split-row--best"><span class="split-row__km">3 km</span><span class="split-row__bar"><i style="width:100%"></i></span><span class="split-row__t">5:18</span></div>
+          <div class="split-row"><span class="split-row__km">4 km</span><span class="split-row__bar"><i style="width:81%"></i></span><span class="split-row__t">5:29</span></div>
+          <div class="split-row"><span class="split-row__km">5 km</span><span class="split-row__bar"><i style="width:72%"></i></span><span class="split-row__t">5:34</span></div>
+          <div class="split-row split-row--part"><span class="split-row__km">0.24</span><span class="split-row__bar"><i style="width:95%"></i></span><span class="split-row__t">5:21</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="run__vis rise">
+      <figure class="ph ph--45" style="margin:0"><picture><source srcset="img/run.webp" type="image/webp"><img src="img/run.jpg" alt="A runner alone on a road in early light" loading="lazy" decoding="async" style="--focal:var(--f-run,center)" width="1605" height="1049"></picture></figure>
+      <div class="run__phone"><div class="phone">
+            <div class="phone__notch"></div>
+            <div class="phone__screen">
+              <div class="scr">
+                <div class="scr__status"><span>18:42</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="scr__bossrow" style="margin-top:16px"><b>Morning run</b><span>Tue</span></div>
+
+                <div class="rns__map">
+                  <svg viewBox="0 0 280 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map of a 5.24 kilometre loop through a street grid, start and finish a block apart.">
+                    <rect x="-100" y="-100" width="480" height="600" fill="#08080a"/>
+                    <rect x="168" y="34" width="104" height="96" rx="7" fill="#6c8b58" fill-opacity=".14"/>
+                    <path d="M-40 372 L120 468 L-40 468 Z" fill="#4a6b7a" fill-opacity=".16"/>
+                    <g stroke="#f3efe8" stroke-opacity=".085" stroke-width="1">
+                      <path d="M20 -20V420M62 -20V420M104 -20V420M188 -20V420M230 -20V420M272 -20V420"/>
+                      <path d="M-20 30H300M-20 78H300M-20 126H300M-20 174H300M-20 270H300M-20 318H300M-20 366H300"/>
+                    </g>
+                    <g stroke="#f3efe8" stroke-opacity=".16" stroke-width="2.4">
+                      <path d="M146 -20V420"/><path d="M-20 222H300"/>
+                    </g>
+                    <path d="M62 322 L62 270 L104 270 L104 222 L146 222 L146 174 L188 174 L188 126 L230 126 L230 78 L188 78 L188 46 L146 46 L146 100 L110 100 L110 150 L78 150 L78 200 L40 200 L40 300 L78 300 L78 330"
+                          fill="none" stroke="#ff6b40" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <g fill="#08080a" stroke="#ff7a52" stroke-width="2">
+                      <circle cx="144" cy="222" r="3.6"/><circle cx="230" cy="126" r="3.6"/>
+                      <circle cx="146" cy="64" r="3.6"/><circle cx="78" cy="178" r="3.6"/><circle cx="62" cy="300" r="3.6"/>
+                    </g>
+                    <circle cx="62" cy="322" r="7" fill="#08080a" stroke="#8fd18a" stroke-width="3"/>
+                    <circle cx="78" cy="330" r="6.5" fill="#ff7a52"/>
+                    <text x="16" y="356" font-family="IBM Plex Mono, monospace" font-size="11" fill="#f3efe8" fill-opacity=".5" letter-spacing="1.4">START</text>
+                  </svg>
+                </div>
+
+                <div class="rns__big">5.24<small>KM</small></div>
+                <div class="rns__grid">
+                  <div><div class="rns__k">Time</div><div class="rns__v">28:31</div></div>
+                  <div><div class="rns__k">Pace</div><div class="rns__v">5:27</div></div>
+                  <div><div class="rns__k">Cadence</div><div class="rns__v">172</div></div>
+                </div>
+                <div class="scr__foot">Route stored on this phone only</div>
+              </div>
+            </div>
+          </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ LIBRARY ══════════════ -->
+<section class="band" id="library">
+  <div class="shell">
+    <div class="head head--split rise">
+      <div>
+        <p class="kicker">The library</p>
+        <h2>Five detectors.<br><em>Fifty-one exercises.</em></h2>
+      </div>
+      <p class="lede">Exercises differ in how they are <em>detected</em>. Group them that way and sixty problems collapse into five.</p>
+    </div>
+    <div class="fam rise">
+      <div class="fam__row">
+        <span class="fam__no">F1</span>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/squat.webp" type="image/webp"><img src="img/squat.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-squat,center)" width="1800" height="1198"></picture></figure>
+        <div class="fam__game">Boss Fight<em>Strength reps</em></div>
+        <p class="fam__how">Squats, push-ups, lunges, sit-ups, bridges. Fatigue reads as velocity loss and collapsing depth.</p>
+        <div class="fam__n"><b>21</b>exercises</div>
+      </div>
+      <div class="fam__row">
+        <span class="fam__no">F2</span>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/plank.webp" type="image/webp"><img src="img/plank.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-plank,center)" width="1800" height="1200"></picture></figure>
+        <div class="fam__game">Siege<em>Holds</em></div>
+        <p class="fam__how">Your plank <em>is</em> the shield. A hold has no velocity, so fatigue is read as tremor.</p>
+        <div class="fam__n"><b>9</b>holds</div>
+      </div>
+      <div class="fam__row">
+        <span class="fam__no">F3</span>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/yoga.webp" type="image/webp"><img src="img/yoga.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-yoga,center)" width="1800" height="1440"></picture></figure>
+        <div class="fam__game">Sigil<em>Yoga</em></div>
+        <p class="fam__how">No boss, no damage, no ranking. Each asana lights a constellation point; the cue names the worst joint.</p>
+        <div class="fam__n"><b>14</b>asanas</div>
+      </div>
+      <div class="fam__row">
+        <span class="fam__no">F4</span>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/cardio.webp" type="image/webp"><img src="img/cardio.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-cardio,left center)" width="1800" height="1200"></picture></figure>
+        <div class="fam__game">Pursuit<em>Cardio</em></div>
+        <p class="fam__how">Cadence and amplitude from one landmark axis. Something chases you; the gap closes when you slow.</p>
+        <div class="fam__n"><b>10</b>movements</div>
+      </div>
+      <div class="fam__row">
+        <span class="fam__no">F5</span>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/jump.webp" type="image/webp"><img src="img/jump.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-jump,42% 25%)" width="1800" height="1196"></picture></figure>
+        <div class="fam__game">Breaker<em>Jumps</em></div>
+        <p class="fam__how">Jump height in real centimetres. A stiff landing scores but doesn't break through — that force went into you.</p>
+        <div class="fam__n"><b>7</b>jumps</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ SCREENS ══════════════ -->
+<section class="band band--panel" id="screens">
+  <div class="shell">
+    <div class="head head--split rise">
+      <div>
+        <p class="kicker">Every screen</p>
+        <h2>One app.<br><em>Fifteen ways in.</em></h2>
+      </div>
+      <p class="lede">Boss fights, holds, yoga, cardio, a race against a file, a coach, a streak and a clinical test — all on the same engine.</p>
+    </div>
+        <div class="reel" id="reel">
+
+      <div class="reel__stage">
+        <ol class="reel__rail">
+          <li><button type="button" data-go="0"><i></i><span>Mode select</span></button></li>
+          <li><button type="button" data-go="1"><i></i><span>Session summary</span></button></li>
+          <li><button type="button" data-go="2"><i></i><span>Siege</span></button></li>
+          <li><button type="button" data-go="3"><i></i><span>Sigil</span></button></li>
+          <li><button type="button" data-go="4"><i></i><span>Ghost Race</span></button></li>
+          <li><button type="button" data-go="5"><i></i><span>Pursuit</span></button></li>
+          <li><button type="button" data-go="6"><i></i><span>Streaks</span></button></li>
+          <li><button type="button" data-go="7"><i></i><span>Clinic</span></button></li>
+        </ol>
+        <div class="reel__dev">
+          <div class="phone">
+            <div class="phone__notch"></div>
+            <div class="phone__screen">
+          <div class="reel__scn is-on" data-i="0">
+            <div class="scr">
+                <div class="scr__status"><span>18:45</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="sx__hd"><b>Modes</b><span>15</span></div>
+                <div class="mgrid">
+                  <div class="mtile mtile--on">Boss Fight</div><div class="mtile">Time Attack</div>
+                  <div class="mtile">Ghost Race</div>
+                  <div class="mtile">Duel</div><div class="mtile">Survival</div>
+                  <div class="mtile">Boss Rush</div><div class="mtile">Tempo Trial</div>
+                  <div class="mtile">Siege</div><div class="mtile">Pursuit</div>
+                  <div class="mtile">Breaker</div><div class="mtile">Sigil</div>
+                  <div class="mtile">Last Standing</div><div class="mtile">Pass the Phone</div>
+                  <div class="mtile">Circuit</div><div class="mtile">Clinic</div>
+                </div>
+                <div class="scr__foot">Nothing is locked behind a menu</div>
+              </div>
+          </div>
+          <div class="reel__scn" data-i="1">
+            <div class="scr">
+                <div class="scr__status"><span>06:30</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="sx__hd"><b>Set complete</b><span>Squat</span></div>
+                <div class="sx__big">18<small>REPS</small></div>
+                <div class="sx__sub">2 340 damage · boss down</div>
+                <div class="sx__art">
+                  <svg viewBox="0 0 260 200" preserveAspectRatio="none" aria-hidden="true">
+                    <rect x="0" y="0" width="260" height="46" fill="#6c8b58" fill-opacity=".3"/>
+                    <rect x="0" y="46" width="260" height="46" fill="#a5842f" fill-opacity=".3"/>
+                    <rect x="0" y="92" width="260" height="56" fill="#b3612a" fill-opacity=".3"/>
+                    <rect x="0" y="148" width="260" height="52" fill="#c2330f" fill-opacity=".34"/>
+                    <polyline points="14,12 44,20 74,36 104,58 134,84 164,112 194,142 240,172"
+                              fill="none" stroke="#ff7a52" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+                  </svg>
+                </div>
+                <div class="sx__tri">
+                  <div><span>Clean</span><b>12</b></div>
+                  <div><span>OK</span><b>4</b></div>
+                  <div><span>Shallow</span><b>2</b></div>
+                </div>
+                <div class="scr__foot">Export PNG · CSV</div>
+              </div>
+          </div>
+          <div class="reel__scn" data-i="2">
+            <div class="scr">
+                <div class="scr__status"><span>07:21</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="sx__hd"><b>Siege</b><span>Forearm plank</span></div>
+                <div class="sx__big">1:24<small>HELD</small></div>
+                <div class="sx__art">
+                  <svg viewBox="0 0 220 130" aria-hidden="true">
+                    <g stroke="#f3efe8" stroke-opacity=".85" stroke-width="3.4" stroke-linecap="round" fill="none">
+                      <path d="M62 54 L58 60"/>
+                      <path d="M58 60 L120 66"/>
+                      <path d="M120 66 L172 82"/>
+                      <path d="M58 60 L52 84 L44 92"/>
+                      <path d="M120 66 L124 88"/>
+                      <path d="M40 96 L184 96"/>
+                    </g>
+                    <circle cx="64" cy="47" r="10" stroke="#f3efe8" stroke-opacity=".85" stroke-width="3.4" fill="none"/>
+                    <g fill="#ff7a52">
+                      <circle cx="58" cy="60" r="4.4"/><circle cx="120" cy="66" r="4.4"/><circle cx="172" cy="82" r="4.4"/>
+                    </g>
+                    <path d="M40 30 L188 30" stroke="#8fd18a" stroke-width="2" stroke-dasharray="4 5" opacity=".7"/>
+                    <text x="40" y="22" font-family="IBM Plex Mono, monospace" font-size="11" fill="#8fd18a" letter-spacing="1.4">LINE HOLDING</text>
+                  </svg>
+                </div>
+                <div class="sx__row"><span>Shield</span><em>78%</em></div>
+                <div class="sx__bar"><i style="width:78%"></i></div>
+                <div class="sx__row"><span>Tremor</span><em style="color:#f2c14e">rising</em></div>
+                <div class="sx__bar"><i style="width:34%;background:#f2c14e"></i></div>
+                <div class="scr__foot">Break form and a hit lands</div>
+              </div>
+          </div>
+          <div class="reel__scn" data-i="3">
+            <div class="scr">
+                <div class="scr__status"><span>19:03</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="sx__hd"><b>Sigil</b><span>Vrikshasana</span></div>
+                <div class="sx__art" style="margin-top:16px">
+                  <svg viewBox="0 0 240 260" aria-hidden="true">
+                    <g stroke="#ff7a52" stroke-width="1.6" opacity=".55">
+                      <path d="M52 210 L96 154 L84 92 L138 54 L192 96 L176 168 L120 202 L52 210"/>
+                      <path d="M96 154 L176 168M84 92 L120 202"/>
+                    </g>
+                    <g fill="#ff7a52">
+                      <circle cx="52" cy="210" r="6"/><circle cx="96" cy="154" r="7.5"/>
+                      <circle cx="84" cy="92" r="6.5"/><circle cx="138" cy="54" r="8.5"/>
+                      <circle cx="176" cy="168" r="6"/>
+                    </g>
+                    <g fill="#f3efe8" fill-opacity=".22">
+                      <circle cx="192" cy="96" r="5"/><circle cx="120" cy="202" r="5"/>
+                    </g>
+                    <circle cx="138" cy="54" r="16" fill="none" stroke="#ff7a52" stroke-opacity=".3" stroke-width="1.4"/>
+                  </svg>
+                </div>
+                <div class="sx__row"><span>Accuracy</span><em>0.88</em></div>
+                <div class="sx__bar"><i style="width:88%"></i></div>
+                <div class="sx__sub" style="margin-top:14px;text-transform:none;letter-spacing:.02em;font-size:11px;color:var(--on-dark-muted)">“Straighten your left arm.”</div>
+                <div class="scr__foot">No boss. No damage. No ranking.</div>
+              </div>
+          </div>
+          <div class="reel__scn" data-i="4">
+            <div class="scr">
+                <div class="scr__status"><span>07:18</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="sx__hd"><b>Ghost Race</b><span>Squat</span></div>
+                <div class="sx__art">
+                  <svg viewBox="0 0 240 200" preserveAspectRatio="none" aria-hidden="true">
+                    <polyline points="10,182 46,150 82,124 118,96 154,72 190,44 230,20"
+                              fill="none" stroke="#ff7a52" stroke-width="4" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+                    <polyline points="10,182 46,158 82,136 118,110 154,88 190,64 230,44"
+                              fill="none" stroke="#f3efe8" stroke-opacity=".38" stroke-width="4" stroke-dasharray="7 7" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+                  </svg>
+                </div>
+                <div class="sx__row"><span>You</span><em>1 240</em></div>
+                <div class="sx__bar"><i style="width:92%"></i></div>
+                <div class="sx__row"><span>Gold pacer</span><em style="color:var(--on-dark-muted)">1 180</em></div>
+                <div class="sx__bar"><i style="width:87%;background:rgba(243,239,232,.34)"></i></div>
+                <div class="duel__lead" style="margin-top:16px">60 ahead</div>
+                <div class="scr__foot">A ghost is a file you can send</div>
+              </div>
+          </div>
+          <div class="reel__scn" data-i="5">
+            <div class="scr">
+                <div class="scr__status"><span>18:51</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="sx__hd"><b>Pursuit</b><span>High knees</span></div>
+                <div class="sx__big">42<small>M AHEAD</small></div>
+                <div class="sx__sub">It closes when you slow down</div>
+                <div class="sx__art">
+                  <svg viewBox="0 0 240 200" aria-hidden="true">
+                    <g stroke="#f3efe8" stroke-opacity=".1" stroke-width="1">
+                      <path d="M-60 62H300M-60 100H300M-60 138H300"/>
+                    </g>
+                    <path d="M52 100 L172 100" stroke="#ff7a52" stroke-width="1.6" stroke-dasharray="4 6" opacity=".6"/>
+                    <g stroke="#f3efe8" stroke-opacity=".34" stroke-width="3" stroke-linecap="round" fill="none">
+                      <path d="M40 88 L36 108"/><path d="M36 108 L44 128"/><path d="M36 108 L28 126"/>
+                      <path d="M40 90 L52 100"/>
+                      <circle cx="42" cy="76" r="8" stroke-width="3"/>
+                    </g>
+                    <g stroke="#ff7a52" stroke-width="3.4" stroke-linecap="round" fill="none">
+                      <path d="M182 82 L178 104"/><path d="M178 104 L192 122"/><path d="M178 104 L166 118"/>
+                      <path d="M180 84 L196 94"/>
+                      <circle cx="184" cy="68" r="9" stroke-width="3.4"/>
+                    </g>
+                    <g stroke="#ff7a52" stroke-opacity=".45" stroke-width="2.6" stroke-linecap="round">
+                      <path d="M204 78h16M208 92h14M204 106h18"/>
+                    </g>
+                    <text x="96" y="92" font-family="IBM Plex Mono, monospace" font-size="12" fill="#ff7a52" letter-spacing="1.4">42 m</text>
+                  </svg>
+                </div>
+                <div class="sx__row"><span>Cadence</span><em>168 <span style="font-size:9px;color:var(--on-dark-faint)">SPM</span></em></div>
+                <div class="sx__bar"><i style="width:84%"></i></div>
+                <div class="sx__row"><span>Amplitude</span><em>0.79</em></div>
+                <div class="sx__bar"><i style="width:79%"></i></div>
+                <div class="scr__foot">Tiny fake reps buy no ground</div>
+              </div>
+          </div>
+          <div class="reel__scn" data-i="6">
+            <div class="scr">
+                <div class="scr__status"><span>06:34</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="sx__hd"><b>Consistency</b><span>Season 1</span></div>
+                <div class="sx__big">23<small>DAYS</small></div>
+                <div class="sx__sub">Rest day protected · 2 freezes left</div>
+                <div class="cal">
+                  <i class="on"></i><i class="on"></i><i class="on"></i><i class="rest"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+                  <i class="on"></i><i class="on"></i><i class="rest"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+                  <i class="on"></i><i class="rest"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i>
+                  <i class="on"></i><i class="on"></i><i class="on"></i><i class="rest"></i><i class="on"></i><i class="on"></i><i class="today"></i>
+                  <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                </div>
+                <div class="sx__row"><span>Resilience</span><em>+6</em></div>
+                <div class="sx__bar"><i style="width:70%;background:#8fd18a"></i></div>
+                <div class="scr__foot">A rest day earns the streak</div>
+              </div>
+          </div>
+          <div class="reel__scn" data-i="7">
+            <div class="scr">
+                <div class="scr__status"><span>19:08</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="sx__hd"><b>Clinic</b><span>0:00 left</span></div>
+                <div class="sx__big">14<small>STANDS</small></div>
+                <div class="sx__sub">30-second sit-to-stand · complete</div>
+                <div class="sx__art">
+                  <svg viewBox="0 0 260 180" aria-hidden="true">
+                    <g stroke="#f3efe8" stroke-opacity=".08" stroke-width="1">
+                      <path d="M-300 45H560M-300 90H560M-300 135H560"/>
+                    </g>
+                    <polyline points="18,140 68,126 118,110 168,98 224,72"
+                              fill="none" stroke="#8fd18a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <g fill="#08080a" stroke="#8fd18a" stroke-width="3">
+                      <circle cx="18" cy="140" r="5"/><circle cx="68" cy="126" r="5"/>
+                      <circle cx="118" cy="110" r="5"/><circle cx="168" cy="98" r="5"/>
+                    </g>
+                    <circle cx="224" cy="72" r="9" fill="#8fd18a"/>
+                  </svg>
+                </div>
+                <div class="sx__sub">Your trend · five months</div>
+                <div class="scr__foot" style="color:var(--dark-accent)">Not a medical device</div>
+              </div>
+          </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ol class="reel__steps">
+        <li class="reel__step is-on" data-i="0">
+          <p class="reel__n">01<span>/08</span></p>
+          <h3>Mode select</h3>
+          <p class="reel__sub">Solo · versus · group</p>
+          <p class="reel__txt">Fifteen ways to play, all of them on the first screen. Nothing unlocks by playing longer and nothing sits behind a purchase.</p>
+        </li>
+        <li class="reel__step" data-i="1">
+          <p class="reel__n">02<span>/08</span></p>
+          <h3>Session summary</h3>
+          <p class="reel__sub">Your fatigue curve</p>
+          <p class="reel__txt">Where the set actually went &mdash; eighteen reps, twelve of them clean, and the rep the depth started to go. It exports as a PNG or a CSV, to your phone.</p>
+        </li>
+        <li class="reel__step" data-i="2">
+          <p class="reel__n">03<span>/08</span></p>
+          <h3>Siege</h3>
+          <p class="reel__sub">Holds · fatigue as tremor</p>
+          <p class="reel__txt">A hold has no reps to count, so the phone measures how still you are instead. The shield falls as the tremor rises: break the line and the hit lands.</p>
+        </li>
+        <li class="reel__step" data-i="3">
+          <p class="reel__n">04<span>/08</span></p>
+          <h3>Sigil</h3>
+          <p class="reel__sub">Yoga · a constellation</p>
+          <p class="reel__txt">Pose matching, scored on accuracy alone. No boss, no damage, no ranking &mdash; the only feedback is which joint to move, and where.</p>
+        </li>
+        <li class="reel__step" data-i="4">
+          <p class="reel__n">05<span>/08</span></p>
+          <h3>Ghost Race</h3>
+          <p class="reel__sub">Beat yesterday's you</p>
+          <p class="reel__txt">Your own best set replayed beside you as a pacer. A ghost is a small file, so yesterday&rsquo;s you is something you can hand to somebody else.</p>
+        </li>
+        <li class="reel__step" data-i="5">
+          <p class="reel__n">06<span>/08</span></p>
+          <h3>Pursuit</h3>
+          <p class="reel__sub">Cardio · distance is cadence</p>
+          <p class="reel__txt">Distance built out of cadence and knee height rather than GPS, which is why it works indoors. Slow down and it closes; shrink the movement and you buy no ground.</p>
+        </li>
+        <li class="reel__step" data-i="6">
+          <p class="reel__n">07<span>/08</span></p>
+          <h3>Streaks</h3>
+          <p class="reel__sub">Rest days score</p>
+          <p class="reel__txt">The streak counts rest as training, because it is. Two freezes a season, and a protected day still adds resilience.</p>
+        </li>
+        <li class="reel__step" data-i="7">
+          <p class="reel__n">08<span>/08</span></p>
+          <h3>Clinic</h3>
+          <p class="reel__sub">A published protocol</p>
+          <p class="reel__txt">The thirty-second sit-to-stand, counted the way the published protocol defines it, with a five-month trend behind it. A measurement, not a diagnosis.</p>
+        </li>
+      </ol>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ COACH ══════════════ -->
+<section class="band" id="coach">
+  <div class="shell story">
+    <figure class="ph ph--45 ph--bw rise" style="margin:0"><picture><source srcset="img/portrait.webp" type="image/webp"><img src="img/portrait.jpg" alt="An athlete's face, close, between sets" loading="lazy" decoding="async" style="--focal:var(--f-portrait,center 70%)" width="1200" height="1800"></picture></figure>
+    <div class="rise">
+      <p class="kicker">The coach</p>
+      <h2>The coach and the villain are the <em>same model.</em></h2>
+      <p class="lede">Eleven numbers go to a language model on the phone's own neural processor. It writes the coaching and the taunt — and never sees your video.</p>
+      <div class="quotes">
+        <figure class="quote" style="margin:0"><figcaption class="quote__who">Coach</figcaption><p>“Your last three reps lost four centimetres of depth. Take forty seconds, then finish it.”</p></figure>
+        <figure class="quote quote--boss" style="margin:0"><figcaption class="quote__who">The Pacemaker</figcaption><p>“Your knees are negotiating. I don't negotiate.”</p></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ THE DEVICE ══════════════ -->
+<section class="band band--line" id="device">
+  <div class="shell iq">
+    <div class="rise">
+      <div class="iq__dev">
+        <div class="phone">
+          <div class="phone__notch"></div>
+          <div class="phone__screen">
+            <div class="scr">
+              <div class="scr__status"><span>20:04</span><span>&#9992; &nbsp;OFFLINE&nbsp; &#9646;&#9646;&#9646;</span></div>
+              <div class="sx__hd"><b>Between sets</b><span>Squat &middot; set 3</span></div>
+              <div class="sx__art" style="flex:1">
+                <div class="iqq">
+                  <p class="iqq__who">Coach</p>
+                  <p class="iqq__line">&ldquo;Your last three reps lost four centimetres of depth. Take forty seconds, then finish it.&rdquo;</p>
+                  <p class="iqq__who iqq__who--boss">The Pacemaker</p>
+                  <p class="iqq__line">&ldquo;Your knees are negotiating. I don&rsquo;t negotiate.&rdquo;</p>
+                </div>
+              </div>
+              <div class="sx__tri">
+                <div><span>Model</span><b>Gemma&nbsp;3n</b></div>
+                <div><span>Runs</span><b>On&#8209;device</b></div>
+                <div><span>Sent</span><b>0&nbsp;B</b></div>
+              </div>
+              <div class="scr__foot">Eleven numbers in. Two sentences out.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="iq__lab"><b>iQOO 15</b><span>The coach, running with the radio off</span></p>
+    </div>
+    <div class="rise">
+      <p class="kicker">The device</p>
+      <h2>Five pieces of the phone. <em>No accessories.</em></h2>
+      <p class="lede">No band, no strap, no chest belt, no gym machine reporting to an app. Everything ClashFit measures, it measures with hardware already in your hand — and the whole loop closes on that hardware.</p>
+      <ul class="iq__use">
+        <li>
+          <span class="iq__part">Front camera</span>
+          <span class="iq__what"><b>The referee</b>Thirty frames a second, thirty-three body landmarks. It is the only sensor the game needs — and a rep the camera could not see is never counted.</span>
+        </li>
+        <li>
+          <span class="iq__part">GPU</span>
+          <span class="iq__what"><b>Grading at camera rate</b>The pose landmarker runs on the GPU delegate, which is what leaves the CPU free to run the rep machine, the fatigue model and the fight at the same time.</span>
+        </li>
+        <li>
+          <span class="iq__part">Silicon</span>
+          <span class="iq__what"><b>A language model with no network</b>Between sets, eleven numbers go to Gemma 3n running locally. It never runs while the camera does — the phone does one hard thing at a time, on purpose.</span>
+        </li>
+        <li>
+          <span class="iq__part">Haptics</span>
+          <span class="iq__what"><b>The rep you feel</b>Every counted rep is confirmed in the hand, so the screen is optional. It is what makes eyes-free sets possible at all.</span>
+        </li>
+        <li>
+          <span class="iq__part">Speaker</span>
+          <span class="iq__what"><b>Coaching out loud</b>Tempo cues and the coach's line are spoken by the phone. In Tempo Trial you never look at it — you are on the floor, face down.</span>
+        </li>
+      </ul>
+      <p class="lede" style="margin-top:26px">None of this needs a flagship to run. But grading at camera rate <em>and</em> answering between sets without a network is where the 15's silicon stops being a spec sheet.</p>
+      <div class="tags"><span class="tag">Two phones = a duel</span><span class="tag">Airplane mode</span><span class="tag">No wearables</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ PRIVACY ══════════════ -->
+<section class="band band--panel" id="privacy">
+  <div class="shell feature">
+    <div class="rise">
+      <p class="kicker">Privacy</p>
+      <h2>No cloud box on <em>this diagram.</em></h2>
+      <p class="lede">Pose, form scoring, the fatigue model and the language model all run on the phone. The shipping app requests no internet permission at all. You can check.</p>
+      <div class="tags"><span class="tag">No account</span><span class="tag">No upload</span><span class="tag">No internet permission</span></div>
+    </div>
+    <div class="rise">
+<pre class="arch">   front camera · 30 fps
+            ↓
+   <b>Pose landmarker</b> · GPU · 33 joints
+            ↓
+   filter → joint angles → <b>rep machine</b>
+            ↓                    ↓
+   <b>fatigue estimator</b> → <b>adaptive boss</b>
+            ↓
+   [between sets] <b>on-device LLM</b> → speech
+            ↓
+   <u>local storage · this phone only</u></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CLINIC ══════════════ -->
+<section class="band" id="clinic">
+  <div class="shell">
+    <div class="head head--split rise">
+      <div>
+        <p class="kicker">Clinic</p>
+        <h2>The tests a physio uses, on a phone <em>you already own.</em></h2>
+      </div>
+      <p class="lede">The app already measures joint angles thirty times a second. Running a published protocol is a scoring change, not a new product.</p>
+    </div>
+    <figure class="ph ph--169 rise" style="margin:clamp(28px,4vw,48px) 0 0"><picture><source srcset="img/clinic.webp" type="image/webp"><img src="img/clinic.jpg" alt="An older adult exercising with a physiotherapist" loading="lazy" decoding="async" style="--focal:var(--f-clinic,center)" width="1800" height="1201"></picture><figcaption class="ph__cap"><b>Balance · reach · sit-to-stand</b><span>Not a medical device</span></figcaption></figure>
+    <div class="grid grid--3 rise">
+      <article class="card"><span class="card__k">30 seconds</span><h3>Sit-to-stand</h3><p>How many times you can rise from a chair in thirty seconds. A count, its protocol, and your own trend.</p></article>
+      <article class="card"><span class="card__k">Monthly</span><h3>Balance and reach</h3><p>Single-leg balance and functional reach, in real units, at home in two minutes.</p></article>
+      <article class="card"><span class="card__k">Honest</span><h3>Not a medical device</h3><p>It says so on screen, every time. No diagnosis, no risk score, no unattributed age bands.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ METRICS ══════════════ -->
+<section class="band band--tight band--line">
+  <div class="shell">
+    <div class="head rise"><p class="kicker">The bar we hold</p><h2>What has to be true.</h2></div>
+    <div class="metrics rise">
+      <div class="metric"><div class="metric__v">100<span style="font-size:.5em"> ms</span></div><div class="metric__k">Rep to hit</div><div class="metric__s">latency is the feel</div></div>
+      <div class="metric"><div class="metric__v">30<span style="font-size:.5em"> fps</span></div><div class="metric__k">On-device</div><div class="metric__s">33 tracked joints</div></div>
+      <div class="metric"><div class="metric__v">51</div><div class="metric__k">Exercises</div><div class="metric__s">five detector families</div></div>
+      <div class="metric"><div class="metric__v">15</div><div class="metric__k">Ways to play</div><div class="metric__s">solo · versus · group</div></div>
+      <div class="metric"><div class="metric__v">0</div><div class="metric__k">Bytes up</div><div class="metric__s">by design, not a setting</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CTA ══════════════ -->
+<section class="cta" id="get">
+  <div class="cta__img"><picture><source srcset="img/gym.webp" type="image/webp"><img src="img/gym.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-gym,center)" width="1800" height="1200"></picture></div>
+  <div class="cta__scrim"></div>
+  <div class="shell"><div class="cta__in rise">
+    <p class="kicker">Coming to Android and iOS</p>
+    <h2>Prop your phone.<br><em>Fight it out.</em></h2>
+    <p class="lede">One download. No account, no equipment, nothing to subscribe to.</p>
+    <div class="hero__cta">
+      <button class="btn btn--ember" data-waitlist type="button">Join the waitlist</button>
+      <a class="btn btn--line" href="#loop">How it works</a>
+    </div>
+    <div class="stores"><span class="tag">Android · Play Store</span><span class="tag">iOS · App Store</span><span class="tag">Free core, forever</span></div>
+  </div></div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="shell">
+    <div class="foot__grid">
+      <div>
+        <a class="brand" href="#top"><i></i>ClashFit</a>
+        <p>Offline AI fitness combat. Your body is the controller, your camera is the referee, and nothing leaves the phone.</p>
+      </div>
+      <div><h4>Play</h4><ul><li><a href="#modes">Modes</a></li><li><a href="#race">1v1 Duel</a></li><li><a href="#raid">Raid &mdash; roadmap</a></li><li><a href="#run">Run tracker &mdash; roadmap</a></li><li><a href="#alarm">Wake-up alarm &mdash; roadmap</a></li></ul></div>
+      <div><h4>How it works</h4><ul><li><a href="#loop">The loop</a></li><li><a href="#fatigue">Fatigue model</a></li><li><a href="#coach">The coach</a></li><li><a href="#device">The device</a></li><li><a href="#privacy">Privacy</a></li></ul></div>
+      <div><h4>More</h4><ul><li><a href="#library">Exercise library</a></li><li><a href="#screens">Every screen</a></li><li><a href="#clinic">Clinic mode</a></li><li><a href="/credits">Credits</a></li></ul></div>
+    </div>
+    <div class="foot__base">
+      <span>ClashFit · iQOO Hackathon 2026 · Pune City Battle</span>
+      <span>Not a medical device</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ══════════════ WAITLIST ══════════════ -->
+<dialog class="wl" id="waitlist" aria-labelledby="wl-title">
+  <form method="dialog" class="wl__x"><button value="close" aria-label="Close">&times;</button></form>
+  <div class="wl__in">
+
+    <div id="wl-ask">
+      <p class="kicker">Android &amp; iOS &middot; 2026</p>
+      <h2 id="wl-title" style="font-size:clamp(30px,4.6vw,42px);margin-top:10px">Join the<br><em>waitlist.</em></h2>
+      <p class="wl__lede">One note when the beta opens. Nothing else, ever.</p>
+      <form class="wl__form" id="wl-form" novalidate>
+        <label class="wl__label" for="wl-email">Email</label>
+        <input class="wl__input" id="wl-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" enterkeyhint="go">
+        <button class="btn btn--ember" type="submit">Join the waitlist</button>
+      </form>
+      <p class="wl__fine">Prototype for the iQOO Hackathon 2026 &mdash; this form does not store or send anything yet.</p>
+    </div>
+
+    <div id="wl-done" hidden>
+      <p class="kicker">Noted</p>
+      <h2 style="font-size:clamp(30px,4.6vw,42px);margin-top:10px">See you in<br><em>the arena.</em></h2>
+      <p class="wl__lede">ClashFit lands on Android and iOS in 2026. Until then, the whole thing runs on the phone in your hand &mdash; and nothing leaves it.</p>
+      <div class="tags"><span class="tag">No account</span><span class="tag">No upload</span><span class="tag">Free core, forever</span></div>
+    </div>
+
+  </div>
+</dialog>
+
+<script>
+(function () {
+  var els = document.querySelectorAll('.rise');
+  if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    els.forEach(function (el) { el.classList.add('in'); }); return;
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.06 });
+  els.forEach(function (el) { io.observe(el); });
+})();
+</script>
+
+<script>
+/* Waitlist. The form is deliberately inert: no endpoint, no storage, no errors.
+   It exists so the page has one honest call to action while the app is not public. */
+(function () {
+  var dlg  = document.getElementById('waitlist');
+  var form = document.getElementById('wl-form');
+  var ask  = document.getElementById('wl-ask');
+  var done = document.getElementById('wl-done');
+  if (!dlg || !form) return;
+
+  var supported = typeof dlg.showModal === 'function';
+
+  function open() {
+    ask.hidden = false; done.hidden = true; form.reset();
+    if (supported) { dlg.showModal(); } else { dlg.setAttribute('open', ''); }
+    var email = document.getElementById('wl-email');
+    if (email && !window.matchMedia('(max-width: 700px)').matches) { email.focus(); }
+  }
+
+  document.querySelectorAll('[data-waitlist]').forEach(function (btn) {
+    btn.addEventListener('click', function () { open(); });
+  });
+
+  /* Whatever is typed, the answer is the same and it is never an error. */
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    ask.hidden = true; done.hidden = false;
+  });
+
+  /* Click the backdrop to dismiss. */
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) { dlg.close(); } });
+})();
+</script>
+
+<script>
+/* The reel. One phone; the screen changes with the step that is crossing the
+   middle of the viewport. Falls back to the first screen with no observer. */
+(function () {
+  var reel = document.getElementById('reel');
+  if (!reel) return;
+  var steps = [].slice.call(reel.querySelectorAll('.reel__step'));
+  var scns  = [].slice.call(reel.querySelectorAll('.reel__scn'));
+  var rail  = [].slice.call(reel.querySelectorAll('.reel__rail button'));
+  if (!steps.length || steps.length !== scns.length) return;
+
+  var cur = -1;
+  function show(i) {
+    if (i === cur || i < 0 || i >= scns.length) return;
+    cur = i;
+    for (var k = 0; k < scns.length; k++) {
+      scns[k].classList.toggle('is-on', k === i);
+      steps[k].classList.toggle('is-on', k === i);
+      if (rail[k]) rail[k].setAttribute('aria-current', k === i ? 'true' : 'false');
+    }
+  }
+  show(0);
+
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) show(steps.indexOf(e.target));
+      });
+    }, { rootMargin: '-50% 0px -50% 0px', threshold: 0 });
+    steps.forEach(function (s) { io.observe(s); });
+  }
+
+  rail.forEach(function (b) {
+    b.addEventListener('click', function () {
+      var t = steps[+b.getAttribute('data-go')];
+      if (t) t.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+
+  /* Tilt, driven by how far through the reel we are. Transform only. */
+  var dev = reel.querySelector('.reel__dev');
+  if (dev && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    var queued = false;
+    var frame = function () {
+      queued = false;
+      var r = reel.getBoundingClientRect();
+      var span = Math.max(1, r.height - window.innerHeight);
+      var p = Math.min(1, Math.max(0, -r.top / span));
+      dev.style.setProperty('--p', p.toFixed(4));
+    };
+    var onScroll = function () {
+      if (!queued) { queued = true; requestAnimationFrame(frame); }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    frame();
+  }
+})();
+</script>
+
+<script>
+/* Parallax. One rAF-throttled scroll listener, transform only, and nothing at
+   all when the reader has asked for reduced motion. */
+(function () {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var img = document.querySelector('.hero__img');
+  var dev = document.querySelector('.hero__dev');
+  var hero = document.querySelector('.hero');
+  if (!hero || (!img && !dev)) return;
+  if (img) img.style.willChange = 'transform';
+  if (dev) dev.style.willChange = 'transform';
+
+  var queued = false;
+  function frame() {
+    queued = false;
+    var y = window.scrollY || 0;
+    if (y > hero.offsetHeight + 200) return;      /* off screen: stop working */
+    if (img) img.style.transform = 'translate3d(0,' + (y * 0.16).toFixed(1) + 'px,0) scale(1.09)';
+    if (dev) dev.style.transform = 'translate3d(0,' + (y * -0.07).toFixed(1) + 'px,0)';
+  }
+  window.addEventListener('scroll', function () {
+    if (!queued) { queued = true; requestAnimationFrame(frame); }
+  }, { passive: true });
+  frame();
+})();
+</script>
 </body>
 </html>
