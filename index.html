@@ -366,8 +366,10 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   color:var(--on-dark);display:flex;flex-direction:column;
 }
 .phone__notch{
-  position:absolute;top:9px;left:50%;transform:translateX(-50%);
-  width:78px;height:19px;border-radius:999px;background:#050506;z-index:5;
+  /* iQOO 15 has a centred punch-hole camera, not an iPhone pill. */
+  position:absolute;top:11px;left:50%;transform:translateX(-50%);
+  width:11px;height:11px;border-radius:50%;background:#050506;z-index:5;
+  box-shadow:0 0 0 1.5px rgba(0,0,0,.5);
 }
 .scr{padding:13px 15px;display:flex;flex-direction:column;height:100%;gap:0}
 .scr__status{
@@ -580,6 +582,9 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   .roadmap-badge{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.14em;
     text-transform:uppercase;color:var(--brass);border:1px solid var(--brass);
     padding:5px 11px;margin-bottom:18px;opacity:.9}
+
+  .credits__line{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--faint);margin:0}
+  .credits__line a{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -622,7 +627,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
         <a class="btn btn--ember" href="/app">Try it now</a>
         <a class="btn btn--line" href="#loop">How it works</a>
       </div>
-      <div class="hero__meta"><span>No account</span><span>No equipment</span><span>Works in airplane mode</span></div>
+      <div class="hero__meta"><span>Built for iQOO 15</span><span>No account</span><span>No equipment</span><span>Works in airplane mode</span></div>
     </div>
     <div class="hero__stats">
       <div><b>51</b><span>Exercises</span></div>
@@ -827,10 +832,10 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
           <span class="plan__k">Head to head</span>
           <h3>Versus</h3>
           <ul>
-            <li>Rep Race <span>Timed</span></li>
+            
             <li>Duel <span>Most damage</span></li>
-            <li>Tug of War <span>One bar</span></li>
-            <li>Mirror Match <span>Tempo</span></li>
+            
+            
             <li>Ghost Race <span>Async</span></li>
           </ul>
           <a class="btn btn--ember" href="/app">Race a ghost</a>
@@ -844,7 +849,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
           <ul>
             <li>Raid <span>3–8 · co-op</span></li>
             <li>Last Standing <span>Fatigue KO</span></li>
-            <li>Relay · Pass the phone <span>One device</span></li>
+            <li>Pass the Phone <span>One device</span></li>
             <li>Team vs Team <span>Two bosses</span></li>
             <li>Circuit <span>Four families</span></li>
           </ul>
@@ -870,8 +875,8 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             <div class="phone__notch"></div>
             <div class="phone__screen">
               <div class="scr">
-                <div class="scr__status"><span>9:41</span><span>⚡ &nbsp;LINKED&nbsp; ▮▮▮</span></div>
-                <div class="scr__bossrow" style="margin-top:16px"><b>Rep Race</b><span>Push-ups</span></div>
+                <div class="scr__status"><span>07:14</span><span>⚡ &nbsp;LINKED&nbsp; ▮▮▮</span></div>
+                <div class="scr__bossrow" style="margin-top:16px"><b>Duel</b><span>Push-ups</span></div>
 
                 <div class="duel__clock">0:38<small>LEFT OF 1:00</small></div>
 
@@ -924,6 +929,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 <!-- ══════════════ LEADERBOARD ══════════════ -->
 <section class="bleed bleed--flip" id="raid">
+        <span class="roadmap-badge">Roadmap &mdash; the sync scales, the room does not exist yet</span>
   <div class="bleed__img"><picture><source srcset="img/group.webp" type="image/webp"><img src="img/group.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-group,center)" width="1800" height="1195"></picture></div>
   <div class="bleed__scrim"></div>
   <div class="shell bleed__in">
@@ -931,7 +937,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             <div class="phone__notch"></div>
             <div class="phone__screen">
               <div class="scr">
-                <div class="scr__status"><span>9:41</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="scr__status"><span>07:16</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
                 <div class="scr__bossrow" style="margin-top:16px"><b>Raid room</b><span>● 6 in</span></div>
 
                 <div class="plb">
@@ -963,7 +969,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
       <p class="kicker">Playing together</p>
       <h2>A live leaderboard.<br><em>No server.</em></h2>
       <p class="lede">Phones sync <em>events</em>, not state. Ranks, damage and every player's fatigue band, live on every screen in the room — in airplane mode.</p>
-      <div class="tags"><span class="tag tag--ember">Raid</span><span class="tag tag--ember">Last Standing</span><span class="tag">Relay</span><span class="tag">Circuit</span></div>
+      <div class="tags"><span class="tag tag--ember">Last Standing</span><span class="tag tag--ember">Pass the Phone</span><span class="tag">Circuit</span><span class="tag">Circuit</span></div>
     </div>
   </div>
 </section>
@@ -1001,7 +1007,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             <div class="phone__notch"></div>
             <div class="phone__screen">
               <div class="scr">
-                <div class="scr__status"><span>9:41</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="scr__status"><span>18:42</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
                 <div class="scr__bossrow" style="margin-top:16px"><b>Morning run</b><span>Tue</span></div>
 
                 <div class="rns__map">
@@ -1111,16 +1117,16 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             <div class="phone__notch"></div>
             <div class="phone__screen">
               <div class="scr">
-                <div class="scr__status"><span>9:41</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="scr__status"><span>18:45</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
                 <div class="sx__hd"><b>Modes</b><span>15</span></div>
                 <div class="mgrid">
                   <div class="mtile mtile--on">Boss Fight</div><div class="mtile">Time Attack</div>
-                  <div class="mtile">Rep Race</div><div class="mtile">Ghost Race</div>
+                  <div class="mtile">Ghost Race</div>
                   <div class="mtile">Duel</div><div class="mtile">Survival</div>
                   <div class="mtile">Boss Rush</div><div class="mtile">Tempo Trial</div>
                   <div class="mtile">Siege</div><div class="mtile">Pursuit</div>
                   <div class="mtile">Breaker</div><div class="mtile">Sigil</div>
-                  <div class="mtile">Last Standing</div><div class="mtile">Relay</div>
+                  <div class="mtile">Last Standing</div><div class="mtile">Pass the Phone</div>
                   <div class="mtile">Circuit</div><div class="mtile">Clinic</div>
                 </div>
                 <div class="scr__foot">Nothing is locked behind a menu</div>
@@ -1138,7 +1144,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             <div class="phone__notch"></div>
             <div class="phone__screen">
               <div class="scr">
-                <div class="scr__status"><span>9:41</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="scr__status"><span>06:30</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
                 <div class="sx__hd"><b>Set complete</b><span>Squat</span></div>
                 <div class="sx__big">18<small>REPS</small></div>
                 <div class="sx__sub">2 340 damage · boss down</div>
@@ -1172,7 +1178,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             <div class="phone__notch"></div>
             <div class="phone__screen">
               <div class="scr">
-                <div class="scr__status"><span>9:41</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="scr__status"><span>07:21</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
                 <div class="sx__hd"><b>Siege</b><span>Forearm plank</span></div>
                 <div class="sx__big">1:24<small>HELD</small></div>
                 <div class="sx__art">
@@ -1212,7 +1218,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             <div class="phone__notch"></div>
             <div class="phone__screen">
               <div class="scr">
-                <div class="scr__status"><span>9:41</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="scr__status"><span>19:03</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
                 <div class="sx__hd"><b>Sigil</b><span>Vrikshasana</span></div>
                 <div class="sx__art" style="margin-top:16px">
                   <svg viewBox="0 0 240 260" aria-hidden="true">
@@ -1249,7 +1255,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             <div class="phone__notch"></div>
             <div class="phone__screen">
               <div class="scr">
-                <div class="scr__status"><span>9:41</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="scr__status"><span>07:18</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
                 <div class="sx__hd"><b>Ghost Race</b><span>Squat</span></div>
                 <div class="sx__art">
                   <svg viewBox="0 0 240 200" preserveAspectRatio="none" aria-hidden="true">
@@ -1279,7 +1285,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             <div class="phone__notch"></div>
             <div class="phone__screen">
               <div class="scr">
-                <div class="scr__status"><span>9:41</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="scr__status"><span>18:51</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
                 <div class="sx__hd"><b>Pursuit</b><span>High knees</span></div>
                 <div class="sx__big">42<small>M AHEAD</small></div>
                 <div class="sx__sub">It closes when you slow down</div>
@@ -1324,7 +1330,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             <div class="phone__notch"></div>
             <div class="phone__screen">
               <div class="scr">
-                <div class="scr__status"><span>9:41</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="scr__status"><span>06:34</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
                 <div class="sx__hd"><b>Consistency</b><span>Season 1</span></div>
                 <div class="sx__big">23<small>DAYS</small></div>
                 <div class="sx__sub">Rest day protected · 2 freezes left</div>
@@ -1352,7 +1358,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             <div class="phone__notch"></div>
             <div class="phone__screen">
               <div class="scr">
-                <div class="scr__status"><span>9:41</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="scr__status"><span>19:08</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
                 <div class="sx__hd"><b>Clinic</b><span>0:00 left</span></div>
                 <div class="sx__big">14<small>STANDS</small></div>
                 <div class="sx__sub">30-second sit-to-stand · complete</div>
@@ -1482,28 +1488,11 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
         <a class="brand" href="#top"><i></i>ClashFit</a>
         <p>Offline AI fitness combat. Your body is the controller, your camera is the referee, and nothing leaves the phone.</p>
       </div>
-      <div><h4>Play</h4><ul><li><a href="#modes">Modes</a></li><li><a href="#race">1v1 Rep Race</a></li><li><a href="#raid">Raid</a></li><li><a href="#run">Run tracker</a></li><li><a href="#alarm">Wake-up alarm</a></li></ul></div>
+      <div><h4>Play</h4><ul><li><a href="#modes">Modes</a></li><li><a href="#race">1v1 Duel</a></li><li><a href="#raid">Raid &mdash; roadmap</a></li><li><a href="#run">Run tracker &mdash; roadmap</a></li><li><a href="#alarm">Wake-up alarm &mdash; roadmap</a></li></ul></div>
       <div><h4>How it works</h4><ul><li><a href="#loop">The loop</a></li><li><a href="#fatigue">Fatigue model</a></li><li><a href="#coach">The coach</a></li><li><a href="#privacy">Privacy</a></li></ul></div>
       <div><h4>More</h4><ul><li><a href="#library">Exercise library</a></li><li><a href="#screens">Every screen</a></li><li><a href="#clinic">Clinic mode</a></li></ul></div>
     </div>
-    <div class="credits">
-      <h4>Photography</h4>
-      <ul id="credits">
-        <li><a href="https://commons.wikimedia.org/wiki/File:Airman_powers_through_challenges_150117-F-GX122-077.jpg" rel="noopener">Airman powers through challenges 150117-F-GX122-077</a> — Staff Sgt. Natasha Stannard · Public domain</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:Dumbbell_plank.jpg" rel="noopener">Dumbbell plank</a> — Tyler  Read · CC BY 2.0</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:District_Crossfit_Class_Warfare-50.jpg" rel="noopener">District Crossfit Class Warfare-50</a> — ROSE PHYSICAL THERAPY GROUP (photos · photo sets) · CC BY 2.0</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:Runner-1-.jpg" rel="noopener">Runner-1-</a> — Robeter at English Wikipedia · Public domain</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:Athlete_after_training.jpg" rel="noopener">Athlete after training</a> — Robertgombos · CC BY-SA 4.0</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:US_Navy_090314-N-5366K-056_Athletes_battle_through_two_minutes_of_push_ups_during_the_Navy_SEAL_Fitness_Challenge_at_Arizona_State_University_in_Phoenix.jpg" rel="noopener">US Navy 090314-N-5366K-056 Athletes battle through two minutes of push ups during the Navy SEAL Fitness Challenge at Arizona State University in Phoenix</a> — U.S. Navy photo by Mass Communication Specialist 2nd Class Michelle Kapica · Public domain</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:Joshua_Tree_yoga_-_warrior_1b.jpg" rel="noopener">Joshua Tree yoga - warrior 1b</a> — Jarek Tuszyński · CC BY-SA 3.0</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:Marines%27_voices_echo,_prompt_new_gym_hours_150927-M-AI083-067.jpg" rel="noopener">Marines&#x27; voices echo, prompt new gym hours 150927-M-AI083-067</a> — Lance Cpl. Jason Jimenez · Public domain</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:L.E._Phillips_Senior_Center.jpg" rel="noopener">L.E. Phillips Senior Center</a> — Greatmats · CC BY-SA 4.0</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:Man_lifting_a_heavy_barbell.jpg" rel="noopener">Man lifting a heavy barbell</a> — Binyamin Mellish · CC0</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:Fitness_training_improves_run_times_(8276716).jpg" rel="noopener">Fitness training improves run times (8276716)</a> — U.S. Air Force photo by Airman 1st Class Eve Daugherty · Public domain</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:District_Crossfit_Class_Warfare-244.jpg" rel="noopener">District Crossfit Class Warfare-244</a> — ROSE PHYSICAL THERAPY GROUP (photos · photo sets) · CC BY 2.0</li>
-        <li><a href="https://commons.wikimedia.org/wiki/File:Traditional_Wrestling_Match.jpg" rel="noopener">Traditional Wrestling Match</a> — Amdadphoto · CC BY-SA 4.0</li>
-      </ul>
-    </div>
+    <div class="credits"><p class="credits__line">Photography &mdash; public domain and Creative Commons. <a href="/credits">Credits</a>.</p></div>
     <div class="foot__base">
       <span>ClashFit · iQOO Hackathon 2026 · Pune City Battle</span>
       <span>Not a medical device</span>
