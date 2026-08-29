@@ -61,6 +61,7 @@ check-in we open a fresh repository and implement against these specs.
 | 26 | [Deck Copy](26-DECK-COPY.md) | All nine slides, written. Due 27 Aug. |
 | 27 | [Impact & Business Case](27-IMPACT-BUSINESS.md) | Who it's for, who pays, why India, and the risks we raise before a judge does. |
 | 28 | [**Judge-Proofing**](28-JUDGE-PROOFING.md) | Every claim, its defence, and the evidence to show. Rehearse it. |
+| 30 | [🚨 **Rules Delta**](30-RULES-DELTA.md) | **Read first.** Organiser clarifications the other 41 docs predate — including the Office Kit / Linux blocker. |
 | 29 | [**Build Status**](29-BUILD-STATUS.md) | **What is built, what is event-only, what is still open.** Start here to see where things stand. |
 
 ### Reference pack — copy-ready data

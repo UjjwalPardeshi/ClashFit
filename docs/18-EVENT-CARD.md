@@ -5,6 +5,17 @@ everything that matters on the day. Print it, or keep it open on the laptop.
 
 ---
 
+## 🚨 Before anything else
+
+**Office Kit does not run on Linux.** Windows 10+ or macOS 10.14.6+ only. Omkar's machine is
+Ubuntu with no Windows partition. Red Light is 55% of the build and Office Kit is 10% of the
+rubric — whoever brings the Windows/Mac laptop is the one who can use a laptop at all during Red
+Light. Confirm this before you travel. [30-RULES-DELTA](30-RULES-DELTA.md) §1.
+
+**You cannot leave the venue.** Leaving midway is a disqualification. Food and mattresses provided.
+
+---
+
 ## Gates — the only checkpoints
 
 | Gate | Time | Must be true | If not |

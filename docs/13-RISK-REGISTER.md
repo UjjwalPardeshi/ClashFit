@@ -7,6 +7,21 @@ switch — the thing you do when mitigation has failed and the clock is running.
 
 ## Tier 1 — can lose the weekend
 
+### R0 · Office Kit cannot run on the laptop we are bringing
+**Likelihood: certain unless acted on. Impact: total.**
+Office Kit is Windows 10+ / macOS 10.14.6+ only. Omkar's machine is Ubuntu 24.04 on a single ext4
+partition with no Windows install — the EFI entry for it is stale. Without Office Kit, ~10.5 of 19
+build hours are phone-only with no bridge, the 10% Office Kit score is zero, there is no route to
+move the 3 GB Gemma weights onto the phone, and the mirrored-screen demo staging is gone.
+
+*Mitigation, cheapest first:* use Ujjwal's laptop if it runs Windows or macOS and pair both phones
+to it; borrow a machine; dual-boot (needs shrinking a 475 GB ext4 partition — real risk this close);
+a Windows VM (USB/wireless device pairing is exactly where VMs fail — do not discover that at the
+venue).
+*Kill switch:* accept phone-only Red Light, forfeit the 10% Office Kit line, and side-load Gemma
+over a cable before travelling.
+
+
 ### R1 · Pose detection fails in the venue
 **Likelihood: high. Impact: total.**
 A hackathon hall has bad mixed lighting, cluttered backgrounds, and constant human movement behind

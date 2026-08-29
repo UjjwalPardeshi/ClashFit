@@ -12,9 +12,11 @@ boring before you walk in.
 
 - [ ] **Register for the Pune City Battle.** You cannot submit without it, and registration closes
       at the same cutoff.
-- [ ] **Also register for Hyderabad (26–27 Sep, submission 22 Sep).** Separate ₹6L pool, separate
-      submission, three more working-professional Finale slots, and the same prep carries over.
-      Only tick it if you can genuinely attend in person.
+- [ ] **Hyderabad (26–27 Sep, submission 22 Sep) needs a DIFFERENT IDEA.** Earlier advice here said
+      "the same prep carries over" — that was wrong. The organisers have since said: *"Please submit
+      a different idea for each; the same idea pasted everywhere reads weak."* A second city is a
+      second project, not a second submission of this one. Skip it unless you want to build a
+      separate idea. See [30-RULES-DELTA](30-RULES-DELTA.md) §4.
 - [ ] Open the Pune dashboard. **Check whether problem statements are published** — there is a
       mandatory Step 2 where the team leader locks one before the idea form unlocks.
 - [ ] Decide who is team leader. Only the leader can lock the problem statement and submit.
