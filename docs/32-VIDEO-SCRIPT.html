@@ -38,8 +38,9 @@ tbody tr{page-break-inside:avoid;break-inside:avoid}
 .vo{font-size:10.6pt;line-height:1.48}
 .vo em{font-style:normal;background:#ffe9e1;padding:0 .6mm}
 .note{background:#f4f5f7;border-left:2.5pt solid #ff4f1f;padding:4mm 5mm;margin:5mm 0;font-size:9.4pt}
-.note b{display:block;font-family:"IBM Plex Mono",monospace;font-size:7.4pt;letter-spacing:.14em;
+.note > b:first-child{display:block;font-family:"IBM Plex Mono",monospace;font-size:7.4pt;letter-spacing:.14em;
   text-transform:uppercase;color:#ff4f1f;margin-bottom:2mm}
+.note b{font-weight:600;color:#15161a}
 ul{margin:0 0 4mm 4.6mm;padding:0}
 li{margin-bottom:2.2mm}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8mm}
@@ -48,6 +49,13 @@ li{margin-bottom:2.2mm}
 .foot{margin-top:9mm;padding-top:4mm;border-top:.6pt solid #d5d8de;font-family:"IBM Plex Mono",monospace;
   font-size:7.4pt;letter-spacing:.12em;text-transform:uppercase;color:#8b909b;display:flex;justify-content:space-between}
 .pb{page-break-before:always;break-before:page}
+tr.spk td{background:#15161a;color:#fff;padding:3mm 3mm;border-bottom:0}
+tr.spk .who{font-family:"Big Shoulders Display",Impact,sans-serif;font-weight:900;font-size:14pt;
+  text-transform:uppercase;letter-spacing:.02em}
+tr.spk .who em{font-style:normal;color:#ff8a5c}
+tr.spk .det{font-family:"IBM Plex Mono",monospace;font-size:7.2pt;letter-spacing:.13em;
+  text-transform:uppercase;color:#b9bec9;margin-top:1.2mm}
+.hand{background:#fff6f2;border-left:2.5pt solid #ff4f1f;padding:3mm 4mm;margin:0;font-size:9pt;font-style:italic;color:#7a3a22}
 </style>
 </head>
 <body>
@@ -58,9 +66,10 @@ li{margin-bottom:2.2mm}
   <div class="meta">
     <span>Team <b>Da Goats</b></span>
     <span>Omkar Kadam &middot; Ujjwal Pardeshi</span>
-    <span>Target <b>3:00</b></span>
-    <span>Words <b>~470</b></span>
+    <span>Target <b>3:10</b></span>
+    <span>Words <b>~465</b></span>
     <span>Aspect <b>16:9</b></span>
+    <span>Voices <b>2</b> &middot; split at 1:34</span>
   </div>
 </div>
 
@@ -68,95 +77,117 @@ li{margin-bottom:2.2mm}
 silences between beats are where the footage does the work. Every claim in this script is one the
 product can actually demonstrate on camera, so nothing here needs to be faked in the edit.</p>
 
+<p class="lede"><b>Two voices.</b> Omkar narrates the first half and Ujjwal the second, and the split
+is not arbitrary &mdash; it falls exactly on the seam between what each of you actually built. Omkar
+carries the camera, the pose pipeline and the fatigue model; Ujjwal picks up at the on-device model
+and carries the game, the privacy argument, multiplayer and the close. A jury that hears each person
+explain the part they own reads as a real team rather than one narrator and one silent partner.</p>
+
 <h2>The script</h2>
 
-<p class="lede">Three sources are cut together: <span class="src deck" style="width:auto">DECK</span>
-slides exported from the pitch deck, <span class="src site" style="width:auto">SITE</span> screen
-recordings of clash-fit.vercel.app, and <span class="src live" style="width:auto">LIVE</span> footage
-of a real set on a real phone. The rule of the edit is that the live footage carries the proof and
-the other two carry the explanation &mdash; never the other way round.</p>
+<p class="lede">Two sources only: <span class="src site" style="width:auto">SITE</span> screen
+recordings of clash-fit.vercel.app and <span class="src deck" style="width:auto">DECK</span> captures
+of the fourteen-slide pitch deck. No prototype and no demo footage &mdash; nothing here depends on
+the app behaving on the day.</p>
+
+<p class="lede"><b>Two voices.</b> Omkar narrates to 1:34, Ujjwal from there. The split falls on the
+seam between what each of you built: Omkar carries the camera, the loop, the grading and the fatigue
+model; Ujjwal picks up at breadth, the on-device model, privacy and the close.</p>
 
 <table>
 <thead><tr><th class="t">Time</th><th class="src">Source</th><th class="shot">On screen</th><th>Voiceover</th></tr></thead>
 <tbody>
 
-<tr><td class="t">0:00&ndash;0:13</td><td class="src live">LIVE</td>
-  <td class="shot">A bedroom or empty office. Phone propped against a bottle on the floor, screen
-    dark. You walk into frame and stop.</td>
+<tr class="spk"><td colspan="4">
+  <div class="who">Part one &mdash; <em>Omkar Kadam</em></div>
+  <div class="det">0:00 &ndash; 1:34 &middot; 6 beats &middot; ~215 words &middot; the camera, the loop, the grade, the fatigue model</div>
+</td></tr>
+
+<tr><td class="t">0:00&ndash;0:14</td><td class="src site">SITE<br>hero</td>
+  <td class="shot">Load clash-fit.vercel.app. Hold on the hero &mdash; the headline and the iQOO&nbsp;15
+    with the fight running on it. Do not scroll yet.</td>
   <td class="vo">Every fitness app on your phone counts what you <em>tell</em> it. Tap ten, it logs
     ten. Not one of them can see whether the rep actually happened.</td></tr>
 
-<tr><td class="t">0:13&ndash;0:24</td><td class="src deck">DECK<br>slide 02</td>
-  <td class="shot">Cut to the deck. The two boxes: &ldquo;10 squats&rdquo; against &ldquo;10 reps,
-    4 of them shallow.&rdquo; Hold on the second box.</td>
-  <td class="vo">Here is what the app knows, and here is what actually happened. The gap between
-    those two boxes is the entire product.</td></tr>
+<tr><td class="t">0:14&ndash;0:26</td><td class="src deck">DECK<br>slide 02</td>
+  <td class="shot">Cut to the deck. Two boxes side by side; hold on the second long enough to read it.</td>
+  <td class="vo">This is what the app knows. And this is what actually happened &mdash; ten reps, four
+    of them shallow, four centimetres of depth gone by the end. The gap between those two boxes is
+    the entire product.</td></tr>
 
-<tr><td class="t">0:24&ndash;0:40</td><td class="src live">LIVE</td>
-  <td class="shot">Back to the floor. Screen wakes, skeleton overlay locks on, you start squatting.
-    Hold on the overlay tracking the knee and hip.</td>
+<tr><td class="t">0:26&ndash;0:42</td><td class="src deck">DECK<br>slide 03</td>
+  <td class="shot">The loop diagram. Let all five arrows draw, then hold on the blue note underneath.</td>
   <td class="vo">ClashFit turns the front camera into a referee. Thirty frames a second, thirty-three
-    body landmarks, and every rep graded before it counts &mdash; on depth, range, tempo and alignment.</td></tr>
+    body landmarks, a rep machine, a form score &mdash; and only then, damage. Every box on that line
+    runs on the phone.</td></tr>
 
-<tr><td class="t">0:40&ndash;0:56</td><td class="src live">LIVE<br>screen rec</td>
-  <td class="shot">Close on the phone screen. Damage fires on a clean rep, boss health drops. Then a
-    deliberately shallow rep; hold on the small number.</td>
-  <td class="vo">Effort becomes damage. A clean rep takes three hundred off the boss. A shallow one
-    takes almost nothing &mdash; so the only way to win the fight is to move better.</td></tr>
+<tr><td class="t">0:42&ndash;0:58</td><td class="src deck">DECK<br>slide 04</td>
+  <td class="shot">The donut and the damage curve. Let the four arcs draw, then the curve.</td>
+  <td class="vo">A rep is not a count. It is four measurements, weighted &mdash; depth, range, tempo,
+    alignment. And that score becomes damage on a curve, so a clean rep takes three hundred off the
+    boss and a shallow one takes almost nothing.</td></tr>
 
-<tr><td class="t">0:56&ndash;1:04</td><td class="src deck">DECK<br>slide 10</td>
-  <td class="shot">The damage curve. Let the &ldquo;worst rep / best rep&rdquo; markers land.</td>
-  <td class="vo">That curve is not a metaphor. It is the damage model, and a bad rep visibly does less.</td></tr>
-
-<tr><td class="t">1:04&ndash;1:26</td><td class="src live">LIVE<br>then DECK 08</td>
-  <td class="shot">The set continues, you visibly slow. Cut to the app&rsquo;s summary screen, then to
-    deck slide 08 with the full fatigue curve. Hold the curve for two full seconds.</td>
+<tr><td class="t">0:58&ndash;1:20</td><td class="src deck">DECK<br>slide 05</td>
+  <td class="shot">The fatigue curve. Let it draw completely, then hold two full seconds of silence on
+    the finished chart. This is the most important shot in the video.</td>
   <td class="vo">Then it does the thing nothing else on your phone does. It measures your velocity,
-    your range, and the pauses between reps &mdash; against <em>your own first three</em>. It knows
-    you are fading before you do. And the boss staggers when you fade, instead of quietly making
-    itself easier.</td></tr>
+    your range, and the pauses between reps &mdash; against <em>your own first three</em>. Thirteen
+    reps here, and you can see exactly where the movement changed. It knows you are fading before you do.</td></tr>
 
-<tr><td class="t">1:26&ndash;1:44</td><td class="src live">LIVE<br>screen rec</td>
-  <td class="shot">Between-sets screen. The coaching line types in, then the boss taunt underneath it.</td>
+<tr><td class="t">1:20&ndash;1:34</td><td class="src deck">DECK<br>slide 06</td>
+  <td class="shot">The five-families table with the exercise photographs.</td>
+  <td class="vo">And fatigue is not one signal. A plank has no velocity, so we measure the shake.
+    Five families of movement, fifty-one exercises, one estimator.</td></tr>
+
+<tr class="spk"><td colspan="4">
+  <div class="who">Part two &mdash; <em>Ujjwal Pardeshi</em></div>
+  <div class="det">1:34 &ndash; 3:10 &middot; 7 beats &middot; ~250 words &middot; breadth, the on-device model, privacy, the device, the close</div>
+</td></tr>
+<tr><td colspan="4" class="hand">Hand-off. Record the two halves separately &mdash; do not try to
+  trade lines live. Leave a clean half-second of air at the join so the edit has somewhere to cut.</td></tr>
+
+<tr><td class="t">1:34&ndash;1:48</td><td class="src site">SITE<br>#screens</td>
+  <td class="shot">The sticky phone reel on the landing page &mdash; one device, the screens changing
+    as you scroll. Scroll slowly and steadily; get three or four changes on camera.</td>
+  <td class="vo">Sixteen ways to play, all on one engine and one phone. Boss fights, holds, yoga,
+    cardio, a race against a file, a streak, and a clinical test.</td></tr>
+
+<tr><td class="t">1:48&ndash;2:00</td><td class="src deck">DECK<br>slide 08</td>
+  <td class="shot">The two-phone sync diagram. Let the event arrows draw.</td>
+  <td class="vo">Two phones make a duel. They exchange events rather than state, so the boss&rsquo;s
+    health matches on both screens with no server between them.</td></tr>
+
+<tr><td class="t">2:00&ndash;2:16</td><td class="src deck">DECK<br>slide 09</td>
+  <td class="shot">The coach slide. Hold on the two quotes &mdash; the coaching line, then the taunt.</td>
   <td class="vo">Between sets, a twenty-three field summary of what your body just did goes to
     Gemma 3n, running on the phone. It writes the coaching, and it writes the taunt. It never sees a
     frame of video, because we never send it one.</td></tr>
 
-<tr><td class="t">1:44&ndash;1:58</td><td class="src live">LIVE</td>
-  <td class="shot">Pull down the notification shade, switch on airplane mode, return to the app, do
-    another rep. It counts. Do not cut away before it registers.</td>
-  <td class="vo">All of it runs on the device. Airplane mode, no account, nothing uploaded. A camera
-    in your bedroom that cannot phone home.</td></tr>
+<tr><td class="t">2:16&ndash;2:30</td><td class="src deck">DECK<br>slide 10</td>
+  <td class="shot">The privacy slide, full orange, with the on-device stack beside it. Hold on the
+    four zeroes.</td>
+  <td class="vo">Your body never leaves the phone. No frame, no landmark, no form score has ever left
+    a device &mdash; and none can.</td></tr>
 
-<tr><td class="t">1:58&ndash;2:12</td><td class="src live">LIVE<br>two phones</td>
-  <td class="shot">Two phones on the floor, two people doing push-ups, both screens legible. Then a
-    tight two-shot of the screens showing the same boss health.</td>
-  <td class="vo">Two phones make a duel. They exchange events rather than state, so the boss&rsquo;s
-    health matches on both screens with no server anywhere between them.</td></tr>
+<tr><td class="t">2:30&ndash;2:46</td><td class="src site">SITE<br>#outbreak</td>
+  <td class="shot">Scroll to Outbreak on the landing page. Hold on the map with the pursuers closing.
+    Cut to deck slide 11 if you want the numbers larger.</td>
+  <td class="vo">With one exception, and we say so on the page. Outbreak puts the chase on a real map
+    &mdash; a sixty-second head start, then pursuers spawn around you and close. It uses your location,
+    it asks when you start it, and the camera stays shut throughout.</td></tr>
 
-<tr><td class="t">2:12&ndash;2:28</td><td class="src site">SITE<br>#tools</td>
-  <td class="shot">Screen-record the landing page scrolling slowly through the health-tools section.
-    Let the five rows pass at a readable pace.</td>
-  <td class="vo">And because the camera can see a body, the same engine runs an alarm you cannot
-    dismiss from bed, a desk timer for the hours nobody trains in, and the thirty-second sit-to-stand
-    a physiotherapist uses.</td></tr>
+<tr><td class="t">2:46&ndash;2:58</td><td class="src deck">DECK<br>slide 12</td>
+  <td class="shot">The device slide with the iQOO&nbsp;15, front and back.</td>
+  <td class="vo">Built for the iQOO 15 &mdash; a ninety-degree front camera wide enough to hold a whole
+    body from across a room, and the silicon to grade at camera rate and still run a language model
+    between sets.</td></tr>
 
-<tr><td class="t">2:28&ndash;2:42</td><td class="src site">SITE<br>#screens</td>
-  <td class="shot">Screen-record the sticky phone reel on the landing page &mdash; the single device
-    with the screens changing as you scroll. This is the most cinematic thing either of us built.</td>
-  <td class="vo">Fifteen ways to play, fifty-one exercises, five families of movement &mdash; all on
-    one engine, all on one phone.</td></tr>
-
-<tr><td class="t">2:42&ndash;2:54</td><td class="src deck">DECK<br>slide 13</td>
-  <td class="shot">The device slide, then cut to the real iQOO 15 in hand, turning to show the back.</td>
-  <td class="vo">It is built for the iQOO 15 &mdash; a ninety-degree front camera wide enough to hold
-    a whole body from across a room, and the silicon to grade at camera rate and still run a language
-    model between sets.</td></tr>
-
-<tr><td class="t">2:54&ndash;3:00</td><td class="src deck">DECK<br>slide 23</td>
-  <td class="shot">Wide shot of you mid-rep with the phone in the foreground, then cut to the closing
-    deck slide on black.</td>
-  <td class="vo">ClashFit. Your body is the controller. Your camera is the referee.<br>
+<tr><td class="t">2:58&ndash;3:12</td><td class="src deck">DECK<br>13, then 14</td>
+  <td class="shot">The three health-tool panels, then straight to the closing slide with the team and
+    the URL. Let the last one sit for three seconds.</td>
+  <td class="vo">The same camera also runs an alarm you cannot dismiss from bed, a posture score, and
+    the sit-to-stand a physiotherapist uses. A hundred and sixty tests, no runtime dependencies &mdash;
+    it already runs. ClashFit. Your body is the controller. Your camera is the referee.<br>
     Team Da Goats. Pune.</td></tr>
 
 </tbody>
@@ -164,59 +195,47 @@ the other two carry the explanation &mdash; never the other way round.</p>
 
 <div class="note">
   <b>Running time</b>
-  Timed at a normal 150 words a minute this lands at about <b>3:00</b>. If the form caps you at 2:30,
-  cut the deck-10 damage-curve beat (0:56) and the site-#screens beat (2:28) &mdash; they are the two
-  that explain rather than prove. Never cut the fatigue beat at 1:04; it is the only thing in the
-  video no other team can show.
+  Timed at a normal 150 words a minute this lands at about <b>3:10</b>. If the form caps you at 3:00,
+  trim the deck-04 beat at 0:42 &mdash; it explains rather than proves. Never cut the fatigue beat at
+  0:58; it is the only thing in the video no other team can show.
 </div>
 
 <div class="note">
   <b>The one rule</b>
-  Do not fake a single frame of the interface. Everything in this script exists and runs &mdash; if a
-  screen is not ready on the day, cut the beat rather than mock it up. A jury that has seen a live
-  demo will spot a rendered screenshot instantly, and one faked frame puts every other claim in the
-  video under suspicion.
+  Every screen in this video is a real page or a real slide, and every number on them is read out of
+  the repository. Nothing needs to be mocked up, so nothing should be. If a beat will not record
+  cleanly, cut it rather than rebuilding it in an editor.
 </div>
 
 <div class="pb"></div>
 
-<h2>Shot list &mdash; what to actually film</h2>
+<h2>Capture list</h2>
+
+<p class="lede">Everything is a screen recording. Record at 1920&times;1080 or larger and let the
+animations finish before you stop &mdash; several charts draw themselves over about a second and a
+half, and a clip cut too early shows a half-drawn line.</p>
 
 <table>
-<thead><tr><th class="t">#</th><th class="shot">Setup</th><th>What you need in the can</th></tr></thead>
+<thead><tr><th class="t">#</th><th class="shot">Source</th><th>What to capture</th></tr></thead>
 <tbody>
-<tr><td class="t">01</td><td class="shot">Wide, phone on floor</td>
-  <td>You walking in, propping the phone, stepping back. Shoot this twice &mdash; once tight on the
-  phone, once wide on the room. It is the establishing shot and the sign-off.</td></tr>
-<tr><td class="t">02</td><td class="shot">Over-the-shoulder, screen visible</td>
-  <td>A full set of squats with the skeleton overlay tracking. Get at least twelve reps so the editor
-  can choose which ones to use.</td></tr>
-<tr><td class="t">03</td><td class="shot">Screen recording, not a camera</td>
-  <td>Damage numbers, boss HP falling, the CLEAN / SHALLOW verdict. Screen-record this separately at
-  full resolution &mdash; filming a screen with a second camera looks amateur and moir&eacute;s.</td></tr>
-<tr><td class="t">04</td><td class="shot">Screen recording</td>
-  <td>The summary screen with the fatigue curve drawing in. This is the most important four seconds
-  in the video; get a clean take.</td></tr>
-<tr><td class="t">05</td><td class="shot">Screen recording</td>
-  <td>The between-sets coach line and the boss taunt appearing.</td></tr>
-<tr><td class="t">06</td><td class="shot">Handheld, close</td>
-  <td>Airplane mode being switched on, then a rep still counting. This shot proves the privacy claim
-  better than any sentence can &mdash; do not cut away before the rep registers.</td></tr>
-<tr><td class="t">07</td><td class="shot">Two phones, two people</td>
-  <td>The duel. Both phones in one frame, both screens legible, both people moving. Then a tight
-  two-shot of the screens showing the same boss health.</td></tr>
-<tr><td class="t">08</td><td class="shot">Quick cuts</td>
-  <td>Alarm, desk timer, sit-to-stand. Two seconds each is plenty.</td></tr>
-<tr><td class="t">10</td><td class="shot">Deck capture</td>
-  <td>Open <span class="tag">deck-phase1/index.html</span> full-screen (press <b>F</b>) and
-  screen-record slides 02, 08, 10, 13 and 23 with the entrance animations playing. Do not screenshot
-  them &mdash; the charts draw themselves and that motion is worth having.</td></tr>
-<tr><td class="t">11</td><td class="shot">Landing page capture</td>
-  <td>Screen-record clash-fit.vercel.app at 1440&times;900: the hero, the <span class="tag">#tools</span>
-  section scrolling, and the <span class="tag">#screens</span> reel where the pinned phone changes
-  screens. Scroll slowly and steadily &mdash; a trackpad flick reads as nervous on video.</td></tr>
-<tr><td class="t">09</td><td class="shot">Product</td>
-  <td>The iQOO 15 itself, front and back, in decent light. Slow rotation.</td></tr>
+<tr><td class="t">01</td><td class="shot">Site &mdash; hero</td>
+  <td>Load clash-fit.vercel.app at 1440&times;900 and sit on the hero for ten seconds, then scroll a
+  little so the parallax moves.</td></tr>
+<tr><td class="t">02</td><td class="shot">Site &mdash; #screens</td>
+  <td>The sticky phone reel. The most cinematic thing on the site &mdash; scroll slowly enough that
+  three or four screens change on camera.</td></tr>
+<tr><td class="t">03</td><td class="shot">Site &mdash; #outbreak</td>
+  <td>The Outbreak section with the map. Hold once it is fully in frame.</td></tr>
+<tr><td class="t">04</td><td class="shot">Deck &mdash; 02, 03, 04</td>
+  <td>Open <span class="tag">deck-phase1/index.html</span>, press <b>F</b> for full screen, and record
+  each slide from the moment it appears so the entrance animations play.</td></tr>
+<tr><td class="t">05</td><td class="shot">Deck &mdash; 05 and 06</td>
+  <td>The fatigue curve needs a full two seconds after it finishes drawing. Slide 06 has the exercise
+  photographs, so give it a beat to read.</td></tr>
+<tr><td class="t">06</td><td class="shot">Deck &mdash; 08, 09, 10</td>
+  <td>Multiplayer, the coach and privacy. Slides 08 and 10 both have strokes worth waiting for.</td></tr>
+<tr><td class="t">07</td><td class="shot">Deck &mdash; 12, 13, 14</td>
+  <td>The device, the health tools and the close. Let slide 14 sit for three seconds on the last line.</td></tr>
 </tbody>
 </table>
 
@@ -224,19 +243,18 @@ the other two carry the explanation &mdash; never the other way round.</p>
 
 <div class="two">
 <div>
-<p><b>Framing</b></p>
+<p><b>Capture</b></p>
 <ul>
-  <li>Shoot the phone <b>side-on to the athlete</b>, exactly as the app tells you to. If the video
-    shows bad framing, the first thing a judge learns about the product is that it is fussy.</li>
-  <li>Whole body in frame, feet included. A cropped foot on camera undermines the ninety-degree
-    field-of-view argument you make at 2:25.</li>
-  <li>Keep the phone still. Prop it; do not have someone hold it.</li>
+  <li>Record at <b>1920&times;1080 or larger</b>. The deck is authored at 1080p, so anything smaller
+    resamples the type and it shows.</li>
+  <li>Hide your browser chrome &mdash; full screen for the deck, and hide bookmarks for the site.
+    A visible tab bar makes a product look like a prototype.</li>
+  <li>Use a clean browser profile. No extension icons, no notifications mid-take.</li>
 </ul>
-<p><b>Light</b></p>
+<p><b>Pacing</b></p>
 <ul>
-  <li>Even, front-ish light. The pose model degrades in low light and you do not want to demonstrate
-    that on camera.</li>
-  <li>Avoid a bright window behind you &mdash; it silhouettes the body and the tracking suffers.</li>
+  <li>Let every animation finish. The charts are the argument; a half-drawn one is worse than none.</li>
+  <li>Scroll with the wheel or arrow keys at a steady rate. Do not accelerate.</li>
 </ul>
 </div>
 <div>
@@ -249,8 +267,7 @@ the other two carry the explanation &mdash; never the other way round.</p>
 </ul>
 <p><b>Edit</b></p>
 <ul>
-  <li>No speed ramps on the reps. If the footage is sped up, the movement stops looking like the
-    thing being measured.</li>
+  <li>No speed ramps. The charts read as data; sped up they read as decoration.</li>
   <li>Hold the fatigue curve. It is the one image in the video that no other team has.</li>
   <li>End on black with the wordmark and the URL. No music sting over the final line.</li>
 </ul>
@@ -281,7 +298,7 @@ the other two carry the explanation &mdash; never the other way round.</p>
 </tbody>
 </table>
 
-<div class="foot"><span>ClashFit &middot; Team Da Goats</span><span>Video script &middot; v1</span></div>
+<div class="foot"><span>ClashFit &middot; Team Da Goats</span><span>Video script &middot; v3 &middot; 14-slide deck</span></div>
 
 </body>
 </html>

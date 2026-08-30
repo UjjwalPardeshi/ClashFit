@@ -23,7 +23,7 @@ Give one app a daily budget. Past it, it stays shut until the reps are paid.
   A lock somebody cannot get out of is a trap, and a trap is a defect. The
   escape is one tap, and it is never hidden behind a countdown or a dark pattern.
 - **Needs the native app**: Android usage-access permission and an accessibility
-  or overlay path; iOS Screen Time / `FamilyControls`. Impossible in a browser.
+  or overlay path. Impossible in a browser.
 
 Open question: does an unlock cost more the second time in a day, or is a flat
 price more honest? Escalation is stickier and closer to gambling design; a flat

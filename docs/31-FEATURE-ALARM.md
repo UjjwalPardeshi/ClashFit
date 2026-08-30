@@ -38,7 +38,7 @@ train; this does.
 
 | Need | Why it is not free |
 | --- | --- |
-| Fire while the app is closed | A web build cannot schedule a reliable alarm. This is the feature that forces a native shell (Android `AlarmManager` / iOS `UNNotification`). |
+| Fire while the app is closed | A web build cannot schedule a reliable alarm. This is the feature that forces a native shell (Android `AlarmManager`). |
 | Camera at wake time | Permission and a warm-up path from a locked screen. |
 | Low-light pose | 06:30 in a bedroom is far darker than any trace we have recorded. The pose landmarker's confidence floor has not been tuned for it. |
 | Audio that survives silent mode | Platform-specific; an alarm that a silent switch defeats is not an alarm. |

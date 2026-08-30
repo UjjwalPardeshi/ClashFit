@@ -1584,7 +1584,10 @@ t('page · the device section counts its own callouts correctly', () => {
   // "Five pieces of the phone" over a list of six is the same self-contradiction
   // the exercise library shipped with. Count it rather than trust it.
   const WORDS = { three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8 };
-  const sec = page.slice(page.indexOf('id="device"'), page.indexOf('id="privacy"'));
+  // Slice by the section's own bounds, not by whatever happens to follow it —
+  // the page was reordered on 30 Aug and this test broke on the assumption.
+  const from = page.indexOf('id="device"');
+  const sec = page.slice(from, page.indexOf('</section>', from));
   const callouts = (sec.match(/class="iq__part"/g) || []).length;
   const said = sec.match(/<h2>(\w+) pieces of the phone/);
   ok(said, 'the device heading no longer names a number of pieces');

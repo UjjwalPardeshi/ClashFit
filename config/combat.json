@@ -98,6 +98,16 @@
       "tolerance": 0.35,
       "floor": 0.3,
       "_note": "targetEccSec is in MEASURED-WINDOW terms (topExit -> bottomEnter), same units as form.tempo. A 1.6s full descent measures around 0.55s."
+    },
+    "OUTBREAK": {
+      "enabled": false,
+      "requiresNetwork": true,
+      "requiresLocation": true,
+      "headStartSec": 60,
+      "spawnRadiusM": 400,
+      "captureRadiusM": 12,
+      "ammoPickups": 6,
+      "note": "The one mode that leaves the device. See docs/33-FEATURE-OUTBREAK.md."
     }
   },
   "familyGames": {

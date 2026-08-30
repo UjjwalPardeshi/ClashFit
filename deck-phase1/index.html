@@ -201,7 +201,6 @@ svg{display:block;overflow:visible}
 <div id="bar"></div>
 <div id="stage">
 
-<!-- ─────────────────────────── 01 · title ─────────────────────────── -->
 <section class="s" data-n="01">
   <div class="stack">
     <p class="eyebrow r">iQOO Hackathon 2026 &middot; Pune City Battle &middot; Working professionals</p>
@@ -219,7 +218,6 @@ svg{display:block;overflow:visible}
   <p class="kbd r">clash-fit.vercel.app</p>
 </section>
 
-<!-- ─────────────────────────── 02 · problem ─────────────────────────── -->
 <section class="s" data-n="02">
   <div class="stack">
     <p class="eyebrow r">The problem</p>
@@ -246,49 +244,7 @@ svg{display:block;overflow:visible}
   </div>
 </section>
 
-<!-- ─────────────────────────── 03 · the cost ─────────────────────────── -->
-<section class="s s--panel" data-n="03">
-  <div class="stack">
-    <p class="eyebrow r">Why it matters</p>
-    <h2 class="r">A log that cannot be wrong<em>is a log that cannot help.</em></h2>
-    <div class="row row--2" style="margin-top:56px;align-items:start">
-      <ul class="list st" style="margin-top:0">
-        <li><span class="n">01</span><div><b>The number goes up while the movement falls apart</b>
-          <p>Self-reported counts drift toward whatever keeps the streak alive. The log rewards
-          the tap, not the rep, so the two quietly stop describing the same thing.</p></div></li>
-        <li><span class="n">02</span><div><b>Nobody tells you when to stop</b>
-          <p>Training effect and injury risk both live in the last few reps of a set. Without a
-          measure of fatigue there is no way to know which of those two you are buying.</p></div></li>
-        <li><span class="n">03</span><div><b>Form coaching needs eyes, and eyes cost money</b>
-          <p>The feedback that fixes a movement is the one thing a phone app has never been able
-          to give &mdash; so it is priced at whatever an hour of a coach's time costs.</p></div></li>
-      </ul>
-      <div class="stack r">
-        <div class="panel" style="padding:44px">
-          <p class="quote">&ldquo;The problem was never motivation.<br>It is that nobody is watching.&rdquo;</p>
-          <p class="small" style="margin-top:28px">Which is a sensing problem, not a behaviour-change
-            problem &mdash; and sensing problems are the kind you can actually solve with a camera
-            and a model that fits on a phone.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─────────────────────────── 04 · insight ─────────────────────────── -->
-<section class="s s--ember" data-n="04">
-  <div class="stack center">
-    <p class="eyebrow r">The insight</p>
-    <h2 class="r" style="font-size:var(--t8);max-width:26ch">A camera that can see a body<em style="color:#0b0b0c">is a referee.</em></h2>
-    <p class="lede r" style="font-size:var(--t3);max-width:64ch">
-      Once every rep is graded before it counts, effort stops being something you claim
-      and becomes something you spend. That single change is what turns training into a game
-      that cannot be cheated.</p>
-  </div>
-</section>
-
-<!-- ─────────────────────────── 05 · the loop ─────────────────────────── -->
-<section class="s" data-n="05">
+<section class="s" data-n="03">
   <p class="eyebrow r">How it works</p>
   <h2 class="r">Reps in. <em>Damage out.</em></h2>
   <div class="grow" style="display:grid;place-items:center;margin-top:12px">
@@ -340,13 +296,200 @@ svg{display:block;overflow:visible}
     way to do more damage is to move better, and the phone is the thing deciding whether you did.</p>
 </section>
 
-<!-- ─────────────────────────── 06 · architecture ─────────────────────────── -->
-<section class="s s--dark" data-n="06">
-  <p class="eyebrow r">Architecture</p>
-  <h2 class="r">No cloud box <em>on this diagram.</em></h2>
-  <div class="grow row row--l" style="margin-top:30px;gap:80px">
+<section class="s" data-n="04">
+  <p class="eyebrow r">What &ldquo;graded&rdquo; means</p>
+  <h2 class="r">One rep, four measurements.<em>A bad rep visibly does less.</em></h2>
+  <div class="grow row" style="grid-template-columns:.82fr .78fr 1fr;gap:clamp(24px,3vw,56px);margin-top:20px;align-items:center">
+    <div style="display:grid;place-items:center"><svg viewBox="0 0 460 460" style="width:100%;max-width:460px">
+        <g transform="translate(230,230)">
+          <circle r="150" fill="none" stroke="#f3efe80f" stroke-width="56"/>
+          <g fill="none" stroke-width="56" transform="rotate(-90)">
+            <circle class="draw" style="--len:943" r="150" stroke="#ff4f1f"   stroke-dasharray="377 566"/>
+            <circle class="draw" style="--len:943;transition-delay:.5s" r="150" stroke="#ff8a3d" stroke-dasharray="0 377 236 330" />
+            <circle class="draw" style="--len:943;transition-delay:.65s" r="150" stroke="#f2c14e" stroke-dasharray="0 613 189 141"/>
+            <circle class="draw" style="--len:943;transition-delay:.8s" r="150" stroke="#5b9dff" stroke-dasharray="0 802 141 0"/>
+          </g>
+          <text y="-8" text-anchor="middle" fill="#f3efe8" font-family="Big Shoulders Display" font-weight="900" font-size="62">FORM</text>
+          <text y="34" text-anchor="middle" fill="#96a0b0" font-family="IBM Plex Mono" font-size="14" letter-spacing="2">SCORE</text>
+        </g>
+        <g class="st" font-family="IBM Plex Mono" font-size="14" letter-spacing="1.4">
+          <g><rect x="0" y="424" width="14" height="14" fill="#ff4f1f"/><text x="24" y="436" fill="#96a0b0">DEPTH 40%</text></g>
+          <g><rect x="126" y="424" width="14" height="14" fill="#ff8a3d"/><text x="150" y="436" fill="#96a0b0">ROM 25%</text></g>
+          <g><rect x="240" y="424" width="14" height="14" fill="#f2c14e"/><text x="264" y="436" fill="#96a0b0">TEMPO 20%</text></g>
+          <g><rect x="368" y="424" width="14" height="14" fill="#5b9dff"/><text x="392" y="436" fill="#96a0b0">ALIGN 15%</text></g>
+        </g>
+      </svg></div>
+    <div style="display:grid;place-items:center"><svg viewBox="0 0 620 500" style="width:100%" id="damage-chart"></svg></div>
+    <div class="stack">
+      <p class="lede" style="margin-top:0;font-size:var(--t1)">A rep is not a count. It is four
+        quantities the camera can measure, weighted per exercise &mdash; depth matters more in a squat
+        than tempo does.</p>
+      <table class="st" style="margin-top:22px">
+        <tr><td class="k">0.40</td><td><b>Depth</b> in real centimetres, scored superlinearly</td></tr>
+        <tr><td class="k">0.25</td><td><b>Range</b> against your own first three reps</td></tr>
+        <tr><td class="k">0.20</td><td><b>Tempo</b> &mdash; the eccentric, where reps get cheap</td></tr>
+        <tr><td class="k">0.15</td><td><b>Alignment</b> &mdash; knee over toe, hip above shoulder</td></tr>
+      </table>
+      <p class="lede r" style="margin-top:24px;font-size:var(--t1)">That score becomes damage on a
+        curve. A clean rep takes three hundred off the boss; a shallow one takes almost nothing. The
+        only way to win is to move better.</p>
+      <p class="cap">Weights from config/exercises/squat.json &middot; curve from config/combat.json</p>
+    </div>
+  </div>
+</section>
+
+<section class="s s--panel" data-n="05">
+  <p class="eyebrow r">The differentiator</p>
+  <h2 class="r">It knows when <em>you're gassed.</em></h2>
+  <p class="lede r" style="max-width:none">Velocity, range and the pauses between reps, measured every
+    rep against <strong>your own first three</strong>. Not a difficulty slider. Not a self-reported
+    effort rating. The point at which the movement actually changed.</p>
+  <div class="grow" style="display:grid;place-items:center;margin-top:10px">
+    <svg viewBox="0 0 1600 470" style="width:100%" id="fatigue-chart"></svg>
+  </div>
+  <p class="cap r">Thirteen reps to failure &middot; produced by the shipping engine &middot;
+    <span class="mono">node test/replay.js traces/synthetic-f3-to-failure.jsonl</span></p>
+</section>
+
+<section class="s" data-n="06">
+  <p class="eyebrow r">One model, five shapes of movement</p>
+  <h2 class="r">A plank has no velocity.<em>So we measure the shake.</em></h2>
+  <p class="lede r" style="max-width:none">Fatigue is not one signal. Each family of movement degrades
+    in its own way, so each has its own weighted signals feeding the same estimator and the same four
+    bands. That is what lets one engine cover yoga, cardio, holds, jumps and reps.</p>
+  <div class="grow" style="margin-top:20px">
+    <table class="st">
+      <tr><th style="width:104px"></th><th style="width:210px">Family</th><th style="width:104px">Exercises</th>
+          <th style="width:250px">Game</th><th>How fatigue shows up</th></tr>
+      <tr><td style="padding-right:20px"><img src="../img/squat.webp" alt="A barbell squat at depth" style="width:84px;height:58px;object-fit:cover;display:block;filter:grayscale(.25) contrast(1.05)"></td><td class="k">REP_CYCLE</td><td class="num" style="text-align:left">10</td>
+          <td><b>Boss Fight</b> · strength reps</td>
+          <td>Velocity decay <span class="mono" style="color:var(--ember)">0.45</span> ·
+              range decay <span class="mono" style="color:var(--ember)">0.35</span> ·
+              growing pauses <span class="mono" style="color:var(--ember)">0.20</span></td></tr>
+      <tr><td style="padding-right:20px"><img src="../img/plank.webp" alt="A plank" style="width:84px;height:58px;object-fit:cover;display:block;filter:grayscale(.25) contrast(1.05)"></td><td class="k">ISOMETRIC_HOLD</td><td class="num" style="text-align:left">9</td>
+          <td><b>Siege</b> · your plank is the shield</td>
+          <td>Tremor growth <span class="mono" style="color:var(--ember)">0.60</span> ·
+              quality decay <span class="mono" style="color:var(--ember)">0.40</span></td></tr>
+      <tr><td style="padding-right:20px"><img src="../img/yoga.webp" alt="A yoga warrior pose" style="width:84px;height:58px;object-fit:cover;display:block;filter:grayscale(.25) contrast(1.05)"></td><td class="k">POSE_MATCH</td><td class="num" style="text-align:left">14</td>
+          <td><b>Sigil</b> · each asana a constellation</td>
+          <td>Accuracy drift <span class="mono" style="color:var(--ember)">1.00</span></td></tr>
+      <tr><td style="padding-right:20px"><img src="../img/cardio.webp" alt="Runners on a track" style="width:84px;height:58px;object-fit:cover;display:block;filter:grayscale(.25) contrast(1.05)"></td><td class="k">CADENCE</td><td class="num" style="text-align:left">11</td>
+          <td><b>Pursuit</b> · distance is cadence</td>
+          <td>Cadence decay <span class="mono" style="color:var(--ember)">0.55</span> ·
+              amplitude decay <span class="mono" style="color:var(--ember)">0.45</span></td></tr>
+      <tr><td style="padding-right:20px"><img src="../img/jump.webp" alt="A box jump" style="width:84px;height:58px;object-fit:cover;display:block;filter:grayscale(.25) contrast(1.05)"></td><td class="k">BALLISTIC</td><td class="num" style="text-align:left">7</td>
+          <td><b>Breaker</b> · jump height in centimetres</td>
+          <td>Height decay <span class="mono" style="color:var(--ember)">0.60</span> ·
+              landing softness <span class="mono" style="color:var(--ember)">0.40</span></td></tr>
+    </table>
+    <div class="stat-row r" style="grid-template-columns:repeat(4,1fr);margin-top:30px">
+      <div class="stat stat--e"><b>51</b><span>Exercises</span></div>
+      <div class="stat"><b>5</b><span>Detector families</span></div>
+      <div class="stat"><b>1</b><span>Fatigue estimator</span></div>
+      <div class="stat"><b>4</b><span>Bands · 0.15 / 0.30 / 0.50</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="s s--dark" data-n="07">
+  <p class="eyebrow r">Every screen</p>
+  <h2 class="r">One device. <em>Every mode.</em></h2>
+  <p class="lede r" style="max-width:none">Boss fights, holds, yoga, cardio, a race against a file,
+    a streak and a clinical test &mdash; the same engine, the same phone, eight of the sixteen shown here.</p>
+  <div class="grow st" style="display:grid;grid-template-columns:repeat(8,1fr);gap:clamp(10px,1.2vw,20px);align-items:center;margin-top:30px">
+      <figure style="margin:0;text-align:center"><img src="img/phone-mode-select.png" alt="Mode select screen on an iQOO 15" style="width:100%;filter:drop-shadow(0 26px 34px rgba(0,0,0,.6))"><figcaption class="cap" style="margin-top:10px;font-size:11px;letter-spacing:.1em">Mode select</figcaption></figure>
+      <figure style="margin:0;text-align:center"><img src="img/phone-session-summary.png" alt="Session summary with the fatigue curve" style="width:100%;filter:drop-shadow(0 26px 34px rgba(0,0,0,.6))"><figcaption class="cap" style="margin-top:10px;font-size:11px;letter-spacing:.1em">Session summary</figcaption></figure>
+      <figure style="margin:0;text-align:center"><img src="img/phone-siege.png" alt="Siege, an isometric hold" style="width:100%;filter:drop-shadow(0 26px 34px rgba(0,0,0,.6))"><figcaption class="cap" style="margin-top:10px;font-size:11px;letter-spacing:.1em">Siege &middot; holds</figcaption></figure>
+      <figure style="margin:0;text-align:center"><img src="img/phone-sigil.png" alt="Sigil, yoga pose matching" style="width:100%;filter:drop-shadow(0 26px 34px rgba(0,0,0,.6))"><figcaption class="cap" style="margin-top:10px;font-size:11px;letter-spacing:.1em">Sigil &middot; yoga</figcaption></figure>
+      <figure style="margin:0;text-align:center"><img src="img/phone-ghost-race.png" alt="Ghost Race against a previous set" style="width:100%;filter:drop-shadow(0 26px 34px rgba(0,0,0,.6))"><figcaption class="cap" style="margin-top:10px;font-size:11px;letter-spacing:.1em">Ghost Race</figcaption></figure>
+      <figure style="margin:0;text-align:center"><img src="img/phone-pursuit.png" alt="Pursuit, cardio scored on cadence" style="width:100%;filter:drop-shadow(0 26px 34px rgba(0,0,0,.6))"><figcaption class="cap" style="margin-top:10px;font-size:11px;letter-spacing:.1em">Pursuit &middot; cardio</figcaption></figure>
+      <figure style="margin:0;text-align:center"><img src="img/phone-streaks.png" alt="Consistency streak with protected rest days" style="width:100%;filter:drop-shadow(0 26px 34px rgba(0,0,0,.6))"><figcaption class="cap" style="margin-top:10px;font-size:11px;letter-spacing:.1em">Streaks</figcaption></figure>
+      <figure style="margin:0;text-align:center"><img src="img/phone-clinic.png" alt="Clinic mode, the sit-to-stand test" style="width:100%;filter:drop-shadow(0 26px 34px rgba(0,0,0,.6))"><figcaption class="cap" style="margin-top:10px;font-size:11px;letter-spacing:.1em">Clinic</figcaption></figure>
+    </div>
+  </section>
+
+<section class="s s--dark" data-n="08">
+  <p class="eyebrow r">Multiplayer</p>
+  <h2 class="r">Two phones, one boss,<em>no server.</em></h2>
+  <div class="grow row row--r" style="margin-top:26px;gap:70px">
+    <div class="stack">
+      <p class="lede" style="margin-top:0">Phones exchange <strong>events</strong>, not state. Boss HP
+        is a pure function of the deduplicated union of every damage event either phone has seen, so
+        the two screens converge without any authority deciding who is right.</p>
+      <div class="panel r" style="margin-top:30px">
+        <p class="mono" style="font-size:var(--t2);color:var(--ink)">bossHp = maxHp &minus; &Sigma; damage over dedupe(union)</p>
+        <p class="small" style="margin-top:18px">Every message carries a self-healing tail of the last
+          eight events, so a dropped packet repairs itself on the next one. No acknowledgements, no
+          retransmit logic, no clock sync &mdash; and it works in airplane mode.</p>
+      </div>
+      <div class="tags r">
+        <span class="tag">Duel · most damage wins</span><span class="tag">Raid · 3–8 co-op</span>
+        <span class="tag">Last Standing · fatigue KO</span><span class="tag">Pass the Phone · one device</span>
+      </div>
+    </div>
     <div style="display:grid;place-items:center">
-      <svg viewBox="0 0 760 640" style="width:100%">
+      <svg viewBox="0 0 620 440" style="width:100%" id="sync-diagram"></svg>
+    </div>
+  </div>
+</section>
+
+<section class="s" data-n="09">
+  <p class="eyebrow r">The on-device model</p>
+  <h2 class="r">The coach and the villain<em>are the same model.</em></h2>
+  <div class="grow row row--l" style="margin-top:30px;gap:80px">
+    <div class="stack">
+      <p class="lede" style="margin-top:0">Between sets &mdash; never during one &mdash; a
+        twenty-three-field summary of what your body just did goes to <strong>Gemma 3n</strong>,
+        running on the phone. It writes the coaching and it writes the taunt. It never sees a frame
+        of video, because we never send it one.</p>
+      <table class="st" style="margin-top:34px">
+        <tr><th>Goes to the model</th><th style="width:220px">Never goes</th></tr>
+        <tr><td>Rep count, form means, first-three vs last-three</td><td class="k">Video</td></tr>
+        <tr><td>Depth in centimetres, and how much of it you lost</td><td class="k">Images</td></tr>
+        <tr><td>Velocity loss, range loss, fatigue band</td><td class="k">Landmarks</td></tr>
+        <tr><td>Best and worst rep, combo, boss HP, rest seconds</td><td class="k">Audio</td></tr>
+        <tr><td>Bilateral deficit, and which side is weaker</td><td class="k">Identity</td></tr>
+      </table>
+      <p class="cap">Every field enumerated in src/coach.js · summarise()</p>
+    </div>
+    <div class="stack" style="gap:30px">
+      <div class="panel r">
+        <p class="quote" style="font-size:var(--t3)">&ldquo;Your last three reps lost four centimetres
+          of depth. Take forty seconds, then finish it.&rdquo;<small>Coach</small></p>
+      </div>
+      <div class="panel panel--e r">
+        <p class="quote" style="font-size:var(--t3)">&ldquo;Your knees are negotiating.<br>I don't
+          negotiate.&rdquo;<small>The Pacemaker</small></p>
+      </div>
+      <div class="panel r">
+        <p class="small" style="font-size:var(--t0)"><strong>And when the model is wrong, it does not
+          speak.</strong> A validator checks every sentence against the telemetry it was given. A line
+          that cites a number we did not measure is dropped, and a template bank keyed on the same
+          numbers speaks instead. The athlete never hears a hallucination.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s s--ember" data-n="10">
+  <p class="eyebrow r">Privacy</p>
+  <h2 class="r" style="max-width:26ch">Your body never<em style="color:#0b0b0c">leaves the phone.</em></h2>
+  <div class="grow row row--r" style="margin-top:22px;gap:60px;align-items:center">
+    <div class="stack">
+      <p class="lede" style="margin-top:0;color:rgba(11,11,12,.82)">Pose, form scoring, fatigue and the
+        language model all run on the phone. No frame of video, no landmark and no form score has ever
+        left a device, and none can &mdash; in any mode.
+        <strong style="color:#0b0b0c">Outbreak is the single mode that uses the network</strong>,
+        because a map is tiles from a server. It asks for location when you start it, never at install,
+        and it never opens the camera.</p>
+      <div class="stat-row st" style="grid-template-columns:repeat(2,1fr);gap:30px;margin-top:34px">
+        <div class="stat"><b style="color:#0b0b0c">0</b><span style="color:rgba(11,11,12,.6)">Frames uploaded</span></div>
+        <div class="stat"><b style="color:#0b0b0c">0</b><span style="color:rgba(11,11,12,.6)">Accounts</span></div>
+        <div class="stat"><b style="color:#0b0b0c">0</b><span style="color:rgba(11,11,12,.6)">Landmarks sent</span></div>
+        <div class="stat"><b style="color:#0b0b0c">0</b><span style="color:rgba(11,11,12,.6)">Runtime dependencies</span></div>
+      </div>
+    </div>
+    <div style="display:grid;place-items:center;filter:invert(1) hue-rotate(180deg);opacity:.92"><svg viewBox="0 0 760 640" style="width:100%">
         <g class="st">
           <g><rect x="120" y="0"   width="520" height="72" rx="4" fill="#17171a" stroke="#f3efe814"/>
              <text x="380" y="46" text-anchor="middle" fill="#f3efe8" font-family="Barlow" font-size="21" font-weight="600">Front camera · 30 fps</text></g>
@@ -388,213 +531,71 @@ svg{display:block;overflow:visible}
           <line x1="12" y1="260" x2="74" y2="322" stroke="#ff4f1f" stroke-width="3"/>
           <text x="43" y="360" text-anchor="middle" fill="#96a0b0" font-family="IBM Plex Mono" font-size="11" letter-spacing="1">NONE</text>
         </g>
-      </svg>
-    </div>
+      </svg></div>
+  </div>
+</section>
+
+<section class="s s--dark" data-n="11">
+  <p class="eyebrow r">Outdoors &middot; the one mode that goes online</p>
+  <h2 class="r">Sixty seconds.<em>Then they start moving.</em></h2>
+  <div class="grow row row--l" style="margin-top:26px;gap:70px">
     <div class="stack">
-      <ul class="list st" style="margin-top:0">
-        <li><span class="n">GPU</span><div><b>Pose runs on the GPU delegate</b>
-          <p>Which leaves the CPU free for the rep machine, the fatigue model and the fight, in the
-          same frame budget.</p></div></li>
-        <li><span class="n">CPU</span><div><b>Everything between is arithmetic</b>
-          <p>Filters, angles, a state machine and four weighted scores. Deterministic, testable, and
-          fast enough that it never becomes the bottleneck.</p></div></li>
-        <li><span class="n">NPU</span><div><b>The language model runs between sets</b>
-          <p>Never while the camera does. The phone does one hard thing at a time, on purpose.</p></div></li>
-        <li><span class="n">NET</span><div><b>No internet permission at all</b>
-          <p>Not a policy, a build property. There is nothing in the app that could upload a frame
-          even if it wanted to.</p></div></li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<!-- ─────────────────────────── 07 · form score ─────────────────────────── -->
-<section class="s" data-n="07">
-  <p class="eyebrow r">What &ldquo;graded&rdquo; means</p>
-  <h2 class="r">One rep, <em>four measurements.</em></h2>
-  <div class="grow row row--r" style="margin-top:26px;gap:90px">
-    <div class="stack">
-      <p class="lede" style="margin-top:0">A rep is not a count. It is a weighted score over four
-        quantities the camera can actually measure &mdash; and the weights differ per exercise,
-        because depth matters more in a squat than tempo does.</p>
-      <table class="st">
-        <tr><th style="width:130px">Weight</th><th>What it measures</th></tr>
-        <tr><td class="k">0.40</td><td><b>Depth</b> &mdash; how far the joint actually travelled, in real
-          centimetres, scored superlinearly so a shallow rep loses more than it looks like it should</td></tr>
-        <tr><td class="k">0.25</td><td><b>Range</b> &mdash; the arc of this rep against the best arc you
-          produced in your own first three</td></tr>
-        <tr><td class="k">0.20</td><td><b>Tempo</b> &mdash; the eccentric, because dropping into the bottom
-          is how a rep gets cheap and how people get hurt</td></tr>
-        <tr><td class="k">0.15</td><td><b>Alignment</b> &mdash; the joint that betrays the movement: knee
-          over toe, hip above shoulder, elbow flare</td></tr>
-      </table>
-      <p class="cap">Squat weights, from config/exercises/squat.json</p>
-    </div>
-    <div style="display:grid;place-items:center">
-      <svg viewBox="0 0 460 460" style="width:100%;max-width:460px">
-        <g transform="translate(230,230)">
-          <circle r="150" fill="none" stroke="#f3efe80f" stroke-width="56"/>
-          <g fill="none" stroke-width="56" transform="rotate(-90)">
-            <circle class="draw" style="--len:943" r="150" stroke="#ff4f1f"   stroke-dasharray="377 566"/>
-            <circle class="draw" style="--len:943;transition-delay:.5s" r="150" stroke="#ff8a3d" stroke-dasharray="0 377 236 330" />
-            <circle class="draw" style="--len:943;transition-delay:.65s" r="150" stroke="#f2c14e" stroke-dasharray="0 613 189 141"/>
-            <circle class="draw" style="--len:943;transition-delay:.8s" r="150" stroke="#5b9dff" stroke-dasharray="0 802 141 0"/>
-          </g>
-          <text y="-8" text-anchor="middle" fill="#f3efe8" font-family="Big Shoulders Display" font-weight="900" font-size="62">FORM</text>
-          <text y="34" text-anchor="middle" fill="#96a0b0" font-family="IBM Plex Mono" font-size="14" letter-spacing="2">SCORE</text>
-        </g>
-        <g class="st" font-family="IBM Plex Mono" font-size="14" letter-spacing="1.4">
-          <g><rect x="0" y="424" width="14" height="14" fill="#ff4f1f"/><text x="24" y="436" fill="#96a0b0">DEPTH 40%</text></g>
-          <g><rect x="126" y="424" width="14" height="14" fill="#ff8a3d"/><text x="150" y="436" fill="#96a0b0">ROM 25%</text></g>
-          <g><rect x="240" y="424" width="14" height="14" fill="#f2c14e"/><text x="264" y="436" fill="#96a0b0">TEMPO 20%</text></g>
-          <g><rect x="368" y="424" width="14" height="14" fill="#5b9dff"/><text x="392" y="436" fill="#96a0b0">ALIGN 15%</text></g>
-        </g>
-      </svg>
-    </div>
-  </div>
-</section>
-
-<!-- ─────────────────────────── 08 · fatigue ─────────────────────────── -->
-<section class="s s--panel" data-n="08">
-  <p class="eyebrow r">The differentiator</p>
-  <h2 class="r">It knows when <em>you're gassed.</em></h2>
-  <p class="lede r" style="max-width:none">Velocity, range and the pauses between reps, measured every
-    rep against <strong>your own first three</strong>. Not a difficulty slider. Not a self-reported
-    effort rating. The point at which the movement actually changed.</p>
-  <div class="grow" style="display:grid;place-items:center;margin-top:10px">
-    <svg viewBox="0 0 1600 470" style="width:100%" id="fatigue-chart"></svg>
-  </div>
-  <p class="cap r">Thirteen reps to failure &middot; produced by the shipping engine &middot;
-    <span class="mono">node test/replay.js traces/synthetic-f3-to-failure.jsonl</span></p>
-</section>
-
-<!-- ─────────────────────────── 09 · families ─────────────────────────── -->
-<section class="s" data-n="09">
-  <p class="eyebrow r">One model, five shapes of movement</p>
-  <h2 class="r">A plank has no velocity.<em>So we measure the shake.</em></h2>
-  <p class="lede r" style="max-width:none">Fatigue is not one signal. Each family of movement degrades
-    in its own way, so each has its own weighted signals feeding the same estimator and the same four
-    bands. That is what lets one engine cover yoga, cardio, holds, jumps and reps.</p>
-  <div class="grow" style="margin-top:20px">
-    <table class="st">
-      <tr><th style="width:250px">Family</th><th style="width:120px">Exercises</th>
-          <th style="width:290px">Game</th><th>How fatigue shows up</th></tr>
-      <tr><td class="k">REP_CYCLE</td><td class="num" style="text-align:left">10</td>
-          <td><b>Boss Fight</b> · strength reps</td>
-          <td>Velocity decay <span class="mono" style="color:var(--ember)">0.45</span> ·
-              range decay <span class="mono" style="color:var(--ember)">0.35</span> ·
-              growing pauses <span class="mono" style="color:var(--ember)">0.20</span></td></tr>
-      <tr><td class="k">ISOMETRIC_HOLD</td><td class="num" style="text-align:left">9</td>
-          <td><b>Siege</b> · your plank is the shield</td>
-          <td>Tremor growth <span class="mono" style="color:var(--ember)">0.60</span> ·
-              quality decay <span class="mono" style="color:var(--ember)">0.40</span></td></tr>
-      <tr><td class="k">POSE_MATCH</td><td class="num" style="text-align:left">14</td>
-          <td><b>Sigil</b> · each asana a constellation</td>
-          <td>Accuracy drift <span class="mono" style="color:var(--ember)">1.00</span></td></tr>
-      <tr><td class="k">CADENCE</td><td class="num" style="text-align:left">11</td>
-          <td><b>Pursuit</b> · distance is cadence</td>
-          <td>Cadence decay <span class="mono" style="color:var(--ember)">0.55</span> ·
-              amplitude decay <span class="mono" style="color:var(--ember)">0.45</span></td></tr>
-      <tr><td class="k">BALLISTIC</td><td class="num" style="text-align:left">7</td>
-          <td><b>Breaker</b> · jump height in centimetres</td>
-          <td>Height decay <span class="mono" style="color:var(--ember)">0.60</span> ·
-              landing softness <span class="mono" style="color:var(--ember)">0.40</span></td></tr>
-    </table>
-    <div class="stat-row r" style="grid-template-columns:repeat(4,1fr);margin-top:46px">
-      <div class="stat stat--e"><b>51</b><span>Exercises</span></div>
-      <div class="stat"><b>5</b><span>Detector families</span></div>
-      <div class="stat"><b>1</b><span>Fatigue estimator</span></div>
-      <div class="stat"><b>4</b><span>Bands · 0.15 / 0.30 / 0.50</span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ─────────────────────────── 10 · the boss ─────────────────────────── -->
-<section class="s s--dark" data-n="10">
-  <p class="eyebrow r">The game layer</p>
-  <h2 class="r">A bad rep <em>visibly does less.</em></h2>
-  <div class="grow row row--2" style="margin-top:30px">
-    <div class="stack">
-      <p class="lede" style="margin-top:0">Damage is the form score raised to an exponent, multiplied
-        by a combo that only clean reps extend. You can feel the difference between a good rep and a
-        lazy one in the number that comes off the boss &mdash; which is the entire coaching mechanism,
-        delivered without a word.</p>
-      <ul class="list st" style="margin-top:26px">
-        <li><span class="n">↑</span><div><b>The boss reads your fatigue band</b>
-          <p>It staggers when you fade rather than scaling difficulty behind your back.</p></div></li>
-        <li><span class="n">↓</span><div><b>Mercy resolution</b>
-          <p>When you are genuinely done, the fight ends. A game that punishes an honest athlete for
-          reaching failure is a game nobody opens twice.</p></div></li>
-      </ul>
-      <div class="panel panel--e r" style="margin-top:34px">
-        <p class="quote" style="font-size:var(--t3)">&ldquo;The boss can't outlast you &mdash;<br>but it makes you earn the ending.&rdquo;</p>
+      <p class="lede" style="margin-top:0">Outbreak puts the chase on a real map. A sixty-second head
+        start, then pursuers spawn around you and begin closing. Ammo caches sit at real coordinates.
+        Get within twelve metres of a pursuer and it has you.</p>
+      <div class="stat-row st" style="grid-template-columns:repeat(4,1fr);margin-top:40px">
+        <div class="stat stat--e"><b>60s</b><span>Head start</span></div>
+        <div class="stat"><b>400m</b><span>Spawn radius</span></div>
+        <div class="stat"><b>12m</b><span>Capture radius</span></div>
+        <div class="stat"><b>&times;6</b><span>Ammo caches</span></div>
+      </div>
+      <p class="lede r" style="margin-top:36px"><strong>A pursuer closes when your cadence drops</strong>,
+        not only when your coordinate stops. The same detector that runs Pursuit indoors decides whether
+        you are still running &mdash; which is why walking it does not work.</p>
+      <div class="panel panel--e r" style="margin-top:30px">
+        <p class="small" style="font-size:var(--t0)"><strong>And it is the one mode that asks for the
+          network.</strong> A map is tiles from a server. Outbreak requests location when you start it,
+          never at install; declining costs you exactly this mode. The camera stays shut throughout, so
+          no frame leaves the device here either, and the route is stored on the phone.</p>
       </div>
     </div>
     <div style="display:grid;place-items:center">
-      <svg viewBox="0 0 620 500" style="width:100%" id="damage-chart"></svg>
+      <svg viewBox="0 0 520 560" style="width:100%;max-width:520px">
+        <rect width="520" height="560" rx="3" fill="#0e0f12" stroke="#f3efe814"/>
+        <g stroke="#f3efe8" stroke-opacity=".07" stroke-width="12" fill="none">
+          <path d="M-10 120 H530"/><path d="M-10 300 H530"/><path d="M-10 460 H530"/>
+          <path d="M90 -10 V570"/><path d="M250 -10 V570"/><path d="M410 -10 V570"/></g>
+        <g fill="#f3efe8" fill-opacity=".04">
+          <rect x="110" y="140" width="120" height="140" rx="2"/><rect x="270" y="140" width="120" height="140" rx="2"/>
+          <rect x="110" y="320" width="120" height="120" rx="2"/><rect x="270" y="320" width="120" height="120" rx="2"/></g>
+        <circle class="pop" style="transition-delay:.5s" cx="250" cy="300" r="150" fill="none" stroke="#ff4f1f" stroke-opacity=".24" stroke-width="1.5" stroke-dasharray="5 7"/>
+        <g class="st">
+          <g><path d="M250 300 L196 214" stroke="#ff4f1f" stroke-opacity=".45" stroke-width="1.5" stroke-dasharray="3 4"/>
+             <circle cx="196" cy="214" r="10" fill="#ff2d1a"/><circle cx="196" cy="214" r="19" fill="none" stroke="#ff2d1a" stroke-opacity=".35" stroke-width="1.5"/></g>
+          <g><path d="M250 300 L372 246" stroke="#ff4f1f" stroke-opacity=".45" stroke-width="1.5" stroke-dasharray="3 4"/>
+             <circle cx="372" cy="246" r="10" fill="#ff2d1a"/><circle cx="372" cy="246" r="19" fill="none" stroke="#ff2d1a" stroke-opacity=".35" stroke-width="1.5"/></g>
+          <g><path d="M250 300 L318 414" stroke="#ff4f1f" stroke-opacity=".45" stroke-width="1.5" stroke-dasharray="3 4"/>
+             <circle cx="318" cy="414" r="10" fill="#ff2d1a"/><circle cx="318" cy="414" r="19" fill="none" stroke="#ff2d1a" stroke-opacity=".35" stroke-width="1.5"/></g>
+        </g>
+        <g fill="#f2c14e" class="pop" style="transition-delay:.9s">
+          <rect x="124" y="168" width="10" height="10" transform="rotate(45 129 173)"/>
+          <rect x="428" y="352" width="10" height="10" transform="rotate(45 433 357)"/>
+          <rect x="236" y="486" width="10" height="10" transform="rotate(45 241 491)"/></g>
+        <circle cx="250" cy="300" r="28" fill="#6fd08c" fill-opacity=".14"/>
+        <circle cx="250" cy="300" r="12" fill="#6fd08c"/>
+        <circle cx="250" cy="300" r="21" fill="none" stroke="#6fd08c" stroke-width="2"/>
+        <g font-family="IBM Plex Mono" font-size="13" letter-spacing="1.8">
+          <text x="22" y="36" fill="#f3efe8" fill-opacity=".8">04:31</text><text x="22" y="56" fill="#96a0b0">ELAPSED</text>
+          <text x="200" y="36" fill="#f3efe8" fill-opacity=".8">612 M</text><text x="200" y="56" fill="#96a0b0">DISTANCE</text>
+          <text x="376" y="36" fill="#ff4f1f">98 M</text><text x="376" y="56" fill="#96a0b0">NEAREST</text>
+          <text x="22" y="540" fill="#6fd08c">YOU</text><text x="120" y="540" fill="#ff2d1a">PURSUERS</text>
+          <text x="270" y="540" fill="#f2c14e">AMMO</text></g>
+      </svg>
     </div>
   </div>
 </section>
 
-<!-- ─────────────────────────── 11 · the coach ─────────────────────────── -->
-<section class="s" data-n="11">
-  <p class="eyebrow r">The on-device model</p>
-  <h2 class="r">The coach and the villain<em>are the same model.</em></h2>
-  <div class="grow row row--l" style="margin-top:30px;gap:80px">
-    <div class="stack">
-      <p class="lede" style="margin-top:0">Between sets &mdash; never during one &mdash; a
-        twenty-three-field summary of what your body just did goes to <strong>Gemma 3n</strong>,
-        running on the phone. It writes the coaching and it writes the taunt. It never sees a frame
-        of video, because we never send it one.</p>
-      <table class="st" style="margin-top:34px">
-        <tr><th>Goes to the model</th><th style="width:220px">Never goes</th></tr>
-        <tr><td>Rep count, form means, first-three vs last-three</td><td class="k">Video</td></tr>
-        <tr><td>Depth in centimetres, and how much of it you lost</td><td class="k">Images</td></tr>
-        <tr><td>Velocity loss, range loss, fatigue band</td><td class="k">Landmarks</td></tr>
-        <tr><td>Best and worst rep, combo, boss HP, rest seconds</td><td class="k">Audio</td></tr>
-        <tr><td>Bilateral deficit, and which side is weaker</td><td class="k">Identity</td></tr>
-      </table>
-      <p class="cap">Every field enumerated in src/coach.js · summarise()</p>
-    </div>
-    <div class="stack" style="gap:30px">
-      <div class="panel r">
-        <p class="quote" style="font-size:var(--t3)">&ldquo;Your last three reps lost four centimetres
-          of depth. Take forty seconds, then finish it.&rdquo;<small>Coach</small></p>
-      </div>
-      <div class="panel panel--e r">
-        <p class="quote" style="font-size:var(--t3)">&ldquo;Your knees are negotiating.<br>I don't
-          negotiate.&rdquo;<small>The Pacemaker</small></p>
-      </div>
-      <div class="panel r">
-        <p class="small" style="font-size:var(--t0)"><strong>And when the model is wrong, it does not
-          speak.</strong> A validator checks every sentence against the telemetry it was given. A line
-          that cites a number we did not measure is dropped, and a template bank keyed on the same
-          numbers speaks instead. The athlete never hears a hallucination.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ─────────────────────────── 12 · privacy ─────────────────────────── -->
-<section class="s s--ember" data-n="12">
-  <div class="stack center">
-    <p class="eyebrow r">Privacy</p>
-    <h2 class="r" style="font-size:var(--t8);max-width:24ch">A camera in your bedroom<em style="color:#0b0b0c">that cannot phone home.</em></h2>
-    <p class="lede r" style="font-size:var(--t3);max-width:66ch">
-      Pose, form scoring, fatigue and the language model all run on the phone. The shipping app
-      requests no internet permission at all &mdash; so the promise is not a policy you have to
-      believe, it is a property you can check.</p>
-    <div class="stat-row r" style="grid-template-columns:repeat(4,1fr);max-width:1200px">
-      <div class="stat"><b style="color:#0b0b0c">0</b><span style="color:rgba(11,11,12,.6)">Bytes uploaded</span></div>
-      <div class="stat"><b style="color:#0b0b0c">0</b><span style="color:rgba(11,11,12,.6)">Accounts</span></div>
-      <div class="stat"><b style="color:#0b0b0c">0</b><span style="color:rgba(11,11,12,.6)">Frames stored</span></div>
-      <div class="stat"><b style="color:#0b0b0c">0</b><span style="color:rgba(11,11,12,.6)">Runtime dependencies</span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ─────────────────────────── 13 · the device ─────────────────────────── -->
-<section class="s" data-n="13">
+<section class="s" data-n="12">
   <p class="eyebrow r">Why this phone</p>
   <h2 class="r">Two hard jobs, <em>one battery.</em></h2>
   <div class="grow row row--r" style="margin-top:26px;gap:70px">
@@ -626,308 +627,93 @@ svg{display:block;overflow:visible}
     chip vendor. Nothing on this slide is quoted from a spec we could not source twice.</p>
 </section>
 
-<!-- ─────────────────────────── 14 · asymmetry ─────────────────────────── -->
-<section class="s s--panel" data-n="14">
-  <p class="eyebrow r">The health science</p>
-  <h2 class="r">Both sides were always there.<em>We stopped averaging them away.</em></h2>
-  <div class="grow row row--2" style="margin-top:30px">
-    <div class="stack">
-      <p class="lede" style="margin-top:0">Pose gives you a left knee and a right knee. Every app
-        averages them into one number and throws the difference away. That difference &mdash; the
-        Limb Symmetry Index &mdash; is a measure clinicians actually use, and no consumer fitness app
-        reports it, because none of them can see both sides.</p>
-      <div class="panel r" style="margin-top:34px">
-        <p class="mono" style="font-size:var(--t2);color:var(--ink)">LSI = weaker / stronger × 100</p>
-        <p class="small" style="margin-top:18px">Computed per rep across a set, then graded for
-          confidence &mdash; because a side-on camera foreshortens the far limb and will manufacture
-          an asymmetry that is not there. When the framing cannot support the number, we say so
-          instead of reporting it.</p>
-      </div>
-      <p class="lede r" style="margin-top:30px">The output is a measurement and a phrase.
-        Never a diagnosis: the language validator will not let the words
-        <span class="mono" style="color:var(--ember)">injury</span>,
-        <span class="mono" style="color:var(--ember)">risk</span> or
-        <span class="mono" style="color:var(--ember)">abnormal</span> reach the athlete.</p>
-    </div>
-    <div style="display:grid;place-items:center">
-      <svg viewBox="0 0 560 460" style="width:100%" id="lsi-chart"></svg>
-    </div>
-  </div>
-</section>
-
-<!-- ─────────────────────────── 15 · clinic ─────────────────────────── -->
-<section class="s" data-n="15">
-  <p class="eyebrow r">Clinic mode</p>
-  <h2 class="r">The tests a physio uses,<em>on a phone you already own.</em></h2>
-  <div class="grow row row--l" style="margin-top:30px;gap:80px">
-    <div class="stack">
-      <p class="lede" style="margin-top:0">The 30-second sit-to-stand is a published, validated test
-        of lower-limb strength. It is counted by a human with a stopwatch, in a clinic, once or twice
-        a year. The camera can count it correctly, at home, as often as you like &mdash; and plot the
-        trend that the twice-a-year version can never show.</p>
-      <ul class="list st" style="margin-top:30px">
-        <li><span class="n">01</span><div><b>Counted the way the protocol defines it</b>
-          <p>Full stand, full sit, thirty seconds, no arms. The same rules the paper specifies.</p></div></li>
-        <li><span class="n">02</span><div><b>A five-month trend, not a single number</b>
-          <p>The value of a home test is the slope, which is exactly the thing an annual assessment
-          cannot give you.</p></div></li>
-        <li><span class="n">03</span><div><b>It is a measurement, not a diagnosis</b>
-          <p>Stated on the screen, in the copy, and enforced by the same validator that governs the
-          coach's language.</p></div></li>
-      </ul>
-    </div>
-    <div class="stack" style="gap:26px">
-      <div class="panel r"><p class="quote" style="font-size:var(--t5)">14<small>Stands in 30 seconds</small></p></div>
-      <div class="panel r"><p class="small">Ageing populations, post-operative rehab, and anyone whose
-        physiotherapist wants adherence data between appointments. The same engine that runs a boss
-        fight runs this &mdash; which is the argument for building the game first and the clinic
-        second, rather than the other way round.</p></div>
-      <div class="tags r"><span class="tag">Not a medical device</span><span class="tag">On-device</span><span class="tag">No account</span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ─────────────────────────── 16 · multiplayer ─────────────────────────── -->
-<section class="s s--dark" data-n="16">
-  <p class="eyebrow r">Multiplayer</p>
-  <h2 class="r">Two phones, one boss,<em>no server.</em></h2>
-  <div class="grow row row--r" style="margin-top:26px;gap:70px">
-    <div class="stack">
-      <p class="lede" style="margin-top:0">Phones exchange <strong>events</strong>, not state. Boss HP
-        is a pure function of the deduplicated union of every damage event either phone has seen, so
-        the two screens converge without any authority deciding who is right.</p>
-      <div class="panel r" style="margin-top:30px">
-        <p class="mono" style="font-size:var(--t2);color:var(--ink)">bossHp = maxHp &minus; &Sigma; damage over dedupe(union)</p>
-        <p class="small" style="margin-top:18px">Every message carries a self-healing tail of the last
-          eight events, so a dropped packet repairs itself on the next one. No acknowledgements, no
-          retransmit logic, no clock sync &mdash; and it works in airplane mode.</p>
-      </div>
-      <div class="tags r">
-        <span class="tag">Duel · most damage wins</span><span class="tag">Raid · 3–8 co-op</span>
-        <span class="tag">Last Standing · fatigue KO</span><span class="tag">Pass the Phone · one device</span>
-      </div>
-    </div>
-    <div style="display:grid;place-items:center">
-      <svg viewBox="0 0 620 440" style="width:100%" id="sync-diagram"></svg>
-    </div>
-  </div>
-</section>
-
-<!-- ─────────────────────────── 17 · modes ─────────────────────────── -->
-<section class="s" data-n="17">
-  <p class="eyebrow r">The product surface</p>
-  <h2 class="r">One engine. <em>Fifteen ways in.</em></h2>
-  <p class="lede r" style="max-width:none">Every mode runs on the same camera, the same rep machine and
-    the same fatigue estimator. Different rules over one honest stream of reps &mdash; which is why
-    fifteen modes cost far less than fifteen games.</p>
-  <div class="grow row" style="grid-template-columns:repeat(3,1fr);gap:56px;margin-top:34px;align-items:start">
-    <div><p class="kbd" style="color:var(--ember);margin-bottom:6px">Alone</p>
-      <table class="st" style="margin-top:14px">
-        <tr><td>Boss Fight</td><td class="k" style="text-align:right;padding-right:0">2–4 min</td></tr>
-        <tr><td>Time Attack</td><td class="k" style="text-align:right;padding-right:0">60 s</td></tr>
-        <tr><td>Survival</td><td class="k" style="text-align:right;padding-right:0">Waves</td></tr>
-        <tr><td>Boss Rush</td><td class="k" style="text-align:right;padding-right:0">×3</td></tr>
-        <tr><td>Tempo Trial</td><td class="k" style="text-align:right;padding-right:0">Eyes-free</td></tr>
-        <tr><td>Ghost Race</td><td class="k" style="text-align:right;padding-right:0">Vs a file</td></tr>
-      </table></div>
-    <div><p class="kbd" style="color:var(--ember);margin-bottom:6px">Head to head</p>
-      <table class="st" style="margin-top:14px">
-        <tr><td>Duel</td><td class="k" style="text-align:right;padding-right:0">Most damage</td></tr>
-        <tr><td>Siege</td><td class="k" style="text-align:right;padding-right:0">Holds</td></tr>
-        <tr><td>Pursuit</td><td class="k" style="text-align:right;padding-right:0">Cardio</td></tr>
-        <tr><td>Breaker</td><td class="k" style="text-align:right;padding-right:0">Jumps</td></tr>
-        <tr><td>Sigil</td><td class="k" style="text-align:right;padding-right:0">Yoga</td></tr>
-      </table></div>
-    <div><p class="kbd" style="color:var(--ember);margin-bottom:6px">A room</p>
-      <table class="st" style="margin-top:14px">
-        <tr><td>Raid</td><td class="k" style="text-align:right;padding-right:0">3–8 co-op</td></tr>
-        <tr><td>Last Standing</td><td class="k" style="text-align:right;padding-right:0">Fatigue KO</td></tr>
-        <tr><td>Pass the Phone</td><td class="k" style="text-align:right;padding-right:0">One device</td></tr>
-        <tr><td>Circuit</td><td class="k" style="text-align:right;padding-right:0">Four families</td></tr>
-      </table></div>
-  </div>
-  <p class="cap r">Every mode named here resolves to code in config/combat.json or src/roster.js.
-    A test fails the build if one does not.</p>
-</section>
-
-<!-- ─────────────────────────── 18 · beyond the game ─────────────────────────── -->
-<section class="s s--panel" data-n="18">
+<section class="s s--panel" data-n="13">
   <p class="eyebrow r">Beyond the game</p>
-  <h2 class="r">Four of these five<em>never involve a boss.</em></h2>
-  <p class="lede r" style="max-width:none">The camera that referees a fight is only a camera that can
-    see a body. The same pipeline powers a set of health utilities whose price is verified movement
-    &mdash; and none of them asks you to wear anything.</p>
-  <div class="grow">
-    <table class="st">
-      <tr><th style="width:60px">#</th><th style="width:420px">Tool</th><th>What it does</th><th style="width:240px">Requires</th></tr>
-      <tr><td class="k">01</td><td><b>The alarm you cannot dismiss from bed</b></td>
-        <td>Set the alarm, then set its price: five push-ups, a thirty-second plank. It rings until the
-        camera has counted them. An emergency dismiss is always there, held five seconds and logged.</td>
-        <td class="k">Native app</td></tr>
-      <tr><td class="k">02</td><td><b>A daily budget for the app you keep opening</b></td>
-        <td>Past the budget it stays shut until you pay in reps. Deletable in one tap on any day &mdash;
-        a lock you cannot escape is a trap, not a feature.</td><td class="k">Native app</td></tr>
-      <tr><td class="k">03</td><td><b>Sixty seconds, every fifty minutes</b></td>
-        <td>A desk timer for the eight hours nobody trains in. The smallest honest unit of movement,
-        verified rather than assumed.</td><td class="k">Camera only</td></tr>
-      <tr><td class="k">04</td><td><b>What your neck did all day</b></td>
-        <td>One frame every few minutes, scored for neck flexion and shoulder height, then discarded.
-        A number at the end of the day; nothing stored, nothing diagnosed.</td><td class="k">Camera only</td></tr>
-      <tr><td class="k">05</td><td><b>Breathing you do not have to be trusted on</b></td>
-        <td>Six breaths a minute, confirmed from chest and shoulder motion, reporting the rate you
-        actually held rather than the one you were asked for.</td><td class="k">Camera only</td></tr>
-    </table>
+  <h2 class="r">The same camera,<em>doing serious work.</em></h2>
+  <div class="grow row" style="grid-template-columns:repeat(3,1fr);gap:clamp(24px,3vw,52px);margin-top:26px;align-items:stretch">
+    <div class="panel r" style="display:flex;flex-direction:column">
+      <p class="kbd" style="color:var(--ember)">Bilateral asymmetry</p>
+      <h3 style="margin-top:16px;font-size:var(--t3)">Both sides were always there</h3>
+      <p class="small" style="margin-top:16px;flex:1">Pose gives a left knee and a right knee. Every
+        app averages them and throws the difference away. The Limb Symmetry Index is a measure
+        clinicians use, and no consumer fitness app reports it &mdash; none of them can see both sides.</p>
+      <p class="mono" style="margin-top:18px;color:var(--ink);font-size:var(--t1)">LSI = weaker / stronger &times; 100</p>
+      <p class="small" style="margin-top:12px">Graded for confidence, because a side-on camera
+        foreshortens the far limb and will invent an asymmetry that is not there.</p>
+    </div>
+    <div class="panel r" style="display:flex;flex-direction:column">
+      <p class="kbd" style="color:var(--ember)">Clinic mode</p>
+      <h3 style="margin-top:16px;font-size:var(--t3)">The tests a physio uses</h3>
+      <p class="small" style="margin-top:16px;flex:1">The thirty-second sit-to-stand is a published,
+        validated test of lower-limb strength &mdash; counted by a human with a stopwatch, once or
+        twice a year. The camera counts it correctly at home, as often as you like, and plots the
+        trend the annual version can never show.</p>
+      <p class="quote" style="font-size:var(--t5);margin-top:18px">14<small>Stands in 30 seconds</small></p>
+      <p class="small" style="margin-top:14px">A measurement, not a diagnosis &mdash; and the language
+        validator enforces that.</p>
+    </div>
+    <div class="panel r" style="display:flex;flex-direction:column">
+      <p class="kbd" style="color:var(--ember)">Five health tools</p>
+      <h3 style="margin-top:16px;font-size:var(--t3)">Four never involve a boss</h3>
+      <table class="st" style="margin-top:14px;flex:1">
+        <tr><td style="font-size:var(--t0);padding:9px 0"><b>Alarm</b> you cannot dismiss from bed</td></tr>
+        <tr><td style="font-size:var(--t0);padding:9px 0"><b>App budget</b> paid off in reps</td></tr>
+        <tr><td style="font-size:var(--t0);padding:9px 0"><b>Desk timer</b> &mdash; 60s every 50 min</td></tr>
+        <tr><td style="font-size:var(--t0);padding:9px 0"><b>Posture score</b> &mdash; frames read, then discarded</td></tr>
+        <tr><td style="font-size:var(--t0);padding:9px 0"><b>Breathing</b>, verified from chest motion</td></tr>
+      </table>
+      <p class="small" style="margin-top:14px">Nothing here uploads. Nothing here is a diagnosis.</p>
+    </div>
   </div>
 </section>
 
-<!-- ─────────────────────────── 19 · proof ─────────────────────────── -->
-<section class="s s--dark" data-n="19">
-  <p class="eyebrow r">Feasibility</p>
-  <h2 class="r">This is not a mockup.<em>It already runs.</em></h2>
-  <div class="grow row row--2" style="margin-top:30px">
+<section class="s s--dark" data-n="14">
+  <p class="eyebrow r">It already runs</p>
+  <h2 class="r">Not a mockup.<em>And not a solo project.</em></h2>
+  <div class="grow row row--2" style="margin-top:26px;align-items:start">
     <div class="stack">
-      <p class="lede" style="margin-top:0">A working engine exists today, written by two people, with
-        no runtime dependencies at all. The fatigue curve on slide 8 is not a drawing &mdash; it is
-        that engine's output, and one command reproduces every number on it.</p>
-      <div class="panel r" style="margin-top:34px;background:#0b0b0c">
-        <p class="mono" style="font-size:var(--t1);color:var(--fresh)">$ node test/run.js</p>
-        <p class="mono" style="font-size:var(--t1);color:var(--muted);margin-top:10px">160 passed, 0 failed</p>
-        <p class="mono" style="font-size:var(--t1);color:var(--fresh);margin-top:22px">$ node test/replay.js traces/…</p>
-        <p class="mono" style="font-size:var(--t1);color:var(--muted);margin-top:10px">13 reps · fatigue 0.63 · GASSED · MERCY FIRED</p>
-      </div>
-      <p class="lede r" style="margin-top:30px">Tests cover the rep machine, the form scorer, the
-        fatigue estimator, the duel sync, the coach's validator and the landing page's own claims
-        &mdash; the build fails if the page prints a number the config does not hold.</p>
-    </div>
-    <div class="stack">
-      <div class="stat-row st" style="grid-template-columns:1fr 1fr;gap:44px;margin-top:0">
+      <div class="stat-row st" style="grid-template-columns:1fr 1fr 1fr;gap:34px;margin-top:0">
         <div class="stat stat--e"><b>160</b><span>Tests passing</span></div>
         <div class="stat"><b>31</b><span>Modules</span></div>
+        <div class="stat stat--e"><b>0</b><span>Dependencies</span></div>
+        <div class="stat"><b>51</b><span>Exercises</span></div>
+        <div class="stat"><b>16</b><span>Modes wired</span></div>
         <div class="stat"><b>5&nbsp;032</b><span>Lines of engine</span></div>
-        <div class="stat stat--e"><b>0</b><span>Runtime dependencies</span></div>
-        <div class="stat"><b>51</b><span>Exercises in config</span></div>
-        <div class="stat"><b>15</b><span>Modes wired</span></div>
       </div>
-      <div class="panel r" style="margin-top:44px">
-        <p class="small"><strong>Fifteen defects the suite caught before a human did</strong> &mdash;
-          including a calibration step that took 27 seconds and ate six reps of a real set, a duel
-          handshake that answered HELLO with HELLO until the stack overflowed, and a jump-height
-          measurement that was structurally impossible because world landmarks are hip-centred.</p>
+      <div class="panel r" style="margin-top:34px;background:#0b0b0c">
+        <p class="mono" style="font-size:var(--t1);color:var(--fresh)">$ node test/replay.js traces/&hellip;</p>
+        <p class="mono" style="font-size:var(--t1);color:var(--muted);margin-top:10px">13 reps &middot; fatigue 0.63 &middot; GASSED &middot; MERCY FIRED</p>
       </div>
+      <p class="lede r" style="margin-top:26px;font-size:var(--t1)">The fatigue curve three slides back
+        is that command's output. Tests cover the rep machine, the form scorer, the fatigue estimator,
+        the duel sync and the page's own claims &mdash; the build fails if the site prints a number
+        the config does not hold.</p>
     </div>
-  </div>
-</section>
-
-<!-- ─────────────────────────── 20 · who it is for ─────────────────────────── -->
-<section class="s" data-n="20">
-  <p class="eyebrow r">Who this is for</p>
-  <h2 class="r">Three people, <em>one engine.</em></h2>
-  <div class="grow row" style="grid-template-columns:repeat(3,1fr);gap:56px;margin-top:36px;align-items:stretch">
-    <div class="panel r" style="display:flex;flex-direction:column">
-      <p class="kbd" style="color:var(--ember)">01 · The working professional</p>
-      <h3 style="margin-top:18px">Eight hours seated, forty minutes free</h3>
-      <p class="small" style="margin-top:18px;flex:1">No commute to a gym, no equipment, no audience.
-        A boss fight is two to four minutes and it fits between a meeting and dinner. The desk timer
-        and the alarm reach the hours training never does.</p>
-      <p class="kbd" style="margin-top:20px;color:var(--faint)">Our own bucket</p>
+    <div class="stack">
+      <p class="kbd" style="color:var(--ember)">Team Da Goats</p>
+      <div class="row row--2 st" style="gap:26px;margin-top:20px;align-items:stretch">
+        <div class="panel"><h3 style="font-size:var(--t3)">Omkar Kadam</h3>
+          <p class="kbd" style="color:var(--ember);margin-top:12px">Android &amp; perception</p>
+          <p class="small" style="margin-top:16px">The camera path, the pose pipeline and the detector
+            families &mdash; everything between a frame arriving and a rep being counted.</p></div>
+        <div class="panel"><h3 style="font-size:var(--t3)">Ujjwal Pardeshi</h3>
+          <p class="kbd" style="color:var(--ember);margin-top:12px">Game systems &amp; inference</p>
+          <p class="small" style="margin-top:16px">The combat model, the multiplayer sync and the
+            on-device language model &mdash; everything between a rep being counted and it meaning
+            something.</p></div>
+      </div>
+      <div class="panel panel--e r" style="margin-top:30px;text-align:center;padding:34px">
+        <p class="quote" style="font-size:var(--t5)">Prop your phone.<br>Fight it out.</p>
+        <p class="mono" style="margin-top:20px;font-size:var(--t1);letter-spacing:.1em;color:var(--ember)">clash-fit.vercel.app</p>
+      </div>
+      <div class="tags r" style="margin-top:22px"><span class="tag">Working professionals</span><span class="tag">Team of two</span><span class="tag">Pune City Battle</span></div>
     </div>
-    <div class="panel r" style="display:flex;flex-direction:column">
-      <p class="kbd" style="color:var(--ember)">02 · The person who trains alone</p>
-      <h3 style="margin-top:18px">Nobody has ever watched their form</h3>
-      <p class="small" style="margin-top:18px;flex:1">Home training has no coach and no mirror worth
-        trusting. Per-rep depth, range, tempo and alignment is feedback they have never had access to
-        at any price they were willing to pay.</p>
-      <p class="kbd" style="margin-top:20px;color:var(--faint)">The core loop</p>
-    </div>
-    <div class="panel r" style="display:flex;flex-direction:column">
-      <p class="kbd" style="color:var(--ember)">03 · The person in rehab</p>
-      <h3 style="margin-top:18px">Two appointments, five months apart</h3>
-      <p class="small" style="margin-top:18px;flex:1">A validated sit-to-stand and a symmetry index,
-        measured at home between visits, produce the trend a twice-a-year assessment cannot. The
-        clinic did not need a new product &mdash; it needed the one the game already built.</p>
-      <p class="kbd" style="margin-top:20px;color:var(--faint)">Where it goes next</p>
-    </div>
-  </div>
-</section>
-
-<!-- ─────────────────────────── 21 · roadmap ─────────────────────────── -->
-<section class="s s--panel" data-n="21">
-  <p class="eyebrow r">Roadmap</p>
-  <h2 class="r">What is built, <em>and what is honestly not.</em></h2>
-  <div class="grow row row--2" style="margin-top:36px;align-items:start">
-    <div>
-      <p class="kbd" style="color:var(--fresh);letter-spacing:.2em">Running today</p>
-      <table class="st" style="margin-top:16px">
-        <tr><td>Rep detection across five movement families</td></tr>
-        <tr><td>Four-part form scoring with per-exercise weights</td></tr>
-        <tr><td>Fatigue estimator, four bands, five signal sets</td></tr>
-        <tr><td>Fatigue-adaptive boss with mercy resolution</td></tr>
-        <tr><td>Bilateral asymmetry with confidence grading</td></tr>
-        <tr><td>Two-phone duel over offline event sync</td></tr>
-        <tr><td>On-device coach with a hallucination validator</td></tr>
-        <tr><td>30-second sit-to-stand assessment</td></tr>
-      </table>
-    </div>
-    <div>
-      <p class="kbd" style="color:var(--fading);letter-spacing:.2em">Needs the native app</p>
-      <table class="st" style="margin-top:16px">
-        <tr><td>Wake-up alarm &mdash; a browser cannot fire one</td></tr>
-        <tr><td>App-unlock tax &mdash; needs usage-access permission</td></tr>
-        <tr><td>Background posture sampling</td></tr>
-        <tr><td>Run tracker with an on-device route</td></tr>
-      </table>
-      <p class="kbd" style="color:var(--faint);letter-spacing:.2em;margin-top:44px">Further out</p>
-      <table class="st" style="margin-top:16px">
-        <tr><td>Group raid rooms beyond two devices</td></tr>
-        <tr><td>Vision-grounded critique on the worst rep</td></tr>
-        <tr><td>Physio-prescribed protocols by share code</td></tr>
-        <tr><td>The full clinic battery &mdash; five validated tests</td></tr>
-      </table>
-    </div>
-  </div>
-  <p class="cap r">We separate these deliberately. A team that blurs shipped and planned gets caught in
-    the demo; a team that separates them cleanly is telling you what its judgement is like.</p>
-</section>
-
-<!-- ─────────────────────────── 22 · team ─────────────────────────── -->
-<section class="s" data-n="22">
-  <p class="eyebrow r">The team</p>
-  <h2 class="r">Da Goats. <em>Two working engineers.</em></h2>
-  <div class="grow row row--2" style="margin-top:44px;align-items:start">
-    <div class="panel r" style="padding:48px">
-      <h3 style="font-size:var(--t5)">Omkar Kadam</h3>
-      <p class="kbd" style="color:var(--ember);margin-top:14px">Android &amp; perception</p>
-      <p class="small" style="margin-top:24px">Owns the camera path, the pose pipeline and the
-        detector families &mdash; everything between a frame arriving and a rep being counted.</p>
-    </div>
-    <div class="panel r" style="padding:48px">
-      <h3 style="font-size:var(--t5)">Ujjwal Pardeshi</h3>
-      <p class="kbd" style="color:var(--ember);margin-top:14px">Game systems &amp; on-device inference</p>
-      <p class="small" style="margin-top:24px">Owns the combat model, the multiplayer sync and the
-        on-device language model &mdash; everything between a rep being counted and it meaning something.</p>
-    </div>
-  </div>
-  <div class="tags r" style="margin-top:48px">
-    <span class="tag">Working professionals</span><span class="tag">Team of two</span>
-    <span class="tag">Pune City Battle</span><span class="tag">Building this since before the hackathon</span>
-  </div>
-</section>
-
-<!-- ─────────────────────────── 23 · close ─────────────────────────── -->
-<section class="s s--ember" data-n="23">
-  <div class="stack center">
-    <p class="eyebrow r">ClashFit &middot; Team Da Goats</p>
-    <h2 class="r" style="font-size:var(--t9);max-width:22ch">Prop your phone.<em style="color:#0b0b0c">Fight it out.</em></h2>
-    <p class="lede r" style="font-size:var(--t3);max-width:64ch">
-      Real, camera-verified effort in. Boss damage out. Every rep graded on depth, range, tempo and
-      alignment &mdash; and none of it ever leaves your phone.</p>
-    <p class="r" style="margin-top:48px;font-family:var(--mono);font-size:var(--t2);letter-spacing:.1em;color:#0b0b0c">clash-fit.vercel.app</p>
   </div>
 </section>
 
 </div>
 <div id="dots"></div>
-<div id="hud"><span><b id="cur">01</b> / <span id="tot">23</span></span><span><kbd>←</kbd><kbd>→</kbd> move</span><span><kbd>F</kbd> full</span><span><kbd>P</kbd> print</span></div>
+<div id="hud"><span><b id="cur">01</b> / <span id="tot">14</span></span><span><kbd>&larr;</kbd><kbd>&rarr;</kbd> move</span><span><kbd>F</kbd> full</span><span><kbd>P</kbd> print</span></div>
 
 <script>
 /* ══════════════════════════════════════════════════════════════════

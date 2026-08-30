@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ClashFit &mdash; offline AI fitness combat</title>
-<meta name="description" content="Offline AI fitness combat for Android and iOS. Your body is the controller, your camera is the referee, and nothing leaves the phone.">
+<meta name="description" content="Offline AI fitness combat for Android. Your body is the controller, your camera is the referee, and nothing leaves the phone.">
 
 <!-- Link previews. Without these the URL shares as a blank card, which is how a
      judge is most likely to first meet this page. Card built by tools/og-card.html. -->
@@ -110,11 +110,11 @@ h1 em,h2 em{font-style:normal;color:var(--ember)}
 .brand{font-family:var(--display);font-weight:900;font-size:30px;letter-spacing:.01em;text-transform:uppercase;text-decoration:none;line-height:1;display:flex;align-items:center;gap:10px}
 .brand i{width:12px;height:12px;background:var(--ember);display:inline-block}
 .nav__links{display:flex;gap:26px;margin-left:auto;font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
-.nav__links a{text-decoration:none;color:var(--muted)}
+.nav__links a{text-decoration:none;color:var(--muted);white-space:nowrap}
 .nav__links a:hover{color:var(--ink)}
 .nav .btn{padding:12px 18px;margin-left:8px}
 @media(max-width:1080px){.nav__links{display:none}.nav .btn{margin-left:auto}}
-@media(min-width:1081px) and (max-width:1320px){.nav__links{gap:17px;font-size:11.5px}.nav__in{gap:22px}}
+@media(min-width:1081px) and (max-width:1460px){.nav__links{gap:14px;font-size:11px}.nav__in{gap:18px}}
 
 /* ---------- photo primitives ---------- */
 .ph{position:relative;overflow:hidden;background:var(--panel)}
@@ -872,6 +872,25 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 @media(max-width:900px){.ans{grid-template-columns:minmax(0,1fr);gap:0}
   .ans__c{padding:22px 0 28px}.ans__c+.ans__c{border-top-width:1px;border-top-color:var(--rule-soft)}
   .ans__l{padding-top:14px}}
+
+/* ---------- outbreak ---------- */
+.out{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);gap:clamp(28px,5vw,72px);align-items:center}
+.out__rules{list-style:none;margin:30px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 26px}
+.out__rules li{display:grid;grid-template-columns:66px 1fr;gap:14px;align-items:start}
+.out__rules b{font-family:var(--display);font-weight:900;font-size:26px;line-height:1;color:var(--ember)}
+.out__rules span{font-size:14px;line-height:1.5;color:var(--muted)}
+.out__note{
+  margin-top:30px;border-left:2px solid var(--ember);background:rgba(255,79,31,.06);
+  padding:18px 22px;font-size:14.5px;line-height:1.6;color:var(--muted);
+}
+.out__note b{display:block;color:var(--ink);font-weight:600;margin-bottom:7px;font-size:15px}
+.out__vis svg{width:100%;height:auto;border:1px solid var(--rule-soft)}
+.out__cap{margin-top:14px;font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint)}
+@media(max-width:900px){
+  .out{grid-template-columns:minmax(0,1fr);gap:34px}
+  .out__vis{order:-1}
+}
+@media(max-width:520px){.out__rules{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -888,6 +907,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
       <a href="#alarm">Alarm</a>
       <a href="#tools">Tools</a>
       <a href="#run">Run</a>
+      <a href="#outbreak">Outbreak</a>
       <a href="#library">Library</a>
       <a href="#device">Device</a>
       <a href="#privacy">Privacy</a>
@@ -910,18 +930,18 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   </svg>
   <div class="shell hero__in">
     <div>
-      <p class="kicker">Android &amp; iOS · 2026</p>
+      <p class="kicker">Android &middot; 2026</p>
       <h1>Your body is<br>the controller.<br><em>Your camera is<br>the referee.</em></h1>
       <p class="lede">Real, camera-verified effort in. Boss damage out. Every rep is graded on depth, range, tempo and alignment — and none of it leaves your phone.</p>
       <div class="hero__cta">
         <button class="btn btn--ember" data-waitlist type="button">Join the waitlist</button>
         <a class="btn btn--line" href="#loop">How it works</a>
       </div>
-      <div class="hero__meta"><span>Built for iQOO 15</span><span>No account</span><span>No equipment</span><span>Works in airplane mode</span></div>
+      <div class="hero__meta"><span>Built for iQOO 15</span><span>No account</span><span>No equipment</span><span>Airplane mode, indoors</span></div>
       <div class="hero__stats">
         <div><b>51</b><span>Exercises</span></div>
-        <div><b>15</b><span>Ways to play</span></div>
-        <div><b>0</b><span>Bytes uploaded</span></div>
+        <div><b>16</b><span>Ways to play</span></div>
+        <div><b>0</b><span>Frames uploaded</span></div>
       </div>
     </div>
 
@@ -965,8 +985,8 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 <div class="tape" aria-hidden="true">
   <div class="tape__in">
-    <div class="tape__seq"><span>Boss Fight</span><i></i><span>Time Attack</span><i></i><span>Ghost Race</span><i></i><span>Duel</span><i></i><span>Survival</span><i></i><span>Boss Rush</span><i></i><span>Tempo Trial</span><i></i><span>Pass the Phone</span><i></i><span>Last Standing</span><i></i><span>Circuit</span><i></i><span>Siege</span><i></i><span>Pursuit</span><i></i><span>Breaker</span><i></i><span>Sigil</span><i></i><span>Clinic</span><i></i></div>
-    <div class="tape__seq"><span>Boss Fight</span><i></i><span>Time Attack</span><i></i><span>Ghost Race</span><i></i><span>Duel</span><i></i><span>Survival</span><i></i><span>Boss Rush</span><i></i><span>Tempo Trial</span><i></i><span>Pass the Phone</span><i></i><span>Last Standing</span><i></i><span>Circuit</span><i></i><span>Siege</span><i></i><span>Pursuit</span><i></i><span>Breaker</span><i></i><span>Sigil</span><i></i><span>Clinic</span><i></i></div>
+    <div class="tape__seq"><span>Boss Fight</span><i></i><span>Time Attack</span><i></i><span>Ghost Race</span><i></i><span>Duel</span><i></i><span>Survival</span><i></i><span>Boss Rush</span><i></i><span>Tempo Trial</span><i></i><span>Pass the Phone</span><i></i><span>Last Standing</span><i></i><span>Circuit</span><i></i><span>Siege</span><i></i><span>Pursuit</span><i></i><span>Breaker</span><i></i><span>Sigil</span><i></i><span>Clinic</span><i></i><span>Outbreak</span><i></i></div>
+    <div class="tape__seq"><span>Boss Fight</span><i></i><span>Time Attack</span><i></i><span>Ghost Race</span><i></i><span>Duel</span><i></i><span>Survival</span><i></i><span>Boss Rush</span><i></i><span>Tempo Trial</span><i></i><span>Pass the Phone</span><i></i><span>Last Standing</span><i></i><span>Circuit</span><i></i><span>Siege</span><i></i><span>Pursuit</span><i></i><span>Breaker</span><i></i><span>Sigil</span><i></i><span>Clinic</span><i></i><span>Outbreak</span><i></i></div>
   </div>
 </div>
 
@@ -986,7 +1006,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
       <li class="ans__c">
         <p class="ans__n">02</p>
         <h2 class="ans__h">Three things run, and none of them phone home.</h2>
-        <p class="ans__p">MediaPipe Pose on the GPU at camera rate, thirty&#8209;three joints. A fatigue estimator reading velocity loss against your own first three reps. Gemma&nbsp;3n on the phone&rsquo;s silicon, writing the coaching between sets from a twenty&#8209;three&#8209;field summary of the set &mdash; and not one pixel. The shipping app requests no internet permission at all.</p>
+        <p class="ans__p">MediaPipe Pose on the GPU at camera rate, thirty&#8209;three joints. A fatigue estimator reading velocity loss against your own first three reps. Gemma&nbsp;3n on the phone&rsquo;s silicon, writing the coaching between sets from a twenty&#8209;three&#8209;field summary of the set &mdash; and not one pixel. Everything that watches your body runs with the radio off.</p>
         <a class="ans__l" href="#privacy">The whole diagram</a>
       </li>
       <li class="ans__c">
@@ -1093,121 +1113,111 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   </div>
 </section>
 
-<!-- ══════════════ ALARM (orange) ══════════════ -->
-<section class="band band--ember" id="alarm">
-  <div class="shell alarm">
+<!-- ══════════════ COACH ══════════════ -->
+<section class="band" id="coach">
+  <div class="shell story">
+    <figure class="ph ph--45 ph--bw rise" style="margin:0"><picture><source srcset="img/portrait.webp" type="image/webp"><img src="img/portrait.jpg" alt="An athlete down on the floor between sets" loading="lazy" decoding="async" style="--focal:var(--f-portrait,center 70%)" width="1200" height="1800"></picture></figure>
     <div class="rise">
-      <p class="kicker">Wake-up &middot; with the native app</p>
-      <h2>The alarm stops when the <em>reps</em> stop it.</h2>
-      <p class="lede">Set the alarm, then set its price: five push-ups. At 6:30 the camera comes on, and only the movement silences it. A wiggle under the blanket counts as nothing.</p>
-      <ul class="alarm__pts">
-        <li><b>01</b><span>Any exercise, any count. Start at three chair squats if that is honest.</span></li>
-        <li><b>02</b><span>The same scoring that runs a boss fight runs the alarm. Too shallow doesn't count.</span></li>
-        <li><b>03</b><span>An emergency dismiss, held five seconds and logged. Strict, never a trap.</span></li>
-      </ul>
-    </div>
-    <div class="alarm__vis rise">
-      <figure class="ph ph--45" style="margin:0"><picture><source srcset="img/pushup.webp" type="image/webp"><img src="img/pushup.jpg" alt="A push-up, side-on, at the bottom of the rep" loading="lazy" decoding="async" style="--focal:var(--f-pushup,right center)" width="1800" height="1200"></picture></figure>
-      <div class="alarm__phone"><div class="phone">
-            <div class="phone__notch"></div>
-            <div class="phone__screen">
-              <div class="scr">
-                <div class="scr__status"><span>6:30</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
-                <div class="alm__time">6:30</div>
-                <div class="alm__meta">Alarm · weekdays · ringing</div>
-
-                <div class="alm__task">
-                  <span class="scr__label">To dismiss</span>
-                  <b>5 push-ups</b>
-                  <div class="alm__pips"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>
-                  <div class="alm__count">2 of 5 counted</div>
-                </div>
-
-                <div class="alm__cam">
-                  <!-- side-on push-up, mid-descent -->
-                  <svg viewBox="0 0 200 110" fill="none" aria-hidden="true">
-                    <g stroke="#f3efe8" stroke-opacity=".85" stroke-width="3" stroke-linecap="round">
-                      <path d="M56 46 L52 52"/>
-                      <path d="M52 52 L104 60"/>
-                      <path d="M104 60 L152 78"/>
-                      <path d="M152 78 L166 84"/>
-                      <path d="M52 52 L48 74 L44 84"/>
-                      <path d="M104 60 L108 80"/>
-                      <path d="M40 88 L172 88"/>
-                    </g>
-                    <circle cx="58" cy="40" r="9" stroke="#f3efe8" stroke-opacity=".85" stroke-width="3"/>
-                    <g fill="#ff7a52">
-                      <circle cx="52" cy="52" r="4"/><circle cx="104" cy="60" r="4"/>
-                      <circle cx="152" cy="78" r="4"/><circle cx="48" cy="74" r="3.4"/>
-                    </g>
-                    <path d="M40 70 A14 14 0 0 0 52 66" stroke="#ff7a52" stroke-width="2" stroke-dasharray="2.5 3.5"/>
-                    <text x="8" y="66" font-family="IBM Plex Mono, monospace" font-size="11" fill="#ff7a52" letter-spacing="1">84°</text>
-                  </svg>
-                </div>
-
-                <div class="alm__lock">Snooze used · 1 of 1</div>
-              </div>
-            </div>
-          </div></div>
+      <p class="kicker">The coach</p>
+      <h2>The coach and the villain are the <em>same model.</em></h2>
+      <p class="lede">A twenty-three-field summary goes to a language model on the phone's own neural processor. It writes the coaching and the taunt — and never sees your video.</p>
+      <div class="quotes">
+        <figure class="quote" style="margin:0"><figcaption class="quote__who">Coach</figcaption><p>“Your last three reps lost four centimetres of depth. Take forty seconds, then finish it.”</p></figure>
+        <figure class="quote quote--boss" style="margin:0"><figcaption class="quote__who">The Pacemaker</figcaption><p>“Your knees are negotiating. I don't negotiate.”</p></figure>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ══════════════ BEYOND THE GAME ══════════════ -->
-<section class="band band--line" id="tools">
-  <div class="shell">
-    <div class="head head--split rise">
-      <div>
-        <p class="kicker">Beyond the game</p>
-        <h2>Not everything<br>here is <em>a fight.</em></h2>
-      </div>
-      <p class="lede">The camera that referees a boss fight is only a camera that can see a body. Four of the five below never involve a boss at all &mdash; and none of them ask you to wear anything.</p>
+<!-- ══════════════ PRIVACY ══════════════ -->
+<section class="band band--panel" id="privacy">
+  <div class="shell feature">
+    <div class="rise">
+      <p class="kicker">Privacy</p>
+      <h2>Your body never<em>leaves the phone.</em></h2>
+      <p class="lede">Pose, form scoring, the fatigue model and the language model all run on the phone. No frame of video, no landmark and no form score has ever left a device, and none can &mdash; in any mode, including the one below that goes outside. <strong style="color:var(--ink);font-weight:600">Outbreak is the single mode that uses the network</strong>, because a map is tiles fetched from a server. It asks for location when you start it, not when you install, and it never opens the camera. Everything else still runs in airplane mode.</p>
+      <div class="tags"><span class="tag">No account</span><span class="tag">No frame uploaded</span><span class="tag">Camera never leaves the device</span><span class="tag">Airplane mode, indoors</span></div>
     </div>
+    <div class="rise">
+<pre class="arch">   front camera · 30 fps
+            ↓
+   <b>Pose landmarker</b> · GPU · 33 joints
+            ↓
+   filter → joint angles → <b>rep machine</b>
+            ↓                    ↓
+   <b>fatigue estimator</b> → <b>adaptive boss</b>
+            ↓
+   [between sets] <b>on-device LLM</b> → speech
+            ↓
+   <u>local storage · this phone only</u></pre>
+    </div>
+  </div>
+</section>
 
-    <ul class="tools rise">
-      <li class="tool">
-        <span class="tool__n">01</span>
-        <div class="tool__b">
-          <h3>The alarm you cannot dismiss from bed</h3>
-          <p>Set the alarm, then set its price: five push-ups, fifteen squats, a thirty-second plank. It keeps ringing until the camera has counted them, graded the way a boss fight is graded. A wiggle under the blanket counts as nothing. An emergency dismiss is always there, held five seconds and logged.</p>
+<!-- ══════════════ THE DEVICE ══════════════ -->
+<section class="band band--line" id="device">
+  <div class="shell iq">
+    <div class="rise">
+      <div class="iq__dev">
+        <div class="phone">
+          <div class="phone__notch"></div>
+          <div class="phone__screen">
+            <div class="scr">
+              <div class="scr__status"><span>20:04</span><span>&#9992; &nbsp;OFFLINE&nbsp; &#9646;&#9646;&#9646;</span></div>
+              <div class="sx__hd"><b>Between sets</b><span>Squat &middot; set 3</span></div>
+              <div class="sx__art" style="flex:1">
+                <div class="iqq">
+                  <p class="iqq__who">Coach</p>
+                  <p class="iqq__line">&ldquo;Your last three reps lost four centimetres of depth. Take forty seconds, then finish it.&rdquo;</p>
+                  <p class="iqq__who iqq__who--boss">The Pacemaker</p>
+                  <p class="iqq__line">&ldquo;Your knees are negotiating. I don&rsquo;t negotiate.&rdquo;</p>
+                </div>
+              </div>
+              <div class="sx__tri">
+                <div><span>Model</span><b>Gemma&nbsp;3n</b></div>
+                <div><span>Runs</span><b>On&#8209;device</b></div>
+                <div><span>Sent</span><b>0&nbsp;B</b></div>
+              </div>
+              <div class="scr__foot">Twenty-three fields in. Two sentences out.</div>
+            </div>
+          </div>
         </div>
-        <span class="tool__t">Needs the native app</span>
-      </li>
-      <li class="tool">
-        <span class="tool__n">02</span>
-        <div class="tool__b">
-          <h3>A daily budget for the app you keep opening</h3>
-          <p>Give one app a budget &mdash; twenty minutes of the feed you lose evenings to. Past it, it stays shut until you pay in reps. Same grading, so the price cannot be faked, and the budget is yours to set or delete on any day you want it gone.</p>
-        </div>
-        <span class="tool__t">Needs the native app</span>
-      </li>
-      <li class="tool">
-        <span class="tool__n">03</span>
-        <div class="tool__b">
-          <h3>Sixty seconds, every fifty minutes</h3>
-          <p>A desk timer for the eight hours nobody trains in. It asks for one minute: ten squats, or a stretch held long enough to count. It is the smallest honest unit of movement, and the camera is the only thing standing between you and skipping it.</p>
-        </div>
-        <span class="tool__t">Camera only</span>
-      </li>
-      <li class="tool">
-        <span class="tool__n">04</span>
-        <div class="tool__b">
-          <h3>What your neck did all day</h3>
-          <p>While you work, a single frame every few minutes, scored for neck flexion and shoulder height. One number at the end of the day and a curve across the week. The frames are read and discarded &mdash; nothing is stored, and nothing is a diagnosis.</p>
-        </div>
-        <span class="tool__t">Camera only</span>
-      </li>
-      <li class="tool">
-        <span class="tool__n">05</span>
-        <div class="tool__b">
-          <h3>Breathing you do not have to be trusted on</h3>
-          <p>After the set, six breaths a minute for two minutes. The phone watches your chest and shoulders rather than asking whether you kept to the pace, and tells you the rate you actually held. Recovery, measured the same way the training is.</p>
-        </div>
-        <span class="tool__t">Camera only</span>
-      </li>
-    </ul>
-
-    <p class="tools__foot">Nothing here uploads. Nothing here is a diagnosis.</p>
+      </div>
+      <p class="iq__lab"><b>iQOO 15</b><span>The coach, running with the radio off</span></p>
+    </div>
+    <div class="rise">
+      <p class="kicker">The device</p>
+      <h2>Six pieces of the phone. <em>No accessories.</em></h2>
+      <p class="lede">No band, no strap, no chest belt, no gym machine reporting to an app. Everything ClashFit measures, it measures with hardware already in your hand — and the whole loop closes on that hardware.</p>
+      <ul class="iq__use">
+        <li>
+          <span class="iq__part">32&nbsp;MP &middot; 90&deg;</span>
+          <span class="iq__what"><b>The referee, and the reason for the wide lens</b>Thirty frames a second, thirty-three body landmarks. The number that decides whether any of this works is the field of view: at ninety degrees the 15 holds a whole standing body from about two metres, which is the distance a bedroom actually gives you. A narrower selfie lens crops your feet, and a rep the camera cannot see is never counted.</span>
+        </li>
+        <li>
+          <span class="iq__part">Snapdragon&nbsp;8 Elite Gen&nbsp;5</span>
+          <span class="iq__what"><b>Grading at camera rate</b>The pose landmarker runs on the GPU delegate, which leaves the CPU free for the rep machine, the fatigue model and the fight at the same time. Three nanometres is why all of that fits inside one frame&rsquo;s worth of time.</span>
+        </li>
+        <li>
+          <span class="iq__part">Silicon</span>
+          <span class="iq__what"><b>A language model with no network</b>Between sets, a twenty-three-field summary of the set goes to Gemma 3n running locally &mdash; counts, form scores, depth and velocity loss, a fatigue band. Never a frame of video. It never runs while the camera does — the phone does one hard thing at a time, on purpose.</span>
+        </li>
+        <li>
+          <span class="iq__part">7000&nbsp;mAh &middot; 8K&nbsp;VC</span>
+          <span class="iq__what"><b>A set is not a benchmark run</b>Twelve minutes of camera, GPU and screen, continuously, is a thermal problem rather than a peak-performance one. iQOO put a 7000&nbsp;mAh cell and their 8K vapour-chamber cooling behind it. What that buys us is a frame rate that does not quietly sag halfway through a set and take the fatigue baseline down with it.</span>
+        </li>
+        <li>
+          <span class="iq__part">Haptics</span>
+          <span class="iq__what"><b>The rep you feel</b>Every counted rep is confirmed in the hand, so the screen is optional. It is what makes eyes-free sets possible at all.</span>
+        </li>
+        <li>
+          <span class="iq__part">Speaker</span>
+          <span class="iq__what"><b>Coaching out loud</b>Tempo cues and the coach's line are spoken by the phone. In Tempo Trial you never look at it — you are on the floor, face down.</span>
+        </li>
+      </ul>
+      <p class="lede" style="margin-top:26px">None of this needs a flagship to run. But grading at camera rate <em>and</em> answering between sets without a network is where the 15's silicon stops being a spec sheet.</p>
+      <div class="tags"><span class="tag">Two phones = a duel</span><span class="tag">Airplane mode</span><span class="tag">No wearables</span></div>
+    </div>
   </div>
 </section>
 
@@ -1249,6 +1259,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             
             
             <li>Ghost Race <span>Async</span></li>
+            <li>Outbreak <span>Outdoors</span></li>
           </ul>
           <button class="btn btn--ember" data-waitlist type="button">Join the waitlist</button>
         </div>
@@ -1381,129 +1392,6 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
       <h2>A live leaderboard.<br><em>No server.</em></h2>
       <p class="lede">Phones sync <em>events</em>, not state. Ranks, damage and every player's fatigue band, live on every screen in the room — in airplane mode.</p>
       <div class="tags"><span class="tag tag--ember">Last Standing</span><span class="tag tag--ember">Pass the Phone</span><span class="tag">Circuit</span><span class="tag">Circuit</span></div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════ RUN ══════════════ -->
-<section class="band band--panel" id="run">
-  <div class="shell run">
-    <div class="rise">
-      <p class="kicker">Outside &middot; with the native app</p>
-      <h2>A run tracker that <em>keeps the route.</em></h2>
-      <p class="lede">Distance, pace, splits, cadence, elevation. The one difference that matters: the trace stays on your device. Runs grow STAMINA — how long you last before the bands escalate.</p>
-      <div class="panel" style="margin-top:28px">
-        <div class="panel__head"><span class="panel__title">Morning run</span><span class="panel__note">illustrative &mdash; not a recorded session</span></div>
-        <div class="run__big">5.24<small>km</small></div>
-        <div class="run__grid">
-          <div><div class="run__k">Moving</div><div class="run__v">28:31</div></div>
-          <div><div class="run__k">Pace</div><div class="run__v">5:27</div></div>
-          <div><div class="run__k">Cadence</div><div class="run__v">172</div></div>
-        </div>
-        <div class="splits">
-          <div class="splits__k">Splits · pace per kilometre</div>
-          <div class="split-row"><span class="split-row__km">1 km</span><span class="split-row__bar"><i style="width:77%"></i></span><span class="split-row__t">5:31</span></div>
-          <div class="split-row"><span class="split-row__km">2 km</span><span class="split-row__bar"><i style="width:93%"></i></span><span class="split-row__t">5:22</span></div>
-          <div class="split-row split-row--best"><span class="split-row__km">3 km</span><span class="split-row__bar"><i style="width:100%"></i></span><span class="split-row__t">5:18</span></div>
-          <div class="split-row"><span class="split-row__km">4 km</span><span class="split-row__bar"><i style="width:81%"></i></span><span class="split-row__t">5:29</span></div>
-          <div class="split-row"><span class="split-row__km">5 km</span><span class="split-row__bar"><i style="width:72%"></i></span><span class="split-row__t">5:34</span></div>
-          <div class="split-row split-row--part"><span class="split-row__km">0.24</span><span class="split-row__bar"><i style="width:95%"></i></span><span class="split-row__t">5:21</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="run__vis rise">
-      <figure class="ph ph--45" style="margin:0"><picture><source srcset="img/run.webp" type="image/webp"><img src="img/run.jpg" alt="A runner alone on a road in early light" loading="lazy" decoding="async" style="--focal:var(--f-run,center)" width="1605" height="1049"></picture></figure>
-      <div class="run__phone"><div class="phone">
-            <div class="phone__notch"></div>
-            <div class="phone__screen">
-              <div class="scr">
-                <div class="scr__status"><span>18:42</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
-                <div class="scr__bossrow" style="margin-top:16px"><b>Morning run</b><span>Tue</span></div>
-
-                <div class="rns__map">
-                  <svg viewBox="0 0 280 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map of a 5.24 kilometre loop through a street grid, start and finish a block apart.">
-                    <rect x="-100" y="-100" width="480" height="600" fill="#08080a"/>
-                    <rect x="168" y="34" width="104" height="96" rx="7" fill="#6c8b58" fill-opacity=".14"/>
-                    <path d="M-40 372 L120 468 L-40 468 Z" fill="#4a6b7a" fill-opacity=".16"/>
-                    <g stroke="#f3efe8" stroke-opacity=".085" stroke-width="1">
-                      <path d="M20 -20V420M62 -20V420M104 -20V420M188 -20V420M230 -20V420M272 -20V420"/>
-                      <path d="M-20 30H300M-20 78H300M-20 126H300M-20 174H300M-20 270H300M-20 318H300M-20 366H300"/>
-                    </g>
-                    <g stroke="#f3efe8" stroke-opacity=".16" stroke-width="2.4">
-                      <path d="M146 -20V420"/><path d="M-20 222H300"/>
-                    </g>
-                    <path d="M62 322 L62 270 L104 270 L104 222 L146 222 L146 174 L188 174 L188 126 L230 126 L230 78 L188 78 L188 46 L146 46 L146 100 L110 100 L110 150 L78 150 L78 200 L40 200 L40 300 L78 300 L78 330"
-                          fill="none" stroke="#ff6b40" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-                    <g fill="#08080a" stroke="#ff7a52" stroke-width="2">
-                      <circle cx="144" cy="222" r="3.6"/><circle cx="230" cy="126" r="3.6"/>
-                      <circle cx="146" cy="64" r="3.6"/><circle cx="78" cy="178" r="3.6"/><circle cx="62" cy="300" r="3.6"/>
-                    </g>
-                    <circle cx="62" cy="322" r="7" fill="#08080a" stroke="#8fd18a" stroke-width="3"/>
-                    <circle cx="78" cy="330" r="6.5" fill="#ff7a52"/>
-                    <text x="16" y="356" font-family="IBM Plex Mono, monospace" font-size="11" fill="#f3efe8" fill-opacity=".5" letter-spacing="1.4">START</text>
-                  </svg>
-                </div>
-
-                <div class="rns__big">5.24<small>KM</small></div>
-                <div class="rns__grid">
-                  <div><div class="rns__k">Time</div><div class="rns__v">28:31</div></div>
-                  <div><div class="rns__k">Pace</div><div class="rns__v">5:27</div></div>
-                  <div><div class="rns__k">Cadence</div><div class="rns__v">172</div></div>
-                </div>
-                <div class="scr__foot">Route stored on this phone only</div>
-              </div>
-            </div>
-          </div></div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════ LIBRARY ══════════════ -->
-<section class="band" id="library">
-  <div class="shell">
-    <div class="head head--split rise">
-      <div>
-        <p class="kicker">The library</p>
-        <h2>Five detectors.<br><em>Fifty-one exercises.</em></h2>
-      </div>
-      <p class="lede">Exercises differ in how they are <em>detected</em>. Group them that way and sixty problems collapse into five.</p>
-    </div>
-    <div class="fam rise">
-      <div class="fam__row">
-        <span class="fam__no">F1</span>
-        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/squat.webp" type="image/webp"><img src="img/squat.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-squat,center)" width="1800" height="1198"></picture></figure>
-        <div class="fam__game">Boss Fight<em>Strength reps</em></div>
-        <p class="fam__how">Squats, push-ups, lunges, sit-ups, bridges. Fatigue reads as velocity loss and collapsing depth.</p>
-        <div class="fam__n"><b>10</b>exercises</div>
-      </div>
-      <div class="fam__row">
-        <span class="fam__no">F2</span>
-        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/plank.webp" type="image/webp"><img src="img/plank.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-plank,center)" width="1800" height="1200"></picture></figure>
-        <div class="fam__game">Siege<em>Holds</em></div>
-        <p class="fam__how">Your plank <em>is</em> the shield. A hold has no velocity, so fatigue is read as tremor.</p>
-        <div class="fam__n"><b>9</b>holds</div>
-      </div>
-      <div class="fam__row">
-        <span class="fam__no">F3</span>
-        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/yoga.webp" type="image/webp"><img src="img/yoga.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-yoga,center)" width="1800" height="1440"></picture></figure>
-        <div class="fam__game">Sigil<em>Yoga</em></div>
-        <p class="fam__how">No boss, no damage, no ranking. Each asana lights a constellation point; the cue names the worst joint.</p>
-        <div class="fam__n"><b>14</b>asanas</div>
-      </div>
-      <div class="fam__row">
-        <span class="fam__no">F4</span>
-        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/cardio.webp" type="image/webp"><img src="img/cardio.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-cardio,left center)" width="1800" height="1200"></picture></figure>
-        <div class="fam__game">Pursuit<em>Cardio</em></div>
-        <p class="fam__how">Cadence and amplitude from one landmark axis. Something chases you; the gap closes when you slow.</p>
-        <div class="fam__n"><b>11</b>movements</div>
-      </div>
-      <div class="fam__row">
-        <span class="fam__no">F5</span>
-        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/jump.webp" type="image/webp"><img src="img/jump.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-jump,42% 25%)" width="1800" height="1196"></picture></figure>
-        <div class="fam__game">Breaker<em>Jumps</em></div>
-        <p class="fam__how">Jump height in real centimetres. A stiff landing scores but doesn't break through — that force went into you.</p>
-        <div class="fam__n"><b>7</b>jumps</div>
-      </div>
     </div>
   </div>
 </section>
@@ -1790,111 +1678,322 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   </div>
 </section>
 
-<!-- ══════════════ COACH ══════════════ -->
-<section class="band" id="coach">
-  <div class="shell story">
-    <figure class="ph ph--45 ph--bw rise" style="margin:0"><picture><source srcset="img/portrait.webp" type="image/webp"><img src="img/portrait.jpg" alt="An athlete down on the floor between sets" loading="lazy" decoding="async" style="--focal:var(--f-portrait,center 70%)" width="1200" height="1800"></picture></figure>
-    <div class="rise">
-      <p class="kicker">The coach</p>
-      <h2>The coach and the villain are the <em>same model.</em></h2>
-      <p class="lede">A twenty-three-field summary goes to a language model on the phone's own neural processor. It writes the coaching and the taunt — and never sees your video.</p>
-      <div class="quotes">
-        <figure class="quote" style="margin:0"><figcaption class="quote__who">Coach</figcaption><p>“Your last three reps lost four centimetres of depth. Take forty seconds, then finish it.”</p></figure>
-        <figure class="quote quote--boss" style="margin:0"><figcaption class="quote__who">The Pacemaker</figcaption><p>“Your knees are negotiating. I don't negotiate.”</p></figure>
+<!-- ══════════════ LIBRARY ══════════════ -->
+<section class="band" id="library">
+  <div class="shell">
+    <div class="head head--split rise">
+      <div>
+        <p class="kicker">The library</p>
+        <h2>Five detectors.<br><em>Fifty-one exercises.</em></h2>
+      </div>
+      <p class="lede">Exercises differ in how they are <em>detected</em>. Group them that way and sixty problems collapse into five.</p>
+    </div>
+    <div class="fam rise">
+      <div class="fam__row">
+        <span class="fam__no">F1</span>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/squat.webp" type="image/webp"><img src="img/squat.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-squat,center)" width="1800" height="1198"></picture></figure>
+        <div class="fam__game">Boss Fight<em>Strength reps</em></div>
+        <p class="fam__how">Squats, push-ups, lunges, sit-ups, bridges. Fatigue reads as velocity loss and collapsing depth.</p>
+        <div class="fam__n"><b>10</b>exercises</div>
+      </div>
+      <div class="fam__row">
+        <span class="fam__no">F2</span>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/plank.webp" type="image/webp"><img src="img/plank.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-plank,center)" width="1800" height="1200"></picture></figure>
+        <div class="fam__game">Siege<em>Holds</em></div>
+        <p class="fam__how">Your plank <em>is</em> the shield. A hold has no velocity, so fatigue is read as tremor.</p>
+        <div class="fam__n"><b>9</b>holds</div>
+      </div>
+      <div class="fam__row">
+        <span class="fam__no">F3</span>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/yoga.webp" type="image/webp"><img src="img/yoga.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-yoga,center)" width="1800" height="1440"></picture></figure>
+        <div class="fam__game">Sigil<em>Yoga</em></div>
+        <p class="fam__how">No boss, no damage, no ranking. Each asana lights a constellation point; the cue names the worst joint.</p>
+        <div class="fam__n"><b>14</b>asanas</div>
+      </div>
+      <div class="fam__row">
+        <span class="fam__no">F4</span>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/cardio.webp" type="image/webp"><img src="img/cardio.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-cardio,left center)" width="1800" height="1200"></picture></figure>
+        <div class="fam__game">Pursuit<em>Cardio</em></div>
+        <p class="fam__how">Cadence and amplitude from one landmark axis. Something chases you; the gap closes when you slow.</p>
+        <div class="fam__n"><b>11</b>movements</div>
+      </div>
+      <div class="fam__row">
+        <span class="fam__no">F5</span>
+        <figure class="ph fam__th" style="margin:0"><picture><source srcset="img/jump.webp" type="image/webp"><img src="img/jump.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-jump,42% 25%)" width="1800" height="1196"></picture></figure>
+        <div class="fam__game">Breaker<em>Jumps</em></div>
+        <p class="fam__how">Jump height in real centimetres. A stiff landing scores but doesn't break through — that force went into you.</p>
+        <div class="fam__n"><b>7</b>jumps</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ══════════════ THE DEVICE ══════════════ -->
-<section class="band band--line" id="device">
-  <div class="shell iq">
+<!-- ══════════════ RUN ══════════════ -->
+<section class="band band--panel" id="run">
+  <div class="shell run">
     <div class="rise">
-      <div class="iq__dev">
-        <div class="phone">
-          <div class="phone__notch"></div>
-          <div class="phone__screen">
-            <div class="scr">
-              <div class="scr__status"><span>20:04</span><span>&#9992; &nbsp;OFFLINE&nbsp; &#9646;&#9646;&#9646;</span></div>
-              <div class="sx__hd"><b>Between sets</b><span>Squat &middot; set 3</span></div>
-              <div class="sx__art" style="flex:1">
-                <div class="iqq">
-                  <p class="iqq__who">Coach</p>
-                  <p class="iqq__line">&ldquo;Your last three reps lost four centimetres of depth. Take forty seconds, then finish it.&rdquo;</p>
-                  <p class="iqq__who iqq__who--boss">The Pacemaker</p>
-                  <p class="iqq__line">&ldquo;Your knees are negotiating. I don&rsquo;t negotiate.&rdquo;</p>
-                </div>
-              </div>
-              <div class="sx__tri">
-                <div><span>Model</span><b>Gemma&nbsp;3n</b></div>
-                <div><span>Runs</span><b>On&#8209;device</b></div>
-                <div><span>Sent</span><b>0&nbsp;B</b></div>
-              </div>
-              <div class="scr__foot">Twenty-three fields in. Two sentences out.</div>
-            </div>
-          </div>
+      <p class="kicker">Outside &middot; with the native app</p>
+      <h2>A run tracker that <em>keeps the route.</em></h2>
+      <p class="lede">Distance, pace, splits, cadence, elevation. The one difference that matters: the trace stays on your device. Runs grow STAMINA — how long you last before the bands escalate.</p>
+      <div class="panel" style="margin-top:28px">
+        <div class="panel__head"><span class="panel__title">Morning run</span><span class="panel__note">illustrative &mdash; not a recorded session</span></div>
+        <div class="run__big">5.24<small>km</small></div>
+        <div class="run__grid">
+          <div><div class="run__k">Moving</div><div class="run__v">28:31</div></div>
+          <div><div class="run__k">Pace</div><div class="run__v">5:27</div></div>
+          <div><div class="run__k">Cadence</div><div class="run__v">172</div></div>
+        </div>
+        <div class="splits">
+          <div class="splits__k">Splits · pace per kilometre</div>
+          <div class="split-row"><span class="split-row__km">1 km</span><span class="split-row__bar"><i style="width:77%"></i></span><span class="split-row__t">5:31</span></div>
+          <div class="split-row"><span class="split-row__km">2 km</span><span class="split-row__bar"><i style="width:93%"></i></span><span class="split-row__t">5:22</span></div>
+          <div class="split-row split-row--best"><span class="split-row__km">3 km</span><span class="split-row__bar"><i style="width:100%"></i></span><span class="split-row__t">5:18</span></div>
+          <div class="split-row"><span class="split-row__km">4 km</span><span class="split-row__bar"><i style="width:81%"></i></span><span class="split-row__t">5:29</span></div>
+          <div class="split-row"><span class="split-row__km">5 km</span><span class="split-row__bar"><i style="width:72%"></i></span><span class="split-row__t">5:34</span></div>
+          <div class="split-row split-row--part"><span class="split-row__km">0.24</span><span class="split-row__bar"><i style="width:95%"></i></span><span class="split-row__t">5:21</span></div>
         </div>
       </div>
-      <p class="iq__lab"><b>iQOO 15</b><span>The coach, running with the radio off</span></p>
     </div>
-    <div class="rise">
-      <p class="kicker">The device</p>
-      <h2>Six pieces of the phone. <em>No accessories.</em></h2>
-      <p class="lede">No band, no strap, no chest belt, no gym machine reporting to an app. Everything ClashFit measures, it measures with hardware already in your hand — and the whole loop closes on that hardware.</p>
-      <ul class="iq__use">
-        <li>
-          <span class="iq__part">32&nbsp;MP &middot; 90&deg;</span>
-          <span class="iq__what"><b>The referee, and the reason for the wide lens</b>Thirty frames a second, thirty-three body landmarks. The number that decides whether any of this works is the field of view: at ninety degrees the 15 holds a whole standing body from about two metres, which is the distance a bedroom actually gives you. A narrower selfie lens crops your feet, and a rep the camera cannot see is never counted.</span>
-        </li>
-        <li>
-          <span class="iq__part">Snapdragon&nbsp;8 Elite Gen&nbsp;5</span>
-          <span class="iq__what"><b>Grading at camera rate</b>The pose landmarker runs on the GPU delegate, which leaves the CPU free for the rep machine, the fatigue model and the fight at the same time. Three nanometres is why all of that fits inside one frame&rsquo;s worth of time.</span>
-        </li>
-        <li>
-          <span class="iq__part">Silicon</span>
-          <span class="iq__what"><b>A language model with no network</b>Between sets, a twenty-three-field summary of the set goes to Gemma 3n running locally &mdash; counts, form scores, depth and velocity loss, a fatigue band. Never a frame of video. It never runs while the camera does — the phone does one hard thing at a time, on purpose.</span>
-        </li>
-        <li>
-          <span class="iq__part">7000&nbsp;mAh &middot; 8K&nbsp;VC</span>
-          <span class="iq__what"><b>A set is not a benchmark run</b>Twelve minutes of camera, GPU and screen, continuously, is a thermal problem rather than a peak-performance one. iQOO put a 7000&nbsp;mAh cell and their 8K vapour-chamber cooling behind it. What that buys us is a frame rate that does not quietly sag halfway through a set and take the fatigue baseline down with it.</span>
-        </li>
-        <li>
-          <span class="iq__part">Haptics</span>
-          <span class="iq__what"><b>The rep you feel</b>Every counted rep is confirmed in the hand, so the screen is optional. It is what makes eyes-free sets possible at all.</span>
-        </li>
-        <li>
-          <span class="iq__part">Speaker</span>
-          <span class="iq__what"><b>Coaching out loud</b>Tempo cues and the coach's line are spoken by the phone. In Tempo Trial you never look at it — you are on the floor, face down.</span>
-        </li>
-      </ul>
-      <p class="lede" style="margin-top:26px">None of this needs a flagship to run. But grading at camera rate <em>and</em> answering between sets without a network is where the 15's silicon stops being a spec sheet.</p>
-      <div class="tags"><span class="tag">Two phones = a duel</span><span class="tag">Airplane mode</span><span class="tag">No wearables</span></div>
+    <div class="run__vis rise">
+      <figure class="ph ph--45" style="margin:0"><picture><source srcset="img/run.webp" type="image/webp"><img src="img/run.jpg" alt="A runner alone on a road in early light" loading="lazy" decoding="async" style="--focal:var(--f-run,center)" width="1605" height="1049"></picture></figure>
+      <div class="run__phone"><div class="phone">
+            <div class="phone__notch"></div>
+            <div class="phone__screen">
+              <div class="scr">
+                <div class="scr__status"><span>18:42</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="scr__bossrow" style="margin-top:16px"><b>Morning run</b><span>Tue</span></div>
+
+                <div class="rns__map">
+                  <svg viewBox="0 0 280 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Map of a 5.24 kilometre loop through a street grid, start and finish a block apart.">
+                    <rect x="-100" y="-100" width="480" height="600" fill="#08080a"/>
+                    <rect x="168" y="34" width="104" height="96" rx="7" fill="#6c8b58" fill-opacity=".14"/>
+                    <path d="M-40 372 L120 468 L-40 468 Z" fill="#4a6b7a" fill-opacity=".16"/>
+                    <g stroke="#f3efe8" stroke-opacity=".085" stroke-width="1">
+                      <path d="M20 -20V420M62 -20V420M104 -20V420M188 -20V420M230 -20V420M272 -20V420"/>
+                      <path d="M-20 30H300M-20 78H300M-20 126H300M-20 174H300M-20 270H300M-20 318H300M-20 366H300"/>
+                    </g>
+                    <g stroke="#f3efe8" stroke-opacity=".16" stroke-width="2.4">
+                      <path d="M146 -20V420"/><path d="M-20 222H300"/>
+                    </g>
+                    <path d="M62 322 L62 270 L104 270 L104 222 L146 222 L146 174 L188 174 L188 126 L230 126 L230 78 L188 78 L188 46 L146 46 L146 100 L110 100 L110 150 L78 150 L78 200 L40 200 L40 300 L78 300 L78 330"
+                          fill="none" stroke="#ff6b40" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <g fill="#08080a" stroke="#ff7a52" stroke-width="2">
+                      <circle cx="144" cy="222" r="3.6"/><circle cx="230" cy="126" r="3.6"/>
+                      <circle cx="146" cy="64" r="3.6"/><circle cx="78" cy="178" r="3.6"/><circle cx="62" cy="300" r="3.6"/>
+                    </g>
+                    <circle cx="62" cy="322" r="7" fill="#08080a" stroke="#8fd18a" stroke-width="3"/>
+                    <circle cx="78" cy="330" r="6.5" fill="#ff7a52"/>
+                    <text x="16" y="356" font-family="IBM Plex Mono, monospace" font-size="11" fill="#f3efe8" fill-opacity=".5" letter-spacing="1.4">START</text>
+                  </svg>
+                </div>
+
+                <div class="rns__big">5.24<small>KM</small></div>
+                <div class="rns__grid">
+                  <div><div class="rns__k">Time</div><div class="rns__v">28:31</div></div>
+                  <div><div class="rns__k">Pace</div><div class="rns__v">5:27</div></div>
+                  <div><div class="rns__k">Cadence</div><div class="rns__v">172</div></div>
+                </div>
+                <div class="scr__foot">Route stored on this phone only</div>
+              </div>
+            </div>
+          </div></div>
     </div>
   </div>
 </section>
 
-<!-- ══════════════ PRIVACY ══════════════ -->
-<section class="band band--panel" id="privacy">
-  <div class="shell feature">
+<!-- ══════════════ OUTBREAK ══════════════ -->
+<section class="band band--line" id="outbreak">
+  <div class="shell out">
     <div class="rise">
-      <p class="kicker">Privacy</p>
-      <h2>No cloud box on <em>this diagram.</em></h2>
-      <p class="lede">Pose, form scoring, the fatigue model and the language model all run on the phone. The shipping app requests no internet permission at all. You can check.</p>
-      <div class="tags"><span class="tag">No account</span><span class="tag">No upload</span><span class="tag">No internet permission</span></div>
+      <p class="kicker">Outdoors &middot; uses your location</p>
+      <h2>Sixty seconds.<br><em>Then they start moving.</em></h2>
+      <p class="lede">Outbreak puts the chase on a real map. You get a sixty-second head start, then
+        pursuers spawn around you and begin closing. Ammo caches sit at real coordinates; reaching one
+        arms you. Get within twelve metres of a pursuer and it has you.</p>
+      <ul class="out__rules">
+        <li><b>60s</b><span>Head start. The map centres where you are and nothing moves until it ends.</span></li>
+        <li><b>400m</b><span>Spawn radius. Close enough to matter, far enough that the first minute is yours.</span></li>
+        <li><b>12m</b><span>Capture radius. The only number in the mode you cannot argue with.</span></li>
+        <li><b>&times;6</b><span>Ammo caches, scattered. Running toward one is a decision, not a pickup.</span></li>
+      </ul>
+      <p class="lede" style="margin-top:26px"><strong style="color:var(--ink);font-weight:600">A
+        pursuer closes when your cadence drops</strong>, not only when your coordinate stops. The same
+        cadence detector that runs Pursuit indoors decides whether you are actually still running &mdash;
+        which is why walking it does not work.</p>
+      <div class="out__note">
+        <b>This is the one mode that goes online.</b>
+        A map is tiles fetched from a server, and a map centred on you carries where you are. Outbreak
+        asks for location when you start it, never at install, and declining costs you exactly this
+        mode. The camera stays shut the whole time, so no frame leaves the device here either &mdash;
+        and the route is stored on the phone, like every other session.
+      </div>
     </div>
+
+    <div class="rise out__vis">
+      <svg viewBox="0 0 520 560" role="img" aria-label="A city map with pursuers converging on a runner, ammo caches marked nearby">
+        <rect width="520" height="560" rx="3" fill="#0e0f12"/>
+        <g stroke="#f3efe8" stroke-opacity=".07" stroke-width="12" fill="none">
+          <path d="M-10 120 H530"/><path d="M-10 300 H530"/><path d="M-10 460 H530"/>
+          <path d="M90 -10 V570"/><path d="M250 -10 V570"/><path d="M410 -10 V570"/>
+        </g>
+        <g fill="#f3efe8" fill-opacity=".04">
+          <rect x="110" y="140" width="120" height="140" rx="2"/><rect x="270" y="140" width="120" height="140" rx="2"/>
+          <rect x="110" y="320" width="120" height="120" rx="2"/><rect x="270" y="320" width="120" height="120" rx="2"/>
+          <rect x="430" y="140" width="80" height="140" rx="2"/><rect x="10" y="320" width="60" height="120" rx="2"/>
+        </g>
+        <circle cx="250" cy="300" r="150" fill="none" stroke="#ff4f1f" stroke-opacity=".22" stroke-width="1.5" stroke-dasharray="5 7"/>
+        <text x="250" y="138" text-anchor="middle" fill="#ff4f1f" fill-opacity=".6" font-family="IBM Plex Mono" font-size="11" letter-spacing="2">400 M</text>
+        <path d="M250 300 L196 214" stroke="#ff4f1f" stroke-opacity=".45" stroke-width="1.5" stroke-dasharray="3 4"/>
+        <path d="M250 300 L372 246" stroke="#ff4f1f" stroke-opacity=".45" stroke-width="1.5" stroke-dasharray="3 4"/>
+        <path d="M250 300 L318 414" stroke="#ff4f1f" stroke-opacity=".45" stroke-width="1.5" stroke-dasharray="3 4"/>
+        <g fill="#ff2d1a">
+          <circle cx="196" cy="214" r="9"/><circle cx="372" cy="246" r="9"/><circle cx="318" cy="414" r="9"/>
+          <circle cx="158" cy="392" r="9"/>
+        </g>
+        <g fill="none" stroke="#ff2d1a" stroke-opacity=".35" stroke-width="1.5">
+          <circle cx="196" cy="214" r="17"/><circle cx="372" cy="246" r="17"/>
+          <circle cx="318" cy="414" r="17"/><circle cx="158" cy="392" r="17"/>
+        </g>
+        <g fill="#f2c14e">
+          <rect x="124" y="168" width="9" height="9" transform="rotate(45 128.5 172.5)"/>
+          <rect x="428" y="352" width="9" height="9" transform="rotate(45 432.5 356.5)"/>
+          <rect x="236" y="486" width="9" height="9" transform="rotate(45 240.5 490.5)"/>
+        </g>
+        <circle cx="250" cy="300" r="26" fill="#6fd08c" fill-opacity=".14"/>
+        <circle cx="250" cy="300" r="11" fill="#6fd08c"/>
+        <circle cx="250" cy="300" r="19" fill="none" stroke="#6fd08c" stroke-width="2"/>
+        <g font-family="IBM Plex Mono" font-size="11" letter-spacing="1.6">
+          <text x="20" y="34" fill="#f3efe8" fill-opacity=".8">04:31</text>
+          <text x="20" y="52" fill="#96a0b0">ELAPSED</text>
+          <text x="200" y="34" fill="#f3efe8" fill-opacity=".8">612 M</text>
+          <text x="200" y="52" fill="#96a0b0">DISTANCE</text>
+          <text x="380" y="34" fill="#ff4f1f">98 M</text>
+          <text x="380" y="52" fill="#96a0b0">NEAREST</text>
+          <text x="20" y="544" fill="#6fd08c">YOU</text>
+          <text x="120" y="544" fill="#ff2d1a">PURSUERS</text>
+          <text x="260" y="544" fill="#f2c14e">AMMO</text>
+        </g>
+      </svg>
+      <p class="out__cap">Outbreak &middot; the only ClashFit mode that asks for the network</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ ALARM (orange) ══════════════ -->
+<section class="band band--ember" id="alarm">
+  <div class="shell alarm">
     <div class="rise">
-<pre class="arch">   front camera · 30 fps
-            ↓
-   <b>Pose landmarker</b> · GPU · 33 joints
-            ↓
-   filter → joint angles → <b>rep machine</b>
-            ↓                    ↓
-   <b>fatigue estimator</b> → <b>adaptive boss</b>
-            ↓
-   [between sets] <b>on-device LLM</b> → speech
-            ↓
-   <u>local storage · this phone only</u></pre>
+      <p class="kicker">Wake-up &middot; with the native app</p>
+      <h2>The alarm stops when the <em>reps</em> stop it.</h2>
+      <p class="lede">Set the alarm, then set its price: five push-ups. At 6:30 the camera comes on, and only the movement silences it. A wiggle under the blanket counts as nothing.</p>
+      <ul class="alarm__pts">
+        <li><b>01</b><span>Any exercise, any count. Start at three chair squats if that is honest.</span></li>
+        <li><b>02</b><span>The same scoring that runs a boss fight runs the alarm. Too shallow doesn't count.</span></li>
+        <li><b>03</b><span>An emergency dismiss, held five seconds and logged. Strict, never a trap.</span></li>
+      </ul>
     </div>
+    <div class="alarm__vis rise">
+      <figure class="ph ph--45" style="margin:0"><picture><source srcset="img/pushup.webp" type="image/webp"><img src="img/pushup.jpg" alt="A push-up, side-on, at the bottom of the rep" loading="lazy" decoding="async" style="--focal:var(--f-pushup,right center)" width="1800" height="1200"></picture></figure>
+      <div class="alarm__phone"><div class="phone">
+            <div class="phone__notch"></div>
+            <div class="phone__screen">
+              <div class="scr">
+                <div class="scr__status"><span>6:30</span><span>✈ &nbsp;OFFLINE&nbsp; ▮▮▮</span></div>
+                <div class="alm__time">6:30</div>
+                <div class="alm__meta">Alarm · weekdays · ringing</div>
+
+                <div class="alm__task">
+                  <span class="scr__label">To dismiss</span>
+                  <b>5 push-ups</b>
+                  <div class="alm__pips"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div>
+                  <div class="alm__count">2 of 5 counted</div>
+                </div>
+
+                <div class="alm__cam">
+                  <!-- side-on push-up, mid-descent -->
+                  <svg viewBox="0 0 200 110" fill="none" aria-hidden="true">
+                    <g stroke="#f3efe8" stroke-opacity=".85" stroke-width="3" stroke-linecap="round">
+                      <path d="M56 46 L52 52"/>
+                      <path d="M52 52 L104 60"/>
+                      <path d="M104 60 L152 78"/>
+                      <path d="M152 78 L166 84"/>
+                      <path d="M52 52 L48 74 L44 84"/>
+                      <path d="M104 60 L108 80"/>
+                      <path d="M40 88 L172 88"/>
+                    </g>
+                    <circle cx="58" cy="40" r="9" stroke="#f3efe8" stroke-opacity=".85" stroke-width="3"/>
+                    <g fill="#ff7a52">
+                      <circle cx="52" cy="52" r="4"/><circle cx="104" cy="60" r="4"/>
+                      <circle cx="152" cy="78" r="4"/><circle cx="48" cy="74" r="3.4"/>
+                    </g>
+                    <path d="M40 70 A14 14 0 0 0 52 66" stroke="#ff7a52" stroke-width="2" stroke-dasharray="2.5 3.5"/>
+                    <text x="8" y="66" font-family="IBM Plex Mono, monospace" font-size="11" fill="#ff7a52" letter-spacing="1">84°</text>
+                  </svg>
+                </div>
+
+                <div class="alm__lock">Snooze used · 1 of 1</div>
+              </div>
+            </div>
+          </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ BEYOND THE GAME ══════════════ -->
+<section class="band band--line" id="tools">
+  <div class="shell">
+    <div class="head head--split rise">
+      <div>
+        <p class="kicker">Beyond the game</p>
+        <h2>Not everything<br>here is <em>a fight.</em></h2>
+      </div>
+      <p class="lede">The camera that referees a boss fight is only a camera that can see a body. Four of the five below never involve a boss at all &mdash; and none of them ask you to wear anything.</p>
+    </div>
+
+    <ul class="tools rise">
+      <li class="tool">
+        <span class="tool__n">01</span>
+        <div class="tool__b">
+          <h3>The alarm you cannot dismiss from bed</h3>
+          <p>Set the alarm, then set its price: five push-ups, fifteen squats, a thirty-second plank. It keeps ringing until the camera has counted them, graded the way a boss fight is graded. A wiggle under the blanket counts as nothing. An emergency dismiss is always there, held five seconds and logged.</p>
+        </div>
+        <span class="tool__t">Needs the native app</span>
+      </li>
+      <li class="tool">
+        <span class="tool__n">02</span>
+        <div class="tool__b">
+          <h3>A daily budget for the app you keep opening</h3>
+          <p>Give one app a budget &mdash; twenty minutes of the feed you lose evenings to. Past it, it stays shut until you pay in reps. Same grading, so the price cannot be faked, and the budget is yours to set or delete on any day you want it gone.</p>
+        </div>
+        <span class="tool__t">Needs the native app</span>
+      </li>
+      <li class="tool">
+        <span class="tool__n">03</span>
+        <div class="tool__b">
+          <h3>Sixty seconds, every fifty minutes</h3>
+          <p>A desk timer for the eight hours nobody trains in. It asks for one minute: ten squats, or a stretch held long enough to count. It is the smallest honest unit of movement, and the camera is the only thing standing between you and skipping it.</p>
+        </div>
+        <span class="tool__t">Camera only</span>
+      </li>
+      <li class="tool">
+        <span class="tool__n">04</span>
+        <div class="tool__b">
+          <h3>What your neck did all day</h3>
+          <p>While you work, a single frame every few minutes, scored for neck flexion and shoulder height. One number at the end of the day and a curve across the week. The frames are read and discarded &mdash; nothing is stored, and nothing is a diagnosis.</p>
+        </div>
+        <span class="tool__t">Camera only</span>
+      </li>
+      <li class="tool">
+        <span class="tool__n">05</span>
+        <div class="tool__b">
+          <h3>Breathing you do not have to be trusted on</h3>
+          <p>After the set, six breaths a minute for two minutes. The phone watches your chest and shoulders rather than asking whether you kept to the pace, and tells you the rate you actually held. Recovery, measured the same way the training is.</p>
+        </div>
+        <span class="tool__t">Camera only</span>
+      </li>
+    </ul>
+
+    <p class="tools__foot">Nothing here uploads. Nothing here is a diagnosis.</p>
   </div>
 </section>
 
@@ -1936,14 +2035,14 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   <div class="cta__img"><picture><source srcset="img/gym.webp" type="image/webp"><img src="img/gym.jpg" alt="" loading="lazy" decoding="async" style="--focal:var(--f-gym,center)" width="1800" height="1200"></picture></div>
   <div class="cta__scrim"></div>
   <div class="shell"><div class="cta__in rise">
-    <p class="kicker">Coming to Android and iOS</p>
+    <p class="kicker">Coming to Android</p>
     <h2>Prop your phone.<br><em>Fight it out.</em></h2>
     <p class="lede">One download. No account, no equipment, nothing to subscribe to.</p>
     <div class="hero__cta">
       <button class="btn btn--ember" data-waitlist type="button">Join the waitlist</button>
       <a class="btn btn--line" href="#loop">How it works</a>
     </div>
-    <div class="stores"><span class="tag">Android · Play Store</span><span class="tag">iOS · App Store</span><span class="tag">Free core, forever</span></div>
+    <div class="stores"><span class="tag">Android · Play Store</span><span class="tag">Free core, forever</span></div>
   </div></div>
 </section>
 
@@ -1956,7 +2055,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
         <a class="brand" href="#top"><i></i>ClashFit</a>
         <p>Offline AI fitness combat. Your body is the controller, your camera is the referee, and nothing leaves the phone.</p>
       </div>
-      <div><h4>Play</h4><ul><li><a href="#modes">Modes</a></li><li><a href="#race">1v1 Duel</a></li><li><a href="#raid">Raid room</a></li><li><a href="#run">Run tracker</a></li><li><a href="#alarm">Wake-up alarm</a></li><li><a href="#tools">Health tools</a></li></ul></div>
+      <div><h4>Play</h4><ul><li><a href="#modes">Modes</a></li><li><a href="#race">1v1 Duel</a></li><li><a href="#raid">Raid room</a></li><li><a href="#run">Run tracker</a></li><li><a href="#outbreak">Outbreak</a></li><li><a href="#alarm">Wake-up alarm</a></li><li><a href="#tools">Health tools</a></li></ul></div>
       <div><h4>How it works</h4><ul><li><a href="#loop">The loop</a></li><li><a href="#fatigue">Fatigue model</a></li><li><a href="#coach">The coach</a></li><li><a href="#device">The device</a></li><li><a href="#privacy">Privacy</a></li></ul></div>
       <div><h4>More</h4><ul><li><a href="#library">Exercise library</a></li><li><a href="#screens">Every screen</a></li><li><a href="#clinic">Clinic mode</a></li><li><a href="/credits">Credits</a></li></ul></div>
     </div>
@@ -1973,7 +2072,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   <div class="wl__in">
 
     <div id="wl-ask">
-      <p class="kicker">Android &amp; iOS &middot; 2026</p>
+      <p class="kicker">Android &middot; 2026</p>
       <h2 id="wl-title" style="font-size:clamp(30px,4.6vw,42px);margin-top:10px">Join the<br><em>waitlist.</em></h2>
       <p class="wl__lede">One note when the beta opens. Nothing else, ever.</p>
       <form class="wl__form" id="wl-form" novalidate>
@@ -1987,7 +2086,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
     <div id="wl-done" hidden>
       <p class="kicker">Noted</p>
       <h2 style="font-size:clamp(30px,4.6vw,42px);margin-top:10px">See you in<br><em>the arena.</em></h2>
-      <p class="wl__lede">ClashFit lands on Android and iOS in 2026. Until then, the whole thing runs on the phone in your hand &mdash; and nothing leaves it.</p>
+      <p class="wl__lede">ClashFit lands on Android in 2026. Until then, the whole thing runs on the phone in your hand &mdash; and nothing leaves it.</p>
       <div class="tags"><span class="tag">No account</span><span class="tag">No upload</span><span class="tag">Free core, forever</span></div>
     </div>
 
