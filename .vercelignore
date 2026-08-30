@@ -16,3 +16,9 @@ traces/
 serve.js
 package.json
 README.md
+
+# The Phase-1 deck ships as a live page; its exports and source frames do not.
+deck-phase1/slides/
+deck-phase1/*.pdf
+deck-phase1/*.pptx
+deck-phase1/README.md
