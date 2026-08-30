@@ -1604,6 +1604,33 @@ t('page · names no hardware we could not verify', () => {
   eq(hit.join(', '), '', 'unverified hardware claims on the page:');
 });
 
+t('page · every mode count it prints agrees with every other one', () => {
+  // Adding Outbreak on 30 Aug left FIVE stale "fifteen"s on the page — the
+  // screens kicker, its heading, the reel copy, the metrics strip and the
+  // mode-select mockup — while the hero already said sixteen. Count them all.
+  const WORDS = { thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17 };
+  const claims = [];
+  const add = (n, where) => { if (Number.isFinite(n)) claims.push([n, where]); };
+
+  add(Number((page.match(/<div><b>(\d+)<\/b><span>Ways to play<\/span><\/div>/) || [])[1]), 'hero stat');
+  add(Number((page.match(/<div class="metric__v">(\d+)<\/div><div class="metric__k">Ways to play/) || [])[1]), 'metrics strip');
+  add(Number((page.match(/<b>Modes<\/b><span>(\d+)<\/span>/) || [])[1]), 'mode-select mockup');
+  for (const m of page.matchAll(/(\w+) ways (?:in|to play)/gi)) {
+    const n = WORDS[m[1].toLowerCase()];
+    if (n) add(n, `"${m[0]}"`);
+  }
+
+  ok(claims.length >= 4, `expected several mode counts on the page, found ${claims.length}`);
+  const distinct = [...new Set(claims.map((c) => c[0]))];
+  eq(distinct.length, 1, `the page states ${distinct.join(' and ')} ways to play — ${claims.map((c) => c[1] + '=' + c[0]).join(', ')}:`);
+
+  // and that single number has to match what the tape actually names
+  const tape = page.slice(page.indexOf('class="tape__seq"'));
+  const named = new Set((tape.slice(0, tape.indexOf('</div>')).match(/<span>([^<]+)<\/span>/g) || [])
+    .map((x) => x.replace(/<\/?span>/g, '')));
+  eq(named.size, distinct[0], 'modes named in the tape vs the number the page prints:');
+});
+
 t('page · the telemetry field count it prints is the real one', () => {
   // The page used to say "eleven numbers". summarise() returns 23 fields, and the
   // claim had been wrong long enough that nobody was counting. Now it is counted.
