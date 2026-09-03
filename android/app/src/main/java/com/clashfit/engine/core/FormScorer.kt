@@ -10,7 +10,8 @@ import kotlin.math.pow
 
 /** Form scoring: four named geometric quantities, never a vague "form quality". */
 object FormScorer {
-    private fun clamp01(v: Float): Float = v.coerceIn(0f, 1f)
+    /** Mirrors the JS `clamp01`: a non-finite input is worth zero, never NaN downstream. */
+    private fun clamp01(v: Float): Float = if (v.isFinite()) v.coerceIn(0f, 1f) else 0f
 
     /** Depth: how far past the target, relative to the player's own calibrated rest position. */
     fun depth(event: RepEvent, exponent: Float = 1.5f): Float {
@@ -58,7 +59,9 @@ object FormScorer {
         val d = depth(event, depthExponent)
         val r = rom(event, romBaselineU)
         val t = tempo(event)
-        val a = alignmentScore
+        // The JS computes alignment through alignmentScore(), which clamps. Here it arrives as a
+        // caller-supplied number, so the clamp has to happen on the way in.
+        val a = clamp01(alignmentScore)
 
         val sum = weights.depth + weights.rom + weights.tempo + weights.alignment
         val norm = if (sum > 0f) sum else 1f
