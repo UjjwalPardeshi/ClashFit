@@ -139,14 +139,17 @@ class VoiceCommands(
             text.contains("stop") -> Command.STOP
             // pause / paused / pausing
             text.contains("pause") -> Command.PAUSE
-            // resume / resumed / resuming / go / start
-            text.contains("resume") || text.contains("go") || text.contains("start") -> Command.RESUME
-            // next / skip to next
+            // next / skip to next — checked before the generic resume keywords below so
+            // "go to next" / "next set" resolve to NEXT rather than matching "go" first.
             text.contains("next") -> Command.NEXT
             // skip / skipped / skipping
             text.contains("skip") -> Command.SKIP
-            // casual / easy / easier / modify / adjust
-            text.contains("casual") || text.contains("easy") || text.contains("modify") -> Command.CASUAL
+            // casual / chill / easy / easier / easiest / easy mode / modify / adjust
+            text.contains("casual") || text.contains("chill") ||
+                Regex("\\beas\\w*").containsMatchIn(text) || text.contains("modify") -> Command.CASUAL
+            // resume / resumed / resuming / go / start — generic, so it's checked last:
+            // these words also appear inside more specific commands above.
+            text.contains("resume") || text.contains("go") || text.contains("start") -> Command.RESUME
             else -> null
         }
     }

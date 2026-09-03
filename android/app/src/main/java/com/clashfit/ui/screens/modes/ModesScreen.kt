@@ -39,22 +39,25 @@ import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Panel
 import com.clashfit.ui.theme.Rule
 
-/** Sixteen tiles grouped by kind: SOLO, VERSUS, GROUP, FAMILY, CLINIC. */
+/** Every mode, grouped by kind: SOLO, VERSUS, GROUP, FAMILY, CLINIC. */
 @Composable
 fun ModesScreen(nav: NavHostController, modifier: Modifier = Modifier) {
     Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
         Headline("CHOOSE", accent = "YOUR FIGHT")
         SectionGap(24)
 
-        ModeSection("Solo", GameMode.grid.filter { it.kind == ModeKind.SOLO }, nav)
+        // Every mode of each kind, not just the sixteen tiles on the site's fixed home grid
+        // (GameMode.grid) — this screen is the full catalogue, e.g. Versus also includes
+        // TUG_OF_WAR and MIRROR_MATCH, and Group also includes RAID and TEAM_VS_TEAM.
+        ModeSection("Solo", GameMode.entries.filter { it.kind == ModeKind.SOLO }, nav)
         SectionGap()
-        ModeSection("Versus", GameMode.grid.filter { it.kind == ModeKind.VERSUS }, nav)
+        ModeSection("Versus", GameMode.entries.filter { it.kind == ModeKind.VERSUS }, nav)
         SectionGap()
-        ModeSection("Group", GameMode.grid.filter { it.kind == ModeKind.GROUP }, nav)
+        ModeSection("Group", GameMode.entries.filter { it.kind == ModeKind.GROUP }, nav)
         SectionGap()
-        ModeSection("Family", GameMode.grid.filter { it.kind == ModeKind.FAMILY }, nav)
+        ModeSection("Family", GameMode.entries.filter { it.kind == ModeKind.FAMILY }, nav)
         SectionGap()
-        ModeSection("Clinic", GameMode.grid.filter { it.kind == ModeKind.CLINIC }, nav)
+        ModeSection("Clinic", GameMode.entries.filter { it.kind == ModeKind.CLINIC }, nav)
         SectionGap()
     }
 }
