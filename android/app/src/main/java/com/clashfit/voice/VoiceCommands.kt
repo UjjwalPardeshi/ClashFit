@@ -33,8 +33,7 @@ class VoiceCommands(
     private val _commands = MutableSharedFlow<Command>(replay = 0)
     val commands: SharedFlow<Command> = _commands.asSharedFlow()
 
-    private var backoffMs = 100L
-    private val maxBackoffMs = 5000L
+    private var backoffMs = INITIAL_BACKOFF_MS
     private var listening = false
 
     init {
@@ -74,7 +73,7 @@ class VoiceCommands(
                     kotlinx.coroutines.delay(backoffMs)
                     startListening()
                 }
-                backoffMs = min(backoffMs * 2, maxBackoffMs)
+                backoffMs = nextBackoffMs(backoffMs)
             }
 
             override fun onResults(results: Bundle?) {
@@ -89,7 +88,7 @@ class VoiceCommands(
                 }
                 // Restart listening
                 startListening()
-                backoffMs = 100L // Reset backoff on success
+                backoffMs = INITIAL_BACKOFF_MS // Reset backoff on success
             }
 
             override fun onPartialResults(partialResults: Bundle?) {}
@@ -157,5 +156,18 @@ class VoiceCommands(
     fun shutdown() {
         stopListening()
         recognizer.destroy()
+    }
+
+    companion object {
+        internal const val INITIAL_BACKOFF_MS = 100L
+        internal const val MAX_BACKOFF_MS = 5000L
+
+        /**
+         * Pure backoff-doubling step, extracted from the restart-on-error logic above so it
+         * can be unit tested without an Android runtime. Doubles [currentBackoffMs], capped
+         * at [maxBackoffMs].
+         */
+        internal fun nextBackoffMs(currentBackoffMs: Long, maxBackoffMs: Long = MAX_BACKOFF_MS): Long =
+            min(currentBackoffMs * 2, maxBackoffMs)
     }
 }
