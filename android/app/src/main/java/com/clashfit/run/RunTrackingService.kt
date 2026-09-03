@@ -1,5 +1,7 @@
 package com.clashfit.run
 
+import android.content.pm.PackageManager
+
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Notification
@@ -36,6 +38,17 @@ import kotlin.math.sqrt
 
 /** Foreground location service tracking distance, pace, elevation, and cadence. */
 class RunTrackingService : LifecycleService(), LocationListener, SensorEventListener {
+
+    /** Lint-visible permission check: the screen asked already, but the service must not assume it. */
+    private fun requestUpdatesGuarded(locationRequest: LocationRequest) {
+        val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        if (fine == PackageManager.PERMISSION_GRANTED) {
+            fusedClient.requestLocationUpdates(locationRequest, this, mainLooper)
+        } else {
+            Log.w(TAG, "Location permission missing; the run cannot be tracked.")
+            stopSelf()
+        }
+    }
     private lateinit var fusedClient: FusedLocationProviderClient
     private lateinit var graph: AppGraph
     private lateinit var sensorManager: SensorManager
@@ -102,7 +115,7 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
             .setGranularity(Granularity.GRANULARITY_FINE)
             .build()
 
-        fusedClient.requestLocationUpdates(locationRequest, this, mainLooper)
+        requestUpdatesGuarded(locationRequest)
 
         // Register step counter, fallback to accelerometer
         val stepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
@@ -151,7 +164,7 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
             .setMinUpdateIntervalMillis(1000L)
             .build()
-        fusedClient.requestLocationUpdates(locationRequest, this, mainLooper)
+        requestUpdatesGuarded(locationRequest)
 
         // Register step counter, fallback to accelerometer
         val stepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
