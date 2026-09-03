@@ -1,7 +1,6 @@
 package com.clashfit.ui.screens.breathing
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,13 +39,11 @@ import com.clashfit.engine.summary.BreathPhase
 import com.clashfit.engine.summary.BreathTick
 import com.clashfit.engine.summary.BreathingSession
 import com.clashfit.engine.summary.recoveryFraction
+import com.clashfit.ui.components.AppCard
+import com.clashfit.ui.components.AppIcons
 import com.clashfit.ui.components.Bar
-import com.clashfit.ui.components.EmberButton
-import com.clashfit.ui.components.Headline
-import com.clashfit.ui.components.Kicker
-import com.clashfit.ui.components.Mark
-import com.clashfit.ui.components.OutlineButton
-import com.clashfit.ui.components.RuleRow
+import com.clashfit.ui.components.PrimaryButton
+import com.clashfit.ui.components.SecondaryButton
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.StatTile
 import com.clashfit.ui.components.Tag
@@ -53,13 +52,10 @@ import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.EmberDeep
 import com.clashfit.ui.theme.Fresh
 import com.clashfit.ui.theme.Ground
-import com.clashfit.ui.theme.Ground2
 import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.LocalReduceMotion
-import com.clashfit.ui.theme.Rule
-import com.clashfit.ui.theme.RuleSoft
 
 // The between-rounds recovery ritual. Pick a pattern, follow the square, bank the fatigue drop.
 // docs/22-HEALTH-DOMAINS.md §3 — breathing during rest recovers a fatigue band faster.
@@ -181,9 +177,9 @@ private fun Intro(
     onBegin: () -> Unit,
 ) {
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-        Kicker("Recovery")
+        Text("Recovery", style = MaterialTheme.typography.labelMedium, color = InkMuted)
         SectionGap(12)
-        Headline("BREATHE", accent = "Between rounds")
+        Text("Breathe between rounds", style = MaterialTheme.typography.displayMedium, color = Ink)
         SectionGap(12)
         Text(
             "Follow the square. Every cycle you finish pulls the fatigue band back before the next set.",
@@ -192,27 +188,29 @@ private fun Intro(
         )
         SectionGap(28)
 
-        Kicker("Pattern")
-        SectionGap(4)
+        Text("Pattern", style = MaterialTheme.typography.labelMedium, color = InkMuted)
+        SectionGap(12)
         Protocols.forEach { p ->
             val selected = p.id == protocol.id
-            RuleRow(
-                label = p.name,
+            AppCard(
+                Modifier.fillMaxWidth(),
                 onClick = { onProtocol(p.id) },
-                trailing = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Tag(p.detail, color = if (selected) Ember else InkMuted)
-                        Mark(size = 8, color = if (selected) Ember else RuleSoft)
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(p.name, style = MaterialTheme.typography.bodyMedium, color = Ink)
                     }
-                },
-            )
+                    Tag(p.detail, color = if (selected) Ember else InkMuted)
+                }
+            }
         }
         SectionGap(24)
 
-        Kicker("Cycles")
+        Text("Cycles", style = MaterialTheme.typography.labelMedium, color = InkMuted)
         SectionGap(12)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             CycleChoices.forEach { n ->
@@ -222,7 +220,7 @@ private fun Intro(
         }
         SectionGap(28)
 
-        EmberButton("Begin", Modifier.fillMaxWidth(), onClick = onBegin)
+        PrimaryButton("Begin", Modifier.fillMaxWidth(), onClick = onBegin)
         SectionGap(20)
     }
 }
@@ -243,8 +241,13 @@ private fun Running(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Kicker(protocol.name)
-            Text(mmss(remainingSec), style = MaterialTheme.typography.labelSmall, color = InkFaint)
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(protocol.name, style = MaterialTheme.typography.labelMedium, color = InkMuted)
+                Text(mmss(remainingSec), style = MaterialTheme.typography.labelSmall, color = InkFaint)
+            }
+            IconButton(onClick = onStop, modifier = Modifier) {
+                Icon(AppIcons.Close, contentDescription = "Exit", tint = Ink)
+            }
         }
         SectionGap(16)
 
@@ -262,15 +265,15 @@ private fun Running(
         ) {
             Text(
                 "${(tick.cycle + 1).coerceAtMost(cycles)} / $cycles",
-                style = MaterialTheme.typography.headlineSmall,
-                color = InkFaint,
+                style = MaterialTheme.typography.headlineMedium,
+                color = Ink,
             )
             Tag(protocol.detail)
         }
         SectionGap(12)
         Bar(overall)
         SectionGap(16)
-        OutlineButton("Stop", Modifier.fillMaxWidth(), onClick = onStop)
+        SecondaryButton("Stop", Modifier.fillMaxWidth(), onClick = onStop)
     }
 }
 
@@ -282,16 +285,18 @@ private fun Running(
 @Composable
 private fun BreathBox(tick: BreathTick, reduceMotion: Boolean, modifier: Modifier = Modifier) {
     val accent = tick.phase.accent()
-    Box(modifier.background(Ground2).border(1.dp, Rule), contentAlignment = Alignment.Center) {
-        if (reduceMotion) {
-            Box(
-                Modifier.fillMaxSize(0.72f).border(3.dp, accent).padding(24.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Bar(tick.phaseProgress, color = accent, height = 6)
+    AppCard(modifier, padding = 0) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            if (reduceMotion) {
+                Box(
+                    Modifier.fillMaxSize(0.72f).padding(24.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Bar(tick.phaseProgress, color = accent, height = 6)
+                }
+            } else {
+                Box(Modifier.fillMaxSize(scaleFor(tick)).background(accent))
             }
-        } else {
-            Box(Modifier.fillMaxSize(scaleFor(tick)).background(accent))
         }
     }
 }
@@ -300,9 +305,14 @@ private fun BreathBox(tick: BreathTick, reduceMotion: Boolean, modifier: Modifie
 private fun Done(completed: Int, target: Int, seconds: Int, onBack: () -> Unit, onAgain: () -> Unit) {
     val recovered = (recoveryFraction(completed, target) * 100f).toInt()
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-        Kicker("Recovery")
+        Text("Recovery", style = MaterialTheme.typography.labelMedium, color = InkMuted)
         SectionGap(12)
-        Headline("RECOVERED", accent = if (recovered > 0) "-$recovered% fatigue" else "Nothing banked")
+        Text("Recovered", style = MaterialTheme.typography.displayMedium, color = Ink, modifier = Modifier)
+        if (recovered > 0) {
+            Text("-$recovered% fatigue", style = MaterialTheme.typography.titleSmall, color = Fresh)
+        } else {
+            Text("Nothing banked", style = MaterialTheme.typography.titleSmall, color = InkMuted)
+        }
         SectionGap(12)
         Text(
             "$completed of $target cycles. The band drops that much before the next round.",
@@ -318,9 +328,9 @@ private fun Done(completed: Int, target: Int, seconds: Int, onBack: () -> Unit, 
         }
         SectionGap(28)
 
-        EmberButton("Back to the fight", Modifier.fillMaxWidth(), onClick = onBack)
+        PrimaryButton("Back to the fight", Modifier.fillMaxWidth(), onClick = onBack)
         SectionGap(12)
-        OutlineButton("Again", Modifier.fillMaxWidth(), onClick = onAgain)
+        SecondaryButton("Again", Modifier.fillMaxWidth(), onClick = onAgain)
         SectionGap(20)
     }
 }

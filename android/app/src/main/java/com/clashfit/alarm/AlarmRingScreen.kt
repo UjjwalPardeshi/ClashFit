@@ -7,11 +7,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
@@ -34,6 +36,7 @@ import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Panel
+import com.clashfit.ui.theme.PanelLift
 import com.clashfit.ui.theme.Rule
 import com.clashfit.ui.theme.Working
 import kotlinx.coroutines.delay
@@ -82,6 +85,8 @@ fun AlarmRingScreen(alarmId: Long, onDismissed: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(Ground)
+            // This draws over the lock screen, so nothing may sit under a notch or a gesture bar.
+            .safeDrawingPadding()
             .pointerInput(Unit) { detectTapGestures { } },
     ) {
         if (state == null) {
@@ -207,11 +212,11 @@ private fun RepCameraStage(
         modifier = Modifier
             .fillMaxHeight()
             .aspectRatio(1f)
-            .background(Panel)
-            .border(1.dp, Rule),
+            .clip(MaterialTheme.shapes.medium)
+            .background(PanelLift),
     ) {
         Text(
-            text = if (synthetic) "SYNTHETIC BODY" else "CAMERA ON",
+            text = if (synthetic) "Synthetic body" else "Camera on",
             style = MaterialTheme.typography.labelMedium,
             color = if (skeleton == null) InkFaint else Ember,
             modifier = Modifier
@@ -241,7 +246,7 @@ private fun RepCountdown(state: AlarmRingUiState) {
             textAlign = TextAlign.Center,
         )
         Text(
-            text = "${state.exerciseName.uppercase()} TO DISMISS",
+            text = "${state.exerciseName} to dismiss",
             style = MaterialTheme.typography.labelLarge,
             color = InkMuted,
             textAlign = TextAlign.Center,

@@ -12,24 +12,35 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.clashfit.core.model.FatigueBand
 import com.clashfit.core.model.Verdict
 import com.clashfit.ui.theme.Brass
 import com.clashfit.ui.theme.Clean
 import com.clashfit.ui.theme.Ember
+import com.clashfit.ui.theme.Eyebrow
 import com.clashfit.ui.theme.Fresh
 import com.clashfit.ui.theme.Gassed
 import com.clashfit.ui.theme.Ground
@@ -40,13 +51,17 @@ import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Motion
 import com.clashfit.ui.theme.Ok
 import com.clashfit.ui.theme.Panel
+import com.clashfit.ui.theme.PanelLift
 import com.clashfit.ui.theme.Rule
 import com.clashfit.ui.theme.RuleSoft
 import com.clashfit.ui.theme.Shallow
 import com.clashfit.ui.theme.Working
 
-// The shared kit. Square corners, hard rules, one accent. Every screen builds from these so
-// the app reads as one object, not eleven.
+/*
+ * The shared kit. Material 3 underneath, one accent on top. Every screen builds from these so
+ * the app reads as one object. Older names (EmberButton, PanelBox, RuleRow) stay as thin wrappers
+ * so nothing breaks while screens move over.
+ */
 
 fun FatigueBand.color(): Color = when (this) {
     FatigueBand.FRESH -> Fresh
@@ -61,16 +76,28 @@ fun Verdict.color(): Color = when (this) {
     Verdict.SHALLOW -> Shallow
 }
 
-/** Small uppercase label with the ember dash: the section eyebrow. */
+// ── text ──────────────────────────────────────────────────────────────────────────────────
+
+/** Small spaced eyebrow above a group. Quiet by default; pass a colour to make it a warning. */
 @Composable
-fun Kicker(text: String, modifier: Modifier = Modifier, color: Color = Ember) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Box(Modifier.width(18.dp).height(2.dp).background(color))
-        Text(text.uppercase(), style = MaterialTheme.typography.labelMedium, color = color)
+fun Kicker(text: String, modifier: Modifier = Modifier, color: Color = InkMuted) {
+    Text(text.uppercase(), modifier, style = Eyebrow, color = color)
+}
+
+/** A section title with an optional trailing action, the way every list screen names its groups. */
+@Composable
+fun SectionTitle(text: String, modifier: Modifier = Modifier, action: String? = null, onAction: (() -> Unit)? = null) {
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Text(text, style = MaterialTheme.typography.titleMedium, color = Ink)
+        if (action != null && onAction != null) {
+            TextButton(onClick = onAction, contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                Text(action, style = MaterialTheme.typography.labelLarge, color = Ember)
+            }
+        }
     }
 }
 
-/** Condensed uppercase headline; pass `accent` for the orange second line. */
+/** Condensed uppercase headline; pass `accent` for the ember second line. For heroes and fights. */
 @Composable
 fun Headline(text: String, modifier: Modifier = Modifier, accent: String? = null) {
     Column(modifier) {
@@ -80,58 +107,159 @@ fun Headline(text: String, modifier: Modifier = Modifier, accent: String? = null
 }
 
 @Composable
-fun EmberButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
-    Row(
-        modifier
-            .background(if (enabled) Ember else Panel)
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+fun BrassText(text: String, modifier: Modifier = Modifier) =
+    Text(text.uppercase(), modifier, style = MaterialTheme.typography.labelSmall, color = Brass)
+
+// ── buttons ───────────────────────────────────────────────────────────────────────────────
+
+/** The one filled button. A pill, 52dp tall, full width unless told otherwise. */
+@Composable
+fun PrimaryButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    icon: ImageVector? = null,
+    onClick: () -> Unit,
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
+        shape = CircleShape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Ember, contentColor = Ground,
+            disabledContainerColor = PanelLift, disabledContentColor = InkFaint,
+        ),
+        contentPadding = ButtonDefaults.ContentPadding,
     ) {
-        Text(text.uppercase(), style = MaterialTheme.typography.labelLarge, color = if (enabled) Ground else InkFaint)
-        Text("↗", style = MaterialTheme.typography.titleMedium, color = if (enabled) Ground else InkFaint)
+        if (icon != null) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(10.dp))
+        }
+        Text(text, style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+/** The tonal second choice next to a PrimaryButton. */
+@Composable
+fun SecondaryButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    icon: ImageVector? = null,
+    onClick: () -> Unit,
+) {
+    FilledTonalButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
+        shape = CircleShape,
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = PanelLift, contentColor = Ink,
+            disabledContainerColor = Panel, disabledContentColor = InkFaint,
+        ),
+    ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(10.dp))
+        }
+        Text(text, style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+/** A quiet inline action: "Forgot password?", "See all". */
+@Composable
+fun LinkButton(text: String, modifier: Modifier = Modifier, color: Color = Ember, onClick: () -> Unit) {
+    TextButton(onClick = onClick, modifier = modifier) {
+        Text(text, style = MaterialTheme.typography.labelLarge, color = color)
     }
 }
 
 @Composable
-fun OutlineButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Row(
-        modifier.border(1.dp, Rule).clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text.uppercase(), style = MaterialTheme.typography.labelLarge, color = Ink)
-        Text("↗", style = MaterialTheme.typography.titleMedium, color = Ink)
-    }
-}
+fun EmberButton(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) =
+    PrimaryButton(text, modifier, enabled, onClick = onClick)
 
-/** A bordered surface. Square by design. */
 @Composable
-fun PanelBox(modifier: Modifier = Modifier, padding: Int = 16, content: @Composable () -> Unit) {
-    Box(modifier.background(Panel).border(1.dp, Rule).padding(padding.dp)) { content() }
-}
+fun OutlineButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) =
+    SecondaryButton(text, modifier, onClick = onClick)
 
-/** Big number, small label. Reads at two metres. */
+// ── surfaces ──────────────────────────────────────────────────────────────────────────────
+
+/** A card. Tonal, rounded, no border. Tappable when given onClick. */
 @Composable
-fun StatTile(value: String, label: String, modifier: Modifier = Modifier, color: Color = Ink) {
-    PanelBox(modifier, padding = 12) {
-        Column {
-            Text(value, style = MaterialTheme.typography.headlineLarge, color = color)
-            Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = InkFaint)
+fun AppCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    container: Color = Panel,
+    padding: Int = 16,
+    content: @Composable () -> Unit,
+) {
+    val colors = CardDefaults.cardColors(containerColor = container, contentColor = Ink)
+    val shape = MaterialTheme.shapes.medium
+    if (onClick != null) {
+        Card(onClick = onClick, modifier = modifier, shape = shape, colors = colors) {
+            Box(Modifier.padding(padding.dp)) { content() }
+        }
+    } else {
+        Card(modifier = modifier, shape = shape, colors = colors) {
+            Box(Modifier.padding(padding.dp)) { content() }
         }
     }
 }
 
 @Composable
+fun PanelBox(modifier: Modifier = Modifier, padding: Int = 16, content: @Composable () -> Unit) =
+    AppCard(modifier, padding = padding, content = content)
+
+/** Big number, small label. Reads at two metres. */
+@Composable
+fun StatTile(value: String, label: String, modifier: Modifier = Modifier, color: Color = Ink) {
+    AppCard(modifier, padding = 14) {
+        Column {
+            Text(value, style = MaterialTheme.typography.headlineLarge, color = color)
+            Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = InkMuted, modifier = Modifier.padding(top = 4.dp))
+        }
+    }
+}
+
+/** A small tinted pill. */
+@Composable
 fun Tag(text: String, modifier: Modifier = Modifier, color: Color = InkMuted) {
+    val tint = if (color == InkMuted) PanelLift else color.copy(alpha = 0.16f)
     Text(
-        text.uppercase(),
-        modifier = modifier.border(1.dp, if (color == InkMuted) Rule else color).padding(horizontal = 8.dp, vertical = 4.dp),
-        style = MaterialTheme.typography.labelSmall,
-        color = color,
+        text,
+        modifier = modifier.clip(CircleShape).background(tint).padding(horizontal = 10.dp, vertical = 5.dp),
+        style = MaterialTheme.typography.labelMedium,
+        color = if (color == InkMuted) Ink else color,
     )
 }
+
+/** A circle with a glyph in it, for the front of a list row. */
+@Composable
+fun IconBubble(icon: ImageVector, modifier: Modifier = Modifier, tint: Color = Ember, size: Int = 40) {
+    Box(
+        modifier.size(size.dp).clip(CircleShape).background(tint.copy(alpha = 0.14f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size((size * 0.5f).dp))
+    }
+}
+
+/** Initials in a coloured circle. The player's face until they pick one. */
+@Composable
+fun Avatar(name: String, modifier: Modifier = Modifier, size: Int = 56, color: Color = Ember) {
+    val initials = name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }.take(2)
+        .joinToString("") { it.first().uppercaseChar().toString() }.ifEmpty { "?" }
+    Box(modifier.size(size.dp).clip(CircleShape).background(color), contentAlignment = Alignment.Center) {
+        Text(
+            initials,
+            style = if (size >= 48) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleMedium,
+            color = Ground,
+        )
+    }
+}
+
+// ── data ──────────────────────────────────────────────────────────────────────────────────
 
 /** Four pips with a named band, never a percentage. */
 @Composable
@@ -140,47 +268,74 @@ fun FatiguePips(band: FatigueBand, modifier: Modifier = Modifier, showLabel: Boo
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             repeat(4) { i ->
-                Box(Modifier.width(22.dp).height(6.dp).background(if (i < lit) band.color() else RuleSoft))
+                Box(Modifier.width(22.dp).height(6.dp).clip(CircleShape).background(if (i < lit) band.color() else RuleSoft))
             }
         }
         if (showLabel) Text(band.label, style = MaterialTheme.typography.labelMedium, color = band.color())
     }
 }
 
-/** Thin horizontal bar with an overshooting spring, for HP and progress. */
+/** Thin rounded bar with an overshooting spring, for HP and progress. */
 @Composable
 fun Bar(fraction: Float, modifier: Modifier = Modifier, color: Color = Ember, track: Color = RuleSoft, height: Int = 8) {
     val f by animateFloatAsState(fraction.coerceIn(0f, 1f), animationSpec = Motion.hpBar, label = "bar")
-    Box(modifier.fillMaxWidth().height(height.dp).background(track)) {
-        Box(Modifier.fillMaxWidth(f).height(height.dp).background(color))
+    Box(modifier.fillMaxWidth().height(height.dp).clip(CircleShape).background(track)) {
+        Box(Modifier.fillMaxWidth(f).height(height.dp).clip(CircleShape).background(color))
     }
 }
 
-/** One rule-separated row: label left, value right. The library and settings are lists of these. */
-@Suppress("ModifierParameter") // many call sites pass `value` positionally; reordering modifier first would break them
+/** One row: label left, value right, 56dp tall. Group several inside a ListGroup. */
+@Suppress("ModifierParameter") // call sites pass `value` positionally
 @Composable
-fun RuleRow(label: String, value: String? = null, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, trailing: (@Composable RowScope.() -> Unit)? = null) {
-    Column(modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)) {
-        Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(label, style = MaterialTheme.typography.bodyLarge, color = Ink)
-            if (trailing != null) trailing() else if (value != null) Text(value, style = MaterialTheme.typography.labelSmall, color = InkFaint)
-        }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(Rule))
+fun RuleRow(
+    label: String,
+    value: String? = null,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    trailing: (@Composable RowScope.() -> Unit)? = null,
+) {
+    Row(
+        modifier.fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .heightIn(min = 56.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = Ink, modifier = Modifier.weight(1f))
+        if (trailing != null) trailing() else if (value != null) Text(value, style = MaterialTheme.typography.bodyMedium, color = InkMuted)
     }
 }
 
+/** A card that stacks rows with hairlines between them: the settings-group pattern. */
 @Composable
-fun SectionGap(height: Int = 28) = Spacer(Modifier.height(height.dp))
+fun ListGroup(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(containerColor = Panel, contentColor = Ink),
+    ) { Column { content() } }
+}
 
-/** The brand mark: an ember square. */
 @Composable
-fun Mark(size: Int = 12, color: Color = Ember) = Box(Modifier.size(size.dp).background(color))
+fun SectionGap(height: Int = 24) = Spacer(Modifier.height(height.dp))
 
-// EmptyState and LoadingState live in Shell.kt with the rest of the screen structure.
-
+/** The brand mark: an ember dot. */
 @Composable
-fun BrassText(text: String, modifier: Modifier = Modifier) =
-    Text(text.uppercase(), modifier, style = MaterialTheme.typography.labelSmall, color = Brass)
+fun Mark(size: Int = 12, color: Color = Ember) = Box(Modifier.size(size.dp).clip(CircleShape).background(color))
 
-/** Clip helper for square-cornered images and canvases. */
-fun Modifier.square(): Modifier = this.clip(RectangleShape)
+/** A hairline inside a card. */
+@Composable
+fun InnerDivider(modifier: Modifier = Modifier) =
+    Box(modifier.fillMaxWidth().padding(horizontal = 16.dp).height(1.dp).background(RuleSoft))
+
+/** Kept for the camera overlays that clip a square. */
+fun Modifier.square(): Modifier = this.clip(androidx.compose.ui.graphics.RectangleShape)
+
+/** Centred body copy for empty and error states. */
+@Composable
+fun CenteredCopy(text: String, modifier: Modifier = Modifier, color: Color = InkMuted) =
+    Text(text, modifier.fillMaxWidth(), style = MaterialTheme.typography.bodyMedium, color = color, textAlign = TextAlign.Center)
+
+/** A one-pixel border for the rare element that needs an outline instead of a tone. */
+fun Modifier.outlined(): Modifier = this.border(1.dp, Rule, androidx.compose.foundation.shape.RoundedCornerShape(16.dp))

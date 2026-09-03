@@ -1,37 +1,47 @@
 package com.clashfit.alarm
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
 import com.clashfit.AppGraph
 import com.clashfit.data.AlarmEntity
-import com.clashfit.ui.components.EmberButton
+import com.clashfit.ui.components.AppIcons
+import com.clashfit.ui.components.EmptyState
+import com.clashfit.ui.components.InnerDivider
+import com.clashfit.ui.components.ListGroup
+import com.clashfit.ui.components.PrimaryButton
 import com.clashfit.ui.components.ScreenScaffold
+import com.clashfit.ui.components.SectionGap
+import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkFaint
-import com.clashfit.ui.theme.Panel
+import com.clashfit.ui.theme.InkMuted
+import com.clashfit.ui.theme.PanelLift
 import com.clashfit.ui.theme.Rule
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
 
 /**
  * Screen showing all alarms with enable/disable toggles and next-ring time.
@@ -42,49 +52,44 @@ fun AlarmsScreen(graph: AppGraph, navController: NavHostController) {
     val dao = graph.db.alarms()
     val alarms by dao.all().collectAsStateWithLifecycle(initialValue = emptyList())
 
-    ScreenScaffold(title = "Alarms", onBack = { navController.navigateUp() }) { padding ->
+    ScreenScaffold(title = "Wake-up alarm", onBack = { navController.navigateUp() }) { padding ->
         Column(
             modifier = Modifier
-                .fillMaxSize().padding(padding)
-                .background(Ground)
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .fillMaxWidth()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(top = 4.dp, bottom = 28.dp),
         ) {
             if (alarms.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Panel)
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "NO ALARMS YET",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = InkFaint
-                    )
-                }
+                EmptyState(
+                    title = "No alarms yet",
+                    body = "Create one to wake up on workout days",
+                    icon = AppIcons.Bell,
+                )
             } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    items(alarms, key = { it.id }) { alarm ->
+                ListGroup {
+                    alarms.forEachIndexed { index, alarm ->
                         AlarmListItem(
                             alarm = alarm,
                             dao = dao,
                             scope = scope,
                             onEdit = { navController.navigate(com.clashfit.ui.nav.AlarmEdit(alarm.id)) }
                         )
+                        if (index < alarms.size - 1) {
+                            InnerDivider()
+                        }
                     }
                 }
             }
 
-            EmberButton(
-                text = "NEW ALARM",
+            SectionGap(24)
+            PrimaryButton(
+                text = "Add alarm",
                 modifier = Modifier.fillMaxWidth(),
                 onClick = { navController.navigate(com.clashfit.ui.nav.AlarmEdit(0L)) }
             )
+            SectionGap(8)
         }
     }
 }
@@ -97,27 +102,28 @@ private fun AlarmListItem(
     onEdit: () -> Unit
 ) {
     val context = LocalContext.current
-    Box(
+
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Panel)
-            .border(1.dp, Rule)
-            .padding(16.dp)
+            .padding(vertical = 2.dp)
     ) {
-        Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = String.format(Locale.US, "%02d:%02d", alarm.hour, alarm.minute),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Ink
-                )
-
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f).padding(end = 16.dp)) {
+                Text(String.format(Locale.US, "%02d:%02d", alarm.hour, alarm.minute), style = MaterialTheme.typography.bodyLarge, color = Ink)
+                Text(buildSupportingText(alarm), style = MaterialTheme.typography.bodySmall, color = InkMuted)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { onEdit() }, modifier = Modifier.size(40.dp)) {
+                    Icon(AppIcons.Chevron, contentDescription = "Edit", tint = InkFaint, modifier = Modifier.size(18.dp))
+                }
                 Switch(
                     checked = alarm.enabled,
                     onCheckedChange = { enabled ->
@@ -129,97 +135,35 @@ private fun AlarmListItem(
                                 AlarmScheduler.cancel(context, alarm.id)
                             }
                         }
-                    }
-                )
-            }
-
-            // Label
-            if (alarm.label.isNotEmpty()) {
-                Text(
-                    text = alarm.label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Ink,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-            }
-
-            // Days and exercise
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = formatDaysMask(alarm.daysMask),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = InkFaint
-                )
-
-                Text(
-                    text = alarm.exerciseId.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = InkFaint
-                )
-
-                Text(
-                    text = "${alarm.reps} REPS",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = InkFaint
-                )
-            }
-
-            // Next ring time and edit button
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Next: ${getNextRingTime(alarm)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = InkFaint
-                )
-
-                Text(
-                    text = "EDIT ↗",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFFFF4F1F),
-                    modifier = Modifier
-                        .pointerInput(Unit) {
-                            detectTapGestures(onTap = { onEdit() })
-                        }
-                        .clickable { onEdit() }
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Ground, checkedTrackColor = Ember,
+                        uncheckedThumbColor = InkMuted, uncheckedTrackColor = PanelLift, uncheckedBorderColor = Rule,
+                    ),
                 )
             }
         }
     }
 }
 
+@Composable
+private fun buildSupportingText(alarm: AlarmEntity): String {
+    val dayText = formatDaysMask(alarm.daysMask)
+    val exerciseText = alarm.exerciseId
+    val repsText = "${alarm.reps} rep" + (if (alarm.reps != 1) "s" else "")
+
+    return "$dayText · $exerciseText · $repsText"
+}
+
 private fun formatDaysMask(daysMask: Int): String {
-    if (daysMask == 0) return "ONE-SHOT"
+    if (daysMask == 0) return "One-shot"
 
     val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
     val selected = days.filterIndexed { i, _ -> (daysMask and (1 shl i)) != 0 }
 
     return if (selected.size == 7) {
-        "DAILY"
+        "Daily"
     } else {
         selected.joinToString(" ")
     }
 }
-
-private fun getNextRingTime(alarm: AlarmEntity): String {
-    // Simplified: just show the time. A full implementation would calculate the next occurrence.
-    val cal = Calendar.getInstance()
-    cal.set(Calendar.HOUR_OF_DAY, alarm.hour)
-    cal.set(Calendar.MINUTE, alarm.minute)
-
-    val sdf = SimpleDateFormat("EEE", Locale.getDefault())
-    val dayName = sdf.format(cal.time)
-
-    return "$dayName @ ${String.format(Locale.US, "%02d:%02d", alarm.hour, alarm.minute)}"
-}
-
-// Import the necessary function

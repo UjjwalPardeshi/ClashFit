@@ -328,12 +328,12 @@ class SessionViewModel(
             sessionId
         }
         Log.i(TAG, "session $id saved: ${all.size} reps, ${s.playerDamage} damage, $reason")
-        bank(id, all, formMean, now, s.playerDamage)
+        bank(id, all, formMean, now, s.playerDamage, reason, startedAtMs)
         _finished.tryEmit(id)
     }
 
-    /** Streaks, bests, ladders, the session's own ghost, and the roster turn — none of it blocks the summary. */
-    private suspend fun bank(sessionId: Long, all: List<RepRecord>, formMean: Float, now: Long, damage: Int) {
+    /** Streaks, bests, ladders, the session's own ghost, the roster turn, and meta-progression — none of it blocks the summary. */
+    private suspend fun bank(sessionId: Long, all: List<RepRecord>, formMean: Float, now: Long, damage: Int, reason: EndReason, startedAtMs: Long) {
         val outcome = withContext(Dispatchers.IO) {
             runCatching {
                 ProgressionRepository(graph.db).onSessionFinished(
@@ -343,6 +343,29 @@ class SessionViewModel(
             }.onFailure { Log.w(TAG, "progression not banked", it) }.getOrNull()
         }
         _progress.value = outcome
+        val metaReward = withContext(Dispatchers.IO) {
+            runCatching {
+                val cleanReps = all.count { it.verdict == Verdict.CLEAN }
+                val family = all.firstOrNull()?.family
+                val facts = com.clashfit.meta.SessionFacts(
+                    sessionId = sessionId,
+                    atMs = now,
+                    mode = args.mode.name,
+                    exerciseId = args.exerciseId,
+                    reps = all.size,
+                    cleanReps = cleanReps,
+                    formMean = formMean,
+                    damage = damage,
+                    won = reason == EndReason.BOSS_DOWN || reason == EndReason.GAME_WON,
+                    casual = args.casual,
+                    durationSec = ((now - startedAtMs) / 1000).toInt(),
+                    streakAfter = outcome?.streak?.current ?: 0,
+                    newPersonalBest = outcome?.newBests?.isNotEmpty() ?: false,
+                    family = family?.name,
+                )
+                graph.meta.onSessionFinished(facts).also { graph.rewards.put(sessionId, it) }
+            }.onFailure { Log.w(TAG, "meta not banked", it) }.getOrNull()
+        }
         if (all.size >= MIN_GHOST_REPS && !args.casual && args.mode.kind == ModeKind.SOLO) {
             val t0 = all.first().tStartMs
             val ghost = GhostData(

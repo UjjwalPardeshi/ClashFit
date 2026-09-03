@@ -5,10 +5,10 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +28,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,12 +42,12 @@ import com.clashfit.data.GhostEntity
 import com.clashfit.data.Prefs
 import com.clashfit.engine.core.ChallengeCard
 import com.clashfit.engine.core.ChallengeCodec
-import com.clashfit.ui.components.EmberButton
 import com.clashfit.ui.components.ScreenScaffold
-import com.clashfit.ui.components.Kicker
-import com.clashfit.ui.components.OutlineButton
-import com.clashfit.ui.components.PanelBox
+import com.clashfit.ui.components.AppCard
+import com.clashfit.ui.components.PrimaryButton
+import com.clashfit.ui.components.SecondaryButton
 import com.clashfit.ui.components.SectionGap
+import com.clashfit.ui.components.SectionTitle
 import com.clashfit.ui.components.Tag
 import com.clashfit.ui.nav.Challenge
 import com.clashfit.ui.nav.Session
@@ -60,12 +59,12 @@ import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.MonoReadout
 import com.clashfit.ui.theme.Panel
-import com.clashfit.ui.theme.Rule
+import com.clashfit.ui.theme.PanelLift
 import kotlinx.coroutines.launch
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 
-/** A challenge is a string. No account, no server, no network permission — just text. */
+/** A challenge encodes a target or ghost. Camera frames, pose landmarks, and rep timelines stay on device; only scores, names, and levels sync. Peer-to-peer racing over Nearby needs no server. */
 private const val MAX_GHOST_EVENTS = 48
 private const val DEFAULT_TARGET = 20
 private const val MIN_TARGET = 1
@@ -143,7 +142,7 @@ private fun MakeOneSection(
 ) {
     val context = LocalContext.current
 
-    Kicker("MAKE ONE")
+    SectionTitle("Make a dare")
     SectionGap(12)
 
     ChipRow(
@@ -169,23 +168,23 @@ private fun MakeOneSection(
     if (code == null) {
         Text("Nothing to encode yet.", style = MaterialTheme.typography.bodyMedium, color = InkFaint)
     } else {
-        PanelBox(Modifier.fillMaxWidth(), padding = 12) {
+        AppCard(Modifier.fillMaxWidth(), container = PanelLift, padding = 12) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(code, style = MonoReadout, color = Ink)
-                Tag("${code.length} chars")
+                Text("${code.length} characters", style = MaterialTheme.typography.labelSmall, color = InkFaint)
             }
         }
         SectionGap(12)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            EmberButton("SHARE", Modifier.weight(1f)) { shareText(context, code) }
-            OutlineButton("COPY", Modifier.weight(1f)) { copyText(context, code) }
+            PrimaryButton("Share", Modifier.weight(1f)) { shareText(context, code) }
+            SecondaryButton("Copy", Modifier.weight(1f)) { copyText(context, code) }
         }
     }
 }
 
 @Composable
 private fun TargetStepper(target: Int, onTarget: (Int) -> Unit) {
-    PanelBox(Modifier.fillMaxWidth(), padding = 12) {
+    AppCard(Modifier.fillMaxWidth(), container = Panel, padding = 16) {
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -194,7 +193,7 @@ private fun TargetStepper(target: Int, onTarget: (Int) -> Unit) {
             StepperKey("−") { onTarget(target - 1) }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(target.toString(), style = MaterialTheme.typography.headlineLarge, color = Ember)
-                Text("REPS TO BEAT", style = MaterialTheme.typography.labelSmall, color = InkFaint)
+                Text("reps to beat", style = MaterialTheme.typography.labelSmall, color = InkFaint)
             }
             StepperKey("+") { onTarget(target + 1) }
         }
@@ -203,15 +202,19 @@ private fun TargetStepper(target: Int, onTarget: (Int) -> Unit) {
 
 @Composable
 private fun StepperKey(glyph: String, onClick: () -> Unit) {
-    Text(
-        glyph,
-        style = MaterialTheme.typography.headlineMedium,
-        color = Ink,
+    Box(
         modifier = Modifier
-            .border(1.dp, Rule)
+            .background(PanelLift, shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 8.dp),
-    )
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            glyph,
+            style = MaterialTheme.typography.headlineMedium,
+            color = Ember,
+        )
+    }
 }
 
 @Composable
@@ -220,7 +223,7 @@ private fun GhostSummary(ghost: GhostEntity?, exercises: Map<String, ExerciseSpe
         Text("No ghost to send yet. Finish a fight first.", style = MaterialTheme.typography.bodyMedium, color = InkFaint)
         return
     }
-    PanelBox(Modifier.fillMaxWidth(), padding = 12) {
+    AppCard(Modifier.fillMaxWidth(), container = Panel, padding = 12) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(ghost.name, style = MaterialTheme.typography.bodyLarge, color = Ink)
             Text(exercises.title(ghost.exerciseId), style = MaterialTheme.typography.labelSmall, color = InkFaint)
@@ -240,19 +243,18 @@ private fun GotOneSection(onAccept: (String) -> AcceptResult) {
     var pasted by remember { mutableStateOf("") }
     var result by remember { mutableStateOf<AcceptResult?>(null) }
 
-    Kicker("GOT ONE?")
+    SectionTitle("Accept a dare")
     SectionGap(12)
 
     OutlinedTextField(
         value = pasted,
         onValueChange = { pasted = it; result = null },
         modifier = Modifier.fillMaxWidth(),
-        shape = RectangleShape,
         placeholder = { Text("CF1:…", style = MonoReadout, color = InkFaint) },
         textStyle = MonoReadout,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Ember,
-            unfocusedBorderColor = Rule,
+            unfocusedBorderColor = Panel,
             focusedTextColor = Ink,
             unfocusedTextColor = Ink,
             cursorColor = Ember,
@@ -260,7 +262,7 @@ private fun GotOneSection(onAccept: (String) -> AcceptResult) {
     )
     SectionGap(12)
 
-    EmberButton("ACCEPT", Modifier.fillMaxWidth(), enabled = pasted.isNotBlank()) {
+    PrimaryButton("Accept", Modifier.fillMaxWidth(), enabled = pasted.isNotBlank()) {
         result = onAccept(pasted.trim())
     }
 
@@ -285,16 +287,19 @@ private fun ChipRow(items: List<Pair<String, String>>, selectedId: String, onSel
     ) {
         items.forEach { (id, label) ->
             val on = id == selectedId
-            Text(
-                label.uppercase(),
-                style = MaterialTheme.typography.labelMedium,
-                color = if (on) Ground else InkMuted,
+            Box(
                 modifier = Modifier
-                    .background(if (on) Ember else Panel)
-                    .border(1.dp, if (on) Ember else Rule)
+                    .background(if (on) Ember else PanelLift, shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
                     .clickable { onSelect(id) }
                     .padding(horizontal = 12.dp, vertical = 10.dp),
-            )
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (on) Ground else Ink,
+                )
+            }
         }
     }
 }

@@ -5,10 +5,7 @@ import android.os.Build
 import android.content.Context
 import android.content.pm.PackageManager
 import android.speech.tts.TextToSpeech
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,20 +25,26 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.clashfit.AppGraph
+import com.clashfit.ui.components.AppCard
+import com.clashfit.ui.components.AppIcons
+import com.clashfit.ui.components.IconBubble
+import com.clashfit.ui.components.InnerDivider
+import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.SectionGap
+import com.clashfit.ui.components.Tag
 import com.clashfit.ui.theme.Fresh
-import com.clashfit.ui.theme.Heavy
+import com.clashfit.ui.theme.Gassed
 import com.clashfit.ui.theme.Ink
-import com.clashfit.ui.theme.InkFaint
-import com.clashfit.ui.theme.Panel
-import com.clashfit.ui.theme.Rule
+import com.clashfit.ui.theme.InkMuted
+import com.clashfit.ui.theme.Working
 import java.io.File
 import java.util.Locale
 
@@ -78,11 +81,35 @@ fun PreflightScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier 
 
     ScreenScaffold(title = "Camera check", onBack = { nav.navigateUp() }) { padding ->
         Column(modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
-            Kicker("System Checks")
+            val passCount = checks.count { it.status == PreflightStatus.PASS }
+            val failCount = checks.count { it.status == PreflightStatus.FAIL }
+            val isReady = failCount == 0 && passCount == checks.size
+
+            AppCard(Modifier.fillMaxWidth(), padding = 16) {
+                Column {
+                    Text(
+                        if (isReady) "Referee ready" else "Not ready yet",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Ink,
+                    )
+                    Text(
+                        "$passCount of ${checks.size} checks passed",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = InkMuted,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+            }
+
+            SectionGap(20)
+            Kicker("System checks")
             SectionGap(12)
 
-            checks.forEach { check ->
-                PreflightRow(check)
+            ListGroup {
+                checks.forEachIndexed { index, check ->
+                    PreflightRow(check)
+                    if (index < checks.size - 1) InnerDivider()
+                }
             }
 
             SectionGap(20)
@@ -95,35 +122,31 @@ private fun PreflightRow(check: PreflightCheck) {
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Panel)
-            .border(1.dp, Rule)
-            .padding(12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
+        IconBubble(statusIcon(check.status), tint = statusColor(check.status))
         Column(Modifier.weight(1f)) {
-            Text(check.name.uppercase(), style = MaterialTheme.typography.labelMedium, color = Ink)
-            Text(check.description, style = MaterialTheme.typography.bodySmall, color = InkFaint, modifier = Modifier.padding(top = 4.dp))
+            Text(check.name, style = MaterialTheme.typography.bodyLarge, color = Ink)
+            if (check.description.isNotEmpty()) {
+                Text(check.description, style = MaterialTheme.typography.bodySmall, color = InkMuted, modifier = Modifier.padding(top = 2.dp))
+            }
         }
-        Box(
-            Modifier
-                .background(statusColor(check.status))
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                check.status.name,
-                style = MaterialTheme.typography.labelSmall,
-                color = Ink
-            )
-        }
+        Tag(check.status.name, color = statusColor(check.status))
     }
+}
+
+private fun statusIcon(status: PreflightStatus): ImageVector = when (status) {
+    PreflightStatus.PASS -> AppIcons.Check
+    PreflightStatus.WARN -> AppIcons.Bolt
+    PreflightStatus.FAIL -> AppIcons.Close
 }
 
 private fun statusColor(status: PreflightStatus) = when (status) {
     PreflightStatus.PASS -> Fresh
-    PreflightStatus.WARN -> Heavy
-    PreflightStatus.FAIL -> Heavy
+    PreflightStatus.WARN -> Working
+    PreflightStatus.FAIL -> Gassed
 }
 
 private data class PreflightCheck(

@@ -7,66 +7,146 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.clashfit.AppGraph
+import com.clashfit.data.SessionEntity
+import com.clashfit.ui.components.AppCard
 import com.clashfit.ui.components.AppIcons
 import com.clashfit.ui.components.EmptyState
-import com.clashfit.ui.components.Kicker
+import com.clashfit.ui.components.InnerDivider
+import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.NavRow
+import com.clashfit.ui.components.ProgressRing
 import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SectionGap
-import com.clashfit.ui.components.StatTile
+import com.clashfit.ui.components.SectionTitle
+import com.clashfit.ui.components.StatStrip
+import com.clashfit.ui.components.WeekBars
 import com.clashfit.ui.nav.Character
 import com.clashfit.ui.nav.Ghosts
 import com.clashfit.ui.nav.History
 import com.clashfit.ui.nav.Streaks
-import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Fresh
-import com.clashfit.ui.theme.InkFaint
+import com.clashfit.ui.theme.Ink
+import com.clashfit.ui.theme.InkMuted
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.TextStyle
+import java.util.Locale
 
-/** The Progress tab: the numbers that carry across sessions, and the way into each record. */
+/** The Progress tab: the week at a glance, the streak, and the way into every record. */
 @Composable
 fun ProgressScreen(graph: AppGraph, nav: NavHostController) {
     val streakFlow = remember(graph) { graph.db.streak().observe() }
     val countFlow = remember(graph) { graph.db.sessions().count() }
+    val sessionsFlow = remember(graph) { graph.db.sessions().recent(limit = 120) }
     val streak by streakFlow.collectAsStateWithLifecycle(initialValue = null)
     val sessionCount by countFlow.collectAsStateWithLifecycle(initialValue = 0)
+    val sessions by sessionsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
+
+    val zone = remember { ZoneId.systemDefault() }
+    val week = remember(sessions) { lastSevenDays(sessions, zone) }
     val current = streak?.current ?: 0
     val best = streak?.best ?: 0
 
     ScreenScaffold(title = "Progress") { padding ->
         Column(
             Modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 8.dp),
+                .padding(horizontal = 20.dp).padding(bottom = 28.dp),
         ) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                StatTile("$current", "Day streak", Modifier.weight(1f), color = if (current > 0) Fresh else InkFaint)
-                StatTile("$best", "Best", Modifier.weight(1f), color = Ember)
-                StatTile("$sessionCount", "Sessions", Modifier.weight(1f))
+            AppCard(Modifier.fillMaxWidth(), padding = 18) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                    ProgressRing(fraction = (current % 7) / 7f, size = 84, stroke = 8, color = Fresh) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("$current", style = MaterialTheme.typography.headlineMedium, color = Ink)
+                            Text("DAYS", style = MaterialTheme.typography.labelSmall, color = InkMuted)
+                        }
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            when {
+                                current == 0 -> "No streak yet"
+                                current == 1 -> "Day one"
+                                else -> "$current-day streak"
+                            },
+                            style = MaterialTheme.typography.titleLarge, color = Ink,
+                        )
+                        Text(
+                            if (current == 0) "One set today starts it. Rest days are protected."
+                            else "Best is $best. One protected rest day a week, and it never shows a number you lost.",
+                            style = MaterialTheme.typography.bodySmall, color = InkMuted, modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                }
             }
+
+            SectionGap(16)
+            AppCard(Modifier.fillMaxWidth()) {
+                Column {
+                    SectionTitle("This week")
+                    Text(
+                        "${week.sessions} sessions · ${week.reps} reps · ${week.damage} damage",
+                        style = MaterialTheme.typography.bodySmall, color = InkMuted, modifier = Modifier.padding(top = 2.dp, bottom = 14.dp),
+                    )
+                    WeekBars(week.perDay, labels = week.labels)
+                }
+            }
+
+            SectionGap(20)
+            StatStrip(listOf("$sessionCount" to "Sessions", "$best" to "Best streak", "${week.cleanPct}%" to "Clean this week"))
 
             if (sessionCount == 0) {
                 EmptyState(
-                    title = "Nothing yet",
+                    title = "Nothing on the board yet",
                     body = "Your first set writes the first line here. Every rep after that is measured against it.",
                     icon = AppIcons.Chart,
                 )
             }
 
             SectionGap(24)
-            Kicker("Records")
-            SectionGap(4)
-            NavRow("Streak", { nav.navigate(Streaks) }, supporting = "Rest days count. They are training.")
-            NavRow("History", { nav.navigate(History) }, value = "$sessionCount")
-            NavRow("Character", { nav.navigate(Character) }, supporting = "What the sets have built")
-            NavRow("Ghosts", { nav.navigate(Ghosts) }, supporting = "Your own best, saved to race against")
-            SectionGap(32)
+            SectionTitle("Records")
+            SectionGap(10)
+            ListGroup {
+                NavRow("Streak", { nav.navigate(Streaks) }, icon = AppIcons.Chart, supporting = "The calendar, freezes and rest days")
+                InnerDivider()
+                NavRow("History", { nav.navigate(History) }, icon = AppIcons.Grid, value = "$sessionCount")
+                InnerDivider()
+                NavRow("Character", { nav.navigate(Character) }, icon = AppIcons.Person, supporting = "What the sets have built")
+                InnerDivider()
+                NavRow("Ghosts", { nav.navigate(Ghosts) }, icon = AppIcons.Bolt, supporting = "Your own best, saved to race against")
+            }
         }
     }
+}
+
+private data class WeekSummary(
+    val perDay: List<Float>,
+    val labels: List<String>,
+    val sessions: Int,
+    val reps: Int,
+    val damage: Int,
+    val cleanPct: Int,
+)
+
+/** Reps per day for the last seven days, today on the right. */
+private fun lastSevenDays(sessions: List<SessionEntity>, zone: ZoneId): WeekSummary {
+    val today = LocalDate.now(zone)
+    val days = (6 downTo 0).map { today.minusDays(it.toLong()) }
+    val byDay = sessions.groupBy { Instant.ofEpochMilli(it.startedAtMs).atZone(zone).toLocalDate() }
+    val inWeek = days.flatMap { byDay[it].orEmpty() }
+    val perDay = days.map { d -> byDay[d].orEmpty().sumOf { it.totalReps }.toFloat() }
+    val labels = days.map { it.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.getDefault()) }
+    val reps = inWeek.sumOf { it.totalReps }
+    val cleanPct = if (inWeek.isEmpty()) 0 else (inWeek.map { it.formMean }.average() * 100).toInt()
+    return WeekSummary(perDay, labels, inWeek.size, reps, inWeek.sumOf { it.totalDamage }, cleanPct)
 }

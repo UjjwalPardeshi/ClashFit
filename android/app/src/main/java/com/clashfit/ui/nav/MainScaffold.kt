@@ -1,16 +1,23 @@
 package com.clashfit.ui.nav
 
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination
@@ -46,7 +53,8 @@ enum class Tab(val label: String, val icon: ImageVector, val root: Route, val ow
         "You", AppIcons.Person, You,
         setOf(You::class, Settings::class, Privacy::class, Preflight::class, Challenge::class,
             RunHome::class, RunActive::class, RunSummary::class, Alarms::class, AlarmEdit::class,
-            Breathing::class, Posture::class, Desk::class, Clinic::class),
+            Breathing::class, Posture::class, Desk::class, Clinic::class,
+            Leaderboard::class, Friends::class, Achievements::class, Account::class, Weekly::class),
     );
 
     companion object {
@@ -60,11 +68,20 @@ enum class Tab(val label: String, val icon: ImageVector, val root: Route, val ow
  * drill. The bar hides and the screen takes the whole display.
  */
 private val IMMERSIVE: Set<KClass<out Route>> = setOf(
-    Splash::class, Onboarding::class, Session::class, RunActive::class,
+    Splash::class, Onboarding::class, SignUp::class, SignIn::class, ResetPassword::class, ProfileSetup::class, CameraPrimer::class,
+    Session::class, RunActive::class,
     DuelLobby::class, RaidRoom::class, Roster::class, Breathing::class, Posture::class,
 )
 
 private fun NavDestination.isImmersive(): Boolean = IMMERSIVE.any { hasRoute(it) }
+
+/**
+ * Material's compact-to-medium breakpoint. Below it a bottom bar is right; at and above it the
+ * navigation belongs down the side. This matters more than it used to: an app targeting SDK 36
+ * or later does not get to lock orientation on a large screen, so the tablet and the unfolded
+ * foldable will be landscape whatever the manifest says.
+ */
+private val WIDE_BREAKPOINT = 600.dp
 
 /**
  * Switch tabs the way Android expects: each tab keeps its own stack, tapping a tab you are
@@ -78,7 +95,7 @@ fun NavHostController.switchTo(tab: Tab) {
     }
 }
 
-/** The Scaffold that wraps every routed screen. */
+/** The shell that wraps every routed screen: a bottom bar on a phone, a rail on anything wider. */
 @Composable
 fun MainScaffold(nav: NavHostController, content: @Composable (PaddingValues) -> Unit) {
     val entry by nav.currentBackStackEntryAsState()
@@ -86,24 +103,34 @@ fun MainScaffold(nav: NavHostController, content: @Composable (PaddingValues) ->
     val current = Tab.owning(destination)
     val showBar = destination != null && !destination.isImmersive()
 
-    // Zero content insets here: the NavigationBar pads itself against the system bar, each
-    // screen's own top bar pads against the status bar, and AppNavHost consumes what this
-    // Scaffold hands down so the nested one never pads the same edge twice.
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            if (showBar) {
-                NavigationBar(containerColor = Ground2, contentColor = InkMuted, tonalElevation = 0.dp) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val wide = maxWidth >= WIDE_BREAKPOINT
+
+        // Zero content insets on this Scaffold: the bar and the rail pad themselves against the
+        // system bars, each screen's own top bar pads against the status bar, and AppNavHost
+        // consumes what this hands down so the nested scaffold never pads the same edge twice.
+        val scaffold: @Composable (@Composable () -> Unit) -> Unit = { bottom ->
+            Scaffold(
+                containerColor = MaterialTheme.colorScheme.background,
+                contentColor = MaterialTheme.colorScheme.onBackground,
+                contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                bottomBar = bottom,
+                content = content,
+            )
+        }
+
+        if (wide && showBar) {
+            Row(Modifier.fillMaxSize()) {
+                // NavigationRail applies its own system-bar insets.
+                NavigationRail(containerColor = Ground2, contentColor = InkMuted) {
                     Tab.entries.forEach { tab ->
-                        NavigationBarItem(
+                        NavigationRailItem(
                             selected = tab == current,
                             onClick = { nav.switchTo(tab) },
                             icon = { Icon(tab.icon, contentDescription = tab.label) },
-                            label = { Text(tab.label.uppercase(), style = MaterialTheme.typography.labelMedium) },
+                            label = { Text(tab.label, style = MaterialTheme.typography.labelMedium) },
                             alwaysShowLabel = true,
-                            colors = NavigationBarItemDefaults.colors(
+                            colors = NavigationRailItemDefaults.colors(
                                 selectedIconColor = Ember,
                                 selectedTextColor = Ember,
                                 indicatorColor = Panel,
@@ -113,8 +140,31 @@ fun MainScaffold(nav: NavHostController, content: @Composable (PaddingValues) ->
                         )
                     }
                 }
+                scaffold {}
             }
-        },
-        content = content,
-    )
+        } else {
+            scaffold {
+                if (showBar) {
+                    NavigationBar(containerColor = Ground2, contentColor = InkMuted, tonalElevation = 0.dp) {
+                        Tab.entries.forEach { tab ->
+                            NavigationBarItem(
+                                selected = tab == current,
+                                onClick = { nav.switchTo(tab) },
+                                icon = { Icon(tab.icon, contentDescription = tab.label) },
+                                label = { Text(tab.label, style = MaterialTheme.typography.labelMedium) },
+                                alwaysShowLabel = true,
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = Ember,
+                                    selectedTextColor = Ember,
+                                    indicatorColor = Panel,
+                                    unselectedIconColor = InkMuted,
+                                    unselectedTextColor = InkMuted,
+                                ),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

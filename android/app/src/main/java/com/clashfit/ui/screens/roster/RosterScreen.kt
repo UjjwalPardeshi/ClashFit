@@ -15,10 +15,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -33,6 +33,8 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -48,12 +50,15 @@ import com.clashfit.engine.games.Roster as GameRoster
 import com.clashfit.engine.games.RosterMode
 import com.clashfit.engine.games.RosterPlayer
 import com.clashfit.engine.games.RosterState
+import com.clashfit.ui.components.AppCard
+import com.clashfit.ui.components.Avatar
 import com.clashfit.ui.components.EmberButton
 import com.clashfit.ui.components.EmptyState
 import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.InnerDivider
 import com.clashfit.ui.components.Kicker
+import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.OutlineButton
-import com.clashfit.ui.components.PanelBox
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.StatTile
 import com.clashfit.ui.components.Tag
@@ -63,6 +68,10 @@ import com.clashfit.ui.nav.Session
 import com.clashfit.ui.theme.Brass
 import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Ground
+import com.clashfit.ui.theme.Gold
+import com.clashfit.ui.theme.Silver
+import com.clashfit.ui.theme.Bronze
+import com.clashfit.ui.theme.PanelLift
 import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
@@ -227,12 +236,12 @@ private fun NameRow(
             shape = RectangleShape,
             singleLine = true,
             textStyle = MaterialTheme.typography.bodyLarge,
-            placeholder = { Text("PLAYER ${index + 1}", style = MaterialTheme.typography.bodyLarge, color = InkFaint) },
+            placeholder = { Text("Player ${index + 1}", style = MaterialTheme.typography.bodyLarge, color = InkFaint) },
         )
         if (teamed) TeamToggle(team, onTeam)
         if (removable) {
             Text(
-                "×", Modifier.border(1.dp, Rule).clickable(onClick = onRemove).padding(horizontal = 14.dp, vertical = 12.dp),
+                "×", Modifier.clickable(onClick = onRemove).padding(horizontal = 14.dp, vertical = 12.dp),
                 style = MaterialTheme.typography.titleLarge, color = InkMuted,
             )
         }
@@ -280,13 +289,17 @@ private fun Board(
     Kicker("Hand the phone to")
     SectionGap(12)
     if (current == null) {
-        EmptyState("NOBODY LEFT", "Everyone is out. End the game to crown the winner.")
+        EmptyState("Nobody left", "Everyone is out. End the game to crown the winner.")
     } else {
-        Text(current.name.uppercase(), style = bigName(current.name), color = Ink)
-        val team = current.team
-        if (team != null) {
-            SectionGap(10)
-            Tag("Team $team", color = Ember)
+        AppCard(Modifier.fillMaxWidth(), padding = 20) {
+            Column(Modifier.fillMaxWidth()) {
+                Text(current.name, style = bigName(current.name), color = Ink)
+                val team = current.team
+                if (team != null) {
+                    SectionGap(10)
+                    Tag("Team $team", color = Ember)
+                }
+            }
         }
     }
     SectionGap(14)
@@ -309,7 +322,7 @@ private fun Board(
     OutlineButton("Skip", Modifier.fillMaxWidth(), onClick = onSkip)
     SectionGap(18)
     Text(
-        "END GAME", Modifier.fillMaxWidth().clickable(onClick = onEnd).padding(vertical = 10.dp),
+        "End game", Modifier.fillMaxWidth().clickable(onClick = onEnd).padding(vertical = 10.dp),
         style = MaterialTheme.typography.labelMedium, color = InkFaint, textAlign = TextAlign.Center,
     )
 }
@@ -322,13 +335,17 @@ private fun Finished(state: RosterState, onAgain: () -> Unit, onHome: () -> Unit
     Kicker("Winner")
     SectionGap(12)
     if (winner == null) {
-        EmptyState("NO WINNER", "Nobody put a rep on the board.")
+        EmptyState("No winner", "Nobody put a rep on the board.")
     } else {
-        Text(winner.name.uppercase(), style = bigName(winner.name), color = Ember)
-        val team = winner.team
-        if (team != null) {
-            SectionGap(10)
-            Tag("Team $team", color = Ember)
+        AppCard(Modifier.fillMaxWidth(), padding = 20) {
+            Column(Modifier.fillMaxWidth()) {
+                Text(winner.name, style = bigName(winner.name), color = Ember)
+                val team = winner.team
+                if (team != null) {
+                    SectionGap(10)
+                    Tag("Team $team", color = Ember)
+                }
+            }
         }
         SectionGap(20)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -359,11 +376,11 @@ private fun Leaderboard(players: List<RosterPlayer>, modifier: Modifier = Modifi
     Column(modifier.fillMaxWidth()) {
         Kicker("Standings")
         SectionGap(12)
-        PanelBox(Modifier.fillMaxWidth(), padding = 4) {
-            LazyColumn(Modifier.fillMaxWidth().heightIn(max = 420.dp)) {
-                itemsIndexed(ranked, key = { _, p -> p.id }) { i, p ->
-                    LeaderRow(i + 1, p, if (reduce) Modifier else Modifier.animateItem())
-                }
+        ListGroup(Modifier.fillMaxWidth()) {
+            ranked.forEachIndexed { i, p ->
+                // animateItem is a LazyItemScope extension; these rows live in a plain Column.
+                LeaderRow(i + 1, p, Modifier)
+                if (i < ranked.size - 1) InnerDivider()
             }
         }
     }
@@ -372,28 +389,35 @@ private fun Leaderboard(players: List<RosterPlayer>, modifier: Modifier = Modifi
 @Composable
 private fun LeaderRow(rank: Int, player: RosterPlayer, modifier: Modifier = Modifier) {
     val dim = player.out
-    Column(modifier.fillMaxWidth()) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+    val medal: Color? = when (rank) { 1 -> Gold; 2 -> Silver; 3 -> Bronze; else -> null }
+    Row(
+        modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            Modifier.size(26.dp).clip(CircleShape).background(if (dim) PanelLift else medal ?: PanelLift),
+            contentAlignment = Alignment.Center,
         ) {
-            Text("$rank", Modifier.width(20.dp), style = MaterialTheme.typography.labelSmall, color = if (dim) InkFaint else Ember)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(player.name.uppercase(), style = MaterialTheme.typography.titleSmall, color = if (dim) InkFaint else Ink, maxLines = 1)
-                val reason = player.outReason
-                if (dim && reason != null) {
-                    Text(reason.uppercase(), style = MaterialTheme.typography.labelSmall, color = InkFaint)
-                }
+            Text("$rank", style = MaterialTheme.typography.labelLarge, color = if (medal != null && !dim) Ground else InkMuted)
+        }
+        Avatar(player.name, size = 40)
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(player.name, style = MaterialTheme.typography.titleMedium, color = if (dim) InkFaint else Ink, maxLines = 1)
+                player.team?.let { Tag(it, color = if (dim) InkFaint else Brass) }
             }
-            val team = player.team
-            if (team != null) Tag(team, color = if (dim) InkMuted else Brass)
-            Text("${player.damage}", style = MaterialTheme.typography.headlineSmall, color = if (dim) InkFaint else Ink)
+            val reason = player.outReason
             Text(
-                "${player.reps} REPS", Modifier.width(60.dp),
-                style = MaterialTheme.typography.labelSmall, color = InkFaint, textAlign = TextAlign.End,
+                if (dim && reason != null) reason else "${player.reps} reps",
+                style = MaterialTheme.typography.bodySmall,
+                color = InkFaint,
             )
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(RuleSoft))
+        Column(horizontalAlignment = Alignment.End) {
+            Text("${player.damage}", style = MaterialTheme.typography.headlineSmall, color = if (dim) InkFaint else Ink)
+            Text("damage", style = MaterialTheme.typography.labelSmall, color = InkFaint)
+        }
     }
 }
 

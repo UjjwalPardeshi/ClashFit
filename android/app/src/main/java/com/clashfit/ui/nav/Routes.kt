@@ -6,13 +6,27 @@ import kotlinx.serialization.Serializable
 sealed interface Route
 
 @Serializable data object Splash : Route
+
+// ── first run: welcome → account → profile → camera ─────────────────────────
 @Serializable data object Onboarding : Route
+@Serializable data object SignUp : Route
+@Serializable data object SignIn : Route
+@Serializable data object ResetPassword : Route
+@Serializable data object ProfileSetup : Route
+@Serializable data object CameraPrimer : Route
 
 // ── the four tab roots ───────────────────────────────────────────────────────
 @Serializable data object Home : Route       // Train
 @Serializable data object Library : Route
 @Serializable data object Progress : Route
 @Serializable data object You : Route
+
+// ── social and progression ───────────────────────────────────────────────────
+@Serializable data object Leaderboard : Route
+@Serializable data object Friends : Route
+@Serializable data object Achievements : Route
+@Serializable data object Account : Route
+@Serializable data object Weekly : Route
 
 @Serializable data object Modes : Route
 @Serializable data class ExercisePicker(val mode: String) : Route

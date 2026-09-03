@@ -1,13 +1,10 @@
 package com.clashfit.ui.screens.ghosts
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -31,22 +28,20 @@ import com.clashfit.core.config.ExerciseSpec
 import com.clashfit.core.config.GhostData
 import com.clashfit.core.model.GameMode
 import com.clashfit.data.GhostEntity
-import com.clashfit.ui.components.EmberButton
+import com.clashfit.ui.components.AppIcons
 import com.clashfit.ui.components.EmptyState
+import com.clashfit.ui.components.IconBubble
+import com.clashfit.ui.components.InnerDivider
+import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.Kicker
-import com.clashfit.ui.components.PanelBox
 import com.clashfit.ui.components.SectionGap
-import com.clashfit.ui.components.Tag
 import com.clashfit.ui.nav.Ghosts
 import com.clashfit.ui.nav.Session
 import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Ink
-import com.clashfit.ui.theme.InkFaint
-import com.clashfit.ui.theme.Rule
+import com.clashfit.ui.theme.InkMuted
 import kotlinx.coroutines.launch
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 /**
  * Every ghost you can race: the ones you recorded, and the pacers that ship in the APK.
@@ -68,41 +63,39 @@ fun GhostsScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = M
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {
-            Kicker("YOUR GHOSTS")
+            Kicker("Your ghosts")
             SectionGap(12)
             if (saved.isEmpty()) {
                 EmptyState("Nothing saved", "Finish a fight and it becomes a ghost.")
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    saved.forEach { ghost ->
+                ListGroup {
+                    saved.forEachIndexed { index, ghost ->
                         SavedGhostRow(
                             ghost = ghost,
                             exerciseTitle = exercises.title(ghost.exerciseId),
                             onRace = { nav.navigate(raceRoute(ghost.exerciseId, ghost.id)) },
                             onDelete = { scope.launch { dao.delete(ghost) } },
                         )
+                        if (index < saved.size - 1) InnerDivider()
                     }
                 }
             }
 
-            SectionGap()
+            SectionGap(26)
 
-            Kicker("SHIPPED")
+            Kicker("Shipped pacers")
             SectionGap(12)
             if (shipped.isEmpty()) {
-                Text(
-                    "No pacers bundled with this build.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = InkFaint,
-                )
+                EmptyState("No pacers bundled", "Add more challenge codes to unlock pacers.")
             } else {
-                Column {
-                    shipped.forEach { (id, data) ->
+                ListGroup {
+                    shipped.entries.forEachIndexed { index, (id, data) ->
                         ShippedGhostRow(
                             data = data,
                             exerciseTitle = exercises.title(data.meta.exercise),
                             onRace = { nav.navigate(raceRoute(data.meta.exercise, id)) },
                         )
+                        if (index < shipped.size - 1) InnerDivider()
                     }
                 }
             }
@@ -122,52 +115,33 @@ private fun SavedGhostRow(
 ) {
     var confirming by remember(ghost.id) { mutableStateOf(false) }
 
-    PanelBox(Modifier.fillMaxWidth(), padding = 12) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(ghost.name, style = MaterialTheme.typography.bodyLarge, color = Ink)
-                    Text(
-                        exerciseTitle,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = InkFaint,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        ghost.reps.toString(),
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = Ember,
-                    )
-                    Text("REPS", style = MaterialTheme.typography.labelSmall, color = InkFaint)
-                }
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Tag("${ghost.totalDamage} DMG")
-                Tag(formatDay(ghost.createdAtMs))
-            }
-
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                EmberButton("RACE", Modifier.weight(1f), onClick = onRace)
-                Text(
-                    if (confirming) "SURE?" else "DELETE",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (confirming) Ember else InkFaint,
-                    modifier = Modifier
-                        .clickable { if (confirming) onDelete() else confirming = true }
-                        .padding(horizontal = 12.dp, vertical = 16.dp),
-                )
-            }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onRace)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconBubble(AppIcons.Bolt)
+        Column(Modifier.weight(1f)) {
+            Text(ghost.name, style = MaterialTheme.typography.bodyLarge, color = Ink)
+            Text(
+                "$exerciseTitle · ${ghost.reps} reps",
+                style = MaterialTheme.typography.bodySmall,
+                color = InkMuted,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                if (confirming) "Sure?" else "Delete",
+                style = MaterialTheme.typography.labelMedium,
+                color = if (confirming) Ember else InkMuted,
+                modifier = Modifier
+                    .clickable(enabled = true) { if (confirming) onDelete() else confirming = true }
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            )
         }
     }
 }
@@ -175,34 +149,30 @@ private fun SavedGhostRow(
 /** A bundled pacer. Read-only: you race it, you never delete it. */
 @Composable
 private fun ShippedGhostRow(data: GhostData, exerciseTitle: String, onRace: () -> Unit) {
-    Column(Modifier.fillMaxWidth().clickable(onClick = onRace)) {
-        Row(
-            Modifier.fillMaxWidth().padding(vertical = 14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(data.meta.name, style = MaterialTheme.typography.bodyLarge, color = Ink)
-                Text(
-                    exerciseTitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = InkFaint,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    "${data.meta.reps} REPS",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Ember,
-                )
-                Text("→", style = MaterialTheme.typography.titleMedium, color = Ink)
-            }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onRace)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconBubble(AppIcons.Bolt)
+        Column(Modifier.weight(1f)) {
+            Text(data.meta.name, style = MaterialTheme.typography.bodyLarge, color = Ink)
+            Text(
+                "$exerciseTitle · ${data.meta.reps} reps",
+                style = MaterialTheme.typography.bodySmall,
+                color = InkMuted,
+                modifier = Modifier.padding(top = 2.dp),
+            )
         }
-        Box(Modifier.fillMaxWidth().height(1.dp).background(Rule))
+        Text(
+            "Race",
+            style = MaterialTheme.typography.labelMedium,
+            color = Ember,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+        )
     }
 }
 
@@ -213,12 +183,6 @@ private fun raceRoute(exerciseId: String, ghostId: String): Session =
 /** The exercise index carries the display name; fall back to the raw id rather than blank. */
 internal fun Map<String, ExerciseSpec>.title(exerciseId: String): String =
     this[exerciseId]?.name ?: exerciseId
-
-private val DayFormat: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("d MMM yyyy").withZone(ZoneId.systemDefault())
-
-private fun formatDay(atMs: Long): String =
-    runCatching { DayFormat.format(java.time.Instant.ofEpochMilli(atMs)) }.getOrDefault("")
 
 fun NavGraphBuilder.ghostsRoutes(graph: AppGraph, nav: NavHostController) {
     composable<Ghosts> { GhostsScreen(graph, nav) }

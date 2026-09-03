@@ -1,5 +1,6 @@
 package com.clashfit.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
@@ -25,25 +27,27 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.Ink
+import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
+import com.clashfit.ui.theme.PanelLift
 import com.clashfit.ui.theme.Rule
 import com.clashfit.ui.theme.RuleSoft
 
 /*
  * The screen shell. Every destination that is not a full-screen experience (a fight, a run,
- * an alarm ringing) sits inside one of these: a Material top bar with the screen's name, a
- * back affordance when there is somewhere to go back to, and the content padded clear of it.
- *
- * Kept separate from Kit.kt on purpose. Kit is the visual language; this is structure.
+ * an alarm ringing) sits inside one of these: a top bar with the screen's name, a back arrow
+ * when there is somewhere to go back to, and the content padded clear of it.
  */
 
-/** The app's top bar: the display face, ink on ground, an ember back glyph. */
+/** The app's top bar. Ink on ground, the back glyph in ember. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClashTopBar(
@@ -53,18 +57,11 @@ fun ClashTopBar(
 ) {
     TopAppBar(
         title = {
-            Text(
-                title.uppercase(),
-                style = MaterialTheme.typography.headlineSmall,
-                color = Ink,
-                maxLines = 1,
-            )
+            Text(title, style = MaterialTheme.typography.titleLarge, color = Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
         },
         navigationIcon = {
             if (onBack != null) {
-                IconButton(onClick = onBack) {
-                    Icon(AppIcons.Back, contentDescription = "Back", tint = Ember)
-                }
+                IconButton(onClick = onBack) { Icon(AppIcons.Back, contentDescription = "Back", tint = Ember) }
             }
         },
         actions = actions,
@@ -87,54 +84,55 @@ fun ScreenScaffold(
     title: String,
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
+    bottomBar: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit,
 ) {
     Scaffold(
         topBar = { ClashTopBar(title, onBack, actions) },
+        bottomBar = bottomBar,
         containerColor = Ground,
         contentColor = Ink,
         content = content,
     )
 }
 
-/** The one-pixel rule the whole app draws lists with. */
+/** An icon in the top bar's action slot, with the 48dp target IconButton guarantees. */
+@Composable
+fun BarAction(icon: ImageVector, contentDescription: String, tint: Color = Ink, onClick: () -> Unit) {
+    IconButton(onClick = onClick) { Icon(icon, contentDescription = contentDescription, tint = tint) }
+}
+
+/** The one-pixel rule between things that are not in the same card. */
 @Composable
 fun AppDivider(modifier: Modifier = Modifier) {
     HorizontalDivider(modifier, thickness = 1.dp, color = Rule)
 }
 
-/** A settings row with a real switch. The switch alone guarantees the 48dp target. */
+/** A settings row with a real switch. Lives inside a ListGroup. */
 @Composable
 fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit, supporting: String? = null) {
-    Column(Modifier.fillMaxWidth()) {
-        Row(
-            Modifier.fillMaxWidth().padding(vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f).padding(end = 16.dp)) {
-                Text(label, style = MaterialTheme.typography.bodyLarge, color = Ink)
-                if (supporting != null) {
-                    Text(supporting, style = MaterialTheme.typography.bodySmall, color = InkMuted)
-                }
-            }
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange,
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Ground,
-                    checkedTrackColor = Ember,
-                    uncheckedThumbColor = InkMuted,
-                    uncheckedTrackColor = RuleSoft,
-                    uncheckedBorderColor = Rule,
-                ),
-            )
+    Row(
+        Modifier.fillMaxWidth().clickable { onCheckedChange(!checked) }
+            .heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f).padding(end = 16.dp)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge, color = Ink)
+            if (supporting != null) Text(supporting, style = MaterialTheme.typography.bodySmall, color = InkMuted)
         }
-        AppDivider()
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Ground, checkedTrackColor = Ember,
+                uncheckedThumbColor = InkMuted, uncheckedTrackColor = PanelLift, uncheckedBorderColor = Rule,
+            ),
+        )
     }
 }
 
-/** A navigation row: icon, label, optional value, chevron. 56dp tall. */
+/** A navigation row: optional icon bubble, label, supporting line, value, chevron. Lives inside a ListGroup. */
 @Composable
 fun NavRow(
     label: String,
@@ -142,17 +140,22 @@ fun NavRow(
     icon: ImageVector? = null,
     value: String? = null,
     supporting: String? = null,
+    tint: Color = Ember,
 ) {
-    RuleRow(
-        label = label,
-        onClick = onClick,
-        trailing = {
-            if (value != null) {
-                Text(value, style = MaterialTheme.typography.labelSmall, color = InkMuted, modifier = Modifier.padding(end = 10.dp))
-            }
-            Icon(AppIcons.Chevron, contentDescription = null, tint = InkMuted, modifier = Modifier.size(18.dp))
-        },
-    )
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick)
+            .heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) IconBubble(icon, tint = tint)
+        Column(Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge, color = Ink)
+            if (supporting != null) Text(supporting, style = MaterialTheme.typography.bodySmall, color = InkMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+        if (value != null) Text(value, style = MaterialTheme.typography.bodyMedium, color = InkMuted)
+        Icon(AppIcons.Chevron, contentDescription = null, tint = InkFaint, modifier = Modifier.size(18.dp))
+    }
 }
 
 /** Centred, with an optional glyph above and an action below. Never a bare spinner. */
@@ -165,36 +168,21 @@ fun EmptyState(
     action: (@Composable () -> Unit)? = null,
 ) {
     Column(
-        modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 40.dp),
+        modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 36.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        if (icon != null) {
-            Box(Modifier.size(56.dp), contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = null, tint = Ember, modifier = Modifier.size(32.dp))
-            }
-        }
-        Text(title.uppercase(), style = MaterialTheme.typography.headlineMedium, color = Ink, textAlign = TextAlign.Center)
+        if (icon != null) IconBubble(icon, size = 64)
+        Text(title, style = MaterialTheme.typography.titleLarge, color = Ink, textAlign = TextAlign.Center)
         Text(body, style = MaterialTheme.typography.bodyMedium, color = InkMuted, textAlign = TextAlign.Center)
-        if (action != null) {
-            Box(Modifier.padding(top = 14.dp)) { action() }
-        }
+        if (action != null) Box(Modifier.padding(top = 12.dp)) { action() }
     }
 }
 
 @Composable
 fun LoadingState(message: String = "Loading", modifier: Modifier = Modifier) {
-    Column(
-        modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
+    Column(modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         CircularProgressIndicator(color = Ember, trackColor = RuleSoft, strokeWidth = 3.dp, modifier = Modifier.size(32.dp))
-        Text(
-            message.uppercase(),
-            style = MaterialTheme.typography.labelMedium,
-            color = InkMuted,
-            modifier = Modifier.padding(top = 16.dp),
-        )
+        Text(message, style = MaterialTheme.typography.labelLarge, color = InkMuted, modifier = Modifier.padding(top = 16.dp))
     }
 }

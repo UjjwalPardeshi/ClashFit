@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,9 +47,12 @@ import androidx.compose.ui.unit.sp
 import com.clashfit.core.model.CombatState
 import com.clashfit.core.model.FatigueBand
 import com.clashfit.core.model.Verdict
+import com.clashfit.ui.components.AppCard
+import com.clashfit.ui.components.AppIcons
 import com.clashfit.ui.components.Bar
 import com.clashfit.ui.components.FatiguePips
 import com.clashfit.ui.components.color
+import androidx.compose.material3.Icon
 import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.EmberDeep
 import com.clashfit.ui.theme.Ground
@@ -69,7 +73,7 @@ import kotlinx.coroutines.launch
 fun BossHeader(combat: CombatState, modifier: Modifier = Modifier, timeLeftMs: Long? = null) {
     Column(modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-            Text(combat.bossName.uppercase(), style = MaterialTheme.typography.headlineMedium, color = Ink)
+            Text(combat.bossName, style = MaterialTheme.typography.headlineMedium, color = Ink)
             if (timeLeftMs != null) {
                 Text(formatClock(timeLeftMs), style = MaterialTheme.typography.headlineMedium, color = Ember)
             } else {
@@ -80,9 +84,9 @@ fun BossHeader(combat: CombatState, modifier: Modifier = Modifier, timeLeftMs: L
         Bar(fraction = combat.hpPct, color = hpColor(combat.hpPct), height = 10)
         Spacer(Modifier.height(6.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(combat.phaseLabel.uppercase(), style = MaterialTheme.typography.labelSmall, color = InkFaint)
-            if (combat.staggered) Text("STAGGERED", style = MaterialTheme.typography.labelSmall, color = Heavy)
-            if (combat.mercyActive) Text("FINISH IT", style = MaterialTheme.typography.labelSmall, color = Ember)
+            Text(combat.phaseLabel, style = MaterialTheme.typography.labelSmall, color = InkFaint)
+            if (combat.staggered) Text("Staggered", style = MaterialTheme.typography.labelSmall, color = Heavy)
+            if (combat.mercyActive) Text("Finish it", style = MaterialTheme.typography.labelSmall, color = Ember)
         }
     }
 }
@@ -145,35 +149,41 @@ fun DamageNumeral(hit: HudEvent.Hit?, modifier: Modifier = Modifier) {
 
 /** Rep count with a scale pop on change. 80–140sp is the point. */
 @Composable
-fun RepCounter(reps: Int, modifier: Modifier = Modifier, label: String = "REPS") {
+fun RepCounter(reps: Int, modifier: Modifier = Modifier, label: String = "Reps") {
     val pop = remember { Animatable(1f) }
     var last by remember { mutableStateOf(reps) }
     LaunchedEffect(reps) {
         if (reps != last) { last = reps; pop.snapTo(1.18f); pop.animateTo(1f, Motion.counterPop) }
     }
-    Column(modifier.background(Panel).border(1.dp, Rule).padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("$reps", modifier = Modifier.scale(pop.value), fontSize = 84.sp, lineHeight = 84.sp, fontWeight = FontWeight.Black, fontFamily = MaterialTheme.typography.displayLarge.fontFamily, color = Ink)
-        Text(label, style = MaterialTheme.typography.labelMedium, color = InkFaint)
+    AppCard(modifier, padding = 12) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("$reps", modifier = Modifier.scale(pop.value), fontSize = 84.sp, lineHeight = 84.sp, fontWeight = FontWeight.Black, fontFamily = MaterialTheme.typography.displayLarge.fontFamily, color = Ink)
+            Text(label, style = MaterialTheme.typography.labelMedium, color = InkFaint)
+        }
     }
 }
 
 @Composable
 fun ComboRail(multiplier: Float, streak: Int, modifier: Modifier = Modifier) {
-    Column(modifier.background(Panel).border(1.dp, Rule).padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("×${"%.1f".format(multiplier)}", fontSize = 48.sp, lineHeight = 48.sp, fontWeight = FontWeight.Black, fontFamily = MaterialTheme.typography.displayLarge.fontFamily, color = if (multiplier > 1f) Ember else Ink)
-        Row(horizontalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.padding(vertical = 4.dp)) {
-            repeat(10) { i -> Box(Modifier.width(8.dp).height(4.dp).background(if (i < streak.coerceAtMost(10)) Ember else Rule)) }
+    AppCard(modifier, padding = 12) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("×${"%.1f".format(multiplier)}", fontSize = 48.sp, lineHeight = 48.sp, fontWeight = FontWeight.Black, fontFamily = MaterialTheme.typography.displayLarge.fontFamily, color = if (multiplier > 1f) Ember else Ink)
+            Row(horizontalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.padding(vertical = 4.dp)) {
+                repeat(10) { i -> Box(Modifier.width(8.dp).height(4.dp).background(if (i < streak.coerceAtMost(10)) Ember else Rule)) }
+            }
+            Text("Combo", style = MaterialTheme.typography.labelMedium, color = InkFaint)
         }
-        Text("COMBO", style = MaterialTheme.typography.labelMedium, color = InkFaint)
     }
 }
 
 @Composable
 fun FatigueTile(band: FatigueBand, modifier: Modifier = Modifier) {
-    Column(modifier.background(Panel).border(1.dp, Rule).padding(horizontal = 16.dp, vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        FatiguePips(band, showLabel = false)
-        Text(band.label, style = MaterialTheme.typography.headlineSmall, color = band.color())
-        Text("FATIGUE", style = MaterialTheme.typography.labelMedium, color = InkFaint)
+    AppCard(modifier, padding = 12) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FatiguePips(band, showLabel = false)
+            Text(band.label, style = MaterialTheme.typography.headlineSmall, color = band.color())
+            Text("Fatigue", style = MaterialTheme.typography.labelMedium, color = InkFaint)
+        }
     }
 }
 
@@ -218,8 +228,8 @@ fun CalibrationOverlay(cue: String?, progress: Float, tooFar: Boolean, tooClose:
             }
         }
         Column(Modifier.align(Alignment.BottomCenter).padding(24.dp).background(Ground.copy(alpha = 0.7f)).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            if (tooFar) Text("▲", fontSize = 40.sp, color = Ember)
-            if (tooClose) Text("▼", fontSize = 40.sp, color = Ember)
+            if (tooFar) Text("Too far", fontSize = 28.sp, style = MaterialTheme.typography.labelMedium, color = Ember)
+            if (tooClose) Text("Too close", fontSize = 28.sp, style = MaterialTheme.typography.labelMedium, color = Ember)
             Text(cue ?: "Step into frame.", fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.Medium, color = Ink)
         }
     }
@@ -229,17 +239,21 @@ fun CalibrationOverlay(cue: String?, progress: Float, tooFar: Boolean, tooClose:
 @Composable
 fun FramingLostBanner(cue: String?, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxWidth().background(Ember).padding(20.dp)) {
-        Text((cue ?: "I lost you — step back into frame.").uppercase(), fontSize = 28.sp, lineHeight = 32.sp, fontWeight = FontWeight.Bold, color = Ground)
+        Text(cue ?: "I lost you. Step back into frame.", fontSize = 28.sp, lineHeight = 32.sp, fontWeight = FontWeight.Bold, color = Ground)
     }
 }
 
 /** The one mid-set tap target. Deliberately large; the player is at two metres. */
 @Composable
 fun PauseTarget(paused: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
-    Box(
-        modifier.size(72.dp).background(if (paused) Ember else Panel).border(1.dp, Rule).clickable(onClick = onToggle),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(if (paused) "▶" else "❚❚", fontSize = 26.sp, color = if (paused) Ground else Ink)
+    AppCard(modifier.size(72.dp), padding = 0, container = if (paused) Ember else Panel, onClick = onToggle) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Icon(
+                if (paused) AppIcons.Check else AppIcons.Close,
+                contentDescription = if (paused) "Resume" else "Pause",
+                tint = if (paused) Ground else Ink,
+                modifier = Modifier.size(32.dp)
+            )
+        }
     }
 }

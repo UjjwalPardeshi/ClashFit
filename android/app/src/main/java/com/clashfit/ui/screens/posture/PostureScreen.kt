@@ -1,12 +1,10 @@
 package com.clashfit.ui.screens.posture
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,18 +40,15 @@ import com.clashfit.engine.summary.PostureScorer
 import com.clashfit.data.PostureSampleEntity
 import com.clashfit.perception.CameraPermissionGate
 import com.clashfit.perception.MediaPipePoseSource
-import com.clashfit.ui.components.EmberButton
-import com.clashfit.ui.components.Headline
-import com.clashfit.ui.components.Kicker
-import com.clashfit.ui.components.PanelBox
+import com.clashfit.ui.components.AppCard
+import com.clashfit.ui.components.AppIcons
+import com.clashfit.ui.components.PrimaryButton
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.StatTile
 import com.clashfit.ui.theme.Ember
-import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
-import com.clashfit.ui.theme.LocalReduceMotion
 import com.clashfit.ui.theme.Rule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -62,21 +59,31 @@ import kotlinx.coroutines.withContext
 
 /** Posture measurement: one frame every few minutes, score 0–100, curve across the week. */
 @Composable
-fun PostureScreen(graph: AppGraph) {
+fun PostureScreen(graph: AppGraph, nav: NavHostController) {
     val samples by graph.db.posture().since(System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L).collectAsState(initial = emptyList())
-    val reduceMotion = LocalReduceMotion.current
 
     CameraPermissionGate {
         Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
-            Headline("POSTURE")
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Posture", style = MaterialTheme.typography.displayMedium, color = Ink)
+                IconButton(onClick = { nav.popBackStack() }, modifier = Modifier) {
+                    Icon(AppIcons.Close, contentDescription = "Close", tint = Ink)
+                }
+            }
             SectionGap(24)
 
-            PostureSampler(graph, reduceMotion)
+            PostureSampler(graph)
 
             SectionGap()
-            Kicker("Seven-day curve", color = InkFaint)
-            Spacer(Modifier.height(10.dp))
-            PanelBox(Modifier.fillMaxWidth(), padding = 12) { PostureCurve(samples, Modifier.fillMaxWidth().height(180.dp)) }
+            Text("Seven-day curve", style = MaterialTheme.typography.labelMedium, color = InkMuted)
+            SectionGap(12)
+            AppCard(Modifier.fillMaxWidth(), padding = 12) {
+                PostureCurve(samples, Modifier.fillMaxWidth().height(180.dp))
+            }
 
             SectionGap()
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -92,7 +99,7 @@ fun PostureScreen(graph: AppGraph) {
 }
 
 @Composable
-private fun PostureSampler(graph: AppGraph, reduceMotion: Boolean) {
+private fun PostureSampler(graph: AppGraph) {
     val scope = rememberCoroutineScope()
     val owner = LocalLifecycleOwner.current ?: return
     var sampling by remember { mutableStateOf(false) }
@@ -109,29 +116,25 @@ private fun PostureSampler(graph: AppGraph, reduceMotion: Boolean) {
         }
     }
 
-    Box(Modifier.fillMaxWidth().background(Ground).padding(20.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    AppCard(Modifier.fillMaxWidth()) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
             if (countdown > 0) {
-                if (!reduceMotion) {
-                    Text(countdown.toString(), style = MaterialTheme.typography.displayLarge, color = Ink)
-                } else {
-                    Text("Sampling…", style = MaterialTheme.typography.headlineLarge, color = Ink)
-                }
+                Text(countdown.toString(), style = MaterialTheme.typography.displayLarge, color = Ink)
             } else if (result != null) {
                 val r = result!!
                 Text("${r.score}", style = MaterialTheme.typography.displayLarge, color = Ember)
-                Spacer(Modifier.height(8.dp))
+                SectionGap(8)
                 Text(r.description, style = MaterialTheme.typography.bodySmall, color = Ink)
-                Spacer(Modifier.height(12.dp))
+                SectionGap(12)
                 Text("Frame read and discarded. Only the number is kept.", style = MaterialTheme.typography.labelSmall, color = InkMuted)
             } else {
-                EmberButton("SAMPLE", Modifier.fillMaxWidth()) {
+                PrimaryButton("Sample", Modifier.fillMaxWidth()) {
                     sampling = true
                     countdown = 3
                     scope.launch {
                         // Countdown
                         repeat(3) {
-                            if (!reduceMotion) delay(1000)
+                            delay(1000)
                             countdown--
                         }
                         // Open camera for one frame
@@ -207,6 +210,6 @@ private fun PostureCurve(samples: List<PostureSampleEntity>, modifier: Modifier 
 
 fun NavGraphBuilder.postureRoutes(graph: AppGraph, nav: NavHostController) {
     composable<com.clashfit.ui.nav.Posture> {
-        PostureScreen(graph)
+        PostureScreen(graph, nav)
     }
 }

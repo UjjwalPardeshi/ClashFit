@@ -1,11 +1,6 @@
 package com.clashfit.ui.screens.clinic
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -16,7 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -26,18 +20,23 @@ import androidx.navigation.compose.composable
 import com.clashfit.AppGraph
 import com.clashfit.R
 import com.clashfit.core.model.GameMode
-import com.clashfit.ui.components.EmberButton
-import com.clashfit.ui.components.ScreenScaffold
-import com.clashfit.ui.components.Kicker
+import com.clashfit.ui.components.AppCard
+import com.clashfit.ui.components.AppIcons
+import com.clashfit.ui.components.EmptyState
+import com.clashfit.ui.components.InnerDivider
+import com.clashfit.ui.components.ListGroup
+import com.clashfit.ui.components.PrimaryButton
 import com.clashfit.ui.components.RuleRow
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SectionGap
-import com.clashfit.ui.components.StatTile
+import com.clashfit.ui.components.SectionTitle
 import com.clashfit.ui.nav.Session
-import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkFaint
-import com.clashfit.ui.theme.Panel
-import com.clashfit.ui.theme.Rule
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /** 30-second sit-to-stand protocol: text, not-a-medical-device, personal trend from SessionDao. */
 @Composable
@@ -46,80 +45,78 @@ fun ClinicScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = M
     val recentSessions by graph.db.sessions().recent(limit = 50).collectAsState(initial = emptyList())
     val sessions = remember(recentSessions) { recentSessions.filter { it.mode == "CLINIC_STS" }.take(10) }
 
-    val protocol = clinic["clinic_sts"]
+    // Fix protocol lookup: try both keys, then the first protocol in the map, then null
+    val protocol = remember(clinic) {
+        clinic["clinic_sts"] ?: clinic["sit_to_stand_30s"] ?: clinic.values.firstOrNull()
+    }
+
+    val zone = remember { ZoneId.systemDefault() }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM d") }
 
     ScreenScaffold(title = "Clinic", onBack = { nav.navigateUp() }) { padding ->
         Column(modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
             if (protocol != null) {
-                // Protocol description
-                Kicker("30-Second Sit-to-Stand")
-                SectionGap(12)
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .background(Panel)
-                        .border(1.dp, Rule)
-                        .padding(12.dp)
-                ) {
-                    Text(
-                        protocol.protocol,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Ink
-                    )
-                }
-
-                SectionGap(12)
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .background(Panel)
-                        .border(1.dp, Rule)
-                        .padding(12.dp)
-                ) {
-                    Text(
-                        stringResource(R.string.not_medical),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = InkFaint
-                    )
+                // Protocol description in AppCard
+                AppCard(Modifier.fillMaxWidth()) {
+                    Column {
+                        Text(
+                            protocol.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        Text(
+                            protocol.protocol,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Ink,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        Text(
+                            stringResource(R.string.not_medical),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = InkFaint
+                        )
+                    }
                 }
 
                 SectionGap(28)
 
-                // Personal trend
+                // Personal trend and past attempts
                 if (sessions.isNotEmpty()) {
-                    Kicker("Personal Trend")
-                    SectionGap(12)
-                    val bestSession = sessions.maxByOrNull { it.totalReps }
-                    val recentSession = sessions.firstOrNull()
-
-                    if (bestSession != null) {
-                        StatTile("${bestSession.totalReps}", "PERSONAL BEST", Modifier.fillMaxWidth(), color = Ember)
-                    }
-                    if (recentSession != null) {
-                        SectionGap(12)
-                        StatTile("${recentSession.totalReps}", "LATEST", Modifier.fillMaxWidth(), color = Ink)
+                    SectionTitle("Attempts")
+                    SectionGap(10)
+                    ListGroup {
+                        for ((idx, session) in sessions.withIndex()) {
+                            RuleRow(
+                                label = "${session.totalReps} reps",
+                                value = Instant.ofEpochMilli(session.startedAtMs)
+                                    .atZone(zone).toLocalDate()
+                                    .format(dateFormatter),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            if (idx < sessions.size - 1) InnerDivider()
+                        }
                     }
                 } else {
-                    Kicker("No Results Yet")
-                    SectionGap(12)
-                    Text(
-                        "Start a sit-to-stand session to begin tracking your personal trend.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = InkFaint,
-                        modifier = Modifier.padding(vertical = 12.dp)
-                    )
+                    SectionGap(4)
                 }
 
                 SectionGap(28)
 
                 // Start button
-                EmberButton("START TEST") {
-                    nav.navigate(Session(GameMode.CLINIC_STS.name, "chair_squat"))
-                }
+                PrimaryButton(
+                    "Start test",
+                    onClick = {
+                        nav.navigate(Session(GameMode.CLINIC_STS.name, "chair_squat"))
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             } else {
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Protocol not found", style = MaterialTheme.typography.bodyLarge, color = InkFaint)
-                }
+                SectionGap(8)
+                EmptyState(
+                    title = "Protocol not found",
+                    body = "The sit-to-stand protocol is not configured. Check that the config is loaded.",
+                    icon = AppIcons.Heart
+                )
             }
 
             SectionGap(20)

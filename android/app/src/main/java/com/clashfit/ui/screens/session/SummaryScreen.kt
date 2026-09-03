@@ -18,6 +18,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -37,15 +39,24 @@ import com.clashfit.data.SessionEntity
 import com.clashfit.data.SetEntity
 import com.clashfit.engine.core.AsymmetrySummary
 import com.clashfit.engine.core.describeAsymmetry
-import com.clashfit.ui.components.EmberButton
+import com.clashfit.meta.SessionReward
+import com.clashfit.ui.components.AppCard
+import com.clashfit.ui.components.BadgeTile
+import com.clashfit.ui.components.Bar
 import com.clashfit.ui.components.EmptyState
+import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.InnerDivider
 import com.clashfit.ui.components.Kicker
-import com.clashfit.ui.components.OutlineButton
-import com.clashfit.ui.components.PanelBox
+import com.clashfit.ui.components.ListGroup
+import com.clashfit.ui.components.PrimaryButton
 import com.clashfit.ui.components.RuleRow
+import com.clashfit.ui.components.SecondaryButton
 import com.clashfit.ui.components.SectionGap
+import com.clashfit.ui.components.SectionTitle
 import com.clashfit.ui.components.StatTile
+import com.clashfit.ui.components.XpBar
 import com.clashfit.ui.components.color
+import com.clashfit.ui.screens.social.iconFor
 import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Fresh
 import com.clashfit.ui.theme.Gassed
@@ -53,7 +64,10 @@ import com.clashfit.ui.theme.Heavy
 import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
+import com.clashfit.ui.theme.Panel
+import com.clashfit.ui.theme.PanelLift
 import com.clashfit.ui.theme.Rule
+import com.clashfit.ui.theme.Success
 import com.clashfit.ui.theme.Working
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -151,13 +165,73 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
     val vm: SummaryViewModel = viewModel(key = "summary-$sessionId", factory = SummaryViewModel.factory(graph, sessionId))
     val data by vm.data.collectAsStateWithLifecycle()
     val exported by vm.exported.collectAsStateWithLifecycle()
+    // Banking runs off the main thread after the fight ends, so the reward can land a moment
+    // after this screen composes. Observe the store rather than reading it once, or the XP block
+    // is missing on every fast phone.
+    val rewards by graph.rewards.byId.collectAsStateWithLifecycle()
+    val reward = rewards[sessionId]
     val d = data
     if (d == null) { EmptyState("Summary", "Loading the set…"); return }
 
     Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(20.dp)) {
+        // Outcome headline
         Kicker("Session · ${d.session.exerciseId.replace('_', ' ')} · ${d.session.mode.replace('_', ' ')}")
-        Text(if (d.session.outcome == "BOSS_DOWN" || d.session.outcome == "GAME_WON") "BOSS DOWN" else "SET SAVED", style = MaterialTheme.typography.displaySmall, color = Ink)
+        Headline(if (d.session.outcome == "BOSS_DOWN" || d.session.outcome == "GAME_WON") "Boss down" else "Set saved")
         SectionGap(16)
+
+        // Reward progression section (shown only when reward is available)
+        reward?.let { r ->
+            AppCard(Modifier.fillMaxWidth(), padding = 18) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Text("${r.xp} XP earned", style = MaterialTheme.typography.headlineMedium, color = Ink)
+
+                    ListGroup {
+                        r.lines.forEachIndexed { i, line ->
+                            RuleRow(line.label, "${line.xp} XP")
+                            if (i < r.lines.size - 1) InnerDivider()
+                        }
+                    }
+                }
+            }
+
+            SectionGap(16)
+
+            AppCard(Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    XpBar(r.after)
+
+                    if (r.leveledUp) {
+                        Text("Level up · Reached ${r.after.title}", style = MaterialTheme.typography.bodyMedium, color = Success, modifier = Modifier.padding(top = 4.dp))
+                    }
+
+                    if (r.newAchievements.isNotEmpty()) {
+                        SectionGap(8)
+                        Text("New badges", style = MaterialTheme.typography.labelLarge, color = Ink)
+                        Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            r.newAchievements.forEach { achievement ->
+                                BadgeTile(achievement, unlocked = true, icon = iconFor(achievement), modifier = Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+            }
+
+            SectionGap(16)
+
+            AppCard(Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text(r.weekly.challenge.title, style = MaterialTheme.typography.labelMedium, color = InkMuted)
+                        Text(if (r.weekly.done) "Done" else "${r.weekly.value} / ${r.weekly.challenge.target}", style = MaterialTheme.typography.titleSmall, color = if (r.weekly.done) Success else Ink)
+                    }
+                    Bar(r.weekly.fraction, color = if (r.weekly.done) Success else Ember)
+                }
+            }
+
+            SectionGap()
+        }
+
+        // Stat tiles
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StatTile("${d.session.totalReps}", "reps", Modifier.weight(1f))
             StatTile("${d.session.totalDamage}", "damage", Modifier.weight(1f))
@@ -165,42 +239,70 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
             StatTile(d.peakBand.label, "peak", Modifier.weight(1f), color = d.peakBand.color())
         }
         SectionGap()
-        Kicker("Fatigue curve", color = InkFaint)
-        Spacer(Modifier.height(10.dp))
-        PanelBox(Modifier.fillMaxWidth(), padding = 12) { FatigueCurve(d.reps, Modifier.fillMaxWidth().height(200.dp)) }
+
+        // Fatigue curve
+        SectionTitle("Fatigue curve")
+        SectionGap(10)
+        AppCard(Modifier.fillMaxWidth(), padding = 12) { FatigueCurve(d.reps, Modifier.fillMaxWidth().height(200.dp)) }
         SectionGap()
-        Kicker("Form per rep", color = InkFaint)
-        Spacer(Modifier.height(10.dp))
-        PanelBox(Modifier.fillMaxWidth(), padding = 12) { FormSparkline(d.reps, Modifier.fillMaxWidth().height(90.dp)) }
-        Spacer(Modifier.height(8.dp))
-        Text("CLEAN ${d.cleanCount} · OK ${d.okCount} · SHALLOW ${d.shallowCount}", style = MaterialTheme.typography.labelMedium, color = InkMuted)
+
+        // Form sparkline
+        SectionTitle("Form per rep")
+        SectionGap(10)
+        AppCard(Modifier.fillMaxWidth(), padding = 12) { FormSparkline(d.reps, Modifier.fillMaxWidth().height(90.dp)) }
+        Text("CLEAN ${d.cleanCount} · OK ${d.okCount} · SHALLOW ${d.shallowCount}", style = MaterialTheme.typography.labelMedium, color = InkMuted, modifier = Modifier.padding(top = 8.dp))
         SectionGap()
-        d.best?.let { RuleRow("Best rep · #${it.repIndex}", "${(it.formScore * 100).toInt()}%${it.depthCm?.let { c -> " · %.0f cm".format(c) } ?: ""}") }
-        d.worst?.let { RuleRow("Worst rep · #${it.repIndex}", "${(it.formScore * 100).toInt()}% · ${it.reason}") }
-        for (set in d.sets) {
-            RuleRow("Set ${set.setIndex} · ${set.reps} reps", "${(set.formMean * 100).toInt()}% · ${set.fatigueBandEnd}")
-            set.coachLine?.let { Text("\"$it\"", style = MaterialTheme.typography.bodyMedium, color = InkMuted, modifier = Modifier.padding(vertical = 8.dp)) }
-            if (set.asymmetryPct != null) {
-                val summary = AsymmetrySummary(
-                    usable = 0,
-                    enough = true,
-                    meanLsi = 100f - set.asymmetryPct,
-                    deficitPct = set.asymmetryPct.toFloat(),
-                    weakerSide = set.weakerSide,
-                    consistency = 1f,
-                    consistent = true,
-                )
-                Text(describeAsymmetry(summary), style = MaterialTheme.typography.bodyMedium, color = InkMuted, modifier = Modifier.padding(vertical = 8.dp))
+
+        // Best and worst reps in a ListGroup
+        if (d.best != null || d.worst != null) {
+            ListGroup {
+                d.best?.let { rep ->
+                    RuleRow("Best rep · #${rep.repIndex}", "${(rep.formScore * 100).toInt()}%${rep.depthCm?.let { c -> " · %.0f cm".format(c) } ?: ""}")
+                    if (d.worst != null) InnerDivider()
+                }
+                d.worst?.let { rep ->
+                    RuleRow("Worst rep · #${rep.repIndex}", "${(rep.formScore * 100).toInt()}% · ${rep.reason}")
+                }
             }
+            SectionGap()
+        }
+
+        // Per-set rows in ListGroups with coach lines and asymmetry info
+        for ((setIdx, set) in d.sets.withIndex()) {
+            AppCard(Modifier.fillMaxWidth()) {
+                Column {
+                    RuleRow("Set ${set.setIndex} · ${set.reps} reps", "${(set.formMean * 100).toInt()}% · ${set.fatigueBandEnd}")
+
+                    set.coachLine?.let { line ->
+                        Text("\"$line\"", style = MaterialTheme.typography.bodyMedium, color = InkMuted, modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
+                    }
+
+                    if (set.asymmetryPct != null) {
+                        val summary = AsymmetrySummary(
+                            usable = 0,
+                            enough = true,
+                            meanLsi = 100f - set.asymmetryPct,
+                            deficitPct = set.asymmetryPct.toFloat(),
+                            weakerSide = set.weakerSide,
+                            consistency = 1f,
+                            consistent = true,
+                        )
+                        Text(describeAsymmetry(summary), style = MaterialTheme.typography.bodyMedium, color = InkMuted, modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
+                    }
+                }
+            }
+            if (setIdx < d.sets.size - 1) SectionGap(10)
         }
         SectionGap()
+
+        // Action buttons
         val ctx = androidx.compose.ui.platform.LocalContext.current
-        EmberButton("Fight again", Modifier.fillMaxWidth()) { onAgain(d.session) }
+        PrimaryButton("Fight again", Modifier.fillMaxWidth()) { onAgain(d.session) }
         Spacer(Modifier.height(10.dp))
-        OutlineButton(if (exported == null) "Export CSV" else "Exported", Modifier.fillMaxWidth()) { vm.exportCsv(ctx) }
+        SecondaryButton(if (exported == null) "Export CSV" else "Exported", Modifier.fillMaxWidth()) { vm.exportCsv(ctx) }
         exported?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = InkFaint, modifier = Modifier.padding(top = 6.dp)) }
         Spacer(Modifier.height(10.dp))
-        OutlineButton("Home", Modifier.fillMaxWidth(), onClick = onHome)
+        SecondaryButton("Home", Modifier.fillMaxWidth(), onClick = onHome)
         SectionGap()
     }
 }

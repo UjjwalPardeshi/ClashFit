@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,11 +37,12 @@ import com.clashfit.core.model.EndReason
 import com.clashfit.core.model.FatigueBand
 import com.clashfit.core.model.Phase
 import com.clashfit.core.model.SessionState
-import com.clashfit.ui.components.EmberButton
+import com.clashfit.ui.components.AppCard
+import com.clashfit.ui.components.AppIcons
 import com.clashfit.ui.components.FatiguePips
 import com.clashfit.ui.components.Kicker
-import com.clashfit.ui.components.OutlineButton
-import com.clashfit.ui.components.PanelBox
+import com.clashfit.ui.components.PrimaryButton
+import com.clashfit.ui.components.SecondaryButton
 import com.clashfit.ui.components.StatTile
 import com.clashfit.ui.components.color
 import com.clashfit.ui.theme.Ember
@@ -134,7 +137,7 @@ private fun FightLayout(
             }
             if (prone) { BossHeader(s.combat, timeLeftMs = s.timeLeftMs); Spacer(Modifier.height(12.dp)) }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Bottom) {
-                RepCounter(if (s.mode == com.clashfit.core.model.GameMode.SURVIVAL) s.reps else s.setReps, Modifier.weight(1.1f), label = if (s.wave > 1) "REPS · WAVE ${s.wave}" else "REPS")
+                RepCounter(if (s.mode == com.clashfit.core.model.GameMode.SURVIVAL) s.reps else s.setReps, Modifier.weight(1.1f), label = if (s.wave > 1) "Reps · Wave ${s.wave}" else "Reps")
                 FatigueTile(s.fatigue.band, Modifier.weight(1f))
                 ComboRail(s.combat.comboMultiplier, s.combat.comboStreak, Modifier.weight(1f))
             }
@@ -150,12 +153,12 @@ private fun FightLayout(
 @Composable
 private fun PausedOverlay(onResume: () -> Unit, onStop: () -> Unit) {
     Column(Modifier.fillMaxSize().background(Ground.copy(alpha = 0.86f)).padding(28.dp), verticalArrangement = Arrangement.Center) {
-        Text("PAUSED", style = MaterialTheme.typography.displayMedium, color = Ink)
+        Text("Paused", style = MaterialTheme.typography.displayMedium, color = Ink)
         Text("The boss is frozen. Your fatigue baseline is held.", style = MaterialTheme.typography.bodyLarge, color = InkMuted)
         Spacer(Modifier.height(28.dp))
-        EmberButton("Resume", Modifier.fillMaxWidth(), onClick = onResume)
+        PrimaryButton("Resume", Modifier.fillMaxWidth(), onClick = onResume)
         Spacer(Modifier.height(10.dp))
-        OutlineButton("Stop and save", Modifier.fillMaxWidth(), onClick = onStop)
+        SecondaryButton("Stop and save", Modifier.fillMaxWidth(), onClick = onStop)
     }
 }
 
@@ -175,22 +178,22 @@ fun RestPanel(s: SessionState, restLeft: Int?, onSkip: () -> Unit, onStop: () ->
             StatTile("${t?.velocityLossPct ?: 0}%", "velocity lost", Modifier.weight(1f), color = s.fatigue.band.color())
         }
         val coach = s.coach
-        PanelBox(Modifier.fillMaxWidth(), padding = 20) {
+        AppCard(Modifier.fillMaxWidth(), padding = 20) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("COACH", style = MaterialTheme.typography.labelMedium, color = Ember)
+                Text("Coach", style = MaterialTheme.typography.labelMedium, color = Ember)
                 Text(coach?.coachLine ?: "…", fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.Medium, color = Ink)
             }
         }
-        PanelBox(Modifier.fillMaxWidth(), padding = 20) {
+        AppCard(Modifier.fillMaxWidth(), padding = 20) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(s.combat.bossName.uppercase(), style = MaterialTheme.typography.labelMedium, color = InkFaint)
+                Text(s.combat.bossName, style = MaterialTheme.typography.labelMedium, color = InkFaint)
                 Text(coach?.bossLine ?: "…", style = MaterialTheme.typography.headlineSmall, color = Ember)
             }
         }
         Spacer(Modifier.weight(1f))
         Text("Boss at ${(s.combat.hpPct * 100).toInt()}%${coach?.let { " · " + it.source.name.lowercase() + " coach" } ?: ""}", style = MaterialTheme.typography.labelSmall, color = InkFaint)
-        EmberButton("Next set", Modifier.fillMaxWidth(), onClick = onSkip)
-        OutlineButton("Stop and save", Modifier.fillMaxWidth(), onClick = onStop)
+        PrimaryButton("Next set", Modifier.fillMaxWidth(), onClick = onSkip)
+        SecondaryButton("Stop and save", Modifier.fillMaxWidth(), onClick = onStop)
     }
 }
 
@@ -199,11 +202,11 @@ fun RestPanel(s: SessionState, restLeft: Int?, onSkip: () -> Unit, onStop: () ->
 fun EndPanel(s: SessionState, onSummary: () -> Unit, onExit: () -> Unit) {
     val won = s.endReason == EndReason.BOSS_DOWN || s.endReason == EndReason.GAME_WON
     val title = when (s.endReason) {
-        EndReason.BOSS_DOWN -> "BOSS DOWN"
-        EndReason.GAME_WON -> "YOU WON"
-        EndReason.GAME_LOST -> "IT CAUGHT YOU"
-        EndReason.TIME -> "TIME"
-        EndReason.STOPPED, EndReason.WALKED_AWAY, null -> "YOU STOPPED"
+        EndReason.BOSS_DOWN -> "Boss down"
+        EndReason.GAME_WON -> "You won"
+        EndReason.GAME_LOST -> "It caught you"
+        EndReason.TIME -> "Time"
+        EndReason.STOPPED, EndReason.WALKED_AWAY, null -> "You stopped"
     }
     Column(Modifier.fillMaxSize().background(Ground.copy(alpha = 0.94f)).safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.Start) {
         Kicker(if (won) "Victory" else "Set saved")
@@ -221,15 +224,15 @@ fun EndPanel(s: SessionState, onSummary: () -> Unit, onExit: () -> Unit) {
         Spacer(Modifier.height(28.dp))
         Text("Saving…", style = MaterialTheme.typography.labelSmall, color = InkFaint)
         Spacer(Modifier.height(8.dp))
-        OutlineButton("Home", Modifier.fillMaxWidth(), onClick = onExit)
+        SecondaryButton("Home", Modifier.fillMaxWidth(), onClick = onExit)
     }
 }
 
 @Composable
 private fun ExitCorner(onExit: () -> Unit) {
     Box(Modifier.fillMaxSize().safeDrawingPadding().padding(12.dp)) {
-        Box(Modifier.align(Alignment.TopStart).background(Panel).clickable(onClick = onExit).padding(horizontal = 16.dp, vertical = 12.dp)) {
-            Text("BACK", style = MaterialTheme.typography.labelLarge, color = Ink)
+        IconButton(onExit, Modifier.align(Alignment.TopStart).size(48.dp)) {
+            Icon(AppIcons.Close, contentDescription = "Back", tint = Ink)
         }
     }
 }

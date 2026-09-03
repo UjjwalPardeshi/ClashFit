@@ -1,11 +1,5 @@
 package com.clashfit.ui.screens.duel
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,15 +37,22 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.clashfit.AppGraph
+import com.clashfit.play.Standing
 import com.clashfit.core.model.FatigueBand
 import com.clashfit.core.model.GameMode
 import com.clashfit.core.model.LinkState
 import com.clashfit.duel.NearbyPermissionGate
 import com.clashfit.play.PlayHub
-import com.clashfit.ui.components.EmberButton
+import com.clashfit.ui.components.AppCard
+import com.clashfit.ui.components.AppIcons
+import com.clashfit.ui.components.Avatar
 import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.IconBubble
+import com.clashfit.ui.components.InnerDivider
 import com.clashfit.ui.components.Kicker
-import com.clashfit.ui.components.Mark
+import com.clashfit.ui.components.ListGroup
+import com.clashfit.ui.components.PrimaryButton
+import com.clashfit.ui.components.SecondaryButton
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.Tag
 import com.clashfit.ui.components.color
@@ -59,6 +60,7 @@ import com.clashfit.ui.nav.DuelLobby
 import com.clashfit.ui.nav.RaidRoom
 import com.clashfit.ui.nav.Session
 import com.clashfit.ui.theme.Ember
+import com.clashfit.ui.theme.EmberTint
 import com.clashfit.ui.theme.Fresh
 import com.clashfit.ui.theme.Gassed
 import com.clashfit.ui.theme.Ground
@@ -71,6 +73,8 @@ import com.clashfit.ui.theme.Panel
 import com.clashfit.ui.theme.PanelLift
 import com.clashfit.ui.theme.Rule
 import com.clashfit.ui.theme.RuleSoft
+import com.clashfit.ui.theme.Success
+import com.clashfit.ui.theme.Working
 import kotlinx.coroutines.launch
 
 /**
@@ -247,11 +251,12 @@ private fun Standings(hub: PlayHub) {
         Kicker("The room · ${rows.size}")
         SectionGap(10)
         if (rows.isEmpty()) {
-            Text("NOBODY ELSE YET.", style = MaterialTheme.typography.labelMedium, color = InkFaint)
+            Text("Nobody else yet.", style = MaterialTheme.typography.bodyMedium, color = InkMuted)
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                rows.forEach { s ->
-                    StandingRow(s.name, s.reps, s.damage, s.band, s.out, s.finished, s.me)
+            ListGroup {
+                rows.forEachIndexed { index, s ->
+                    StandingRow(s)
+                    if (index < rows.size - 1) InnerDivider()
                 }
             }
         }
@@ -259,31 +264,28 @@ private fun Standings(hub: PlayHub) {
 }
 
 @Composable
-private fun StandingRow(
-    name: String,
-    reps: Int,
-    damage: Int,
-    band: String,
-    out: Boolean,
-    finished: Boolean,
-    me: Boolean,
-) {
+private fun StandingRow(s: Standing) {
     Row(
         Modifier.fillMaxWidth()
-            .background(if (me) PanelLift else Panel)
-            .border(1.dp, if (me) Ember else Rule)
-            .padding(12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .background(if (s.me) EmberTint else Color.Transparent)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        Avatar(s.name, size = 40)
         Column(Modifier.weight(1f)) {
-            Text(name.uppercase(), style = MaterialTheme.typography.labelLarge, color = if (me) Ember else Ink)
-            Text("$reps REPS · $damage DMG", style = MonoReadout, color = InkFaint)
+            Text(
+                if (s.me) "${s.name} (you)" else s.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = if (s.out) InkFaint else Ink,
+            )
+            // A raid is scored on damage. Showing only a fatigue tag hides the whole contest.
+            Text("${s.reps} reps · ${s.damage} damage", style = MaterialTheme.typography.bodySmall, color = InkMuted)
         }
         when {
-            out -> Tag("Out", color = Gassed)
-            finished -> Tag("Done", color = Fresh)
-            else -> Tag(bandLabel(band), color = bandColor(band))
+            s.out -> Tag("Out", color = Gassed)
+            s.finished -> Tag("Done", color = Fresh)
+            else -> Tag(bandLabel(s.band), color = bandColor(s.band))
         }
     }
 }
@@ -295,7 +297,7 @@ private fun NameField(name: String, onName: (String) -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         Kicker("Your name")
         SectionGap(10)
-        Box(Modifier.fillMaxWidth().background(Panel).border(1.dp, Rule).padding(12.dp)) {
+        Box(Modifier.fillMaxWidth().background(Panel).padding(12.dp)) {
             BasicTextField(
                 value = name,
                 onValueChange = { onName(it.take(12)) },
@@ -336,56 +338,41 @@ private fun DurationChips(selected: Int, enabled: Boolean, onSelect: (Int) -> Un
 /** Named state, always. A judge watching an unexplained spinner assumes it is broken. */
 @Composable
 private fun LinkStrip(state: LinkState, peers: Int) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        PulsingMark(active = state == LinkState.SEARCHING || state == LinkState.ADVERTISING, color = stateColor(state))
-        Tag(linkLabel(state, peers), color = stateColor(state))
+    val (color, icon) = when (state) {
+        LinkState.LINKED -> Success to AppIcons.Check
+        LinkState.LOST -> Gassed to AppIcons.Close
+        LinkState.ADVERTISING -> Working to AppIcons.Bell
+        LinkState.SEARCHING -> Working to AppIcons.Search
+        LinkState.IDLE -> InkMuted to AppIcons.Gear
     }
-}
 
-@Composable
-private fun PulsingMark(active: Boolean, color: Color) {
-    val reduce = LocalReduceMotion.current
-    val transition = rememberInfiniteTransition(label = "link")
-    val pulse by transition.animateFloat(
-        initialValue = 0.25f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(700, easing = LinearEasing), RepeatMode.Reverse),
-        label = "pulse",
-    )
-    Box(Modifier.alpha(if (active && !reduce) pulse else 1f)) { Mark(12, color) }
+    AppCard(Modifier.fillMaxWidth(), padding = 16) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            IconBubble(icon = icon, tint = color)
+            Text(linkLabel(state, peers), style = MaterialTheme.typography.bodyLarge, color = Ink)
+        }
+    }
 }
 
 @Composable
 private fun HostJoinRow(enabled: Boolean, onHost: () -> Unit, onJoin: () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        BigButton("HOST", "Make the room", filled = true, enabled = enabled, onClick = onHost)
-        BigButton("JOIN", "Find a room", filled = false, enabled = enabled, onClick = onJoin)
-    }
-}
-
-@Composable
-private fun RowScope.BigButton(label: String, hint: String, filled: Boolean, enabled: Boolean, onClick: () -> Unit) {
-    val ground = filled && enabled
-    Column(
-        Modifier.weight(1f)
-            .background(if (ground) Ember else Panel)
-            .border(1.dp, if (enabled) Rule else RuleSoft)
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Text(label, style = MaterialTheme.typography.headlineMedium, color = if (ground) Ground else if (enabled) Ink else InkFaint)
-        Text(hint.uppercase(), style = MaterialTheme.typography.labelSmall, color = if (ground) Ground else InkFaint)
+        PrimaryButton("Host", Modifier.weight(1f), enabled = enabled, onClick = onHost)
+        SecondaryButton("Join", Modifier.weight(1f), enabled = enabled, onClick = onJoin)
     }
 }
 
 @Composable
 private fun ReadyBlock(isHost: Boolean, hostLabel: String = "Start", onStart: () -> Unit) {
     if (isHost) {
-        EmberButton(hostLabel, Modifier.fillMaxWidth(), onClick = onStart)
+        PrimaryButton(hostLabel, Modifier.fillMaxWidth(), onClick = onStart)
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("WAITING FOR HOST…", style = MaterialTheme.typography.headlineSmall, color = Ink)
+            Text("Waiting for host…", style = MaterialTheme.typography.titleMedium, color = Ink)
             Text("They press start; both phones go at once.", style = MaterialTheme.typography.bodyMedium, color = InkMuted)
         }
     }
@@ -395,7 +382,7 @@ private fun ReadyBlock(isHost: Boolean, hostLabel: String = "Start", onStart: ()
 private fun ErrorLine(error: String?) {
     if (error == null) return
     SectionGap(16)
-    Text(error.uppercase(), style = MaterialTheme.typography.labelMedium, color = Ember)
+    Text(error, style = MaterialTheme.typography.bodySmall, color = Ember)
 }
 
 // ---------------------------------------------------------------- plain helpers

@@ -1,129 +1,131 @@
 package com.clashfit.ui.screens.character
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.clashfit.AppGraph
-import com.clashfit.ui.components.ScreenScaffold
-import com.clashfit.ui.components.Kicker
+import com.clashfit.data.SessionEntity
+import com.clashfit.data.StreakEntity
+import com.clashfit.ui.components.AppCard
+import com.clashfit.ui.components.Bar
+import com.clashfit.ui.components.InnerDivider
+import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.RuleRow
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SectionGap
-import com.clashfit.ui.components.StatTile
+import com.clashfit.ui.components.SectionTitle
+import com.clashfit.ui.theme.Brass
 import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Fresh
-import com.clashfit.ui.theme.Heavy
 import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkFaint
-import com.clashfit.ui.theme.Rule
+import com.clashfit.ui.theme.InkMuted
+import com.clashfit.ui.theme.Success
 import com.clashfit.ui.theme.Working
 
-/** Seven bars: POWER/STAMINA/FOCUS/MOBILITY/ENERGY/NOURISHMENT/RESILIENCE from Room data. */
+/** Five stat bars built from what you actually did, and the two that wait on sleep and food. */
 @Composable
-fun CharacterScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = Modifier) {
-    val sessions by graph.db.sessions().recent(limit = 50).collectAsState(initial = emptyList())
-    val streaks by graph.db.streak().observe().collectAsState(initial = null)
-
-    // Compute stats from sessions
-    val stats = androidx.compose.runtime.remember(sessions) {
-        CharacterStats.compute(sessions, streaks)
-    }
+fun CharacterScreen(graph: AppGraph, nav: NavHostController) {
+    val sessionsFlow = remember(graph) { graph.db.sessions().recent(limit = 50) }
+    val streakFlow = remember(graph) { graph.db.streak().observe() }
+    val sessions by sessionsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
+    val streak by streakFlow.collectAsStateWithLifecycle(initialValue = null)
+    val stats = remember(sessions, streak) { CharacterStats.compute(sessions, streak) }
 
     ScreenScaffold(title = "Character", onBack = { nav.navigateUp() }) { padding ->
-        Column(modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
-            // Seven stat bars
-            StatBar("POWER", stats.power, 100)
-            StatBar("STAMINA", stats.stamina, 100)
-            StatBar("FOCUS", stats.focus, 100)
-            StatBar("MOBILITY", stats.mobility, 100)
-            StatBar("ENERGY", stats.energy, 100)
-            StatBar("NOURISHMENT", stats.nourishment, 100)
-            StatBar("RESILIENCE", stats.resilience, 100)
+        Column(
+            Modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp).padding(top = 4.dp, bottom = 28.dp),
+        ) {
+            Text(
+                "Every bar is earned from measured reps, never from a plan. Rest days grow resilience.",
+                style = MaterialTheme.typography.bodyMedium, color = InkMuted, modifier = Modifier.padding(bottom = 16.dp),
+            )
+            AppCard(Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    StatBar("Power", stats.power, Ember, "Damage over your last ten fights")
+                    StatBar("Stamina", stats.stamina, Working, "Reps banked, all time")
+                    StatBar("Focus", stats.focus, Brass, "How clean the average rep is")
+                    StatBar("Mobility", stats.mobility, Fresh, "Depth and range across families")
+                    StatBar("Resilience", stats.resilience, Success, "Days in a row, rest included")
+                }
+            }
 
-            SectionGap(28)
-            Kicker("Summary")
-            SectionGap(12)
-            RuleRow("Total Reps", "${stats.totalReps}")
-            RuleRow("Sessions", "${stats.sessionCount}")
-            RuleRow("Form Avg", "%.1f%%".format(stats.formAvg * 100))
-            SectionGap(20)
+            SectionGap(24)
+            SectionTitle("Coming with sleep and nutrition")
+            Text(
+                "Energy and Nourishment read from tracked sleep and meals. Neither is in this build, so neither is shown as a number you have not earned.",
+                style = MaterialTheme.typography.bodySmall, color = InkFaint, modifier = Modifier.padding(top = 4.dp),
+            )
+
+            SectionGap(24)
+            SectionTitle("Totals")
+            SectionGap(10)
+            ListGroup {
+                RuleRow("Sessions", "${stats.sessionCount}")
+                InnerDivider()
+                RuleRow("Reps", "${stats.totalReps}")
+                InnerDivider()
+                RuleRow("Average form", "${(stats.formAvg * 100).toInt()}%")
+                InnerDivider()
+                RuleRow("Current streak", "${streak?.current ?: 0} days")
+            }
         }
     }
 }
 
 @Composable
-private fun StatBar(label: String, value: Int, max: Int) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(label, style = MaterialTheme.typography.labelMedium, color = Ink)
-            Text("$value/$max", style = MaterialTheme.typography.labelSmall, color = InkFaint)
+private fun StatBar(label: String, value: Int, color: Color, hint: String) {
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = MaterialTheme.typography.titleSmall, color = Ink)
+            Text("$value", style = MaterialTheme.typography.titleSmall, color = color)
         }
-        Box(Modifier.fillMaxWidth().height(8.dp).background(Rule)) {
-            Box(Modifier.fillMaxWidth(value.toFloat() / max).height(8.dp).background(Ember))
-        }
+        Bar(value / 100f, Modifier.padding(top = 8.dp), color = color, height = 10)
+        Text(hint, style = MaterialTheme.typography.bodySmall, color = InkFaint, modifier = Modifier.padding(top = 6.dp))
     }
 }
 
-/** Compute character stats from session records and streaks. */
+/** Compute character stats from session records and streaks. All 0–100. */
 object CharacterStats {
     data class Stats(
         val power: Int = 0,
         val stamina: Int = 0,
         val focus: Int = 0,
         val mobility: Int = 0,
-        val energy: Int = 0,
-        val nourishment: Int = 0,
         val resilience: Int = 0,
         val totalReps: Int = 0,
         val sessionCount: Int = 0,
         val formAvg: Float = 0f,
     )
 
-    fun compute(sessions: List<com.clashfit.data.SessionEntity>, streak: com.clashfit.data.StreakEntity?): Stats {
-        if (sessions.isEmpty()) return Stats()
-
+    fun compute(sessions: List<SessionEntity>, streak: StreakEntity?): Stats {
+        if (sessions.isEmpty()) return Stats(resilience = streak?.current?.coerceIn(0, 100) ?: 0)
         val totalReps = sessions.sumOf { it.totalReps }
-        val formAvg = if (sessions.isNotEmpty()) {
-            sessions.map { it.formMean }.average().toFloat()
-        } else 0f
-
-        // Stats derived from recent sessions
-        val recentSessions = sessions.take(10)
-        val power = (recentSessions.sumOf { it.totalDamage } / 10).coerceIn(0, 100).toInt()
-        val stamina = (totalReps / 10).coerceIn(0, 100).toInt()
-        val focus = (formAvg * 100).toInt()
-        val mobility = (formAvg * 100).toInt()
-        val resilience = (streak?.current?.coerceIn(0, 100) ?: 0)
-
+        val formAvg = sessions.map { it.formMean }.average().toFloat()
+        val recent = sessions.take(10)
         return Stats(
-            power = power,
-            stamina = stamina,
-            focus = focus,
-            mobility = mobility,
-            energy = 0, // Not tracked
-            nourishment = 0, // Not tracked
-            resilience = resilience,
+            power = (recent.sumOf { it.totalDamage } / 100).coerceIn(0, 100),
+            stamina = (totalReps / 10).coerceIn(0, 100),
+            focus = (formAvg * 100).toInt().coerceIn(0, 100),
+            mobility = (sessions.map { it.exerciseId }.distinct().size * 8).coerceIn(0, 100),
+            resilience = (streak?.current ?: 0).coerceIn(0, 100),
             totalReps = totalReps,
             sessionCount = sessions.size,
             formAvg = formAvg,
@@ -132,7 +134,5 @@ object CharacterStats {
 }
 
 fun NavGraphBuilder.characterRoutes(graph: AppGraph, nav: NavHostController) {
-    composable<com.clashfit.ui.nav.Character> {
-        CharacterScreen(graph, nav)
-    }
+    composable<com.clashfit.ui.nav.Character> { CharacterScreen(graph, nav) }
 }
