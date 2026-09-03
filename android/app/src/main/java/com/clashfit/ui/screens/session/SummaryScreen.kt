@@ -33,6 +33,8 @@ import com.clashfit.core.model.FatigueBand
 import com.clashfit.data.RepEntity
 import com.clashfit.data.SessionEntity
 import com.clashfit.data.SetEntity
+import com.clashfit.engine.core.AsymmetrySummary
+import com.clashfit.engine.core.describeAsymmetry
 import com.clashfit.ui.components.EmberButton
 import com.clashfit.ui.components.EmptyState
 import com.clashfit.ui.components.Kicker
@@ -149,8 +151,20 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
         d.best?.let { RuleRow("Best rep · #${it.repIndex}", "${(it.formScore * 100).toInt()}%${it.depthCm?.let { c -> " · %.0f cm".format(c) } ?: ""}") }
         d.worst?.let { RuleRow("Worst rep · #${it.repIndex}", "${(it.formScore * 100).toInt()}% · ${it.reason}") }
         for (set in d.sets) {
-            RuleRow("Set ${set.setIndex} · ${set.reps} reps", "${(set.formMean * 100).toInt()}% · ${set.fatigueBandEnd}")
-            set.coachLine?.let { Text("“$it”", style = MaterialTheme.typography.bodyMedium, color = InkMuted, modifier = Modifier.padding(vertical = 8.dp)) }
+            RuleRow(“Set ${set.setIndex} · ${set.reps} reps”, “${(set.formMean * 100).toInt()}% · ${set.fatigueBandEnd}”)
+            set.coachLine?.let { Text(“”$it””, style = MaterialTheme.typography.bodyMedium, color = InkMuted, modifier = Modifier.padding(vertical = 8.dp)) }
+            if (set.asymmetryPct != null) {
+                val summary = AsymmetrySummary(
+                    usable = 0,
+                    enough = true,
+                    meanLsi = 100f - set.asymmetryPct,
+                    deficitPct = set.asymmetryPct.toFloat(),
+                    weakerSide = set.weakerSide,
+                    consistency = 1f,
+                    consistent = true,
+                )
+                Text(describeAsymmetry(summary), style = MaterialTheme.typography.bodyMedium, color = InkMuted, modifier = Modifier.padding(vertical = 8.dp))
+            }
         }
         SectionGap()
         val ctx = androidx.compose.ui.platform.LocalContext.current

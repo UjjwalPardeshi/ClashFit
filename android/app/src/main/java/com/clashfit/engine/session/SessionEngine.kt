@@ -47,6 +47,8 @@ import com.clashfit.engine.core.LandmarkFilter
 import com.clashfit.engine.core.RepDetectorConfig
 import com.clashfit.engine.core.RepStateMachine
 import com.clashfit.engine.core.SignalTables
+import com.clashfit.engine.core.AsymmetryTracker
+import com.clashfit.engine.core.summariseAsymmetry
 import com.clashfit.engine.detect.DetectorFactory
 import com.clashfit.engine.detect.ExerciseDetector
 import com.clashfit.engine.games.BreakerEvent
@@ -117,6 +119,7 @@ class SessionEngine(
     private var primaryAngle: Triple<String, String, String>? = null
     private lateinit var filter: LandmarkFilter
     private lateinit var fatigue: FatigueEstimator
+    private val asymmetryTracker = AsymmetryTracker()
     private val bossConfig: BossConfig = combatCfg.boss.let { b ->
         BossConfig(b.id, b.name, b.maxHp, b.phases.map { BossPhase(it.fromHpPct, it.modifier, it.label) })
     }
@@ -329,8 +332,11 @@ class SessionEngine(
         val pa = primaryAngle
         val valid: Boolean
         if (pa != null) {
-            val (deg, sel) = Geometry.primaryAngle(lms, pa.first, pa.second, pa.third, jointNames, thr)
-            angle = deg; side = sel.side; valid = !deg.isNaN()
+            val result = Geometry.primaryAngle(lms, pa.first, pa.second, pa.third, jointNames, thr)
+            angle = result.angle; side = result.side; valid = result.valid
+            if (phase == Phase.FIGHTING || phase == Phase.REST) {
+                asymmetryTracker.onFrame(result.left, result.right, tMs)
+            }
         } else {
             val sel = Geometry.chooseSide(lms, jointNames, thr)
             angle = Float.NaN; side = sel.side; valid = sel.valid
@@ -435,6 +441,7 @@ class SessionEngine(
         fsm?.reset()
         topRef?.let { fsm?.setTopRef(it) }
         detector?.reset()
+        asymmetryTracker.reset()
         phase = Phase.FIGHTING
     }
 
@@ -520,6 +527,7 @@ class SessionEngine(
         val c = combat.state()
         if (f.band != prevBand) { combat.onFatigueBand(f.band); listener.onBand(f.band) }
 
+        val asymmetry = asymmetryTracker.forRep(raw.tStartMs, raw.tEndMs)
         val rec = RepRecord(
             repIndex = raw.repIndex, exerciseId = exercise.id, family = family,
             tStartMs = raw.tStartMs, tEndMs = raw.tEndMs,
@@ -528,6 +536,7 @@ class SessionEngine(
             concentricVelocity = raw.concentricVelocity, fatigue = f,
             damage = dmg, combo = c.comboMultiplier,
             validFrameRatio = raw.validFrameRatio, depthCm = depthCm(raw),
+            asymmetry = asymmetry,
         )
         record(rec, c)
     }

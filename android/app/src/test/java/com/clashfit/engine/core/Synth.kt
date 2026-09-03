@@ -93,7 +93,7 @@ object Synth {
     }
 
     /** Generate synthetic WORLD landmarks for a given hip-knee-ankle angle (degrees). */
-    fun worldFrame(angleDeg: Float): List<Landmark> {
+    fun worldFrame(angleDeg: Float, leftAngleDeg: Float? = null, rightAngleDeg: Float? = null): List<Landmark> {
         val lm = MutableList(33) { Landmark(0f, 0f, 0f, 0f) }
 
         // Default initialization
@@ -101,13 +101,18 @@ object Synth {
             lm[i] = Landmark(0f, 0f, 0f, 0.95f)
         }
 
-        val a = (angleDeg * PI) / 180.0
-        val sin_a = sin(a).toFloat()
-        val cos_a = cos(a).toFloat()
-
         // Left and right sides
         for (side in listOf(0, 1)) {
             val sx = if (side == 0) -0.12f else 0.12f
+            val angle = when {
+                side == 0 && leftAngleDeg != null -> leftAngleDeg
+                side == 1 && rightAngleDeg != null -> rightAngleDeg
+                else -> angleDeg
+            }
+
+            val a = (angle * PI) / 180.0
+            val sin_a = sin(a).toFloat()
+            val cos_a = cos(a).toFloat()
 
             // Shoulder
             lm[11 + side] = Landmark(sx, -0.45f, 0f, 0.95f)

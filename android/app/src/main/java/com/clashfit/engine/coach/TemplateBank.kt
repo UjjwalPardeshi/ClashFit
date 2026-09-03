@@ -57,6 +57,11 @@ object TemplateBank {
         "Fine. That one hurt.",
     )
 
+    private val ASYM = mapOf(
+        "coach" to "Your {weaker_side} side moved through {asymmetry_pct} percent less range than the other, across the whole set.",
+        "boss" to "One of your sides is carrying the other. I noticed.",
+    )
+
     private val SPECIAL = mapOf(
         "zero" to mapOf(
             "coach" to "Nothing counted that time. Check your framing and go again.",
@@ -79,6 +84,14 @@ object TemplateBank {
         }
 
         val tired = t.fatigueBand == FatigueBand.FADING || t.fatigueBand == FatigueBand.GASSED
+
+        // A consistent bilateral lean outranks a depth or tempo nudge. Depth you can fix next rep; a
+        // side carrying the other is the thing that leads somewhere worse, and it is the observation a
+        // physiotherapist would actually want. It still yields to real fatigue, which is more urgent.
+        if (!tired && t.asymmetryPct != null && t.asymmetryPct >= 10) {
+            return out(ASYM["coach"]!!, ASYM["boss"]!!, t)
+        }
+
         if (!tired && t.sessionSetIndex == 1 && t.fatigueBand == FatigueBand.FRESH) {
             return out(SPECIAL["first"]!!["coach"]!!, pickBoss(t), t)
         }
@@ -154,6 +167,8 @@ object TemplateBank {
             "boss_hp_pct" -> t.bossHpPct
             "worst_index" -> t.worstRep?.index
             "best_index" -> t.bestRep?.index
+            "asymmetry_pct" -> t.asymmetryPct
+            "weaker_side" -> t.weakerSide
             else -> null
         }.let { v ->
             if (v == null || (v is Float && v.isNaN())) null else v

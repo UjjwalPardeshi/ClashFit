@@ -138,4 +138,5 @@ data class RepRecord(
     val heightCm: Float = Float.NaN,
     val holdSec: Float = Float.NaN,
     val accuracy: Float = Float.NaN,
+    val asymmetry: com.clashfit.engine.core.RepAsymmetry? = null,
 )

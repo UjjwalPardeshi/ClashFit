@@ -3,6 +3,7 @@ package com.clashfit.engine.coach
 import com.clashfit.core.model.CombatState
 import com.clashfit.core.model.RepRecord
 import com.clashfit.core.model.SetTelemetry
+import com.clashfit.engine.core.summariseAsymmetry
 import kotlin.math.max
 import kotlin.math.round
 
@@ -15,6 +16,18 @@ object TelemetrySummariser {
         setIndex: Int = 1,
         restSec: Int = 45,
     ): SetTelemetry {
+        val asymmetrySummary = summariseAsymmetry(reps)
+        val asymmetryPct = if (asymmetrySummary.enough && asymmetrySummary.consistent) {
+            round(asymmetrySummary.deficitPct).toInt()
+        } else {
+            null
+        }
+        val weakerSide = if (asymmetrySummary.enough && asymmetrySummary.consistent) {
+            asymmetrySummary.weakerSide
+        } else {
+            null
+        }
+
         if (reps.isEmpty()) {
             return SetTelemetry(
                 exercise = exerciseId,
@@ -38,6 +51,8 @@ object TelemetrySummariser {
                 sessionSetIndex = setIndex,
                 restSec = restSec,
                 trend = SetTelemetry.Trend.FLAT,
+                asymmetryPct = asymmetryPct,
+                weakerSide = weakerSide,
             )
         }
 
@@ -77,6 +92,8 @@ object TelemetrySummariser {
             sessionSetIndex = setIndex,
             restSec = restSec,
             trend = trendOf(reps),
+            asymmetryPct = asymmetryPct,
+            weakerSide = weakerSide,
         )
     }
 

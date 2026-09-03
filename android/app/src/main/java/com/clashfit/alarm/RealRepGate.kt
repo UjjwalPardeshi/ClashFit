@@ -189,7 +189,8 @@ class RealRepGate(
         try {
             val lms = if (world.size == LANDMARK_COUNT) filter?.apply(world, frame.tMs) ?: world else world
             val threshold = configStore.pose.value.visibilityThreshold
-            val (angleDeg, _) = Geometry.primaryAngle(lms, pa.first, pa.second, pa.third, jointNames, threshold)
+            val result = Geometry.primaryAngle(lms, pa.first, pa.second, pa.third, jointNames, threshold)
+            val angleDeg = result.angle
 
             if (angleDeg.isNaN()) nudgeIfLost(frame.tMs) else lastPoseMs = frame.tMs
 

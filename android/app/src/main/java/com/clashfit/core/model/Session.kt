@@ -60,6 +60,8 @@ data class SetTelemetry(
     val sessionSetIndex: Int,
     val restSec: Int,
     val trend: Trend,
+    val asymmetryPct: Int? = null,
+    val weakerSide: String? = null,
 ) {
     data class RepRef(val index: Int, val form: Float, val reason: String? = null)
     enum class Trend { IMPROVING, DECLINING, FLAT }

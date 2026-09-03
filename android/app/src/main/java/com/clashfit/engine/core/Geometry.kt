@@ -90,9 +90,8 @@ object Geometry {
         aName: String, bName: String, cName: String,
         jointNames: List<String>,
         threshold: Float = 0.6f,
-    ): Pair<Float, SideSelection> {
+    ): PrimaryAngleResult {
         val sel = chooseSide(landmarks, jointNames, threshold)
-        if (!sel.valid) return Float.NaN to sel
         fun one(side: Side): Float {
             val ai = idx(aName, side)
             val bi = idx(bName, side)
@@ -100,14 +99,22 @@ object Geometry {
             if (ai < 0 || bi < 0 || ci < 0) return Float.NaN
             return angle3(landmarks[ai], landmarks[bi], landmarks[ci])
         }
+        val left = one(Side.LEFT)
+        val right = one(Side.RIGHT)
         val deg = if (sel.both) {
-            val l = one(Side.LEFT)
-            val r = one(Side.RIGHT)
-            if (l.isNaN() || r.isNaN()) Float.NaN else (l + r) / 2f
+            if (left.isNaN() || right.isNaN()) Float.NaN else (left + right) / 2f
         } else {
             one(sel.side)
         }
-        return deg to sel
+        return PrimaryAngleResult(
+            angle = deg,
+            left = left,
+            right = right,
+            side = sel.side,
+            both = sel.both,
+            visibility = sel.visibility,
+            valid = sel.valid,
+        )
     }
 
     /** Distance in metres between the outer two joints of the primary angle. */
@@ -189,6 +196,17 @@ object Geometry {
 }
 
 data class SideSelection(
+    val side: Side,
+    val both: Boolean,
+    val visibility: Float,
+    val valid: Boolean,
+)
+
+/** Result of primaryAngle computation, including bilateral breakdown. */
+data class PrimaryAngleResult(
+    val angle: Float,
+    val left: Float,
+    val right: Float,
     val side: Side,
     val both: Boolean,
     val visibility: Float,

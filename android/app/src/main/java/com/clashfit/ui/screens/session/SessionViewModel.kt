@@ -319,6 +319,7 @@ class SessionViewModel(
                         startedAtMs = set.startedAtMs, endedAtMs = set.endedAtMs, reps = set.reps.size, formMean = setMean,
                         fatigueEnd = endF?.value ?: 0f, fatigueBandEnd = (endF?.band ?: FatigueBand.FRESH).name,
                         coachLine = set.coachLine, bossLine = set.bossLine, coachSource = set.coachSource, restSec = set.restSec,
+                        asymmetryPct = set.telemetry?.asymmetryPct, weakerSide = set.telemetry?.weakerSide,
                     ),
                     set.reps.map { r -> r.toEntity(sessionId) },
                 )
