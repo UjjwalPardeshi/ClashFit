@@ -44,8 +44,10 @@ com.clashfit
 ├── duel/            DuelTransport · NearbyTransport · DuelSession · RaidSession · RepRaceSession
 ├── run/             RunTrackingService · run screens
 ├── alarm/           scheduler · receivers · ring activity with rep-gated dismiss · alarm screens
-├── data/            Room entities, DAOs, Prefs
-└── ui/              theme · components kit · nav · screens/<feature>
+├── play/            PlayHub — a Nearby link or a pass-the-phone roster that outlives one screen
+├── data/            Room entities, DAOs, Prefs · ProgressionRepository (streaks, bests, ladders)
+└── ui/              theme · components kit · nav · screens/{home, modes, picker, session, duel, roster, ghosts,
+                     challenge, breathing, library, character, streaks, history, clinic, preflight, privacy, settings}
 ```
 
 ## 3. Phases
@@ -54,8 +56,8 @@ com.clashfit
 |---|---|---|
 | 0 | Skeleton: Gradle, manifest, theme, core contracts, config store, Room, nav with stubs | `assembleDebug` green |
 | 1 | Parallel ports and features, one agent per package, no shared files touched | each package compiles, JVM tests pass |
-| 2 | `SessionEngine` + session screens (calibration → fight → rest → victory → summary) · duel/raid/rep-race screens · wiring | end-to-end fight on a device or trace |
-| 3 | Review (correctness vs JS, lifecycle, permissions, performance on the camera thread) · animations · baseline profile · CI | release build green |
+| 2 | `SessionEngine` + session screens (calibration → fight → rest → victory → summary) · duel/raid/rep-race lobbies · roster board · ghosts, challenge codes, breathing · alarm camera gate · progression banked | done: compiles, JVM tests pass, debug APK builds |
+| 3 | Review (correctness vs JS, lifecycle, permissions, performance on the camera thread) · lint clean · animations · baseline profile · CI | release build green |
 
 Commits are small and per package. Push to **both** remotes (`origin` and `fork`).
 
