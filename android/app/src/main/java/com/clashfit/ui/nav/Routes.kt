@@ -1,0 +1,38 @@
+package com.clashfit.ui.nav
+
+import kotlinx.serialization.Serializable
+
+/** Type-safe destinations. If a route is not here, the screen does not exist. */
+sealed interface Route
+
+@Serializable data object Splash : Route
+@Serializable data object Home : Route
+@Serializable data object Modes : Route
+@Serializable data class ExercisePicker(val mode: String) : Route
+/** Calibration, fight, rest and victory are phases of one session, not separate screens. */
+@Serializable data class Session(val mode: String, val exerciseId: String, val casual: Boolean = false, val ghostId: String? = null, val durationSec: Int? = null) : Route
+@Serializable data class Summary(val sessionId: Long) : Route
+
+@Serializable data class DuelLobby(val mode: String, val exerciseId: String) : Route
+@Serializable data class RaidRoom(val exerciseId: String) : Route
+@Serializable data class Roster(val mode: String, val exerciseId: String) : Route
+
+@Serializable data object RunHome : Route
+@Serializable data object RunActive : Route
+@Serializable data class RunSummary(val runId: Long) : Route
+
+@Serializable data object Alarms : Route
+@Serializable data class AlarmEdit(val alarmId: Long = 0L) : Route
+
+@Serializable data object Library : Route
+@Serializable data class ExerciseDetail(val exerciseId: String) : Route
+@Serializable data object Character : Route
+@Serializable data object Streaks : Route
+@Serializable data object History : Route
+@Serializable data object Clinic : Route
+@Serializable data object Ghosts : Route
+@Serializable data object Challenge : Route
+@Serializable data object Breathing : Route
+@Serializable data object Settings : Route
+@Serializable data object Privacy : Route
+@Serializable data object Preflight : Route
