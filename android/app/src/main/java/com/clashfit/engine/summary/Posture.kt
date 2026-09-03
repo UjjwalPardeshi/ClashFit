@@ -58,7 +58,7 @@ object PostureScorer {
         val flexBoth = if (visibleCount >= 4) listOfNotNull(
             flexL.takeIf { earL.visibility > VISIBILITY_THRESHOLD && shoulderL.visibility > VISIBILITY_THRESHOLD },
             flexR.takeIf { earR.visibility > VISIBILITY_THRESHOLD && shoulderR.visibility > VISIBILITY_THRESHOLD },
-        ).averageOrNull() ?: 0f else (flexL + flexR) / 2f
+        ).let { if (it.isEmpty()) 0f else it.average().toFloat() } else (flexL + flexR) / 2f
 
         // Shoulder elevation: vertical distance ear→shoulder, normalized by torso length.
         val elevL = shoulderElevation(earL, shoulderL, hipL)
@@ -66,7 +66,7 @@ object PostureScorer {
         val elevBoth = if (visibleCount >= 4) listOfNotNull(
             elevL.takeIf { earL.visibility > VISIBILITY_THRESHOLD && shoulderL.visibility > VISIBILITY_THRESHOLD && hipL.visibility > VISIBILITY_THRESHOLD },
             elevR.takeIf { earR.visibility > VISIBILITY_THRESHOLD && shoulderR.visibility > VISIBILITY_THRESHOLD && hipR.visibility > VISIBILITY_THRESHOLD },
-        ).averageOrNull() ?: 0f else (elevL + elevR) / 2f
+        ).let { if (it.isEmpty()) 0f else it.average().toFloat() } else (elevL + elevR) / 2f
 
         // Score: 100 at ≤10° flexion, 0 at ≥45°, linear interpolation.
         // Elevation penalty: reduce by up to 20 points if shoulders are raised.

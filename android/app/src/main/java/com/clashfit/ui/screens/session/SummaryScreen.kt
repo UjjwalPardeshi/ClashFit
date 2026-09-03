@@ -151,8 +151,8 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
         d.best?.let { RuleRow("Best rep · #${it.repIndex}", "${(it.formScore * 100).toInt()}%${it.depthCm?.let { c -> " · %.0f cm".format(c) } ?: ""}") }
         d.worst?.let { RuleRow("Worst rep · #${it.repIndex}", "${(it.formScore * 100).toInt()}% · ${it.reason}") }
         for (set in d.sets) {
-            RuleRow(“Set ${set.setIndex} · ${set.reps} reps”, “${(set.formMean * 100).toInt()}% · ${set.fatigueBandEnd}”)
-            set.coachLine?.let { Text(“”$it””, style = MaterialTheme.typography.bodyMedium, color = InkMuted, modifier = Modifier.padding(vertical = 8.dp)) }
+            RuleRow("Set ${set.setIndex} · ${set.reps} reps", "${(set.formMean * 100).toInt()}% · ${set.fatigueBandEnd}")
+            set.coachLine?.let { Text(""$it"", style = MaterialTheme.typography.bodyMedium, color = InkMuted, modifier = Modifier.padding(vertical = 8.dp)) }
             if (set.asymmetryPct != null) {
                 val summary = AsymmetrySummary(
                     usable = 0,
