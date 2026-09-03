@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">ClashFit</string>
-    <string name="tagline">Your body is the controller. Your camera is the referee.</string>
     <string name="not_medical">Not a medical device</string>
     <string name="notif_channel_alarm">Wake-up alarm</string>
     <string name="notif_channel_run">Run tracking</string>

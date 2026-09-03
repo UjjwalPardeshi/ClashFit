@@ -38,11 +38,17 @@ fun NearbyPermissionGate(
 
     // Collect required permissions based on Android version
     val permissions = remember {
-        mutableListOf(
-            Manifest.permission.BLUETOOTH_ADVERTISE,
-            Manifest.permission.BLUETOOTH_CONNECT,
-            Manifest.permission.BLUETOOTH_SCAN,
-        ).apply {
+        mutableListOf<String>().apply {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                add(Manifest.permission.BLUETOOTH_ADVERTISE)
+                add(Manifest.permission.BLUETOOTH_CONNECT)
+                add(Manifest.permission.BLUETOOTH_SCAN)
+            } else {
+                // Pre-S, Nearby Connections runs on the legacy Bluetooth permission plus
+                // fine location (required for BLE scanning before Android 12).
+                add(Manifest.permission.BLUETOOTH)
+                add(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 add(Manifest.permission.NEARBY_WIFI_DEVICES)
             }

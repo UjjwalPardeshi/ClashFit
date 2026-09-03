@@ -158,6 +158,7 @@ fun Bar(fraction: Float, modifier: Modifier = Modifier, color: Color = Ember, tr
 }
 
 /** One rule-separated row: label left, value right. The library and settings are lists of these. */
+@Suppress("ModifierParameter") // many call sites pass `value` positionally; reordering modifier first would break them
 @Composable
 fun RuleRow(label: String, value: String? = null, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, trailing: (@Composable RowScope.() -> Unit)? = null) {
     Column(modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)) {

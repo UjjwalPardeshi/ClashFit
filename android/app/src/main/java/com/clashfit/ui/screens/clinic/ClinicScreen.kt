@@ -18,11 +18,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.clashfit.AppGraph
+import com.clashfit.R
 import com.clashfit.core.model.GameMode
 import com.clashfit.ui.components.EmberButton
 import com.clashfit.ui.components.Headline
@@ -77,7 +79,7 @@ fun ClinicScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = M
                     .padding(12.dp)
             ) {
                 Text(
-                    "Not a medical device. Results are for tracking only.",
+                    stringResource(R.string.not_medical),
                     style = MaterialTheme.typography.labelSmall,
                     color = InkFaint
                 )

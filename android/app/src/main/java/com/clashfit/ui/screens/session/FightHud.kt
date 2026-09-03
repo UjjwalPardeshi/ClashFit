@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.sp
 import com.clashfit.core.model.CombatState
 import com.clashfit.core.model.FatigueBand
@@ -136,7 +137,7 @@ fun DamageNumeral(hit: HudEvent.Hit?, modifier: Modifier = Modifier) {
         launch { rise.animateTo(-48f, tween(700)) }
         launch { alpha.animateTo(0f, tween(700, delayMillis = 220)) }
     }
-    Column(modifier.offset(y = rise.value.dp).scale(scale.value).alpha(alpha.value), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier.offset { IntOffset(0, rise.value.dp.roundToPx()) }.scale(scale.value).alpha(alpha.value), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("+${hit.damage}", fontSize = 96.sp, lineHeight = 96.sp, fontWeight = FontWeight.Black, fontFamily = MaterialTheme.typography.displayLarge.fontFamily, color = hit.verdict.color())
         Text(hit.verdict.name, style = MaterialTheme.typography.labelLarge, color = hit.verdict.color())
     }

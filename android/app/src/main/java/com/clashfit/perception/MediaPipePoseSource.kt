@@ -7,6 +7,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.graphics.createBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -204,10 +205,9 @@ class MediaPipePoseSource(
             val pixelStride = planes[0].pixelStride
             val rowPadding = planes[0].rowStride - pixelStride * imageProxy.width
 
-            val bitmap = Bitmap.createBitmap(
+            val bitmap = createBitmap(
                 imageProxy.width + rowPadding / pixelStride,
                 imageProxy.height,
-                Bitmap.Config.ARGB_8888
             )
             buffer.rewind()
             bitmap.copyPixelsFromBuffer(buffer)
