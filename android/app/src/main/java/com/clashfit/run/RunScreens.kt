@@ -396,14 +396,16 @@ private fun RouteTrace(points: List<com.clashfit.data.RunPointEntity>, modifier:
 
         drawRect(Panel)
 
-        // Project points to local metres
-        val center = points[points.size / 2]
+        // Project points to local metres using geometric center
+        val centerLat = points.map { it.lat }.average()
+        val centerLon = points.map { it.lon }.average()
         val metersPerDegLat = 111_320f
-        val metersPerDegLon = 111_320f * cos(center.lat * PI / 180.0).toFloat()
 
         val projected = points.map { p ->
-            val x = ((p.lon - center.lon) * metersPerDegLon).toFloat()
-            val y = ((p.lat - center.lat) * metersPerDegLat).toFloat()
+            // Recompute metersPerDegLon for each point's latitude for accuracy on long routes
+            val metersPerDegLon = 111_320f * cos(p.lat * PI / 180.0).toFloat()
+            val x = ((p.lon - centerLon) * metersPerDegLon).toFloat()
+            val y = ((p.lat - centerLat) * metersPerDegLat).toFloat()
             Offset(x, y)
         }
 
