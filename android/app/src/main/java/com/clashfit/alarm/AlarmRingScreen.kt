@@ -241,7 +241,7 @@ private fun RepCountdown(state: AlarmRingUiState) {
             textAlign = TextAlign.Center,
         )
         Text(
-            text = "${state.exerciseName.uppercase(Locale.getDefault())} TO DISMISS",
+            text = "${state.exerciseName.uppercase()} TO DISMISS",
             style = MaterialTheme.typography.labelLarge,
             color = InkMuted,
             textAlign = TextAlign.Center,

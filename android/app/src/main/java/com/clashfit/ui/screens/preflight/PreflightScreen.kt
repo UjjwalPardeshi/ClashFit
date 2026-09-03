@@ -1,5 +1,7 @@
 package com.clashfit.ui.screens.preflight
 
+import android.os.Build
+
 import android.content.Context
 import android.content.pm.PackageManager
 import android.speech.tts.TextToSpeech
@@ -161,6 +163,8 @@ private fun checkTts(context: Context): PreflightStatus {
 
 private fun checkAlarms(context: Context): PreflightStatus {
     val alarmManager = context.getSystemService(android.app.AlarmManager::class.java)
+    // canScheduleExactAlarms exists from API 31; below that exact alarms need no consent.
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return PreflightStatus.PASS
     return if (alarmManager?.canScheduleExactAlarms() == true) PreflightStatus.PASS else PreflightStatus.WARN
 }
 
