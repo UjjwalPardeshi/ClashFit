@@ -1,9 +1,10 @@
 package com.clashfit.alarm
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
@@ -11,51 +12,68 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.clashfit.AppGraph
+import com.clashfit.core.pose.CameraFacing
+import com.clashfit.core.pose.PoseSource
+import com.clashfit.core.pose.SyntheticPoseSource
+import com.clashfit.perception.CameraPermissionGate
+import com.clashfit.perception.MediaPipePoseSource
+import com.clashfit.perception.SkeletonOverlay
+import com.clashfit.ui.screens.session.SessionWiring
+import com.clashfit.ui.theme.Ember
+import com.clashfit.ui.theme.EmberDeep
+import com.clashfit.ui.theme.Ground
+import com.clashfit.ui.theme.Ink
+import com.clashfit.ui.theme.InkFaint
+import com.clashfit.ui.theme.InkMuted
+import com.clashfit.ui.theme.Panel
+import com.clashfit.ui.theme.Rule
+import com.clashfit.ui.theme.Working
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 /**
- * The full-screen alarm ring UI. Displays the time, target reps, live rep count with progress pips,
- * snooze button, and an emergency dismiss button that requires a 5-second hold.
+ * The full-screen alarm ring UI. The camera counts verified reps of the alarm's exercise and the
+ * alarm keeps ringing until the configured number of them is done — that is the whole promise.
+ *
+ * The camera occupies the top of the screen and is the only part behind the permission gate: the
+ * numeral, the snooze button and the emergency hold stay reachable whether or not the camera is
+ * allowed, so a denied permission never traps anyone in a ringing alarm.
  */
 @Composable
 fun AlarmRingScreen(alarmId: Long, onDismissed: () -> Unit) {
     val context = LocalContext.current
-    val viewModel: AlarmRingViewModel = remember {
-        AlarmRingViewModel(context, alarmId)
-    }
+    val graph = remember(context) { AppGraph.of(context) }
+    val vm: AlarmRingViewModel = viewModel(
+        key = "alarm-$alarmId",
+        factory = AlarmRingViewModel.factory(context, alarmId),
+    )
 
-    val uiState by viewModel.uiState.collectAsState()
-    val state = uiState ?: return
+    val uiState by vm.uiState.collectAsState()
+    val state = uiState
 
-    var currentTime by remember { mutableStateOf(getCurrentTimeString()) }
-
-    // Update time every second
+    var currentTime by remember { mutableStateOf(currentTimeString()) }
     LaunchedEffect(Unit) {
         while (true) {
             delay(1000)
-            currentTime = getCurrentTimeString()
+            currentTime = currentTimeString()
         }
     }
 
-    // Observe rep gate events
-    val repGate = viewModel.repGate
-    val repEvent by remember(state.exercise) {
-        repGate.observe(state.exercise)
-    }.collectAsState(initial = RepGateEvent(0, state.targetReps, null, null))
-
-    LaunchedEffect(repEvent) {
-        viewModel.onRepCountUpdate(repEvent)
-        if (repEvent.counted >= repEvent.target) {
-            delay(500)
+    // The reps are in, or the emergency hold ran its course: let the ring go. Snoozing does not
+    // end it — the alarm keeps ringing until the reps are verified.
+    LaunchedEffect(state?.finished) {
+        if (state?.finished == true) {
+            delay(400)
             onDismissed()
         }
     }
@@ -63,100 +81,245 @@ fun AlarmRingScreen(alarmId: Long, onDismissed: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0B0B0C)) // Ground color
-            .pointerInput(Unit) {
-                detectTapGestures { }
-            }
+            .background(Ground)
+            .pointerInput(Unit) { detectTapGestures { } },
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceEvenly
-        ) {
-            // Time display (top)
+        if (state == null) {
+            // The alarm row is still loading. Show the clock rather than a black screen.
             Text(
                 text = currentTime,
-                style = MaterialTheme.typography.displayLarge,
-                color = Color(0xFFF3EFE8), // Ink
-                fontSize = 64.sp,
-                textAlign = TextAlign.Center
+                style = MaterialTheme.typography.displayMedium,
+                color = Ink,
+                modifier = Modifier.align(Alignment.Center),
             )
-
-            // Rep counter and progress pips (center)
+        } else {
             Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 Text(
-                    text = "${repEvent.counted} PUSH-UPS TO DISMISS",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color(0xFFF3EFE8),
-                    textAlign = TextAlign.Center
+                    text = currentTime,
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = InkMuted,
+                    textAlign = TextAlign.Center,
                 )
 
-                // Progress pips
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Spacer(Modifier.height(12.dp))
+
+                // The camera stage: roughly 40% of the screen, square, at the top.
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.40f),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    repeat(state.targetReps) { index ->
-                        Box(
-                            modifier = Modifier
-                                .size(16.dp)
-                                .background(
-                                    if (index < repEvent.counted) Color(0xFFFF4F1F) // Ember
-                                    else Color(0x29F3EFE8) // Rule
-                                )
-                        )
-                    }
+                    RepCamera(graph, vm, state)
                 }
 
-                // Last rep verdict
-                if (repEvent.lastVerdict != null) {
-                    Text(
-                        text = "Last: ${repEvent.lastVerdict}",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color(0xA8F3EFE8), // InkMuted
-                        textAlign = TextAlign.Center
-                    )
-                }
-
-                // Cue if available
-                val cue = repEvent.cue
-                if (cue != null) {
-                    Text(
-                        text = cue,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFFF2C14E), // Working/yellow
-                        textAlign = TextAlign.Center
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceEvenly,
+                ) {
+                    RepCountdown(state)
+                    RepProgress(counted = state.repEvent.counted, target = state.targetReps)
+                    DismissControls(
+                        state = state,
+                        onSnooze = { vm.onSnoozePressed() },
+                        onHoldStart = { vm.onEmergencyDismissPressedDown() },
+                        onHoldEnd = { vm.onEmergencyDismissPressedUp() },
                     )
                 }
             }
+        }
+    }
+}
 
-            // Buttons (bottom)
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Snooze button
-                if (state.snoozeLimitRemaining > 0) {
-                    SnoozeButton(
-                        remaining = state.snoozeLimitRemaining,
-                        onSnooze = { viewModel.onSnoozePressed() }
-                    )
-                }
+/**
+ * The rep-counting half of the screen. Everything inside needs the camera, so it — and only it —
+ * sits behind [CameraPermissionGate]. The gate reads the permission once per composition, so it is
+ * re-keyed when the grant lands and the stage appears without leaving the ring screen.
+ */
+@Composable
+private fun RepCamera(graph: AppGraph, vm: AlarmRingViewModel, state: AlarmRingUiState) {
+    // The emulator demo has no camera; the scripted body drives the gate exactly the same way.
+    val synthetic = remember { SessionWiring.forceSynthetic }
+    if (synthetic) {
+        RepCameraStage(graph, vm, state, synthetic = true)
+    } else {
+        val context = LocalContext.current
+        var granted by remember { mutableStateOf(hasCameraPermission(context)) }
+        // The gate reads the permission with a keyless `remember`, so it cannot notice a grant on
+        // its own. Polling while it is missing, and re-keying it when the grant lands, does that.
+        LaunchedEffect(granted) {
+            while (!granted) {
+                delay(500)
+                granted = hasCameraPermission(context)
+            }
+        }
 
-                // Emergency dismiss button (5-second hold)
-                EmergencyDismissButton(
-                    isActive = state.isEmergencyHoldActive,
-                    progress = state.emergencyHoldProgress,
-                    onPressedDown = { viewModel.onEmergencyDismissPressedDown() },
-                    onPressedUp = { viewModel.onEmergencyDismissPressedUp() }
+        key(granted) {
+            CameraPermissionGate {
+                RepCameraStage(graph, vm, state, synthetic = false)
+            }
+        }
+    }
+}
+
+/**
+ * Owns the pose source for as long as it is on screen and hands the gate to the view model.
+ * [MediaPipePoseSource] runs off `ImageAnalysis` and exposes no `PreviewView`, so there is no
+ * camera image to show: the skeleton drawn from the frames is the preview.
+ */
+@Composable
+private fun RepCameraStage(
+    graph: AppGraph,
+    vm: AlarmRingViewModel,
+    state: AlarmRingUiState,
+    synthetic: Boolean,
+) {
+    val owner = LocalLifecycleOwner.current
+    val poseSource: PoseSource = remember(owner, synthetic) {
+        if (synthetic) SyntheticPoseSource(graph.scope)
+        else MediaPipePoseSource(graph.app, graph.config.pose.value, graph.clock, owner, graph.scope)
+    }
+    val gate = remember(poseSource, state.exercise, state.targetReps) {
+        RealRepGate(graph.app, poseSource, graph.config, graph.json, graph.clock, target = state.targetReps)
+    }
+
+    LaunchedEffect(gate, state.alarmId, state.exercise) { vm.attachGate(gate) }
+
+    DisposableEffect(gate) {
+        poseSource.start(CameraFacing.FRONT)
+        onDispose {
+            gate.stop()
+            poseSource.stop()
+        }
+    }
+
+    val skeleton by gate.skeleton.collectAsState()
+
+    Box(
+        modifier = Modifier
+            .fillMaxHeight()
+            .aspectRatio(1f)
+            .background(Panel)
+            .border(1.dp, Rule),
+    ) {
+        Text(
+            text = if (synthetic) "SYNTHETIC BODY" else "CAMERA ON",
+            style = MaterialTheme.typography.labelMedium,
+            color = if (skeleton == null) InkFaint else Ember,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(10.dp),
+        )
+        SkeletonOverlay(skeleton, Modifier.fillMaxSize())
+        if (skeleton == null) {
+            Text(
+                text = "FIND YOUR FRAME",
+                style = MaterialTheme.typography.labelMedium,
+                color = InkFaint,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+    }
+}
+
+/** The number that matters: reps still owed, then the exercise, then the coach's cue. */
+@Composable
+private fun RepCountdown(state: AlarmRingUiState) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = state.remainingReps.toString(),
+            style = MaterialTheme.typography.displayMedium,
+            color = if (state.remainingReps == 0) Ember else Ink,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = "${state.exerciseName.uppercase(Locale.getDefault())} TO DISMISS",
+            style = MaterialTheme.typography.labelLarge,
+            color = InkMuted,
+            textAlign = TextAlign.Center,
+        )
+        val cue = state.repEvent.cue
+        val verdict = state.repEvent.lastVerdict
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = cue ?: verdict?.let { "LAST REP: $it" } ?: " ",
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (cue != null) Working else InkFaint,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** Pips while they fit on one line, a bar once the alarm asks for more reps than that. */
+@Composable
+private fun RepProgress(counted: Int, target: Int) {
+    if (target in 1..12) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            repeat(target) { index ->
+                Box(
+                    modifier = Modifier
+                        .size(14.dp)
+                        .background(if (index < counted) Ember else Rule),
                 )
             }
         }
+    } else {
+        val fraction = if (target > 0) (counted.toFloat() / target).coerceIn(0f, 1f) else 0f
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.8f)
+                .height(10.dp)
+                .background(Rule),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(fraction)
+                    .background(Ember),
+            )
+        }
+    }
+}
+
+/** Snooze while snoozes remain, and the five-second emergency hold. Never behind the camera gate. */
+@Composable
+private fun DismissControls(
+    state: AlarmRingUiState,
+    onSnooze: () -> Unit,
+    onHoldStart: () -> Unit,
+    onHoldEnd: () -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        if (state.snoozeLimitRemaining > 0) {
+            SnoozeButton(remaining = state.snoozeLimitRemaining, onSnooze = onSnooze)
+        } else {
+            Text(
+                text = "NO SNOOZES LEFT",
+                style = MaterialTheme.typography.labelMedium,
+                color = InkFaint,
+            )
+        }
+
+        EmergencyDismissButton(
+            isActive = state.isEmergencyHoldActive,
+            progress = state.emergencyHoldProgress,
+            onPressedDown = onHoldStart,
+            onPressedUp = onHoldEnd,
+        )
     }
 }
 
@@ -165,17 +328,17 @@ private fun SnoozeButton(remaining: Int, onSnooze: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth(0.8f)
-            .background(Color(0xFFFF4F1F)) // Ember
+            .background(Ember)
             .padding(16.dp)
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { onSnooze() })
             },
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "SNOOZE (${remaining} LEFT)",
+            text = "SNOOZE ($remaining LEFT)",
             style = MaterialTheme.typography.labelLarge,
-            color = Color(0xFF0B0B0C) // Ground
+            color = Ground,
         )
     }
 }
@@ -185,46 +348,41 @@ private fun EmergencyDismissButton(
     isActive: Boolean,
     progress: Float,
     onPressedDown: () -> Unit,
-    onPressedUp: () -> Unit
+    onPressedUp: () -> Unit,
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth(0.8f)
             .height(48.dp)
-            .background(
-                Color(0xFF17171A) // Panel
-            )
+            .background(Panel)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {
                         onPressedDown()
                         tryAwaitRelease()
                         onPressedUp()
-                    }
+                    },
                 )
             },
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .fillMaxWidth(progress.coerceIn(0f, 1f))
-                .background(Color(0xFFC2330F)) // EmberDeep
+                .background(EmberDeep),
         )
 
         Text(
-            text = if (isActive) {
-                "HOLD ${(progress * 5).toInt()}s"
-            } else {
-                "EMERGENCY DISMISS"
-            },
+            text = if (isActive) "HOLD ${(progress * 5).toInt()}s" else "EMERGENCY DISMISS",
             style = MaterialTheme.typography.labelMedium,
-            color = Color(0xFFF3EFE8) // Ink
+            color = Ink,
         )
     }
 }
 
-private fun getCurrentTimeString(): String {
-    val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-    return sdf.format(Date())
-}
+private fun hasCameraPermission(context: Context): Boolean =
+    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+
+private fun currentTimeString(): String =
+    SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
