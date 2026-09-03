@@ -12,6 +12,7 @@ import com.clashfit.core.config.ConfigStore
 import com.clashfit.core.util.Clock
 import com.clashfit.data.ClashDb
 import com.clashfit.data.Prefs
+import com.clashfit.play.PlayHub
 import com.clashfit.voice.VoiceCommands
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +56,9 @@ class AppGraph(val app: Context) {
     val sfx: Sfx by lazy { Sfx() }
     val haptics: Haptics by lazy { Haptics(app, prefs) }
     val voiceCommands: VoiceCommands by lazy { VoiceCommands(app, mainScope) }
+
+    // Multiplayer links and pass-the-phone rosters outlive any one screen.
+    val playHub: PlayHub by lazy { PlayHub(app, json, clock, scope) }
 
     companion object {
         fun of(context: Context): AppGraph = (context.applicationContext as ClashFitApp).graph
