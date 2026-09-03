@@ -24,7 +24,7 @@ import java.util.Locale
  */
 class SpeechOut(
     private val context: Context,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
+    private val scope: CoroutineScope,
 ) {
     private val tag = "ClashFit/audio"
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -138,13 +138,21 @@ class SpeechOut(
     }
 
     private suspend fun playQueuedUtterances() {
-        if (currentUtteranceId != null || queue.isEmpty() || tts == null) return
+        if (currentUtteranceId != null || queue.isEmpty()) return
 
         val utterance = queue.removeAt(0)
         currentUtteranceId = System.currentTimeMillis().toString()
 
+        val ttsInstance = tts
+        if (ttsInstance == null) {
+            Log.e(tag, "TTS not initialized when trying to play utterance")
+            currentUtteranceId = null
+            releaseAudioFocus()
+            return
+        }
+
         try {
-            tts!!.apply {
+            ttsInstance.apply {
                 setPitch(utterance.pitch)
                 setSpeechRate(utterance.rate)
             }
@@ -152,7 +160,7 @@ class SpeechOut(
             // Request audio focus, ducking music 12dB (gain 0.251)
             requestAudioFocus()
 
-            tts!!.speak(
+            ttsInstance.speak(
                 utterance.text,
                 TextToSpeech.QUEUE_FLUSH,
                 null,

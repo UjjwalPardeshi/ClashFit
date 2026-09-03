@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import kotlin.math.max
+import kotlin.math.min
 
 /** Recognized voice commands: stop, pause, resume, next, skip, casual. */
 enum class Command { STOP, PAUSE, RESUME, NEXT, SKIP, CASUAL }
@@ -25,7 +25,7 @@ enum class Command { STOP, PAUSE, RESUME, NEXT, SKIP, CASUAL }
  */
 class VoiceCommands(
     private val context: Context,
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
+    private val scope: CoroutineScope,
 ) {
     private val tag = "ClashFit/voice"
     private val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
@@ -74,7 +74,7 @@ class VoiceCommands(
                     kotlinx.coroutines.delay(backoffMs)
                     startListening()
                 }
-                backoffMs = max(backoffMs * 2, maxBackoffMs)
+                backoffMs = min(backoffMs * 2, maxBackoffMs)
             }
 
             override fun onResults(results: Bundle?) {

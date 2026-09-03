@@ -4,6 +4,7 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
 import android.util.Log
+import java.util.concurrent.Executors
 import kotlin.math.PI
 import kotlin.math.sin
 
@@ -11,11 +12,15 @@ import kotlin.math.sin
  * Synthesized sound effects using AudioTrack: rep impacts (pitch varies with combo),
  * milestone chime, phase hit, boss death, framing-lost two-tone, and countdown ticks.
  * Low latency, precomputed PCM buffers, honours a mute flag.
+ * All methods are non-blocking; audio playback happens on a background thread.
  */
 class Sfx {
     private val tag = "ClashFit/audio"
     private val sampleRate = 44100
     private val muted = false // Set via prefs later if needed
+    private val audioExecutor = Executors.newSingleThreadExecutor { t ->
+        Thread(t).apply { isDaemon = true; name = "ClashFit-Audio" }
+    }
 
     /**
      * Rep impact sound: bright for clean, duller/detuned for shallow.
@@ -30,7 +35,7 @@ class Sfx {
                 else -> 700f
             }
             val duration = 80 // ms
-            playTone(frequency, duration.toLong())
+            audioExecutor.submit { playTone(frequency, duration.toLong()) }
         } catch (e: Exception) {
             Log.e(tag, "Error playing rep sound", e)
         }
@@ -42,12 +47,14 @@ class Sfx {
     fun milestone() {
         if (muted) return
         try {
-            // Quick ascending chime: 800Hz -> 1000Hz -> 1200Hz
-            playTone(800f, 100)
-            Thread.sleep(50)
-            playTone(1000f, 100)
-            Thread.sleep(50)
-            playTone(1200f, 100)
+            // Quick ascending chime: 800Hz -> 1000Hz -> 1200Hz on background thread
+            audioExecutor.submit {
+                playTone(800f, 100)
+                Thread.sleep(50)
+                playTone(1000f, 100)
+                Thread.sleep(50)
+                playTone(1200f, 100)
+            }
         } catch (e: Exception) {
             Log.e(tag, "Error playing milestone sound", e)
         }
@@ -59,7 +66,7 @@ class Sfx {
     fun phase() {
         if (muted) return
         try {
-            playTone(300f, 150)
+            audioExecutor.submit { playTone(300f, 150) }
         } catch (e: Exception) {
             Log.e(tag, "Error playing phase sound", e)
         }
@@ -71,12 +78,14 @@ class Sfx {
     fun bossDown() {
         if (muted) return
         try {
-            // Deep descending sweep
-            playTone(400f, 150)
-            Thread.sleep(100)
-            playTone(300f, 150)
-            Thread.sleep(100)
-            playTone(200f, 200)
+            // Deep descending sweep on background thread
+            audioExecutor.submit {
+                playTone(400f, 150)
+                Thread.sleep(100)
+                playTone(300f, 150)
+                Thread.sleep(100)
+                playTone(200f, 200)
+            }
         } catch (e: Exception) {
             Log.e(tag, "Error playing boss death sound", e)
         }
@@ -88,9 +97,12 @@ class Sfx {
     fun framingLost() {
         if (muted) return
         try {
-            playTone(600f, 100)
-            Thread.sleep(50)
-            playTone(400f, 150)
+            // Soft descending two-tone on background thread
+            audioExecutor.submit {
+                playTone(600f, 100)
+                Thread.sleep(50)
+                playTone(400f, 150)
+            }
         } catch (e: Exception) {
             Log.e(tag, "Error playing framing lost sound", e)
         }
@@ -102,7 +114,7 @@ class Sfx {
     fun tick() {
         if (muted) return
         try {
-            playTone(1000f, 100)
+            audioExecutor.submit { playTone(1000f, 100) }
         } catch (e: Exception) {
             Log.e(tag, "Error playing tick sound", e)
         }
@@ -136,8 +148,19 @@ class Sfx {
             .setBufferSizeInBytes(numSamples * 2)
             .build()
 
-        audioTrack.play()
-        audioTrack.write(samples, 0, numSamples)
-        audioTrack.release()
+        try {
+            audioTrack.play()
+            audioTrack.write(samples, 0, numSamples)
+            // Wait for playback to complete before releasing (50ms safety margin for playback latency)
+            // This runs on the audio background thread, so it doesn't block callers
+            Thread.sleep(durationMs + 50)
+        } finally {
+            try {
+                audioTrack.stop()
+                audioTrack.release()
+            } catch (e: Exception) {
+                Log.e(tag, "Error releasing AudioTrack", e)
+            }
+        }
     }
 }

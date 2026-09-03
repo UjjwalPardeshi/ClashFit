@@ -28,6 +28,7 @@ import com.clashfit.data.AlarmDao
 import com.clashfit.ui.theme.ClashFitTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.sin
@@ -60,6 +61,8 @@ class BootReceiver : BroadcastReceiver() {
 class AlarmService : Service() {
     private var audioTrack: AudioTrack? = null
     private var isPlaying = false
+    private var serviceJob = Job()
+    private val serviceScope = CoroutineScope(Dispatchers.Default + serviceJob)
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -107,7 +110,7 @@ class AlarmService : Service() {
         if (isPlaying) return
         isPlaying = true
 
-        CoroutineScope(Dispatchers.Default).launch {
+        serviceScope.launch {
             try {
                 val sampleRate = 44100
                 val duration = 60000 // 60 seconds loop
@@ -168,8 +171,9 @@ class AlarmService : Service() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
+        serviceJob.cancel()
         stopAlarm()
+        super.onDestroy()
     }
 
     companion object {
@@ -373,11 +377,27 @@ object AlarmScheduler {
     }
 
     private fun getAlarmDao(context: Context): AlarmDao? = try {
-        val app = context.applicationContext as? android.app.Application
-        val graph = (app as? com.clashfit.ClashFitApp)?.graph
-        graph?.db?.alarms()
+        val app = context.applicationContext
+        if (app !is com.clashfit.ClashFitApp) {
+            Log.e(TAG, "Application context is not ClashFitApp: ${app?.javaClass?.simpleName}")
+            return null
+        }
+
+        val graph = app.graph
+        if (graph == null) {
+            Log.e(TAG, "ClashFitApp.graph is null")
+            return null
+        }
+
+        val db = graph.db
+        if (db == null) {
+            Log.e(TAG, "Graph.db is null")
+            return null
+        }
+
+        db.alarms()
     } catch (e: Exception) {
-        Log.e(TAG, "Could not get AlarmDao", e)
+        Log.e(TAG, "Could not get AlarmDao: ${e.message}", e)
         null
     }
 }

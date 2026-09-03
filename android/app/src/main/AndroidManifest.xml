@@ -72,7 +72,8 @@
             </intent-filter>
         </activity>
 
-        <!-- Rings over the lock screen; dismissed only by the reps. -->
+        <!-- Rings over the lock screen; dismissed only by the reps.
+             Uses USE_FULL_SCREEN_INTENT permission (declared at line 24) for full-screen notification display. -->
         <activity
             android:name=".alarm.AlarmRingActivity"
             android:exported="false"
@@ -117,5 +118,15 @@
 
         <!-- Profile-guided startup. -->
         <profileable android:shell="true" />
+
+        <!-- FileProvider for sharing CSV exports. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.csv_provider"
+            android:exported="false">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

@@ -3,6 +3,13 @@
 -keep class com.google.protobuf.** { *; }
 -dontwarn com.google.mediapipe.**
 
+# Room database: keep all entity, DAO, and database classes for reflection.
+-keep @androidx.room.Entity class * { *; }
+-keep @androidx.room.Dao class * { *; }
+-keep class * extends androidx.room.RoomDatabase { *; }
+-keep class com.clashfit.data.** { *; }
+-keepattributes RuntimeVisibleAnnotations
+
 # kotlinx.serialization: keep serializers for our models and config records.
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.**

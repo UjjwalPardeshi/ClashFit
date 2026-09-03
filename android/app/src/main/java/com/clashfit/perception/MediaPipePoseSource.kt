@@ -68,6 +68,11 @@ class MediaPipePoseSource(
     private var lastFpsUpdateMs = 0L
     private var lastFrameTimeMs = 0L
 
+    // Bitmap pool for reuse (pre-allocated at init, reused every frame to avoid GC)
+    private val bitmapPool = mutableListOf<Bitmap>()
+    private var bitmapPoolIndex = 0
+    private val BITMAP_POOL_SIZE = 3
+
     private val lifecycleObserver = LifecycleEventObserver { _, event ->
         when (event) {
             Lifecycle.Event.ON_RESUME -> startCamera()
@@ -86,7 +91,17 @@ class MediaPipePoseSource(
         lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
         stopCamera()
         poseLandmarker?.close()
-        executor.shutdown()
+        // Release bitmap pool
+        bitmapPool.forEach { it.recycle() }
+        bitmapPool.clear()
+        executor.shutdownNow()
+        try {
+            if (!executor.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)) {
+                Log.w(TAG, "Executor did not terminate within 2 seconds")
+            }
+        } catch (e: InterruptedException) {
+            Log.e(TAG, "Interrupted waiting for executor termination", e)
+        }
     }
 
     override fun setLowPower(enabled: Boolean) {
@@ -181,12 +196,20 @@ class MediaPipePoseSource(
                 return
             }
 
+            // Initialize bitmap pool on first frame
+            if (bitmapPool.isEmpty()) {
+                for (i in 0 until BITMAP_POOL_SIZE) {
+                    bitmapPool.add(createBitmap(imageProxy.width, imageProxy.height))
+                }
+            }
+
             // Convert ImageProxy to Bitmap (already RGBA_8888 from setOutputImageFormat)
             val bitmap = imageProxyToBitmap(imageProxy)
             if (bitmap != null) {
+                // detectAsync copies the pixels into a packet before it returns, so the pooled
+                // bitmap can be reused on the next frame. Never call mpImage.close() here: the
+                // bitmap container's close() recycles the Bitmap, which would poison the pool.
                 val mpImage: MPImage = BitmapImageBuilder(bitmap).build()
-
-                // Send to MediaPipe with timestamp
                 poseLandmarker?.detectAsync(mpImage, now)
             }
             frameCount++
@@ -200,15 +223,19 @@ class MediaPipePoseSource(
 
     private fun imageProxyToBitmap(imageProxy: ImageProxy): Bitmap? {
         return try {
+            // Get a bitmap from the pool (pre-allocated to avoid allocation churn)
+            if (bitmapPool.isEmpty()) {
+                return null
+            }
+            val bitmap = bitmapPool[bitmapPoolIndex % bitmapPool.size]
+            bitmapPoolIndex++
+
             val planes = imageProxy.planes
             val buffer = planes[0].buffer
             val pixelStride = planes[0].pixelStride
             val rowPadding = planes[0].rowStride - pixelStride * imageProxy.width
 
-            val bitmap = createBitmap(
-                imageProxy.width + rowPadding / pixelStride,
-                imageProxy.height,
-            )
+            // Copy pixel data into the reused bitmap
             buffer.rewind()
             bitmap.copyPixelsFromBuffer(buffer)
             bitmap
