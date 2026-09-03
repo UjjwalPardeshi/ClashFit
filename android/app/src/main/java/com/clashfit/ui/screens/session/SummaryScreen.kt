@@ -1,6 +1,7 @@
 package com.clashfit.ui.screens.session
 
 import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -90,28 +92,53 @@ class SummaryViewModel(private val graph: AppGraph, private val sessionId: Long)
         }
     }
 
-    /** CSV of every rep's raw telemetry, written to files/export. Purpose is evidence, not sharing. */
+    /** CSV of every rep's raw telemetry, written to files/export with RFC 4180 escaping. */
     fun exportCsv(context: Context) {
         val d = _data.value ?: return
         viewModelScope.launch {
-            val path = withContext(Dispatchers.IO) {
+            val file = withContext(Dispatchers.IO) {
                 val dir = File(context.filesDir, "export").apply { mkdirs() }
                 val f = File(dir, "clashfit-${d.session.exerciseId}-${d.session.id}.csv")
                 f.bufferedWriter().use { w ->
                     w.appendLine("repIndex,tStartMs,tEndMs,formScore,depth,rom,tempo,alignment,reason,verdict,concentricVelocity,damage,combo,fatigue,band,validFrameRatio,depthCm,heightCm,holdSec")
                     for (r in d.reps) {
-                        w.appendLine(listOf(r.repIndex, r.tStartMs, r.tEndMs, r.formScore, r.depth, r.rom, r.tempo, r.alignment, r.reason, r.verdict,
-                            r.concentricVelocity, r.damage, r.comboAtRep, r.fatigueValue, r.fatigueBand, r.validFrameRatio,
-                            r.depthCm ?: "", r.heightCm ?: "", r.holdSec ?: "").joinToString(","))
+                        val fields = listOf(
+                            r.repIndex, r.tStartMs, r.tEndMs, r.formScore, r.depth, r.rom, r.tempo, r.alignment,
+                            escapeCsv(r.reason), escapeCsv(r.verdict),
+                            r.concentricVelocity, r.damage, r.comboAtRep, r.fatigueValue, escapeCsv(r.fatigueBand), r.validFrameRatio,
+                            r.depthCm ?: "", r.heightCm ?: "", r.holdSec ?: ""
+                        )
+                        w.appendLine(fields.joinToString(","))
                     }
                 }
-                f.absolutePath
+                f
             }
-            _exported.value = path
+            _exported.value = file.absolutePath
+            // Share the file via intent, allowing user to email or message it
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.csv_provider", file)
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/csv"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, "ClashFit Session · ${d.session.exerciseId}")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(Intent.createChooser(shareIntent, "Share CSV export"))
         }
     }
 
     companion object {
+        /**
+         * RFC 4180 CSV escaping: wrap fields containing comma, newline, or quote in double quotes,
+         * and escape internal quotes as double-double.
+         */
+        fun escapeCsv(value: String): String {
+            return if (value.contains(",") || value.contains("\n") || value.contains("\"")) {
+                "\"" + value.replace("\"", "\"\"") + "\""
+            } else {
+                value
+            }
+        }
+
         fun factory(graph: AppGraph, sessionId: Long) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T = SummaryViewModel(graph, sessionId) as T

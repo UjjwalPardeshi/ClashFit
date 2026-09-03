@@ -61,6 +61,11 @@ object Ladders {
 /**
  * The day key (YYYY-MM-DD) for a timestamp, in UTC. store.js uses `toISOString().slice(0, 10)`,
  * so the key never shifts with the device timezone and is safe to compare across days.
+ *
+ * This function returns the UTC date, not the local date. For example, a session at 23:30 UTC+5
+ * (which is 18:30 UTC) records as the UTC day, not the local day. This ensures consistent
+ * streak tracking across devices regardless of timezone, and matches cross-device expectations
+ * where the same session timestamp always belongs to the same UTC day.
  */
 fun dayKey(ms: Long): String =
     Instant.ofEpochMilli(ms).atZone(ZoneOffset.UTC).toLocalDate().toString()
