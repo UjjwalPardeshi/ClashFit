@@ -6,6 +6,8 @@ import com.clashfit.core.config.ExerciseSpec
 import com.clashfit.core.model.Landmark
 import com.clashfit.core.model.MovementEvent
 import com.clashfit.core.model.PoseEvent
+import com.clashfit.engine.core.Geometry
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
@@ -73,7 +75,7 @@ class PoseMatchDetector(
             val t = item.jsonObject
             val angleArray = mutableListOf<String>()
             t["angle"]?.jsonArray?.forEach { a ->
-                val joint = a.toString().trim('"').trim('\\')
+                val joint = a.jsonPrimitive.content
                 if (joint.isNotEmpty()) angleArray.add(joint)
             }
             val value = t["value"]?.jsonPrimitive?.floatOrNull ?: 90f
@@ -84,12 +86,8 @@ class PoseMatchDetector(
         reference = referenceList
 
         enterAccuracy = detector["enterAccuracy"]?.jsonPrimitive?.floatOrNull ?: 0.70f
-        enterHoldMs = detector["enterHoldMs"]?.let {
-            it.toString().toLongOrNull() ?: 1500L
-        } ?: 1500L
-        breakToleranceMs = detector["breakToleranceMs"]?.let {
-            it.toString().toLongOrNull() ?: 800L
-        } ?: 800L
+        enterHoldMs = detector["enterHoldMs"]?.jsonPrimitive?.longOrNull ?: 1500L
+        breakToleranceMs = detector["breakToleranceMs"]?.jsonPrimitive?.longOrNull ?: 800L
         targetDurationSec = detector["targetDurationSec"]?.jsonPrimitive?.floatOrNull ?: 20f
     }
 
@@ -239,18 +237,8 @@ class PoseMatchDetector(
         }
     }
 
-    private fun getJointIndex(joint: String, side: Side): Int {
-        val leftIndices = mapOf(
-            "SHOULDER" to 11, "ELBOW" to 13, "WRIST" to 15,
-            "HIP" to 23, "KNEE" to 25, "ANKLE" to 27,
-        )
-        val rightIndices = mapOf(
-            "SHOULDER" to 12, "ELBOW" to 14, "WRIST" to 16,
-            "HIP" to 24, "KNEE" to 26, "ANKLE" to 28,
-        )
-        val indices = if (side == Side.LEFT) leftIndices else rightIndices
-        return indices[joint] ?: -1
-    }
+    private fun getJointIndex(joint: String, side: Side): Int =
+        Geometry.idx(joint, side)
 }
 
 private fun angle3(a: Landmark, b: Landmark, c: Landmark): Float {

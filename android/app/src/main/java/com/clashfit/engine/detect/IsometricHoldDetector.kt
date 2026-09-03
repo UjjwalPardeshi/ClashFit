@@ -6,6 +6,8 @@ import com.clashfit.core.config.ExerciseSpec
 import com.clashfit.core.model.HoldEvent
 import com.clashfit.core.model.Landmark
 import com.clashfit.core.model.MovementEvent
+import com.clashfit.engine.core.Geometry
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.intOrNull
@@ -65,7 +67,7 @@ class IsometricHoldDetector(
             val t = item.jsonObject
             val angleArray = mutableListOf<String>()
             t["angle"]?.jsonArray?.forEach { a ->
-                val joint = a.toString().trim('"').trim('\\')
+                val joint = a.jsonPrimitive.content
                 if (joint.isNotEmpty()) angleArray.add(joint)
             }
             val value = t["value"]?.jsonPrimitive?.floatOrNull ?: 90f
@@ -75,9 +77,7 @@ class IsometricHoldDetector(
         }
         targets = targetsList
 
-        breakToleranceMs = detector["breakToleranceMs"]?.let {
-            it.toString().toIntOrNull()?.toLong() ?: 500L
-        } ?: 500L
+        breakToleranceMs = detector["breakToleranceMs"]?.jsonPrimitive?.longOrNull ?: 500L
 
         targetDurationSec = detector["targetDurationSec"]?.jsonPrimitive?.floatOrNull ?: 45f
     }
@@ -228,18 +228,8 @@ class IsometricHoldDetector(
         )
     }
 
-    private fun getJointIndex(joint: String, side: Side): Int {
-        val leftIndices = mapOf(
-            "SHOULDER" to 11, "ELBOW" to 13, "WRIST" to 15,
-            "HIP" to 23, "KNEE" to 25, "ANKLE" to 27,
-        )
-        val rightIndices = mapOf(
-            "SHOULDER" to 12, "ELBOW" to 14, "WRIST" to 16,
-            "HIP" to 24, "KNEE" to 26, "ANKLE" to 28,
-        )
-        val indices = if (side == Side.LEFT) leftIndices else rightIndices
-        return indices[joint] ?: -1
-    }
+    private fun getJointIndex(joint: String, side: Side): Int =
+        Geometry.idx(joint, side)
 
     private data class Point(val x: Float, val y: Float, val t: Long = 0L)
 }

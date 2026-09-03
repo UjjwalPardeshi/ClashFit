@@ -63,6 +63,7 @@ class RepStateMachine(private val config: RepDetectorConfig) {
         lastRepEndMs = null
         topRefU = null
         seenValid = false
+        stateEnteredMs = 0L
     }
 
     /** Feed one frame of primary angle (in degrees, NaN if invalid). Returns a completed rep or null. */
@@ -79,7 +80,6 @@ class RepStateMachine(private val config: RepDetectorConfig) {
             seenValid = true
             stateEnteredMs = tMs
         }
-        if (topRefU == null) topRefU = u
 
         rep?.let {
             if (u < it.uMin) it.uMin = u
@@ -90,7 +90,7 @@ class RepStateMachine(private val config: RepDetectorConfig) {
 
         when (state) {
             RepState.TOP -> {
-                if (u >= uTopEnter && u > topRefU!!) topRefU = u
+                if (u >= uTopEnter && topRefU != null && u > topRefU!!) topRefU = u
                 if (u < uTopExit) {
                     rep = PartialRep(tMs, u, u)
                     enter(RepState.DESCENDING, tMs)
@@ -141,6 +141,7 @@ class RepStateMachine(private val config: RepDetectorConfig) {
         val be = r.tBottomEnd ?: return null
         val ratio = if (r.frames > 0) r.validFrames.toFloat() / r.frames else 0f
         if (ratio < 0.9f) return null
+        require(topRefU != null) { "topRef must be set before FSM emits reps" }
 
         val tEcc = (bs - r.tStartMs) / 1000f
         val tBottom = (be - bs) / 1000f

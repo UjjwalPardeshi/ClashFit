@@ -215,6 +215,7 @@ class SessionEngine(
         family = exercise.familyEnum
         detector = if (family == Family.REP_CYCLE) null else DetectorFactory.create(exercise)
         val det = exercise.detector
+        require(det != null) { "exercise $id missing detector configuration" }
         jointNames = det["requiredJoints"]?.jsonArray?.map { it.jsonPrimitive.content } ?: defaultJoints(exercise)
         primaryAngle = det["primaryAngle"]?.jsonObject?.let {
             Triple(it.getValue("a").jsonPrimitive.content, it.getValue("b").jsonPrimitive.content, it.getValue("c").jsonPrimitive.content)
@@ -389,7 +390,12 @@ class SessionEngine(
             if (phase == Phase.FIGHTING) machine.onFrame(angle, tMs)?.let { completeRep(it, lms) }
         } else {
             val det = detector
-            if (det != null && phase == Phase.FIGHTING) det.onFrame(lms, image, tMs, side)?.let { completeEvent(it) }
+            if (det != null && phase == Phase.FIGHTING) {
+                // BALLISTIC receives both world and image landmarks; other families receive only world.
+                // This matches the JavaScript implementation and allows detectors to handle null image gracefully.
+                val detImage = if (family == Family.BALLISTIC) image else null
+                det.onFrame(lms, detImage, tMs, side)?.let { completeEvent(it) }
+            }
         }
         return state()
     }

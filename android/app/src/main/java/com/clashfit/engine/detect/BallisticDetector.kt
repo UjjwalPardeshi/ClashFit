@@ -6,6 +6,7 @@ import com.clashfit.core.config.ExerciseSpec
 import com.clashfit.core.model.JumpEvent
 import com.clashfit.core.model.Landmark
 import com.clashfit.core.model.MovementEvent
+import com.clashfit.engine.core.Geometry
 import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -189,18 +190,8 @@ class BallisticDetector(
         )
     }
 
-    private fun getJointIndex(joint: String, side: Side): Int {
-        val leftIndices = mapOf(
-            "SHOULDER" to 11, "ELBOW" to 13, "WRIST" to 15,
-            "HIP" to 23, "KNEE" to 25, "ANKLE" to 27,
-        )
-        val rightIndices = mapOf(
-            "SHOULDER" to 12, "ELBOW" to 14, "WRIST" to 16,
-            "HIP" to 24, "KNEE" to 26, "ANKLE" to 28,
-        )
-        val indices = if (side == Side.LEFT) leftIndices else rightIndices
-        return indices[joint] ?: -1
-    }
+    private fun getJointIndex(joint: String, side: Side): Int =
+        Geometry.idx(joint, side)
 
     private data class SettleSample(val t: Long, val y: Float)
 

@@ -6,6 +6,8 @@ import com.clashfit.core.config.ExerciseSpec
 import com.clashfit.core.model.CadenceEvent
 import com.clashfit.core.model.Landmark
 import com.clashfit.core.model.MovementEvent
+import com.clashfit.engine.core.Geometry
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
@@ -41,13 +43,11 @@ class CadenceDetector(
 
     init {
         val detector = spec.detector
-        signalJoint = detector["signalJoint"]?.toString()?.trim('"')?.trim('\\') ?: "WRIST"
-        signalAxis = detector["signalAxis"]?.toString()?.trim('"')?.trim('\\') ?: "y"
+        signalJoint = detector["signalJoint"]?.jsonPrimitive?.content ?: "WRIST"
+        signalAxis = detector["signalAxis"]?.jsonPrimitive?.content ?: "y"
         minProminence = detector["minProminence"]?.jsonPrimitive?.floatOrNull ?: 0.03f
 
-        refractoryMs = detector["refractoryMs"]?.let {
-            it.toString().toLongOrNull() ?: 260L
-        } ?: 260L
+        refractoryMs = detector["refractoryMs"]?.jsonPrimitive?.longOrNull ?: 260L
 
         val targetCadence = detector["targetCadence"]?.jsonObject
         if (targetCadence != null) {
@@ -150,18 +150,8 @@ class CadenceDetector(
         }
     }
 
-    private fun getJointIndex(joint: String, side: Side): Int {
-        val leftIndices = mapOf(
-            "SHOULDER" to 11, "ELBOW" to 13, "WRIST" to 15,
-            "HIP" to 23, "KNEE" to 25, "ANKLE" to 27,
-        )
-        val rightIndices = mapOf(
-            "SHOULDER" to 12, "ELBOW" to 14, "WRIST" to 16,
-            "HIP" to 24, "KNEE" to 26, "ANKLE" to 28,
-        )
-        val indices = if (side == Side.LEFT) leftIndices else rightIndices
-        return indices[joint] ?: -1
-    }
+    private fun getJointIndex(joint: String, side: Side): Int =
+        Geometry.idx(joint, side)
 
     private data class Sample(val t: Long, val v: Float)
 }
