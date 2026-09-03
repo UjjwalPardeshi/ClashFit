@@ -39,7 +39,7 @@ class PostureTest {
     @Test
     fun `poor visibility returns null`() {
         // All landmarks with low visibility
-        val landmarks = SyntheticBody.world(visibility = 0.2f)
+        val landmarks = SyntheticBody.world(kneeDeg = 170f, visibility = 0.2f)
         val sample = PostureScorer.score(landmarks, null)
         assertNull(sample, "Low visibility should return null")
     }
@@ -79,8 +79,8 @@ class PostureTest {
 
         // Ear points adjusted for flexion angle
         val flexRad = kotlin.math.PI * flexDeg / 180f
-        val earOffsetX = -0.1f + 0.2f * kotlin.math.sin(flexRad)
-        val earOffsetY = 0.95f + 0.17f * kotlin.math.cos(flexRad)
+        val earOffsetX = (-0.1 + 0.2 * kotlin.math.sin(flexRad)).toFloat()
+        val earOffsetY = (0.95 + 0.17 * kotlin.math.cos(flexRad)).toFloat()
         landmarks[7] = Landmark(earOffsetX - 0.03f, earOffsetY, 0f, 1f)   // left ear
         landmarks[8] = Landmark(earOffsetX + 0.03f, earOffsetY, 0f, 1f)   // right ear
 

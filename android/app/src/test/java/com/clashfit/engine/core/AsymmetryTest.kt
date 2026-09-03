@@ -9,7 +9,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlin.test.ok
 
 class AsymmetryTest {
     private fun createRep(index: Int, asymmetry: RepAsymmetry?): RepRecord {
@@ -48,7 +47,7 @@ class AsymmetryTest {
         assertNotNull(result)
         val lsi = result.lsi
         val deficit = result.deficitPct
-        ok(deficit < 5, "saw a $deficit% deficit on a symmetric set")
+        assertTrue(deficit < 5, "saw a $deficit% deficit on a symmetric set")
     }
 
     @Test
@@ -66,7 +65,7 @@ class AsymmetryTest {
         val result = tr.forRep(0, 1000)
         assertNotNull(result)
         assertEquals("right", result.weakerSide, "named the wrong side")
-        ok(result.deficitPct > 15, "deficit only ${result.deficitPct}% for a 30% guard")
+        assertTrue(result.deficitPct > 15, "deficit only ${result.deficitPct}% for a 30% guard")
     }
 
     @Test
@@ -85,7 +84,7 @@ class AsymmetryTest {
         }
         val light = run(0.12f)
         val heavy = run(0.35f)
-        ok(heavy > light + 8, "light $light% vs heavy $heavy% — not responsive")
+        assertTrue(heavy > light + 8, "light $light% vs heavy $heavy% — not responsive")
     }
 
     @Test
@@ -112,9 +111,9 @@ class AsymmetryTest {
         )
         val forbidden = Regex("injur|risk|diagnos|cleared|abnormal", RegexOption.IGNORE_CASE)
         for (phrase in phrases) {
-            ok(!forbidden.containsMatchIn(phrase), "clinical claim: $phrase")
+            assertTrue(!forbidden.containsMatchIn(phrase), "clinical claim: $phrase")
         }
-        ok(phrases[2].contains("physiotherapist", ignoreCase = true), "deficit should point at professional")
+        assertTrue(phrases[2].contains("physiotherapist", ignoreCase = true), "deficit should point at professional")
     }
 
     @Test
@@ -141,9 +140,9 @@ class AsymmetryTest {
         }
 
         val summary = summariseAsymmetry(reps)
-        ok(summary.enough, "not enough usable reps")
-        ok(summary.consistent, "lean not consistent")
+        assertTrue(summary.enough, "not enough usable reps")
+        assertTrue(summary.consistent, "lean not consistent")
         assertEquals("right", summary.weakerSide)
-        ok(summary.deficitPct > 10, "deficit too small")
+        assertTrue(summary.deficitPct > 10, "deficit too small")
     }
 }
