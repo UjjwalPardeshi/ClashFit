@@ -34,8 +34,9 @@ class TracePoseSource(
 ) : PoseSource {
 
     private val TAG = "ClashFit/perception"
-    private val frameChannel = Channel<PoseFrame>(capacity = 1)
-    override val frames: Flow<PoseFrame> = frameChannel.receiveAsFlow()
+    // Recreated on every start(): a finished replay closes its channel so collectors complete.
+    private var frameChannel = Channel<PoseFrame>(capacity = 1)
+    override val frames: Flow<PoseFrame> get() = frameChannel.receiveAsFlow()
 
     private val _fps = MutableStateFlow(0f)
     override val fps: StateFlow<Float> = _fps.asStateFlow()
@@ -51,7 +52,12 @@ class TracePoseSource(
 
     override fun start(facing: CameraFacing) {
         _facing.value = facing
-        replayJob = scope.launch { replayTrace() }
+        replayJob?.cancel()
+        if (frameChannel.isClosedForSend) frameChannel = Channel(capacity = 1)
+        val channel = frameChannel
+        replayJob = scope.launch {
+            try { replayTrace() } finally { channel.close() }
+        }
     }
 
     override fun stop() {

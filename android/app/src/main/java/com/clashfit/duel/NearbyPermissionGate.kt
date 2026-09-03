@@ -1,5 +1,11 @@
 package com.clashfit.duel
 
+import androidx.compose.ui.unit.dp
+
+import androidx.compose.foundation.layout.padding
+
+import androidx.compose.foundation.layout.fillMaxSize
+
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -50,6 +56,7 @@ fun NearbyPermissionGate(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
         permissionsGranted = results.values.all { it }
+        if (!permissionsGranted) showRationale = true
     }
 
     LaunchedEffect(Unit) {
@@ -67,7 +74,8 @@ fun NearbyPermissionGate(
     if (permissionsGranted) {
         content()
     } else {
-        // Show permission denial dialog
+        // Never a blank screen: the denial state has a way back in.
+        NearbyPermissionFallback(onGrant = { permissionLauncher.launch(permissions.toTypedArray()) })
         if (showRationale) {
             AlertDialog(
                 onDismissRequest = { showRationale = false },
@@ -95,6 +103,27 @@ fun NearbyPermissionGate(
                     }
                 }
             )
+        }
+    }
+}
+
+@Composable
+private fun NearbyPermissionFallback(onGrant: () -> Unit) {
+    androidx.compose.foundation.layout.Box(
+        androidx.compose.ui.Modifier.fillMaxSize().padding(24.dp),
+        contentAlignment = androidx.compose.ui.Alignment.Center,
+    ) {
+        androidx.compose.foundation.layout.Column(
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+        ) {
+            Text("NEARBY PERMISSION NEEDED", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall)
+            Text(
+                "Phones find each other over Bluetooth and local Wi-Fi. Nothing leaves the room.",
+                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
+            TextButton(onClick = onGrant) { Text("GRANT") }
         }
     }
 }

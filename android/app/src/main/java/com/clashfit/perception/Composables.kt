@@ -1,5 +1,7 @@
 package com.clashfit.perception
 
+import androidx.lifecycle.compose.LifecycleResumeEffect
+
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -148,38 +150,20 @@ fun CameraPermissionGate(
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
-    val hasPermission = remember {
-        ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.CAMERA
-        ) == PackageManager.PERMISSION_GRANTED
+    fun check() = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+    var granted by remember { mutableStateOf(check()) }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok -> granted = ok }
+    // Coming back from system settings must count too.
+    LifecycleResumeEffect(Unit) {
+        granted = check()
+        onPauseOrDispose { }
     }
-
-    var showRationale by remember { mutableStateOf(!hasPermission) }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            showRationale = false
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        if (!hasPermission && showRationale) {
-            // Let the rationale show for a moment before requesting
-        }
-    }
-
-    if (hasPermission && !showRationale) {
+    if (granted) {
         content()
     } else {
         CameraPermissionRationale(
-            onAllow = {
-                showRationale = false
-                permissionLauncher.launch(Manifest.permission.CAMERA)
-            },
-            onDismiss = { showRationale = false }
+            onAllow = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+            onDismiss = { permissionLauncher.launch(Manifest.permission.CAMERA) },
         )
     }
 }
