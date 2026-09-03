@@ -6,49 +6,66 @@ import kotlin.test.assertTrue
 class SfxTest {
 
     @Test
-    fun `rep creates sound without crashing`() {
+    fun `rep creates sound without blocking`() {
         val sfx = Sfx()
+        val startTime = System.currentTimeMillis()
         sfx.rep("CLEAN", 1.5f)
         sfx.rep("SHALLOW", 1.0f)
-        // Just verify no exception thrown
-        assertTrue(true)
+        val duration = System.currentTimeMillis() - startTime
+        // Should return immediately without blocking (< 100ms)
+        assertTrue(duration < 100, "rep() should not block the caller")
     }
 
     @Test
-    fun `milestone creates chime sequence without crashing`() {
+    fun `milestone creates chime sequence without blocking`() {
         val sfx = Sfx()
+        val startTime = System.currentTimeMillis()
         sfx.milestone()
-        assertTrue(true)
+        val duration = System.currentTimeMillis() - startTime
+        // Should return immediately without blocking
+        assertTrue(duration < 100, "milestone() should not block the caller")
     }
 
     @Test
-    fun `phase creates sound without crashing`() {
+    fun `phase creates sound without blocking`() {
         val sfx = Sfx()
+        val startTime = System.currentTimeMillis()
         sfx.phase()
-        assertTrue(true)
+        val duration = System.currentTimeMillis() - startTime
+        // Should return immediately without blocking
+        assertTrue(duration < 100, "phase() should not block the caller")
     }
 
     @Test
-    fun `bossDown creates death sound without crashing`() {
+    fun `bossDown creates death sound without blocking`() {
         val sfx = Sfx()
+        val startTime = System.currentTimeMillis()
         sfx.bossDown()
-        assertTrue(true)
+        val duration = System.currentTimeMillis() - startTime
+        // Should return immediately without blocking
+        assertTrue(duration < 100, "bossDown() should not block the caller")
     }
 
     @Test
-    fun `framingLost creates two-tone without crashing`() {
+    fun `framingLost creates two-tone without blocking`() {
         val sfx = Sfx()
+        val startTime = System.currentTimeMillis()
         sfx.framingLost()
-        assertTrue(true)
+        val duration = System.currentTimeMillis() - startTime
+        // Should return immediately without blocking
+        assertTrue(duration < 100, "framingLost() should not block the caller")
     }
 
     @Test
-    fun `tick creates sound without crashing`() {
+    fun `tick creates sound without blocking`() {
         val sfx = Sfx()
+        val startTime = System.currentTimeMillis()
         sfx.tick()
         sfx.tick()
         sfx.tick()
-        assertTrue(true)
+        val duration = System.currentTimeMillis() - startTime
+        // Should return immediately without blocking (all three calls)
+        assertTrue(duration < 100, "tick() calls should not block the caller")
     }
 
     @Test

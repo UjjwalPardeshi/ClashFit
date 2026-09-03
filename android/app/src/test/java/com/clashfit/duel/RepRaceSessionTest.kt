@@ -1,7 +1,9 @@
 package com.clashfit.duel
 
+import com.clashfit.core.model.DuelMessage
 import com.clashfit.core.util.FakeClock
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -180,4 +182,97 @@ class RepRaceSessionTest {
 
         r1.close()
     }
+
+    @Test
+    fun `heartbeat tick sends PING after HEARTBEAT_MS`() = testScope.runTest {
+        val bus = mutableSetOf<LoopbackTransport>()
+        val clock = FakeClock()
+
+        val t1 = LoopbackTransport(bus)
+        val r1 = RepRaceSession(
+            transport = t1,
+            playerId = "P1",
+            playerName = "Player 1",
+            clock = clock,
+            scope = backgroundScope,
+            durationSec = 60,
+        )
+
+        // Create a peer transport to listen for messages sent by r1
+        val t2 = LoopbackTransport(bus)
+        val messages = mutableListOf<DuelMessage>()
+
+        // Collect messages sent by r1 (received on t2)
+        backgroundScope.launch {
+            t2.incoming.collect { msg ->
+                messages.add(msg)
+            }
+        }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Initial tick
+        r1.tick()
+        testDispatcher.scheduler.advanceUntilIdle()
+        val beforeAdvance = messages.size
+
+        // Advance time to trigger heartbeat
+        clock.advance(1300) // > 1200ms HEARTBEAT_MS
+        r1.tick()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Verify PING was sent after advancing time
+        assertTrue(messages.size > beforeAdvance, "Messages should have been sent after heartbeat timer")
+        val pingMessages = messages.filter { it.type == "PING" }
+        assertTrue(pingMessages.isNotEmpty(), "PING message should have been sent after HEARTBEAT_MS")
+
+        r1.close(); t2.close()
+    }
+
+    @Test
+    fun `player timeout after LOST_AFTER_MS removes player from standings`() = testScope.runTest {
+        val bus = mutableSetOf<LoopbackTransport>()
+        val clock = FakeClock()
+
+        val t1 = LoopbackTransport(bus)
+        val r1 = RepRaceSession(
+            transport = t1,
+            playerId = "P1",
+            playerName = "Player 1",
+            clock = clock,
+            scope = backgroundScope,
+            durationSec = 60,
+        )
+
+        val t2 = LoopbackTransport(bus)
+        val r2 = RepRaceSession(
+            transport = t2,
+            playerId = "P2",
+            playerName = "Player 2",
+            clock = clock,
+            scope = backgroundScope,
+            durationSec = 60,
+        )
+
+        // Both send reps
+        r1.sendRep(currentReps = 5, exerciseId = "squat")
+        r2.sendRep(currentReps = 3, exerciseId = "squat")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // P1 sees both players
+        var standings1 = r1.getStandings()
+        assertEquals(2, standings1.size, "P1 should see both players")
+
+        // Advance time past LOST_AFTER_MS (4000ms)
+        clock.advance(4100)
+        r1.tick()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // P1 should have only itself now (P2 was lost)
+        standings1 = r1.getStandings()
+        assertEquals(1, standings1.size, "P1 should see only itself after P2 times out")
+        assertEquals("P1", standings1[0].playerId)
+
+        r1.close(); r2.close()
+    }
+
 }
