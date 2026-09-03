@@ -35,12 +35,6 @@ import com.google.android.gms.location.Priority
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.ArrayDeque
-import kotlin.math.PI
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
 
 /** Foreground location service tracking distance, pace, elevation, and cadence. */
 class RunTrackingService : LifecycleService(), LocationListener, SensorEventListener {
@@ -66,47 +60,21 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
     private var wakeLock: PowerManager.WakeLock? = null
     private var backgroundLocationHandler: Handler? = null
 
-    private var runId: Long? = null
     private var runInsertInFlight = false
     private var currentState = RunState()
-    private var lastLocationMs: Long = 0L
-    private var lastElev: Double = 0.0
-    private var lastAccelMagnitude: Float = 0f
-    private var peakAccel: Float = 0f
-    private var cadenceAccelCount: Int = 0
-    private var lastKmDistanceMs: Long = 0L
     private var lastKmMovingMs: Long = 0L
     private var nextKmMarker: Float = 1000f // metres
 
-    // GPS fix quality tracking
-    private var firstFixTimeMs: Long = 0L
-    private var lastSmoothedAltitude: Double = 0.0
-    private val altitudeHistory = ArrayDeque<Double>(5) // For median filtering
-
-    // Moving time tracking with hysteresis
-    private var lastMovingTransitionMs: Long = 0L
-    private var stationaryStartMs: Long? = null
-
-    // Pause detection hysteresis
-    private var lastSpeedMps: Float = 0f
-    private var speedBelowThresholdCount: Int = 0
+    // Fix quality, elevation, cadence and moving time are decided by these four. They hold no
+    // Android types, so they can be tested on the JVM; the service keeps only the plumbing.
+    private val fixFilter = FixFilter()
+    private val elevation = ElevationTracker()
+    private val cadence = CadenceEstimator()
+    private val movingTime = MovingTimeTracker()
 
     private val CHANNEL_ID = "run"
     private val NOTIFICATION_ID = 2
-    private val ACCURACY_THRESHOLD_M = 25f
-    private val MIN_SPEED_MPS = 0.5f
-    private val SPEED_HYSTERESIS_MPS = 0.3f // Lower threshold for moving detection
-    private val SPEED_HYSTERESIS_WINDOW_S = 3 // Require 3 seconds below threshold
-    private val ELEV_HYSTERESIS_M = 3f
     private val BATCH_SIZE = 10
-    private val FIRST_FIX_SETTLE_MS = 10_000L // Settle GPS for 10 seconds
-    private val MAX_SPEED_MPS = 8f // 28.8 km/h, ~17 mph
-    private val MIN_JITTER_DISTANCE_M = 2f // Ignore points < 2m away at low speed
-    private val JITTER_SPEED_THRESHOLD_MPS = 0.1f
-
-    private var stepCounterBaseline: Long = 0L
-    private var lastStepCount: Long = 0L
-    private var cadenceStartMs: Long = 0L
 
     override fun onCreate() {
         super.onCreate()
@@ -156,11 +124,12 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
             runId = null, // Will be set after first valid GPS fix
             startedAtMs = nowMs,
         )
-        firstFixTimeMs = nowMs
-        lastKmDistanceMs = nowMs
+        fixFilter.start(nowMs)
+        elevation.reset()
+        cadence.reset()
+        movingTime.reset()
         lastKmMovingMs = 0L
-        stationaryStartMs = null
-        speedBelowThresholdCount = 0
+        nextKmMarker = 1000f
 
         // Acquire wake lock to ensure GPS doesn't get throttled
         wakeLock?.acquire()
@@ -177,10 +146,9 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         // Register step counter, fallback to accelerometer
         val stepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
         if (stepCounter != null) {
+            // The estimator takes its baseline from the first reading together with that
+            // reading's own timestamp, so the gap until the sensor first fires cannot skew cadence.
             sensorManager.registerListener(this, stepCounter, SensorManager.SENSOR_DELAY_NORMAL)
-            cadenceStartMs = graph.clock.nowMs()
-            // Set baseline immediately at registration time, not at first event
-            stepCounterBaseline = 0L // Will be set on first event
         } else {
             val accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
             if (accel != null) {
@@ -197,6 +165,8 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
     private fun pauseRun() {
         Log.d(TAG, "Pausing run")
         currentState = currentState.copy(isPaused = true)
+        // The next fix after a resume starts a new leg; the distance covered while paused is not ours.
+        fixFilter.clearAnchor()
         fusedClient.removeLocationUpdates(this)
         sensorManager.unregisterListener(this)
         tracker.setState(currentState)
@@ -267,155 +237,66 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
     }
 
     override fun onLocationChanged(location: Location) {
-        val nowMs = graph.clock.nowMs()
-
-        // Accuracy gating: only accept fixes better than 25m
-        if (location.accuracy > ACCURACY_THRESHOLD_M) {
-            Log.d(TAG, "Ignoring fix: accuracy ${location.accuracy}m > ${ACCURACY_THRESHOLD_M}m")
-            return
-        }
-
-        // First-fix handling: ignore fixes within first 10 seconds (GPS lock settling)
-        if (nowMs - firstFixTimeMs < FIRST_FIX_SETTLE_MS) {
-            Log.d(TAG, "Waiting for GPS to settle (${nowMs - firstFixTimeMs}ms / $FIRST_FIX_SETTLE_MS ms)")
-            return
-        }
-
-        // Validate coordinates before processing
-        if (location.latitude < -90 || location.latitude > 90 ||
-            location.longitude < -180 || location.longitude > 180 ||
-            location.latitude.isNaN() || location.longitude.isNaN() ||
-            location.altitude.isNaN()
-        ) {
-            Log.w(TAG, "Invalid coordinates: lat=${location.latitude}, lon=${location.longitude}")
-            return
-        }
-
-        // Duplicate timestamp check: only accept if tMs > lastLocationMs
-        if (nowMs <= lastLocationMs) {
-            Log.d(TAG, "Skipping duplicate/old timestamp: nowMs=$nowMs, lastLocationMs=$lastLocationMs")
-            return
-        }
-
-        // The first settled fix seeds the run row; tracking starts on the next fix. The insert is
-        // asynchronous so a location callback never blocks the main thread on the database.
-        if (currentState.runId == null) {
-            if (!runInsertInFlight) {
-                runInsertInFlight = true
-                lifecycleScope.launch {
-                    val rid = try {
-                        withContext(Dispatchers.IO) {
-                            repo.insertRun(distanceM = 0f, movingMs = 0L, pace = 0f, cadence = 0, elev = 0f, splits = "")
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to insert run on first valid GPS fix", e)
-                        runInsertInFlight = false
-                        return@launch
-                    }
-                    currentState = currentState.copy(runId = rid)
-                    tracker.setState(currentState)
-                    runInsertInFlight = false
-                    Log.d(TAG, "Run inserted on first valid GPS fix: runId=$rid")
-                }
-            }
-            return
-        }
-
-        val points = currentState.points.toMutableList()
-        val point = RunPointEntity(
-            runId = currentState.runId ?: return,
-            tMs = nowMs,
+        val fix = Fix(
+            tMs = graph.clock.nowMs(),
             lat = location.latitude,
             lon = location.longitude,
-            altM = location.altitude,
+            altM = if (location.hasAltitude()) location.altitude else null,
             accuracyM = location.accuracy,
-            speedMps = location.speed,
+            reportedSpeedMps = if (location.hasSpeed()) location.speed else null,
         )
-        points.add(point)
 
-        // Calculate distance and pace from last two points
-        if (points.size > 1) {
-            val prev = points[points.size - 2]
-            val curr = points[points.size - 1]
+        when (val result = fixFilter.accept(fix)) {
+            is FixResult.Rejected -> Log.d(TAG, "Fix dropped: ${result.reason}")
+            is FixResult.Accepted -> onAcceptedFix(result)
+        }
+    }
 
-            val deltaDistM = haversineM(prev.lat, prev.lon, curr.lat, curr.lon)
-            val deltaTimeMs = curr.tMs - prev.tMs
+    /** A fix that cleared every quality gate. Everything downstream trusts it. */
+    private fun onAcceptedFix(accepted: FixResult.Accepted) {
+        val fix = accepted.fix
 
-            // Impossible speed jump validation
-            val speedMps = if (deltaTimeMs > 0) deltaDistM / (deltaTimeMs / 1000f) else 0f
-            if (speedMps > MAX_SPEED_MPS) {
-                Log.d(TAG, "Rejecting speed jump: ${speedMps}m/s (${(speedMps * 3.6).toInt()}km/h) > ${MAX_SPEED_MPS}m/s")
-                // Don't add this point, return early
-                return
-            }
+        // The first settled fix seeds the run row; tracking starts on the next one. The insert is
+        // asynchronous so a location callback never blocks the main thread on the database.
+        val rid = currentState.runId
+        if (rid == null) {
+            insertRunOnFirstFix()
+            return
+        }
 
-            // Jitter filtering: if standing still (speed < 0.1 m/s) and moved < 2m, ignore
-            if (speedMps < JITTER_SPEED_THRESHOLD_MPS && deltaDistM < MIN_JITTER_DISTANCE_M) {
-                Log.d(TAG, "Ignoring jitter: ${deltaDistM}m at ${speedMps}m/s")
-                return
-            }
+        val points = currentState.points + RunPointEntity(
+            runId = rid,
+            tMs = fix.tMs,
+            lat = fix.lat,
+            lon = fix.lon,
+            altM = fix.altM ?: 0.0,
+            accuracyM = fix.accuracyM,
+            speedMps = accepted.speedMps,
+        )
 
-            var distToAdd = deltaDistM
+        movingTime.onFix(fix.tMs, accepted.speedMps, accepted.deltaMs)
+        currentState = currentState.copy(
+            distanceM = currentState.distanceM + accepted.distanceM,
+            points = points,
+            movingMs = movingTime.movingMs,
+            isMoving = movingTime.isMoving,
+        )
+
+        recordSplits()
+
+        fix.altM?.let { altM ->
+            currentState = currentState.copy(elevationGainM = elevation.onAltitude(altM))
+        }
+
+        if (currentState.distanceM > 0 && currentState.movingMs > 0) {
             currentState = currentState.copy(
-                distanceM = currentState.distanceM + distToAdd,
-                points = points,
+                avgPaceSecPerKm = (currentState.movingMs / 1000f) / (currentState.distanceM / 1000f),
             )
-
-            // Moving time tracking with hysteresis
-            updateMovingState(nowMs, speedMps, deltaTimeMs)
-
-            // Track per-km splits (moved outside isMoving conditional for boundary accuracy)
-            while (currentState.distanceM >= nextKmMarker) {
-                val movingMsForSplit = currentState.movingMs - lastKmMovingMs
-                val kmPaceSec = if (movingMsForSplit > 0) {
-                    movingMsForSplit / 1000f
-                } else {
-                    0f // If no moving time, pace is 0
-                }
-                val splits = currentState.splits.toMutableList()
-                splits.add(kmPaceSec)
-                currentState = currentState.copy(splits = splits)
-                lastKmMovingMs = currentState.movingMs
-                nextKmMarker += 1000f
-                Log.d(TAG, "Split recorded at ${currentState.distanceM}m: ${kmPaceSec.toInt()}s")
-            }
-
-            // Update elevation with hysteresis and smoothing
-            if (location.hasAltitude()) {
-                altitudeHistory.addLast(location.altitude)
-                if (altitudeHistory.size > 5) {
-                    altitudeHistory.removeFirst()
-                }
-
-                // Use median of recent altitudes for smoothing
-                val smoothedAlt = altitudeHistory.sorted()[altitudeHistory.size / 2]
-                val deltaElev = smoothedAlt - lastSmoothedAltitude
-
-                // Apply hysteresis: only update if delta > threshold
-                if (kotlin.math.abs(deltaElev) > ELEV_HYSTERESIS_M) {
-                    // Count only positive elevation as gain
-                    if (deltaElev > 0) {
-                        currentState = currentState.copy(
-                            elevationGainM = currentState.elevationGainM + deltaElev.toFloat(),
-                        )
-                    }
-                    lastSmoothedAltitude = smoothedAlt
-                    Log.d(TAG, "Elevation update: +${deltaElev}m, total gain=${currentState.elevationGainM}m")
-                }
-            }
-
-            // Update pace
-            if (currentState.distanceM > 0 && currentState.movingMs > 0) {
-                currentState = currentState.copy(
-                    avgPaceSecPerKm = (currentState.movingMs / 1000f) / (currentState.distanceM / 1000f),
-                )
-            }
         }
 
         // Batch save to DB every BATCH_SIZE points
         if (points.size >= BATCH_SIZE) {
             lifecycleScope.launch {
-                val rid = currentState.runId ?: return@launch
                 // Use withContext to AWAIT the DB write before clearing buffer
                 withContext(Dispatchers.IO) {
                     repo.insertPoints(rid, points)
@@ -425,116 +306,55 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         }
 
         tracker.setState(currentState)
-        lastLocationMs = nowMs
     }
 
-    private fun updateMovingState(nowMs: Long, speedMps: Float, deltaTimeMs: Long) {
-        val wasMoving = currentState.isMoving
-        val isCurrentlyMoving = speedMps >= SPEED_HYSTERESIS_MPS
-
-        if (isCurrentlyMoving) {
-            // Reset stationary timer when moving
-            stationaryStartMs = null
-            speedBelowThresholdCount = 0
-
-            if (!wasMoving) {
-                // Transition from stopped to moving
-                currentState = currentState.copy(isMoving = true)
-                lastMovingTransitionMs = nowMs
-                Log.d(TAG, "Resumed moving at ${speedMps}m/s")
-            } else {
-                // Continue moving; add to moving time
-                currentState = currentState.copy(movingMs = currentState.movingMs + deltaTimeMs)
+    private fun insertRunOnFirstFix() {
+        if (runInsertInFlight) return
+        runInsertInFlight = true
+        lifecycleScope.launch {
+            val rid = try {
+                withContext(Dispatchers.IO) {
+                    repo.insertRun(distanceM = 0f, movingMs = 0L, pace = 0f, cadence = 0, elev = 0f, splits = "")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to insert run on first valid GPS fix", e)
+                runInsertInFlight = false
+                return@launch
             }
-        } else {
-            // Speed below threshold; check for pause with hysteresis
-            if (stationaryStartMs == null) {
-                stationaryStartMs = nowMs
-                speedBelowThresholdCount = 1
-            } else {
-                speedBelowThresholdCount++
-            }
+            currentState = currentState.copy(runId = rid)
+            tracker.setState(currentState)
+            runInsertInFlight = false
+            Log.d(TAG, "Run inserted on first valid GPS fix: runId=$rid")
+        }
+    }
 
-            // Require 3+ seconds below threshold before pausing
-            val stationaryDurationMs = nowMs - (stationaryStartMs ?: nowMs)
-            if (wasMoving && stationaryDurationMs >= (SPEED_HYSTERESIS_WINDOW_S * 1000) && speedBelowThresholdCount >= 3) {
-                // Transition to paused
-                currentState = currentState.copy(isMoving = false)
-                Log.d(TAG, "Paused (${speedBelowThresholdCount}s below ${SPEED_HYSTERESIS_MPS}m/s)")
-            } else if (wasMoving) {
-                // Still moving, add time before pause
-                currentState = currentState.copy(movingMs = currentState.movingMs + deltaTimeMs)
-            }
+    /** Splits are cut on the km boundary itself, and priced in moving time, never elapsed time. */
+    private fun recordSplits() {
+        while (currentState.distanceM >= nextKmMarker) {
+            val movingMsForSplit = currentState.movingMs - lastKmMovingMs
+            val kmPaceSec = if (movingMsForSplit > 0) movingMsForSplit / 1000f else 0f
+            currentState = currentState.copy(splits = currentState.splits + kmPaceSec)
+            lastKmMovingMs = currentState.movingMs
+            nextKmMarker += 1000f
+            Log.d(TAG, "Split recorded at ${currentState.distanceM}m: ${kmPaceSec.toInt()}s")
         }
     }
 
     override fun onSensorChanged(event: SensorEvent) {
-        when (event.sensor.type) {
-            Sensor.TYPE_STEP_COUNTER -> {
-                val steps = event.values[0].toLong()
-                // Set baseline on first event only
-                if (stepCounterBaseline == 0L) {
-                    stepCounterBaseline = steps
-                    Log.d(TAG, "Step counter baseline set: $steps")
-                    return // Don't process first event; cadence will be 0/1 until enough time passes
-                }
-
-                val stepsSinceStart = steps - stepCounterBaseline
-                val elapsedSec = (graph.clock.nowMs() - cadenceStartMs) / 1000f
-                if (elapsedSec > 0 && stepsSinceStart > 0) {
-                    val cadence = (stepsSinceStart * 60 / elapsedSec).toInt().coerceIn(0, 200)
-                    currentState = currentState.copy(cadenceSpm = cadence)
-                    tracker.setState(currentState)
-                }
-            }
-            Sensor.TYPE_ACCELEROMETER -> {
-                val x = event.values[0]
-                val y = event.values[1]
-                val z = event.values[2]
-                val magnitude = sqrt(x * x + y * y + z * z)
-
-                // Detect peaks for cadence fallback
-                if (magnitude > peakAccel && magnitude - lastAccelMagnitude > 0) {
-                    peakAccel = magnitude
-                } else if (magnitude < peakAccel * 0.8f) {
-                    cadenceAccelCount++
-                    peakAccel = 0f
-
-                    // Don't return fake estimates; only estimate if we have enough peaks
-                    if (cadenceAccelCount > 10) {
-                        // Rough estimate: 10 peaks ≈ 60 steps at normal cadence
-                        val elapsedSec = (graph.clock.nowMs() - cadenceStartMs) / 1000f
-                        if (elapsedSec > 1) {
-                            val estimatedCadence = (cadenceAccelCount * 60 / elapsedSec).toInt()
-                                .coerceIn(0, 200)
-                            currentState = currentState.copy(cadenceSpm = estimatedCadence)
-                            tracker.setState(currentState)
-                        }
-                    }
-                }
-
-                lastAccelMagnitude = magnitude
-            }
+        val nowMs = graph.clock.nowMs()
+        val spm = when (event.sensor.type) {
+            Sensor.TYPE_STEP_COUNTER -> cadence.onStepCount(event.values[0].toLong(), nowMs)
+            Sensor.TYPE_ACCELEROMETER ->
+                cadence.onAccelerometer(event.values[0], event.values[1], event.values[2], nowMs)
+            else -> return
+        }
+        if (spm != currentState.cadenceSpm) {
+            currentState = currentState.copy(cadenceSpm = spm)
+            tracker.setState(currentState)
         }
     }
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
-
-    private fun haversineM(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Float {
-        // Validate inputs: lat in [-90, 90], lon in [-180, 180], no NaN/Infinity
-        require(lat1 in -90.0..90.0 && !lat1.isNaN()) { "Invalid lat1: $lat1" }
-        require(lon1 in -180.0..180.0 && !lon1.isNaN()) { "Invalid lon1: $lon1" }
-        require(lat2 in -90.0..90.0 && !lat2.isNaN()) { "Invalid lat2: $lat2" }
-        require(lon2 in -180.0..180.0 && !lon2.isNaN()) { "Invalid lon2: $lon2" }
-
-        val R = 6371000.0 // Earth radius in metres
-        val dLat = (lat2 - lat1) * PI / 180.0
-        val dLon = (lon2 - lon1) * PI / 180.0
-        val a = sin(dLat / 2) * sin(dLat / 2) +
-            cos(lat1 * PI / 180.0) * cos(lat2 * PI / 180.0) * sin(dLon / 2) * sin(dLon / 2)
-        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        return (R * c).toFloat()
-    }
 
     private fun buildNotification(): Notification {
         val distKm = (currentState.distanceM / 1000f)
