@@ -1,0 +1,120 @@
+package com.clashfit.core.pose
+
+import com.clashfit.core.model.Landmark
+import com.clashfit.core.model.Landmarks
+import com.clashfit.core.model.PoseFrame
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.launch
+import kotlin.math.cos
+import kotlin.math.sin
+
+/**
+ * A side-on figure built from angles. World landmarks are metric and hip-centred like MediaPipe's;
+ * the knee bends in the y-z plane so the knee stays over the ankle laterally, which is what a
+ * real side-on squat looks like to the alignment scorer. Used by the JVM tests and by the
+ * camera-free demo source.
+ */
+object SyntheticBody {
+    private const val LEG = 0.45f
+    private const val ARM = 0.30f
+
+    /** 33 world landmarks. `kneeDeg` is the hip–knee–ankle angle; 170 is standing, 90 is deep. */
+    fun world(kneeDeg: Float, elbowDeg: Float = 170f, visibility: Float = 1f): Landmarks {
+        val k = Math.toRadians(kneeDeg.toDouble()); val e = Math.toRadians(elbowDeg.toDouble())
+        val lms = MutableList(33) { Landmark(0f, 1.05f, 0f, visibility) }
+        fun set(i: Int, x: Float, y: Float, z: Float) { lms[i] = Landmark(x, y, z, visibility) }
+        for ((side, sx) in listOf(11 to -0.15f, 12 to 0.15f)) {
+            val hip = if (side == 11) 23 else 24
+            val knee = if (side == 11) 25 else 26
+            val ankle = if (side == 11) 27 else 28
+            val shoulder = side
+            val elbow = if (side == 11) 13 else 14
+            val wrist = if (side == 11) 15 else 16
+            val heel = if (side == 11) 29 else 30
+            val foot = if (side == 11) 31 else 32
+            val hx = sx * 0.6f
+            set(hip, hx, 0.50f, 0f)
+            set(knee, hx, 0.00f, 0f)
+            // knee→ankle makes angle kneeDeg with knee→hip (straight up).
+            set(ankle, hx, (LEG * cos(k)).toFloat(), (LEG * sin(k)).toFloat())
+            set(heel, hx, (LEG * cos(k)).toFloat() - 0.03f, (LEG * sin(k)).toFloat() - 0.02f)
+            set(foot, hx, (LEG * cos(k)).toFloat() - 0.03f, (LEG * sin(k)).toFloat() + 0.10f)
+            set(shoulder, sx, 0.95f, 0f)
+            set(elbow, sx, 0.95f - ARM, 0.02f)
+            // elbow→wrist makes angle elbowDeg with elbow→shoulder (straight up).
+            set(wrist, sx, 0.95f - ARM + (ARM * cos(e)).toFloat(), 0.02f + (ARM * sin(e)).toFloat())
+        }
+        // Head cluster.
+        for (i in 0..10) set(i, if (i % 2 == 0) 0.03f else -0.03f, 1.12f, 0.02f)
+        for (i in 17..22) { val l = i % 2 == 1; set(i, if (l) -0.15f else 0.15f, 0.95f - ARM * 2, 0.05f) }
+        return lms
+    }
+
+    /** Normalised image landmarks whose bounding box has the given height, centred in frame. */
+    fun image(boxHeight: Float = 0.75f, visibility: Float = 1f): Landmarks {
+        val top = 0.5f - boxHeight / 2f; val bottom = 0.5f + boxHeight / 2f
+        return List(33) { i ->
+            val y = when (i) { in 0..10 -> top; 11, 12 -> top + boxHeight * 0.18f; 23, 24 -> top + boxHeight * 0.5f
+                25, 26 -> top + boxHeight * 0.75f; 27, 28, 29, 30, 31, 32 -> bottom; else -> top + boxHeight * 0.4f }
+            Landmark(0.5f + (if (i % 2 == 0) 0.03f else -0.03f), y, 0f, visibility)
+        }
+    }
+
+    /** One scripted squat: knee angle over time from `tStart`, as (tMs, kneeDeg) samples at `stepMs`. */
+    fun squatRep(
+        tStart: Long, stepMs: Long = 33, top: Float = 170f, bottom: Float = 85f,
+        descendMs: Long = 1200, bottomMs: Long = 250, ascendMs: Long = 700,
+    ): List<Pair<Long, Float>> {
+        val out = ArrayList<Pair<Long, Float>>()
+        var t = tStart
+        while (t < tStart + descendMs) { out += t to (top - (top - bottom) * ((t - tStart).toFloat() / descendMs)); t += stepMs }
+        val b0 = t
+        while (t < b0 + bottomMs) { out += t to bottom; t += stepMs }
+        val a0 = t
+        while (t < a0 + ascendMs) { out += t to (bottom + (top - bottom) * ((t - a0).toFloat() / ascendMs)); t += stepMs }
+        out += t to top
+        return out
+    }
+}
+
+/**
+ * A `PoseSource` with no camera: plays an endless scripted squat set at 30 fps. The emulator
+ * demo and the preflight self-test run on this; the engine cannot tell the difference.
+ */
+class SyntheticPoseSource(private val scope: CoroutineScope, private val kneeTop: Float = 170f, private val kneeBottom: Float = 85f) : PoseSource {
+    private val _frames = MutableSharedFlow<PoseFrame>(extraBufferCapacity = 4, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    override val frames: Flow<PoseFrame> = _frames
+    override val fps = MutableStateFlow(30f)
+    override val facing = MutableStateFlow(CameraFacing.FRONT)
+    private var job: Job? = null
+    private var lowPower = false
+
+    override fun start(facing: CameraFacing) {
+        this.facing.value = facing
+        job?.cancel()
+        job = scope.launch {
+            var t = 0L
+            val image = SyntheticBody.image()
+            // Stand still to calibrate, then rep forever with a rest gap.
+            repeat(75) { _frames.tryEmit(PoseFrame(SyntheticBody.world(kneeTop), image, t)); t += 33; delay(33) }
+            while (true) {
+                for ((tt, deg) in SyntheticBody.squatRep(t)) {
+                    _frames.tryEmit(PoseFrame(SyntheticBody.world(deg), image, tt)); t = tt
+                    delay(if (lowPower) 200 else 33)
+                }
+                repeat(30) { t += 33; _frames.tryEmit(PoseFrame(SyntheticBody.world(kneeTop), image, t)); delay(33) }
+            }
+        }
+    }
+
+    override fun stop() { job?.cancel(); job = null }
+    override fun setLowPower(enabled: Boolean) { lowPower = enabled; fps.value = if (enabled) 5f else 30f }
+}
