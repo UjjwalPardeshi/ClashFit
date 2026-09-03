@@ -3,6 +3,8 @@ package com.clashfit.duel
 import com.clashfit.core.model.DuelMessage
 import com.clashfit.core.util.Clock
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,12 +47,16 @@ class RepRaceSession(
     private val playerReps = mutableMapOf<String, Int>()  // playerId -> reps count
     private val playerSeqs = mutableMapOf<String, MutableSet<Int>>()  // dedupe by seq
 
+    /** Subscription to the transport's incoming messages, cancelled on close(). */
+    private val incomingJob: Job
+
     init {
         playerReps[playerId] = 0
         playerSeqs[playerId] = mutableSetOf()
 
-        // Start listening for messages
-        scope.launch {
+        // Start listening for messages. UNDISPATCHED so the subscription is live before the
+        // constructor returns, instead of whenever the scheduler next gets a turn.
+        incomingJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
             transport.incoming.collect { msg ->
                 processMessage(msg)
             }
@@ -107,8 +113,9 @@ class RepRaceSession(
         return elapsedMs >= durationSec * 1000L
     }
 
-    /** Tear down the race. */
+    /** Tear down the race. Stops the collector; a session must not outlive its close(). */
     fun close() {
+        incomingJob.cancel()
         transport.close()
     }
 

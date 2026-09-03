@@ -3,6 +3,8 @@ package com.clashfit.duel
 import com.clashfit.core.model.DuelMessage
 import com.clashfit.core.util.Clock
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,13 +47,17 @@ class RaidSession(
     private val playerStates = mutableMapOf<String, PlayerRaidState>()
     private val appliedDamage = mutableMapOf<String, MutableSet<Int>>()  // playerId -> set of applied seqs
 
+    /** Subscription to the transport's incoming messages, cancelled on close(). */
+    private val incomingJob: Job
+
     init {
         // Register ourselves
         playerStates[playerId] = PlayerRaidState(playerId, playerName)
         appliedDamage[playerId] = mutableSetOf()
 
-        // Start listening for messages
-        scope.launch {
+        // Start listening for messages. UNDISPATCHED so the subscription is live before the
+        // constructor returns, instead of whenever the scheduler next gets a turn.
+        incomingJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
             transport.incoming.collect { msg ->
                 processMessage(msg)
             }
@@ -110,8 +116,9 @@ class RaidSession(
     /** Get the current leaderboard. */
     fun getStandings(): List<RaidStanding> = _standings.value
 
-    /** Tear down the raid. */
+    /** Tear down the raid. Stops the collector; a session must not outlive its close(). */
     fun close() {
+        incomingJob.cancel()
         transport.close()
     }
 

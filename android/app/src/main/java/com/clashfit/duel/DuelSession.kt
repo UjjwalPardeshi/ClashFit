@@ -6,6 +6,7 @@ import com.clashfit.core.model.DuelMessage
 import com.clashfit.core.model.LinkState
 import com.clashfit.core.util.Clock
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -45,8 +46,10 @@ class DuelSession(
     private val incomingJob: Job
 
     init {
-        // Start listening for incoming messages
-        incomingJob = scope.launch {
+        // UNDISPATCHED so the subscription is live before this constructor returns: a collector
+        // that only attaches when the scheduler next runs would miss every message sent in the
+        // meantime, including the peer's opening HELLO.
+        incomingJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
             transport.incoming.collect { msg ->
                 receive(msg)
             }
@@ -104,10 +107,14 @@ class DuelSession(
             }
         }
 
+        // The peer table is the source of truth once anyone has spoken to us; before that (and
+        // when the transport itself reports the link gone) we mirror the transport's own state,
+        // which is what tells us we are linked but not yet talking.
         val next = when {
-            peers.isEmpty() -> LinkState.SEARCHING
-            anyLive -> LinkState.LINKED
-            else -> LinkState.LOST
+            transport.state.value == LinkState.LOST -> LinkState.LOST
+            peers.isNotEmpty() -> if (anyLive) LinkState.LINKED else LinkState.LOST
+            transport.state.value == LinkState.LINKED -> LinkState.LINKED
+            else -> LinkState.SEARCHING
         }
 
         if (next != state) {
@@ -179,7 +186,13 @@ class DuelSession(
         peer.fatigueBand = msg.fatigueBand
 
         // Apply the message and its tail (idempotent by construction)
-        val events = if (msg.recent.isNotEmpty()) msg.recent else listOf(CompactEvent(msg.seq, msg.damage))
+        // duel.js: `m.recent ?? [[m.seq, m.damage]]` — an empty tail carries nothing (a WELCOME
+        // from a peer who has not scored yet); only a REP without a tail falls back to its own event.
+        val events = when {
+            msg.recent.isNotEmpty() -> msg.recent
+            msg.type == DuelMessage.REP -> listOf(CompactEvent(msg.seq, msg.damage))
+            else -> emptyList()
+        }
         for ((eventSeq, eventDamage) in events) {
             apply(msg.playerId, eventSeq, eventDamage)
         }
