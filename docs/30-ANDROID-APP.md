@@ -19,12 +19,54 @@ the specification for the engine.
 | Coach | MediaPipe Tasks GenAI 0.10 — Gemma 3n E2B int4, side-loaded to `files/models/` | template bank always ships |
 | Speech | Android `TextToSpeech`; offline `SpeechRecognizer` for commands | |
 | Persistence | Room 2.8 v3 (sessions, sets, reps, streaks, bests, ladders, runs, alarms, ghosts, posture samples; migrations 1→2→3) · DataStore prefs | |
-| Multiplayer | Nearby Connections `P2P_STAR`, event-sourced sync from `07-MULTIPLAYER-SPEC` | no server, no INTERNET permission |
+| Multiplayer | Nearby Connections `P2P_STAR`, event-sourced sync from `07-MULTIPLAYER-SPEC` | no server, local-only permissions (Bluetooth, WiFi Direct) |
 | Run tracker | Fused location in a foreground service; route stays on the phone | |
 | Alarm | `AlarmManager` exact + full-screen ring activity; dismissed by counted reps | |
 | DI / nav | Manual `AppGraph`; type-safe Navigation Compose | no Hilt |
 
-The manifest requests **no `INTERNET` permission**. That is the privacy claim, made checkable.
+The manifest requests `INTERNET` and `ACCESS_NETWORK_STATE` (for cloud accounts and leaderboards
+only). Camera frames, pose data and rep timelines never use these permissions: pose runs on-device,
+leaderboards receive only scores and names.
+
+## 1a. Shell and Onboarding
+
+**App Shell**: Material 3 bottom navigation bar with four tabs: Train (home, modes, exercise picker,
+session), Library (exercise detail, history), Progress (streaks, character sheet), You (account,
+settings, privacy, achievements, leaderboards, friends, weekly challenge). Every screen has a
+back arrow top-left (or menu) and a title centre. Selected tab is indicated by tonal highlight.
+
+**First Run**: Splash (check auth state) → if signed out: Onboarding (three-page Welcome carousel)
+→ SignUp or SignIn (email + password) → ProfileSetup (avatar colour, goal, preferred exercise) →
+CameraPrimer (orientation, lighting, focus) → Home (Train tab). Once `onboarded` pref is true,
+these screens never appear again.
+
+**Cloud Keys**: The build reads three Firebase keys from `android/local.properties` at build time
+(never committed). If any key is missing, the app keeps a local-only account and all features work
+offline:
+- `FIREBASE_API_KEY` — from `current_key` in `google-services.json`
+- `FIREBASE_APP_ID` — from `mobilesdk_app_id`
+- `FIREBASE_PROJECT_ID` — from `project_id`
+
+If all three are present, Firebase Auth + Firestore are initialised at startup and the app syncs
+scores/names/levels to Firestore after every session.
+
+**`google-services.json`**: Never committed to git. Downloaded once per developer from Firebase
+Console and ignored thereafter. If accidentally committed, rotate the API key in the Console.
+
+## 1b. Testing
+
+Run JVM tests (no device needed):
+```bash
+./gradlew :app:testDebugUnitTest    # engine port, form scorer, fatigue, combat, all XP rules
+```
+
+Screenshot tests via Roborazzi (device or emulator):
+```bash
+./gradlew :app:recordRoborazziDebug   # generate PNG screenshots
+./gradlew :app:verifyRoborazziDebug   # compare against baseline
+```
+
+Screenshots are saved to `android/app/screenshots/` and compared against baseline on CI.
 
 ## 2. Package map
 

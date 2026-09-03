@@ -1,9 +1,9 @@
-// Challenge cards — community that works with no server.
+// Challenge cards — local-first community that needs no server.
 //
-// We have no backend and are not building one; the offline claim IS the product. So social has
-// to be local-first, and that constraint produces a better story than a cloud leaderboard: a
-// challenge is a short string. Send it however you like — chat, email, a QR someone scans — and
-// the recipient races exactly what you did.
+// Challenge cards are backend-independent; the encoding and decoding are pure. So a challenge is
+// a short string. Send it however you like — chat, email, a QR someone scans — and the recipient
+// races exactly what you did. That's the product's local-first story: community without needing
+// authentication or a server just for the core feature.
 //
 // A ghost is already just a recorded rep timeline, so a challenge is that timeline plus what it
 // was recorded doing. Encoding it compactly is the whole feature.

@@ -113,7 +113,7 @@ never leaving the device, is a meaningful reduction in the cost of *knowing wher
    "This tells you your risk of falling" is a claim we are not making.
 4. **Say "not a medical device"** on the mode's first screen and in the pitch, before anyone asks.
 5. **Never recommend treatment.** We measure and we trend. Any next step is "talk to a professional."
-6. **Nothing leaves the device** — the same guarantee as everything else, and it matters more here.
+6. **Camera frames and pose landmarks never leave the device** — the same guarantee as everything else. In a clinical context, this means the raw measurements stay completely local: what the patient sees is what they take away, with no sync to a server or a cloud record.
 7. **Never combine with the weight, body-composition or appearance framing** already banned in
    [00-PRD](00-PRD.md) §8.
 

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ClashFit &mdash; offline AI fitness combat</title>
-<meta name="description" content="Offline AI fitness combat for Android. Your body is the controller, your camera is the referee, and nothing leaves the phone.">
+<title>ClashFit &mdash; AI fitness combat, on your phone</title>
+<meta name="description" content="AI fitness combat for Android. Your body is the controller, your camera is the referee, and your camera never leaves the phone.">
 
 <!-- Link previews. Without these the URL shares as a blank card, which is how a
      judge is most likely to first meet this page. Card built by tools/og-card.html. -->
@@ -13,7 +13,7 @@
 <meta property="og:site_name" content="ClashFit">
 <meta property="og:url" content="https://clash-fit.vercel.app/">
 <meta property="og:title" content="ClashFit &mdash; your body is the controller">
-<meta property="og:description" content="Camera-verified reps become damage. Pose, form scoring, fatigue and the language model all run on the phone. Nothing leaves it.">
+<meta property="og:description" content="Camera-verified reps become damage. Pose, form scoring, fatigue and the language model all run on the phone. Only your scores sync.">
 <meta property="og:image" content="https://clash-fit.vercel.app/img/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -924,7 +924,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   <div class="hero__scrim"></div>
   <svg class="stamp" viewBox="0 0 120 120" aria-hidden="true">
     <defs><path id="ring" d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0"/></defs>
-    <text><textPath href="#ring">Offline · On-device · No account · No upload · </textPath></text>
+    <text><textPath href="#ring">Email sign-in · Leaderboards · On-device · Scores sync · </textPath></text>
     <circle cx="60" cy="60" r="20" fill="var(--ember)"/>
     <text class="cf" x="60" y="68" text-anchor="middle">CF</text>
   </svg>
@@ -932,12 +932,12 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
     <div>
       <p class="kicker">Android &middot; 2026</p>
       <h1>Your body is<br>the controller.<br><em>Your camera is<br>the referee.</em></h1>
-      <p class="lede">Real, camera-verified effort in. Boss damage out. Every rep is graded on depth, range, tempo and alignment — and none of it leaves your phone.</p>
+      <p class="lede">Real, camera-verified effort in. Boss damage out. Every rep is graded on depth, range, tempo and alignment. Your camera never leaves your phone, only your scores sync to the cloud.</p>
       <div class="hero__cta">
         <button class="btn btn--ember" data-waitlist type="button">Join the waitlist</button>
         <a class="btn btn--line" href="#loop">How it works</a>
       </div>
-      <div class="hero__meta"><span>Built for iQOO 15</span><span>No account</span><span>No equipment</span><span>Airplane mode, indoors</span></div>
+      <div class="hero__meta"><span>Built for iQOO 15</span><span>Email sign-in</span><span>No equipment</span><span>Train in airplane mode</span></div>
       <div class="hero__stats">
         <div><b>51</b><span>Exercises</span></div>
         <div><b>16</b><span>Ways to play</span></div>
@@ -1136,7 +1136,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
       <p class="kicker">Privacy</p>
       <h2>Your body never<em>leaves the phone.</em></h2>
       <p class="lede">Pose, form scoring, the fatigue model and the language model all run on the phone. No frame of video, no landmark and no form score has ever left a device, and none can &mdash; in any mode, including the one below that goes outside. <strong style="color:var(--ink);font-weight:600">Outbreak is the single mode that uses the network</strong>, because a map is tiles fetched from a server. It asks for location when you start it, not when you install, and it never opens the camera. Everything else still runs in airplane mode.</p>
-      <div class="tags"><span class="tag">No account</span><span class="tag">No frame uploaded</span><span class="tag">Camera never leaves the device</span><span class="tag">Airplane mode, indoors</span></div>
+      <div class="tags"><span class="tag">Email sign-in</span><span class="tag">0 camera frames uploaded</span><span class="tag">Scores sync only</span><span class="tag">Train in airplane mode</span></div>
     </div>
     <div class="rise">
 <pre class="arch">   front camera · 30 fps
@@ -1229,7 +1229,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
         <p class="kicker">Sixteen ways in</p>
         <h2>Pick your <em>fight.</em></h2>
       </div>
-      <p class="lede">Every mode runs on one camera, one rep machine, one fatigue estimator — different rules on one honest stream of reps.</p>
+      <p class="lede">Every mode runs on one camera, one rep machine, one fatigue estimator. XP from each rep feeds your level and weekly leaderboards. A same-for-everyone weekly challenge lands each Monday. Bronze, silver and gold badges mark your progress.</p>
     </div>
     <div class="plans rise">
       <article class="plan">
@@ -1390,7 +1390,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
     <div class="rise">
       <p class="kicker">Playing together</p>
       <h2>A live leaderboard.<br><em>No server.</em></h2>
-      <p class="lede">Phones sync <em>events</em>, not state. Ranks, damage and every player's fatigue band, live on every screen in the room — in airplane mode.</p>
+      <p class="lede">Phones sync <em>events</em>, not state. Ranks, damage, levels and fatigue bands sync live on every screen. Global leaderboards track weekly damage, weekly clean reps, all-time XP and longest streaks. Friend codes let you see where your friends stand.</p>
       <div class="tags"><span class="tag tag--ember">Last Standing</span><span class="tag tag--ember">Pass the Phone</span><span class="tag">Circuit</span><span class="tag">Circuit</span></div>
     </div>
   </div>
@@ -2039,7 +2039,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   <div class="shell"><div class="cta__in rise">
     <p class="kicker">Coming to Android</p>
     <h2>Prop your phone.<br><em>Fight it out.</em></h2>
-    <p class="lede">One download. No account, no equipment, nothing to subscribe to.</p>
+    <p class="lede">One download. Email sign-in, no equipment, free core forever.</p>
     <div class="hero__cta">
       <button class="btn btn--ember" data-waitlist type="button">Join the waitlist</button>
       <a class="btn btn--line" href="#loop">How it works</a>
@@ -2055,7 +2055,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
     <div class="foot__grid">
       <div>
         <a class="brand" href="#top"><i></i>ClashFit</a>
-        <p>Offline AI fitness combat. Your body is the controller, your camera is the referee, and nothing leaves the phone.</p>
+        <p>AI fitness combat. Your body is the controller, your camera is the referee, only your scores sync to the cloud.</p>
       </div>
       <div><h4>Play</h4><ul><li><a href="#modes">Modes</a></li><li><a href="#race">1v1 Duel</a></li><li><a href="#raid">Raid room</a></li><li><a href="#run">Run tracker</a></li><li><a href="#outbreak">Outbreak</a></li><li><a href="#alarm">Wake-up alarm</a></li><li><a href="#tools">Health tools</a></li></ul></div>
       <div><h4>How it works</h4><ul><li><a href="#loop">The loop</a></li><li><a href="#fatigue">Fatigue model</a></li><li><a href="#coach">The coach</a></li><li><a href="#device">The device</a></li><li><a href="#privacy">Privacy</a></li></ul></div>
@@ -2088,8 +2088,8 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
     <div id="wl-done" hidden>
       <p class="kicker">Noted</p>
       <h2 style="font-size:clamp(30px,4.6vw,42px);margin-top:10px">See you in<br><em>the arena.</em></h2>
-      <p class="wl__lede">ClashFit lands on Android in 2026. Until then, the whole thing runs on the phone in your hand &mdash; and nothing leaves it.</p>
-      <div class="tags"><span class="tag">No account</span><span class="tag">No upload</span><span class="tag">Free core, forever</span></div>
+      <p class="wl__lede">ClashFit lands on Android in 2026. Your camera never leaves your phone, your profile and levels sync to the cloud.</p>
+      <div class="tags"><span class="tag">Email sign-in</span><span class="tag">Levels · Leaderboards</span><span class="tag">Free core, forever</span></div>
     </div>
 
   </div>

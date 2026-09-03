@@ -89,13 +89,12 @@ moving through it together, scores aggregated. This is the gym-class / office-br
 
 ---
 
-## 5. Community without a server
+## 5. Local-first community features
 
-We have no backend and we are not building one — the offline claim is the product ([00-PRD](00-PRD.md)
-principle 3). So community features must be **local-first**. That constraint produces a better story
-than a cloud leaderboard would:
+Core features work offline with no server — the offline claim is the product ([00-PRD](00-PRD.md)
+principle 3). These local-first features produce a better story than a cloud leaderboard would:
 
-> **"Community without a server."**
+> **"Offline community: share without a server."**
 
 | Feature | How it works offline |
 |---|---|
@@ -104,10 +103,14 @@ than a cloud leaderboard would:
 | **Crew ledger** | Each phone keeps its own crew results. Merge ledgers whenever two phones are in the same room. Eventually-consistent leaderboards, no server. |
 | **Local room leaderboard** | Persisted per device, for relay and pass-the-phone sessions. |
 
+**Leaderboards are shipped via Firebase:** global (this week's damage, this week's clean reps, all-time
+XP, longest streak) and friends leaderboards. These require signed-in accounts and INTERNET permission for
+synchronisation. Initialised only when cloud keys are present ([00-PRD](00-PRD.md) §7a).
+
 **Needs a backend, therefore roadmap only** — say so plainly if a judge asks: daily city boss with a
-global damage pool, cross-city guilds, and worldwide leaderboards. The city boss is a strong deck
-slide precisely because it mirrors iQOO's own city-battle structure, but it is not something we can
-ship offline.
+global damage pool and cross-city guilds. The city boss is a strong deck slide precisely because
+it mirrors iQOO's own city-battle structure, but it requires persistent cross-device orchestration
+that we do not build in this phase.
 
 ---
 

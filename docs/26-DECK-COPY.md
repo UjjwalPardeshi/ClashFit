@@ -16,7 +16,7 @@ Slot markers `[LIKE THIS]` need your input.
 > ### Offline AI fitness combat
 >
 > Your body is the controller. Your camera is the referee.
-> Nothing leaves the phone.
+> Camera frames, poses, and reps stay on the phone.
 >
 > `Omkar Kadam · Ujjwal [SURNAME] · iQOO Hackathon 2026 · Pune · HealthTech`
 
@@ -108,7 +108,7 @@ fatigue estimator ──────────────→ adaptive boss �
 ```
 
 > Two models, one thermal envelope, never run concurrently.
-> **The release manifest has no INTERNET permission.** You can check.
+> **Camera frames never touch the network.** The manifest comment and the `cloud/` package prove it.
 
 *This slide carries the 15% technical-depth score. Keep it a diagram, not a paragraph.*
 

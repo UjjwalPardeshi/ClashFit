@@ -1669,6 +1669,16 @@ t('page · the hero mode count matches the modes it names', () => {
   eq(names.size, hero, 'distinct modes in the tape vs the hero stat:');
 });
 
+t('page · no longer promises no account, now mentions scores sync or camera privacy', () => {
+  // Accounts now exist and are required. The page should not claim otherwise.
+  // It should instead highlight the privacy guarantee: only scores sync, camera never leaves.
+  const hasNoAccount = /\bno\s+account\b/i.test(page);
+  eq(hasNoAccount, false, 'page still says "no account"');
+
+  const hasScoresSyncOrCameraPrivacy = /only your scores|camera never leaves/i.test(page);
+  ok(hasScoresSyncOrCameraPrivacy, 'page does not mention scores syncing or camera privacy');
+});
+
 // ---------- report ----------
 await Promise.all(pending);
 const w = Math.max(...results.map(r => r[1].length));

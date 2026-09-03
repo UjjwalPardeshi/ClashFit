@@ -2,6 +2,11 @@
 
 Decided 30 Aug 2026. Declared in `config/combat.json` as `modes.OUTBREAK`, `enabled: false`.
 
+> **Update (3 Sep 2026):** The app now declares `INTERNET` and `ACCESS_NETWORK_STATE` permissions
+> for Firebase Auth, Firestore profiles, and cloud leaderboards. The tradeoff this document weighs —
+> adding a network permission — has already been taken. Outbreak remains the only mode that requests
+> location or downloads map tiles; the analysis below is still valid as a record of that decision.
+
 Every other mode in ClashFit runs with the radio off. **This one does not, and that has to be said
 plainly everywhere it appears** — see [§ What it costs us](#what-it-costs-us) below, which is the
 part of this document that actually matters.
@@ -55,12 +60,13 @@ pursuer closes when your cadence drops rather than only when your coordinate sto
 
 This is the entry that future-us will want to have read.
 
-Until today the product had one unusually clean property: **no network at all**. Not "we don't
-misuse your data" — no internet permission in the manifest, nothing to audit, nothing to trust.
-That claim was on the hero, on the privacy section, on a deck slide and in the video script.
+The core privacy guarantee is clear: **the camera pipeline never touches the network**. Frames,
+landmarks, and rep timelines stay on the device. That is still true and still the competitive
+point.
 
-**Outbreak ends that**, because a map is tiles fetched from a server and a map centred on you is a
-request that carries where you are.
+**Outbreak adds a new network use**: a map is tiles fetched from a server and a map centred on you
+is a request that carries where you are. Within the larger product, which now declares `INTERNET`
+for accounts and leaderboards, Outbreak is the one feature that also requests location.
 
 So the claim changes shape. It does not get quietly dropped, and it does not get weasel-worded.
 
@@ -68,9 +74,9 @@ So the claim changes shape. It does not get quietly dropped, and it does not get
 
 | Before | After |
 | --- | --- |
-| "The shipping app requests no internet permission at all." | "Everything that watches your body runs with the radio off. Outbreak is the one mode that goes online, and it says so before it starts." |
-| "0 bytes uploaded" | "0 frames uploaded" — still literally true, and the stronger claim anyway: **no video, no landmarks, no biometrics ever leave the device, in any mode, including this one.** |
-| "Works in airplane mode" | Unchanged, and now load-bearing: every mode except Outbreak still does. |
+| "The camera pipeline never touches the network." | Still true, and unchanged. Outbreak is the one mode that goes online, but the camera stays offline. |
+| "0 frames uploaded" | Unchanged: still literally true in every mode. **No video, no landmarks, no biometrics ever leave the device, in any mode, including this one.** |
+| "Works in airplane mode" | Every mode still does, except Outbreak. This is now load-bearing: you can turn off location and network at the mode screen. |
 
 ### Rules this mode must follow
 
@@ -91,8 +97,8 @@ running. Pursuit already covers cardio indoors; refusing to go outdoors on princ
 choosing a slogan over the users. The privacy promise that actually matters to somebody pointing a
 camera at themselves in a bedroom is *the camera*, and that promise is untouched.
 
-But we should be honest that it is a trade, that it makes the pitch harder to state in one sentence,
-and that "no internet permission at all" was a sharper thing to be able to say than what replaces it.
+But we should be honest that it is a trade. The camera pipeline remains completely offline, and that is
+the core promise. Where we go online, we do so deliberately: sign-in, leaderboards, and now Outbreak.
 
 ## Open questions
 

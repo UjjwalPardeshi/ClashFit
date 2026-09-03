@@ -1,35 +1,32 @@
 # 08 · Data Model
 
-Everything is local. No backend, no account, no sync. Two stores: **Room** for session history,
-**config files** for everything tunable.
+**Local:** Room v4 for session history, progression and achievements. **Cloud:** Firestore
+(Firebase Auth + Firestore Database) stores scores, names and levels only. Camera frames, pose
+data and rep timelines never leave the phone.
 
 ---
 
-## 1. Room schema
+## 1. Room schema (Version 4)
+
+The database is version 4 as of the progression tables migration. Core tables:
 
 ```kotlin
-@Entity(tableName = "profile")
-data class ProfileEntity(
-  @PrimaryKey val id: Int = 1,          // single row
-  val createdAtMs: Long,
-  val squatTopRefDeg: Float?,           // calibrated standing angle
-  val squatRomBaselineDeg: Float?,
-  val pushupTopRefDeg: Float?,
-  val pushupRomBaselineDeg: Float?,
-  val preferredExercise: String,
-  val arenaMode: Boolean
-)
-
 @Entity(tableName = "sessions")
 data class SessionEntity(
   @PrimaryKey(autoGenerate = true) val id: Long = 0,
   val startedAtMs: Long,
   val endedAtMs: Long?,
+  val mode: String,                     // "solo", "duel", "casual"
+  val exerciseId: String,
   val bossId: String,
-  val mode: String,                     // "solo" | "duel" | "casual"
-  val outcome: String?,                 // "victory" | "abandoned"
+  val outcome: String?,                 // "victory", "abandoned"
   val totalDamage: Int,
-  val totalReps: Int
+  val totalReps: Int,
+  val formMean: Float,
+  val peakFatigue: Float,
+  val peakBand: String,
+  val casual: Boolean = false,
+  val ghostId: String? = null
 )
 
 @Entity(tableName = "sets")
@@ -37,31 +34,82 @@ data class SetEntity(
   @PrimaryKey(autoGenerate = true) val id: Long = 0,
   val sessionId: Long,
   val setIndex: Int,
-  val exercise: String,
+  val exerciseId: String,
   val startedAtMs: Long,
   val endedAtMs: Long,
   val reps: Int,
   val formMean: Float,
   val fatigueEnd: Float,
   val fatigueBandEnd: String,
-  val coachLine: String?,               // what was actually said
+  val coachLine: String?,
   val bossLine: String?,
-  val coachSource: String               // "llm" | "template" — for our own honesty
+  val coachSource: String,              // "LLM" | "TEMPLATE"
+  val restSec: Int,
+  val asymmetryPct: Int? = null,
+  val weakerSide: String? = null
 )
 
 @Entity(tableName = "reps")
 data class RepEntity(
   @PrimaryKey(autoGenerate = true) val id: Long = 0,
+  val sessionId: Long,
   val setId: Long,
   val repIndex: Int,
   val tStartMs: Long, val tEndMs: Long,
-  val thetaMin: Float, val thetaMax: Float,
-  val depth: Float, val rom: Float, val tempo: Float, val alignment: Float,
   val formScore: Float,
+  val depth: Float, val rom: Float, val tempo: Float, val alignment: Float,
+  val reason: String,
+  val verdict: String,
   val concentricVelocity: Float,
   val damage: Int,
   val comboAtRep: Float,
-  val validFrameRatio: Float
+  val fatigueValue: Float,
+  val fatigueBand: String,
+  val validFrameRatio: Float,
+  val depthCm: Float?,
+  val heightCm: Float?,
+  val holdSec: Float?
+)
+```
+
+**Progression tables (new in v4):**
+
+```kotlin
+@Entity(tableName = "meta")
+data class MetaEntity(
+  @PrimaryKey val id: Int = 1,          // single row
+  val xp: Long = 0,
+  val level: Int = 1,
+  val sessions: Int = 0,
+  val wins: Int = 0,
+  val totalReps: Int = 0,
+  val cleanReps: Int = 0,
+  val totalDamage: Int = 0,
+  val familiesPlayedMask: Int = 0,
+  val pbCount: Int = 0,
+  val weeklyChallengesDone: Int = 0,
+  val bestStreak: Int = 0
+)
+
+@Entity(tableName = "achievements")
+data class AchievementEntity(
+  @PrimaryKey val id: String,           // stable: "first_fight", "streak_7", "clean_100", etc.
+  val unlockedAtMs: Long
+)
+
+@Entity(tableName = "weekly")
+data class WeeklyEntity(
+  @PrimaryKey val weekKey: String,      // ISO week: "2026-W36"
+  val metric: String,                   // "DAMAGE" | "CLEAN_REPS" | "SESSIONS" | "STREAK_DAYS"
+  val value: Int,
+  val completedAtMs: Long? = null       // null until challenge is first completed
+)
+
+@Entity(tableName = "xp_ledger")
+data class XpLedgerEntity(
+  @PrimaryKey val sessionId: Long,
+  val xp: Int,
+  val atMs: Long
 )
 ```
 
@@ -72,6 +120,72 @@ data class RepEntity(
    screen and show a judge exactly what the engine measured turns a glitch into a credibility win.
 
 Writes go to `Dispatchers.IO`, fire-and-forget. Never block the pose thread on a database write.
+
+---
+
+## 2. Firestore collections (cloud-backed)
+
+**Constraint:** Only scores, names and levels are stored in Firestore. Camera frames, pose
+landmarks, rep timelines and coaching text never leave the phone.
+
+### `users/{uid}`
+The public profile: what the leaderboard shows. Readable by every signed-in player, writable only
+by the player themselves. It deliberately holds no email and no other personal data, because
+Firestore rules work per document and cannot hide a single field from a reader.
+
+```json
+{
+  "displayName": "string (≤24 chars)",
+  "level": "number (≥0)",
+  "xp": "number (≥0)",
+  "bestStreak": "number (≥0)",
+  "friendCode": "string (6 chars, derived from uid)",
+  "createdAt": "timestamp",
+  "updatedAt": "timestamp"
+}
+```
+
+### `scores/{weekKey}/entries/{uid}`
+Weekly challenge scores, grouped by ISO week (e.g. "2026-W36"). Every entry is readable by every
+signed-in player, and each player can write only their own. Nothing here is readable without an
+account: the boards are for players, not for scraping.
+
+```json
+{
+  "uid": "string",
+  "displayName": "string (≤24 chars)",
+  "level": "number (≥0)",
+  "weeklyDamage": "number (≥0)",
+  "weeklyCleanReps": "number (≥0)",
+  "updatedAt": "timestamp"
+}
+```
+
+### `users/{uid}/friends/{friendUid}`
+Mutual friendships: adding a friend writes an edge on both sides. Readable by every signed-in
+player. A player may write their own edge, and the one edge under another player that carries
+their own id, which is what makes the pairing mutual.
+
+```json
+{
+  "addedAt": "timestamp"
+}
+```
+
+---
+
+## 2a. Prefs (DataStore)
+
+On-device player settings and first-run state:
+
+```kotlin
+data class Settings(
+  val onboarded: Boolean = false,       // true after Welcome → SignUp/SignIn → ProfileSetup → CameraPrimer
+  val goal: String = "GET_STRONGER",    // one of: GET_STRONGER, BUILD_HABIT, PLAY_WITH_FRIENDS, MOVE_BETTER
+  val avatarColor: Int = 0,             // 0–N palette index
+  // ... and session preferences (casual mode, preferred exercise, voice, motion, etc.)
+)
+```
 
 ---
 

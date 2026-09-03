@@ -13,7 +13,7 @@ question with a number and a screen wins the exchange. A team that answers with 
 | Evidence | Where | Answers |
 |---|---|---|
 | **Airplane mode in the status bar, mid-fight** | The device | "Is it really offline?" |
-| **The manifest, with no INTERNET permission** | Laptop, one file open | "How do we know nothing is uploaded?" |
+| **The manifest permission comment + cloud/ package** | Laptop, two files open | "How do we know the camera never uploads?" |
 | **The SUMMARY fatigue curve** | In-app | "Does the fatigue thing actually work?" |
 | **Saturday's commit history, first commit before 11:00** | Laptop, `git log` | "Did you build this during the event?" |
 | **The five ADRs** | Laptop | "Why MediaPipe? Why not TensorFlow.js?" |

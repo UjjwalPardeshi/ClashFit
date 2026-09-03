@@ -8,36 +8,46 @@ in this document it does not exist in the build.
 ## 1. Screen graph
 
 ```
-        ┌──────────┐
-        │  SPLASH  │  model warm-up, config load, TTS init
-        └────┬─────┘
-             │ ready (or 25s timeout → degraded mode)
+                            ┌──────────┐
+                            │  SPLASH  │  check auth, model warm-up, config load, TTS init
+                            └────┬─────┘
+                                 │
+              ┌──────────────────┴──────────────────┐
+              │                                     │
+          signed out                            signed in
+              │                                     │
+              ▼                                     ▼
+        ┌──────────────┐                      ┌──────────────┐
+        │   ONBOARDING │  three-page welcome  │     HOME     │  Train tab (Modes / ExercisePicker)
+        └────┬─────────┘                      └──────┬───────┘
+             │                                       │
+             ▼                                       ├──────► LIBRARY   (Library tab)
+        ┌──────────────┐                            │
+        │   SIGN UP    │  email + password           ├──────► PROGRESS  (Progress tab)
+        │   SIGN IN    │  or password reset          │
+        │ RESET PWD    │                             └──────► YOU      (You tab: Account, Settings,
+        └────┬─────────┘                                       Privacy, Achievements, Leaderboard,
+             │                                                 Friends, Weekly Challenge, etc.)
              ▼
-        ┌──────────┐        ┌───────────────┐
-        │   HOME   │───────►│  DUEL LOBBY   │  host / join
-        └────┬─────┘        └───────┬───────┘
-             │ pick fight           │ both ready
-             ▼                      ▼
-      ┌─────────────┐        ┌─────────────┐
-      │ CALIBRATION │───────►│    FIGHT    │◄──── same screen, duel flag on
-      └─────────────┘        └──────┬──────┘
-             ▲                      │ set ends (rep target or player stops)
-             │ framing lost         ▼
-             │                ┌──────────┐
-             └────────────────│   REST   │  coach line + boss taunt, TTS
-                              └────┬─────┘
-                    boss alive ◄───┤
-                                   │ boss dead / player quits
-                                   ▼
-                            ┌──────────────┐
-                            │   VICTORY    │  or DEFEAT
-                            └──────┬───────┘
-                                   ▼
-                            ┌──────────────┐
-                            │   SUMMARY    │  fatigue curve, best rep, form trend
-                            └──────┬───────┘
-                                   ▼
-                                 HOME
+        ┌──────────────┐
+        │ PROFILE SETUP│  avatar colour, goal, favourite exercise
+        └────┬─────────┘
+             │
+             ▼
+        ┌──────────────┐
+        │CAMERA PRIMER │  orientation, lighting, focus
+        └────┬─────────┘
+             │
+             ▼
+           HOME ─────────► DUEL LOBBY  (host / join, calibrate both, fight)
+             │
+             ├──────► CALIBRATION ───────► FIGHT ───────► REST ───────┬─────► VICTORY/DEFEAT
+             │                              (duel: one screen)        │
+             │                                                   boss alive
+             │                                                        │
+             │◄───────────────────────────────────────────────────────┘
+             │
+             └──────► SUMMARY ──────► HOME
 ```
 
 ---
@@ -45,18 +55,29 @@ in this document it does not exist in the build.
 ## 2. Screen-by-screen
 
 ### SPLASH
-**Job:** absorb the LLM cold load so the first fight never waits.
+**Job:** check authentication and absorb the LLM cold load so the first fight never waits.
+- Checks if the player is signed in (via Firebase Auth state or local account).
 - Loads config files, initialises TTS, kicks off `LlmEngine.warmUp()` on a background dispatcher.
 - Shows a determinate progress line with honest labels: "waking the coach", not a spinner.
-- **Timeout at 25s** → proceed to HOME in *degraded mode* (template coach, no LLM). Never block.
-- Exit condition: config loaded + TTS ready. LLM readiness is reported separately and does not gate.
+- **Timeout at 25s** → proceed to next screen in *degraded mode* (template coach, no LLM). Never block.
+- If signed out, navigates to ONBOARDING. If signed in, navigates to HOME.
+- Exit condition: config loaded + TTS ready + auth state known. LLM readiness is reported separately and does not gate.
+
+### ONBOARDING
+**Job:** welcome, sign up or sign in, set profile, primer.
+- Three-page Welcome carousel: product promise, why accounts help (leaderboards, progression), call to action.
+- SIGN UP or SIGN IN screen: email + password form, password reset link.
+- PROFILE SETUP: avatar colour picker, goal (Get Stronger / Build Habit / Play with Friends / Move Better), favourite exercise.
+- CAMERA PRIMER: confirm device orientation, check lighting, check focus, explain the pose system.
+- **Exit to HOME is automatic** after completion. Never show these screens again (gate behind `onboarded` pref).
 
 ### HOME
 **Job:** get into a fight in one tap.
+- This is the TRAIN tab, one of four (Train / Library / Progress / You).
 - Primary action: **FIGHT** (largest element on screen).
-- Secondary: **DUEL**, **Arena Mode toggle**, exercise picker (Squats / Push-ups).
+- Secondary: **DUEL**, modes picker, exercise picker (Squats / Push-ups).
 - Shows a small status row: coach state (ready / warming / offline), camera mode, config version.
-- **No onboarding carousel. No sign-in. No permissions wall beyond camera.**
+- Back arrow and account icon top-left and top-right respectively.
 
 ### CALIBRATION
 **Job:** get the player framed correctly in under 30 seconds, and refuse to start until they are.

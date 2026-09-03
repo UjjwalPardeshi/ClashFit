@@ -1,8 +1,54 @@
 # 23 · Meta-Progression, Economy and Retention
 
-The layer that turns sessions into a habit. **All roadmap** — none of it demos on a phone handed
-over that morning. It exists because "would someone keep using it" is 30% of the score and this is
-the answer.
+XP, levels and achievements are shipped. Seasons and energy budget remain roadmap. This is where
+the "would someone keep using it" answer begins.
+
+---
+
+## Shipped: XP, Levels, Achievements and Weekly Challenges
+
+### XP and Levels
+
+Reps earn XP based on form quality: 4 base + 8 × formMean per rep (casual sessions earn half).
+Damage dealt, personal bests set, streak milestones and weekly challenge completion each award
+bonus XP. Cumulative XP determines level via `100 × (L − 1)^1.5` for level L ≥ 2.
+
+| Level | XP to reach | Title |
+|---|---|---|
+| 1 | 0 | Recruit |
+| 3 | 200 | Contender |
+| 5 | 632 | Brawler |
+| 8 | 1,414 | Fighter |
+| 12 | 2,969 | Warrior |
+| 16 | 5,239 | Gladiator |
+| 20 | 8,242 | Champion |
+| 30 | 24,975 | Titan |
+| 40 | 59,129 | Legend |
+
+### Achievements (18 badges)
+
+Bronze, Silver and Gold tiers across four categories:
+
+**Fights**: First Blood (1 session), Committed (10), Obsessed (50) · **Wins**: Victory (first boss win)
+**Streaks**: Week Strong (7 days), Unstoppable (30 days) · **Form**: Precision (100 clean reps), Master (1000)
+**Damage**: Powerful (10k total), Legendary Power (100k) · **Versatility**: Versatile (5 families)
+**Personal Bests**: Progressing (5 PBs) · **Weekly Challenges**: Challenge Accepted (first weekly challenge)
+**Modes**: Competitive (first versus), Team Player (first raid), Calibrated (first clinic)
+**Levels**: Fighter (level 10), Titan (level 25)
+
+### Weekly Challenges
+
+A single challenge rotates per ISO week (e.g. "2026-W36"), same for all players. Eleven possible
+challenges over damage, clean reps, sessions and streak days, each with three difficulty tiers:
+
+| Metric | Target 1 | Target 2 | Target 3 |
+|---|---|---|---|
+| Damage | 3000 (Damage Dealer) | 5000 (Heavy Hitter) | 8000 (Demolition) |
+| Clean Reps | 150 (Clean Form) | 250 (Pristine) | 400 (Flawless) |
+| Sessions | 3 (Consistency) | 5 (Dedication) | — |
+| Streak Days | 3 (Building Momentum) | 5 (Unstoppable) | 7 (Perfect Week) |
+
+Completing a weekly challenge grants 100 XP bonus.
 
 ---
 
@@ -81,16 +127,17 @@ The single most common way fitness apps lose users is a punitive streak.
 
 ## 7. Social retention
 
-From [20-MULTIPLAYER-MODES](20-MULTIPLAYER-MODES.md), all of it local-first:
-
+- **Leaderboards** (shipped, Firestore-backed): global (this week's damage, this week's clean reps,
+  all-time XP, longest streak) plus friends leaderboards. Built with friend codes.
+- **Weekly Challenge** (shipped): same for every player that ISO week, rotates deterministically.
+- **Friend codes** (shipped): 6-character codes to add friends without email.
 - **Ghost sharing** — a ghost is a file. Send it to anyone; they race it. No server.
 - **Challenge cards** — a QR encoding exercise, mode, target and ghost. Scan, attempt, beat.
-- **Crew ledger** — merges whenever two phones are in the same room. Eventually consistent, no
-  backend.
 - **Raid nights** — a standing time when a crew fights one boss together in a room.
 
-**"Community without a server"** is a better story than a cloud leaderboard, and it is the only one
-consistent with the privacy thesis.
+**"Multiplayer without a server, scores in the cloud"** — leaderboards are Firestore-backed
+(email + password accounts), but the match engine runs on-device and Nearby Connections handles
+peer-to-peer play. No frame of video or pose data ever reaches the cloud.
 
 ---
 

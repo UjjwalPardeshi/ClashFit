@@ -13,11 +13,35 @@ directory up.
 ./gradlew :app:installDebug           # onto a connected phone
 ```
 
-No `local.properties` is committed. Point `ANDROID_HOME` at your SDK or create the file.
+### Local configuration
+
+No `local.properties` is committed. Create the file with:
+
+```properties
+# Android SDK (or point ANDROID_HOME env var instead)
+sdk.dir=/path/to/android-sdk
+
+# Firebase cloud keys (optional; if missing, the app runs offline with a local account)
+FIREBASE_API_KEY=<from google-services.json: current_key>
+FIREBASE_APP_ID=<from google-services.json: mobilesdk_app_id>
+FIREBASE_PROJECT_ID=<from google-services.json: project_id>
+```
+
+The `google-services.json` file (downloaded from Firebase Console) is never committed. If accidentally
+committed, rotate the API key in the Firebase Console.
 
 The on-device coach model is **not** in the APK. Copy `gemma-3n-e2b-int4.task` to
 `Android/data/com.clashfit/files/models/` on the phone; until then the template coach speaks,
 and a judge cannot tell the difference.
+
+### Screenshot tests
+
+```bash
+./gradlew :app:recordRoborazziDebug   # generate baseline PNGs
+./gradlew :app:verifyRoborazziDebug   # compare against baseline
+```
+
+Baselines are in `app/screenshots/`. Use these to verify Material 3 theme tokens and HUD readability.
 
 ## What is where
 
@@ -33,7 +57,9 @@ and a judge cannot tell the difference.
 | `…/ui` | Theme, the shared component kit, type-safe navigation, screens |
 | `app/src/main/assets/config` | The same JSON the prototype tunes against; a copy under `files/config/` on the phone overrides it on resume |
 
-The manifest requests **no `INTERNET` permission**. Open it and check.
+The manifest requests `INTERNET` and `ACCESS_NETWORK_STATE` (Firebase Auth + leaderboards only).
+Camera frames and pose data never use these permissions: pose scoring runs on-device (MediaPipe GPU)
+and coaching runs on-device (Gemma 3n). Only scores, names and levels are sent to Firestore.
 
 Design notes and the phase plan: [`../docs/30-ANDROID-APP.md`](../docs/30-ANDROID-APP.md).
 

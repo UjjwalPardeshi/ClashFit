@@ -70,12 +70,13 @@ seconds**: ask them to keep going and watch the meter move.
 
 ### 2. Fully on-device, including a language model
 The perception layer being on-device is now table stakes. **A 2B-parameter language model generating
-the coaching and the antagonist's dialogue, on the phone's NPU, with no network permission at all**
+the coaching and the antagonist's dialogue, running on the phone's NPU, not on a server**
 is not.
 
 The privacy argument here is genuine rather than rhetorical: this is a camera pointed at a person
 mid-workout in their bedroom. Every competitor listed above with a camera either uploads the stream
-or requires dedicated hardware in the room. **We can demonstrate airplane mode on stage.**
+or requires dedicated hardware in the room. The camera pipeline and the coach both run on-device,
+with the network used only for accounts and leaderboards. **We can demonstrate airplane mode on stage.**
 
 ### 3. Zero hardware
 Kinect, Ring Fit, Peloton Guide, Tempo, Nex, VR — every strong product in this space needs a device

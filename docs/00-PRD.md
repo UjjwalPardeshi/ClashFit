@@ -25,8 +25,9 @@ not a hypothetical one, and it is the reason a large share of people never try t
 
 ## 2. Thesis
 
-> Real, camera-verified physical effort is the input. A boss fight is the output. Nothing leaves
-> the device.
+> Real, camera-verified physical effort is the input. A boss fight is the output. Camera frames,
+> pose landmarks and rep timelines never leave the device. Only scores, name and level sync to
+> the cloud.
 
 The specific claim we are making that nobody else makes: **the system reads fatigue from your
 movement and the difficulty responds to it.** Not a preset difficulty curve, not a self-reported
@@ -50,8 +51,9 @@ needing equipment-based lifts.
    flailing, the product is a toy.
 2. **Never punish fatigue.** Getting tired is the point of exercise. The system responds to
    fatigue by changing the fight, never by shaming the player.
-3. **Nothing leaves the device.** No account, no upload, no network requirement. Ever. This is a
-   product constraint, not an implementation detail.
+3. **Scores in the cloud, sensor data never.** Camera frames, pose landmarks and rep timelines
+   never leave the phone: pose scoring and coaching both run on-device. Only scores, names and
+   levels are uploaded to Firestore, and only after signing in with an email and password.
 4. **Eyes-free must work.** During a push-up your face is 30cm from the floor. If the product only
    communicates visually, it does not work at all.
 5. **Every rep gets feedback inside 100ms.** Latency between the movement and the hit is the entire
@@ -98,14 +100,14 @@ model, progression ladders, and exercises defined as config rather than code. **
 to "would someone keep using it" — and it belongs on the deck, not in the weekend build.**
 
 ### Will not ship — roadmap only, slide 8 of the deck
-Guilds and raids · step-based city events and Health Connect · cloud leaderboards · skins and
-cosmetics · avatar progression · exercise library beyond squats and push-ups · AR overlay ·
-injury-aware routing · account system
+Guilds and raids · step-based city events and Health Connect · skins and cosmetics · avatar
+progression · exercise library beyond squats and push-ups · AR overlay · injury-aware routing ·
+seasons and energy budget.
 
 **Rationale for the cuts:** the loaner phone is handed over at 08:00 Saturday, so any feature
-depending on accumulated history (steps, streaks, Health Connect) demos as an empty screen. Cloud
-features contradict principle 3 and add venue-network risk. Cosmetics need an art pipeline we
-cannot feed in 19 hours.
+depending on seasonal progression (campaigns, energy) demos as an empty screen. The social
+features (guilds, city events) depend on persistent cross-device state that survives only if we
+build a backend. Cosmetics need an art pipeline we cannot feed in 19 hours.
 
 ## 6. Success criteria
 
@@ -135,6 +137,12 @@ the rubric) and they belong in the deck.
 | **Accessibility ladders** | Chair squats, knee push-ups, wall push-ups as first-class progression steps rather than "easy mode". Expands the addressable user base and is the honest thing to do. |
 | **Voice-only mode** | Screen off, TTS coach only. Turns the phone into an audio trainer and makes the product usable when it can't see the screen anyway. |
 | **Local co-op raid** | Three-plus phones in a room against one boss. Gyms, hostels, offices. Natural spread vector. |
+
+## 7a. Accounts and progression
+
+First run takes a player through Welcome (three-page intro), then Sign Up or Sign In (email and password with password reset). Then Profile Setup (choose avatar colour, goal, favourite exercise), then Camera Primer, then Home.
+
+Accounts are backed by Firebase Auth plus Firestore, initialised from three build keys in `android/local.properties` (FIREBASE_API_KEY, FIREBASE_APP_ID, FIREBASE_PROJECT_ID). If the build has no keys, each phone keeps an on-device account so the entire app works offline without registration. Progression includes XP and levels (computed on-device from session scores), achievements with bronze/silver/gold badges, weekly challenges that rotate per ISO week and are the same for all players that week, and leaderboards: global (this week's damage, this week's clean reps, all-time XP, longest streak) plus friends leaderboards. Seasons, energy budget, crews and the campaign map remain roadmap.
 
 ## 8. Non-goals
 

@@ -109,6 +109,17 @@ fallback, so one slipping does not take the other with it.
 *Kill switch:* fatigue meter as a readout only, template coach, pass-the-phone duel. That
 combination is still a complete, honest demo and still scores.
 
+### R8c · Firebase Auth unreachable or keys missing on demo day
+**Likelihood: low. Impact: high.**
+Firebase Auth fails at the venue or the cloud keys are missing from the APK. Sign-in becomes
+impossible and the leaderboard is offline.
+
+*Mitigation:* the app detects auth failure and falls back to an on-device-only account. Every
+screen works with the same credentials as before. The leaderboard explicitly shows unavailable
+rather than an error, with a message that describes the fallback state honestly.
+*Kill switch:* ship with on-device accounts only. Disable the sign-in screen if keys are not
+present. The demo works identically; the leaderboard scores are lost, not corrupted.
+
 ---
 
 ## Tier 3 — manageable
@@ -141,9 +152,6 @@ on lanyards. Return both before exit.
 
 | Not a risk because |
 |---|
-| **Network** — the app has no `INTERNET` permission. Venue wifi is irrelevant. |
-| **Backend downtime** — there is no backend. |
-| **Account/login failures** — there are no accounts. |
 | **Health Connect empty on a fresh device** — we do not use it. Cut in the PRD. |
 | **Play Services availability** — hotspot sockets do not need it; only the Nearby fallback does. |
 

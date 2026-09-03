@@ -24,45 +24,53 @@ If a design decision would look good in a screenshot but fail at 2 metres, it fa
 
 ## 2. Art direction
 
-**Direction: neon tactical.** Deep near-black ground, a single hot accent for damage, cyan for
-system/HUD chrome, and the boss rendered as high-contrast key art. Reads at distance, survives
-bad venue lighting, and sits naturally beside iQOO's own performance-gaming identity without
-copying it.
-
-> **Confirmed 21 Aug.** Alternatives considered and rejected: 16-bit pixel arcade (cheapest to
-> produce, but risks reading as unfinished rather than deliberate) and dark manga key art (highest
-> impact, heaviest asset load and the most likely to overrun on 28 Aug).
+**Direction: Material 3 dark.** Layered surfaces, never pure black, rounded corners on the Material
+scale (8/12/16/20/28 dp), tonal cards, and a single hot accent. Reads at distance, works on any
+Android device, and establishes a clean, modern identity that scales beyond a single weekend.
 
 ### Tokens
 
-```
---ground        #07090C   near-black, slight blue bias
---surface       #10141B
---surface-lift  #1A2029
---ink           #F2F5F8
---ink-mute      #8A94A4
+The app uses Material 3 on dark background with custom token overrides for fitness contexts:
 
---hp-full       #34D399   boss healthy
---hp-mid        #FBBF24
---hp-low        #F43F5E
---damage        #FF3B5C   hit flashes, damage numerals
---clean         #22D3A0   clean-rep flash
---shallow       #F5A524   shallow-rep flash
---system        #38BDF8   HUD chrome, calibration guides
---fatigue-band  #A78BFA   fatigue meter
-```
+**Surfaces** (layered, never pure black):
+- `Ground` #0E0F12: background, lowest elevation
+- `Ground2` #131418: bottom bar, lowest container
+- `Panel` #1B1C21: cards, default container
+- `PanelLift` #24262C: card-on-card, text inputs
+- `PanelTop` #2D3037: highest container, pressed state
 
-**Semantic rule:** green/amber/red are reserved for *rep quality and boss HP only*. They are never
-decoration. A player must be able to learn the colour language in one set.
+**Text** (always maintains 9:1 or better contrast):
+- `Ink` #F5F2EC: primary text
+- `InkMuted` #B8F5F2EC (72%): secondary text, labels
+- `InkFaint` #80F5F2EC (50%): hints, disabled
+
+**Accents**:
+- `Ember` #FF5A2C: primary (damage, selected states) — 6.2:1 on Ground
+- `EmberLift` #FF7A52: pressed, hover
+- `EmberDeep` #C93E14: deep variant
+- `EmberTint` #2E1810: container for selected states
+
+**Semantic**:
+- `Success` #5ED28A: positive feedback
+- `Clean` #8FD18A: clean rep
+- `Ok` #F2C14E: acceptable rep
+- `Shallow` #FF8A3D: shallow rep
+- `Bronze` #CD8B5A, `Silver` #C9CDD4, `Gold` #F2C14E: achievement tiers
+
+**UI Elements**:
+- Buttons: pill-shaped (full height border radius) with tonal background, Material weight
+- Navigation bar: bottom, four tabs (Train / Library / Progress / You), tonal
+- Top app bar: every screen has a back arrow on the left (or menu), title centre, icons right
+- Cards: round corners (16 dp), tonal background, subtle elevation
 
 ### Type
 
 | Role | Face | Use |
 |---|---|---|
-| Numerals | condensed grotesque, 800 weight, tabular | rep count, damage, HP — 80–140sp |
-| Display | same family, 700 | boss name, verdict words ("CLEAN", "SHALLOW") |
-| Body | humanist sans, 500 | coach lines, calibration cues — never below 28sp |
-| Mono | — | debug overlay only, never shipped to the fight screen |
+| Numerals | Big Shoulders Display, 900 weight | damage, rep count, levels — 80–140sp |
+| Headline | Big Shoulders Display, 700 weight | boss name, verdict words ("CLEAN", "SHALLOW") |
+| Body | Barlow, 400–600 weight | coach lines, calibration cues, labels — never below 28sp |
+| Mono | IBM Plex Mono | telemetry readout, debug overlay only |
 
 ---
 

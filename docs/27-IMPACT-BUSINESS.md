@@ -97,7 +97,7 @@ Not "we'll move fast." Four structural reasons:
 | Weeks 1–2 | Ship the second detector family, close the exercise library to 20 working exercises |
 | Weeks 3–6 | Closed beta, 50 users, measure real day-7 retention against the 25% target |
 | Month 2 | One physiotherapy clinic pilot — prescribe-and-trend |
-| Month 3 | Play Store release, free, no accounts |
+| Month 3 | Play Store release, free, with email and password accounts |
 
 **The metric that matters:** day-7 retention. If we cannot beat the fitness-app median substantially,
 the whole thesis about fatigue-adaptive difficulty was wrong, and we should know that in six weeks

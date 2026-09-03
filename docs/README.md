@@ -24,10 +24,10 @@ check-in we open a fresh repository and implement against these specs.
 ### Before you write anything
 | # | Doc | Why |
 |---|---|---|
-| 00 | [PRD](00-PRD.md) | What we are building and for whom. Feeds the Phase-1 description and deck. |
+| 00 | [PRD](00-PRD.md) | What we are building and for whom. Now includes accounts, progression, and the precise privacy promise. |
 | 01 | [TRD](01-TRD.md) | Architecture, modules, ownership split, performance budgets. |
-| 02 | [App Flow](02-APP-FLOW.md) | Every screen, every transition, the session state machine. |
-| 03 | [UI/UX Spec](03-UI-UX-SPEC.md) | Design system, the 2-metre legibility constraint, motion, audio. |
+| 02 | [App Flow](02-APP-FLOW.md) | Every screen, every transition, the session state machine, and the first-run onboarding flow. |
+| 03 | [UI/UX Spec](03-UI-UX-SPEC.md) | Material 3 dark design system, the 2-metre legibility constraint, motion, audio. |
 
 ### The technical core (this is where we win or lose)
 | # | Doc | Why |
@@ -36,7 +36,7 @@ check-in we open a fresh repository and implement against these specs.
 | 05 | [Pose Engine Spec](05-POSE-ENGINE-SPEC.md) | Rep detection, form scoring, **fatigue detection**. The novelty lives here. |
 | 06 | [AI Coach Spec](06-AI-COACH-SPEC.md) | Gemma 3n on-device, prompt design, telemetry→language, TTS. |
 | 07 | [Multiplayer Spec](07-MULTIPLAYER-SPEC.md) | Duel protocol, transport abstraction, self-healing event sync. |
-| 08 | [Data Model](08-DATA-MODEL.md) | Room schema, config files, hot-reload contract. |
+| 08 | [Data Model](08-DATA-MODEL.md) | Room v4 schema (progression tables), Firestore collections, local.properties keys. |
 | 09 | [Module Contracts](09-MODULE-CONTRACTS.md) | The interfaces both of us code against in parallel. |
 
 ### Execution
@@ -52,11 +52,11 @@ check-in we open a fresh repository and implement against these specs.
 | 17 | [Game Modes](17-GAME-MODES.md) | Time Attack, Ghost Race and friends. Modes are cheap; exercises are not. |
 | 18 | [**Event Card**](18-EVENT-CARD.md) | **The one page you read at hour 26.** Gates, cut order, failure playbook, judge Q&A. |
 | 19 | [Exercise Library](19-EXERCISE-LIBRARY.md) | 5 detector families, 61 exercises, and a game shaped like each movement. Strength, yoga, cardio. |
-| 20 | [Solo / Versus / Co-op / Community](20-MULTIPLAYER-MODES.md) | One player to eight, plus community that works with no server. |
+| 20 | [Solo / Versus / Co-op / Community](20-MULTIPLAYER-MODES.md) | One player to eight, leaderboards via Firestore, Nearby Connections multiplayer. |
 | 21 | [Sensor Playbook](21-SENSOR-PLAYBOOK.md) | Every sensor on the phone as gameplay. NFC pairing, proximity push-ups, IMU plank, two-device fusion. |
 | 22 | [Health Domains](22-HEALTH-DOMAINS.md) | Everything health & fitness, gamified onto one character sheet. Roadmap. |
-| 23 | [Meta-Progression](23-META-PROGRESSION.md) | Sessions, days, seasons. Economy, streaks done right, retention. Roadmap. |
-| 24 | [**Build Setup**](24-BUILD-SETUP.md) | **Read before you type.** Dependencies, file tree, manifest, landmark indices, git, hour-zero. |
+| 23 | [Meta-Progression](23-META-PROGRESSION.md) | XP, levels, achievements and weekly challenges shipped. Seasons and energy roadmap. |
+| 24 | [**Build Setup**](24-BUILD-SETUP.md) | **Read before you type.** Dependencies, Firebase keys in local.properties, manifest, screenshot tests. |
 | 25 | [Clinic Mode](25-CLINIC-MODE.md) | Validated functional assessments — sit-to-stand, balance, reach. The impact play. |
 | 26 | [Deck Copy](26-DECK-COPY.md) | All nine slides, written. Due 27 Aug. |
 | 27 | [Impact & Business Case](27-IMPACT-BUSINESS.md) | Who it's for, who pays, why India, and the risks we raise before a judge does. |
@@ -105,7 +105,7 @@ Everything in these docs exists to make those three sentences true and demonstra
 | On-device model | **Gemma 3n E2B int4** via MediaPipe LLM Inference ([ADR-003](adr/ADR-003-on-device-llm.md)) |
 | Duel transport | **Hotspot + sockets** primary, behind a swappable interface ([ADR-004](adr/ADR-004-duel-transport.md)) |
 | Red Light strategy | **Hot-reload config layer**, built in the first Green block ([ADR-005](adr/ADR-005-hot-reload-config.md)) |
-| Art direction | **Neon tactical** (`03-UI-UX-SPEC.md` §2) |
+| Art direction | **Material 3 dark** — layered surfaces, rounded corners, one hot accent (`03-UI-UX-SPEC.md` §2) |
 | Duel priority | **Tier 1** — parallel lane on Sunday alongside the on-device coach |
 | Game modes | Boss Fight + **Time Attack + Ghost Race + Survival + Boss Rush** (`17-GAME-MODES.md`) |
 | Exercise library | **5 detector families, 61 exercises**, exercises as config data (`19-EXERCISE-LIBRARY.md`) |

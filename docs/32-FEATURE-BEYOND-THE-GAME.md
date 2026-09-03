@@ -73,7 +73,8 @@ rate from chest and shoulder landmark motion rather than trusting the user.
 
 1. They are useful to somebody who never opens the game.
 2. They need no hardware beyond the phone.
-3. Nothing leaves the device, which is the same promise the rest of the product
-   makes and the reason it is credible here.
+3. Camera frames and pose landmarks never leave the device, which is the same
+   promise the rest of the product makes and the reason it is credible here.
+   Scores and measurements stay on the device, with no cloud sync.
 4. None of them is a medical device, and the copy on every one of them has to
    keep passing the language validator in `test/run.js`.

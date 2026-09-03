@@ -21,8 +21,8 @@ Decided in [ADR-001](adr/ADR-001-stack.md). Summary:
 | Duel transport | Pluggable — hotspot sockets primary ([ADR-004](adr/ADR-004-duel-transport.md)) |
 | Async | Coroutines + `StateFlow`. Pose on a dedicated single-thread dispatcher. |
 
-**Explicitly rejected:** TensorFlow.js in a WebView for the perception core, Firebase, any backend,
-Unity, Health Connect. Reasons in the ADRs.
+**Explicitly rejected:** TensorFlow.js in a WebView for the perception core, Unity, Health Connect.
+Reasons in the ADRs. Firebase Auth and Firestore are initialised when keys are present (see §10).
 
 ---
 
@@ -173,9 +173,10 @@ in that orientation — see `03-UI-UX-SPEC.md` §4. Audio carries the load here,
 
 ## 7. Offline and permissions
 
-**Network:** the app requests no `INTERNET` permission in the release manifest. This is a
-deliberate, checkable claim we make to the jury: open the manifest, there is no internet
-permission. Duel transport uses local-only permissions.
+**Network:** the camera pipeline and pose model have zero path to the network. All network code
+lives in a single package, `android/app/src/main/java/com/clashfit/cloud/`, which carries only
+scores, names and levels to the cloud, never camera frames or pose data. The manifest declares
+this boundary in its permission comment. Duel transport uses local-only permissions.
 
 **Permissions requested:** `CAMERA`, plus for duel: `NEARBY_WIFI_DEVICES`, `ACCESS_FINE_LOCATION`
 (pre-33 discovery), `BLUETOOTH_ADVERTISE`/`BLUETOOTH_CONNECT` if the BLE fallback ships.
@@ -204,6 +205,7 @@ single practice has saved more hackathon teams than any other.
 
 ## 10. What we do not build
 
-No backend. No account system. No analytics SDK. No crash reporter. No dependency injection
-framework — construct objects by hand in one `AppGraph` object. No navigation library — a sealed
-`Screen` class and a `when` block. Every one of these is a real hour we do not have.
+No analytics SDK. No crash reporter. No dependency injection framework — construct objects by
+hand in one `AppGraph` object. No navigation library — a sealed `Screen` class and a `when` block.
+Firebase Auth and Firestore are initialised only if keys are present; with no keys, the app
+keeps a local account. Every architectural choice is a real hour we do not have.

@@ -42,11 +42,27 @@ after Saturday 19:00 ([10-BUILD-RUNBOOK](10-BUILD-RUNBOOK.md) rule 3).
 | Duel — optional | `com.google.android.gms:play-services-nearby` (only for `NearbyTransport`) |
 
 **Deliberately absent:** Hilt/Koin (construct by hand in one `AppGraph`), Navigation-Compose (a
-sealed `Screen` class and a `when`), Retrofit/OkHttp (no network), Firebase (no backend), Timber,
-any analytics or crash SDK. Every one of those is a real hour you do not have.
+sealed `Screen` class and a `when`), Retrofit/OkHttp (see §7b: INTERNET is for sign-in and scores only), Timber,
+any analytics or crash SDK. Firebase Auth and Firestore are optional, initialised only when keys are present (§7b).
+Every one of the removed dependencies is a real hour you do not have.
 
 **Model asset** — `gemma-3n-e2b-int4.task`, ~2–3 GB. Never in the APK. Side-loaded to app external
 files over Office Kit at check-in.
+
+**Cloud keys** (optional) — Firebase Auth + Firestore initialisation. Extracted from `google-services.json`:
+- `FIREBASE_API_KEY` → `current_key`
+- `FIREBASE_APP_ID` → `mobilesdk_app_id`
+- `FIREBASE_PROJECT_ID` → `project_id`
+
+Add to `android/local.properties` (git-ignored, never committed):
+```
+FIREBASE_API_KEY=<value>
+FIREBASE_APP_ID=<value>
+FIREBASE_PROJECT_ID=<value>
+```
+
+If any key is missing, the app works offline with a local account. If all three are present, Firestore
+is initialised at startup. **The `google-services.json` file itself is never committed.**
 
 ---
 
@@ -140,24 +156,38 @@ the only thing standing between you and a demo.
 REQUIRED
   android.permission.CAMERA
 
+CLOUD ACCOUNTS + LEADERBOARDS (if keys present)
+  android.permission.INTERNET
+  android.permission.ACCESS_NETWORK_STATE
+
 DUEL (Tier 1)
   android.permission.ACCESS_WIFI_STATE
   android.permission.CHANGE_WIFI_STATE
-  android.permission.NEARBY_WIFI_DEVICES     (API 33+, usesPermissionFlags="neverForLocation")
-  android.permission.ACCESS_FINE_LOCATION    (pre-33 discovery only, maxSdkVersion="32")
+  android.permission.BLUETOOTH_ADVERTISE
+  android.permission.BLUETOOTH_CONNECT
+  android.permission.BLUETOOTH_SCAN       (usesPermissionFlags="neverForLocation")
+  android.permission.NEARBY_WIFI_DEVICES  (API 33+, usesPermissionFlags="neverForLocation")
 
-NFC PAIRING (Tier 2)
-  android.permission.NFC
+RUN TRACKER
+  android.permission.ACCESS_FINE_LOCATION
+  android.permission.ACCESS_COARSE_LOCATION
 
-DELIBERATELY ABSENT
-  android.permission.INTERNET     ← the privacy claim, made checkable
+AUDIO + HAPTICS
+  android.permission.RECORD_AUDIO
+  android.permission.VIBRATE
+  android.permission.POST_NOTIFICATIONS
+
+ALARM
+  android.permission.SCHEDULE_EXACT_ALARM
+  android.permission.USE_EXACT_ALARM
 ```
 
-**Leaving out `INTERNET` is a pitch asset.** A judge can open the manifest and verify it in five
-seconds. Do not add it "just for now" — you will forget to remove it.
+**`INTERNET` is conditional on having Firebase keys.** Camera frames and pose data never use it.
+Only scores, names and levels are transmitted, and only to Firestore for leaderboards. Voice
+commands and the on-device coach both run offline.
 
-Also: `android:screenOrientation="portrait"`, `android:keepScreenOn` on the fight screen, and
-`largeHeap="true"` for the LLM.
+Also: `android:screenOrientation="portrait"`, `android:keepScreenOn` on the fight screen,
+`largeHeap="true"` for the LLM, and a comment block explaining the privacy contract.
 
 ---
 
@@ -194,6 +224,22 @@ The lookup you would otherwise be searching for mid-build. 33 landmarks, both im
 
 Use **world landmarks** for angles, **image landmarks** for the overlay and framing checks
 ([05-POSE-ENGINE-SPEC](05-POSE-ENGINE-SPEC.md) §1).
+
+---
+
+## 5a. Screenshot Tests (Roborazzi)
+
+JVM-based screenshot comparison tests via Roborazzi. No device needed for generation, but comparison
+can run on a real device or emulator.
+
+```bash
+./gradlew :app:recordRoborazziDebug     # generate PNG baselines from Composables
+./gradlew :app:verifyRoborazziDebug     # compare current state against baselines
+```
+
+Baselines are stored in `android/app/screenshots/`. Use these to verify Material 3 theme tokens,
+layout responsiveness and HUD readability at different sizes. Baseline changes are reviewed and
+committed alongside design changes.
 
 ---
 

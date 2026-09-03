@@ -7,7 +7,8 @@ see whether the rep actually happened — so the log goes up while the movement 
 
 ClashFit makes the front camera the referee. Every rep is graded before it counts, and the grade
 becomes damage against a boss. A shallow rep does almost nothing, so the only way to win is to move
-better. Everything runs on the phone.
+better. Pose scoring runs on-device. Leaderboards, achievements and progression are in the cloud,
+but camera frames, pose landmarks and coaching text never leave the phone.
 
 > **iQOO Hackathon 2026 · Pune City Battle · HealthTech**
 > Team **Da Goats** — Omkar Kadam, Ujjwal Pardeshi
@@ -35,10 +36,14 @@ fatigue estimator  →  adaptive boss   (staggers when you fade, mercy when you'
 [between sets] Gemma 3n on-device → speech
         ↓
 local storage · this phone only
+        ↓
+[after session] scores → Firestore    (only scores, names, levels)
+        ↓
+leaderboards (global and friends)
 ```
 
-There is no server in that diagram. The one exception is **Outbreak**, the outdoor chase mode, which
-needs map tiles — it says so before it starts, and the camera stays shut throughout.
+Camera frames, pose data and coaching text never reach Firestore. The camera stays closed during
+leaderboard reads and all multiplayer sync.
 
 ---
 
@@ -158,17 +163,20 @@ airplane mode.
 
 ---
 
-## Privacy
+## Accounts and privacy
 
-Pose, form scoring, fatigue and the language model all run on the phone. **No frame of video, no
-landmark and no form score has ever left a device, and none can — in any mode.**
+**Required for leaderboards and progression sync:** Email and password sign-up (Firebase Auth +
+Firestore, initialised from local.properties keys at build time; if keys are absent, the app works
+fully offline with a local account).
 
-Outbreak is the single mode that uses the network, because a map is tiles fetched from a server. It
-asks for location when you start it, never at install, declining costs you exactly that one mode,
-and the camera stays shut throughout. Everything else runs in airplane mode.
+**Privacy promise:** Camera frames, pose landmarks and rep timelines never leave the phone. Pose
+scoring runs on-device (MediaPipe GPU), on-device coaching runs on-device (Gemma 3n), and voice
+commands are offline (Android SpeechRecognizer). Only scores, display names and levels are sent to
+Firestore — strictly after signing in, and only what the leaderboard needs to display.
 
-The trade is written down in [`docs/33-FEATURE-OUTBREAK.md`](docs/33-FEATURE-OUTBREAK.md) rather
-than buried.
+Nearby Connections multiplayer (duel, raid, relay) stays serverless and works in airplane mode.
+Leaderboards need INTERNET only to read and to publish a score. Signing up needs it once; after that
+the training itself runs with the radio off and scores go up when there is a connection.
 
 ---
 
@@ -181,6 +189,29 @@ foreshortens the far limb and will invent an asymmetry that is not there.
 It is a **measurement, not a diagnosis**, and that is enforced rather than promised: a validator
 blocks the words *injury*, *risk*, *diagnos*, *cleared* and *abnormal* from ever reaching the
 athlete, and a test asserts it.
+
+---
+
+## Accounts, levels and leaderboards
+
+**Progression**: XP earned from rep quality (4 base + 8 × formMean per rep), bonuses for a boss
+defeated (25 XP), a new personal best (30 XP), streak days (5–35 XP per day, up to 7 days),
+and weekly challenge completion (100 XP). Casual sessions earn half XP. Cumulative XP determines
+level (100 × (L−1)^1.5 for level L ≥ 2) and rank title (Recruit → Legend, 9 titles total).
+
+**Achievements**: 18 badges in bronze/silver/gold tiers across fights, wins, streaks, form quality,
+damage, versatility, personal bests, weekly challenges, game modes and levels.
+
+**Weekly challenges**: Same challenge for all players each ISO week (e.g. "2026-W36"). One of 11
+possible challenges rotating deterministically (damage, clean reps, sessions or streak days, each
+with three difficulty tiers). Completing a challenge grants 100 XP.
+
+**Leaderboards**: Global (this week's damage, this week's clean reps, all-time XP, longest streak)
+and friends leaderboards. Friend codes (6 chars, derived from player UID) enable adding friends
+without sharing email. Your standing is published whenever it changes, debounced so one finished
+session is one upload; all multiplayer sync still happens locally via Nearby Connections.
+
+See [`firebase/README.md`](firebase/README.md) for Firestore schema and setup instructions.
 
 ---
 
