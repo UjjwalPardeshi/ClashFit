@@ -26,17 +26,20 @@ android {
     }
 
     signingConfigs {
+        // Release signing comes from the environment (CI or a release machine). Without it the
+        // release build still produces an installable APK, signed with the debug key, so
+        // assembleRelease is always a valid check of R8 and resource shrinking.
+        val debugSigning = getByName("debug")
         create("release") {
             val keystoreFile = System.getenv("KEYSTORE_FILE")
             val keystorePassword = System.getenv("KEYSTORE_PASSWORD")
-            val keyAlias = System.getenv("KEY_ALIAS")
-            val keyPassword = System.getenv("KEY_PASSWORD")
-
             if (keystoreFile != null && keystorePassword != null) {
                 storeFile = file(keystoreFile)
                 storePassword = keystorePassword
-                this.keyAlias = keyAlias ?: "clashfit"
-                this.keyPassword = keyPassword ?: keystorePassword
+                keyAlias = System.getenv("KEY_ALIAS") ?: "clashfit"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: keystorePassword
+            } else {
+                initWith(debugSigning)
             }
         }
     }
@@ -53,11 +56,6 @@ android {
         }
     }
 
-    ndkVersion = "26.3.11579264"
-    packagingOptions {
-        pickFirst("lib/arm64-v8a/libc++_shared.so")
-        pickFirst("lib/x86_64/libc++_shared.so")
-    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -76,6 +74,8 @@ android {
 
     packaging {
         resources.excludes += setOf("/META-INF/{AL2.0,LGPL2.1}", "META-INF/DEPENDENCIES")
+        // MediaPipe and CameraX both ship libc++_shared; one copy per ABI is enough.
+        jniLibs.pickFirsts += setOf("lib/arm64-v8a/libc++_shared.so", "lib/x86_64/libc++_shared.so")
         jniLibs.useLegacyPackaging = false
     }
 
