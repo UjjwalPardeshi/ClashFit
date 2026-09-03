@@ -54,6 +54,7 @@ class NearbyTransport(
     private val connectedEndpoints = mutableSetOf<String>()
     private val outgoingQueue = mutableListOf<DuelMessage>()
     private var roomName = ""
+    private var isClosed = false
 
     private val payloadCallback = object : PayloadCallback() {
         override fun onPayloadReceived(endpointId: String, payload: Payload) {
@@ -111,7 +112,6 @@ class NearbyTransport(
 
     override suspend fun host(roomName: String): Result<Unit> {
         this.roomName = roomName
-        _state.value = LinkState.ADVERTISING
 
         val opts = com.google.android.gms.nearby.connection.AdvertisingOptions.Builder()
             .setStrategy(Strategy.P2P_STAR)
@@ -120,6 +120,7 @@ class NearbyTransport(
         client.startAdvertising(roomName, SERVICE_ID, connectionCallback, opts)
             .addOnSuccessListener {
                 Log.d(TAG, "Advertising started for $roomName")
+                _state.value = LinkState.ADVERTISING
             }
             .addOnFailureListener { e ->
                 Log.e(TAG, "Advertising failed: ${e.message}")
@@ -130,8 +131,6 @@ class NearbyTransport(
     }
 
     override suspend fun join(): Result<Unit> {
-        _state.value = LinkState.SEARCHING
-
         val opts = com.google.android.gms.nearby.connection.DiscoveryOptions.Builder()
             .setStrategy(Strategy.P2P_STAR)
             .build()
@@ -150,6 +149,7 @@ class NearbyTransport(
         client.startDiscovery(SERVICE_ID, discoveryCallback, opts)
             .addOnSuccessListener {
                 Log.d(TAG, "Discovery started")
+                _state.value = LinkState.SEARCHING
             }
             .addOnFailureListener { e ->
                 Log.e(TAG, "Discovery failed: ${e.message}")
@@ -171,6 +171,9 @@ class NearbyTransport(
     }
 
     override fun close() {
+        if (isClosed) return
+        isClosed = true
+
         client.stopAdvertising()
         client.stopDiscovery()
         client.stopAllEndpoints()

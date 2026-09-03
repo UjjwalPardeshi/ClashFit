@@ -37,6 +37,8 @@ class RaidSession(
 ) {
     private companion object {
         const val TAG = "ClashFit/raid"
+        const val HEARTBEAT_MS = 1200L
+        const val LOST_AFTER_MS = 4000L
     }
 
     // Leaderboard state
@@ -46,6 +48,8 @@ class RaidSession(
     // Player tracking
     private val playerStates = mutableMapOf<String, PlayerRaidState>()
     private val appliedDamage = mutableMapOf<String, MutableSet<Int>>()  // playerId -> set of applied seqs
+    private val playerLastSeenMs = mutableMapOf<String, Long>()  // Track last message from each player
+    private var lastBeatMs = 0L  // Track last heartbeat send
 
     /** Subscription to the transport's incoming messages, cancelled on close(). */
     private val incomingJob: Job
@@ -54,6 +58,7 @@ class RaidSession(
         // Register ourselves
         playerStates[playerId] = PlayerRaidState(playerId, playerName)
         appliedDamage[playerId] = mutableSetOf()
+        playerLastSeenMs[playerId] = clock.nowMs()
 
         // Start listening for messages. UNDISPATCHED so the subscription is live before the
         // constructor returns, instead of whenever the scheduler next gets a turn.
@@ -116,6 +121,42 @@ class RaidSession(
     /** Get the current leaderboard. */
     fun getStandings(): List<RaidStanding> = _standings.value
 
+    /** Heartbeat and player timeout detection. Call periodically (e.g., every 500ms). */
+    fun tick() {
+        val t = clock.nowMs()
+
+        // Send heartbeat PING if it's been > HEARTBEAT_MS since last beat
+        if (t - lastBeatMs > HEARTBEAT_MS) {
+            lastBeatMs = t
+            transport.send(
+                DuelMessage(
+                    v = 1,
+                    type = DuelMessage.PING,
+                    playerId = playerId,
+                    tMs = t
+                )
+            )
+        }
+
+        // Check for lost players and remove them from leaderboard if silent for too long
+        val lostPlayers = playerStates.keys.filter { id ->
+            id != playerId && (t - (playerLastSeenMs[id] ?: t)) > LOST_AFTER_MS
+        }
+
+        var changed = false
+        for (lostId in lostPlayers) {
+            // Mark as effectively lost by removing from standings
+            playerStates.remove(lostId)
+            playerLastSeenMs.remove(lostId)
+            appliedDamage.remove(lostId)
+            changed = true
+        }
+
+        if (changed) {
+            updateLeaderboard()
+        }
+    }
+
     /** Tear down the raid. Stops the collector; a session must not outlive its close(). */
     fun close() {
         incomingJob.cancel()
@@ -126,6 +167,9 @@ class RaidSession(
 
     private fun processMessage(msg: DuelMessage) {
         if (msg.playerId == playerId) return  // Ignore self
+
+        // Track when we last saw this player
+        playerLastSeenMs[msg.playerId] = clock.nowMs()
 
         when (msg.type) {
             DuelMessage.REP -> {
@@ -163,7 +207,11 @@ class RaidSession(
 
     private fun updateLeaderboard() {
         val standings = playerStates.values
-            .sortedByDescending { it.damage }
+            .sortedWith(
+                compareByDescending<PlayerRaidState> { it.damage }
+                    .thenByDescending { it.reps }
+                    .thenBy { it.name }
+            )
             .map { state ->
                 RaidStanding(
                     playerId = state.playerId,

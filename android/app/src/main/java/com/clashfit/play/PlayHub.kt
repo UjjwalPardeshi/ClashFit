@@ -143,6 +143,8 @@ class PlayHub(
         jobs += scope.launch {
             while (isActive && armed != null) {
                 duel?.tick()
+                race?.tick()
+                raid?.tick()
                 refresh()
                 delay(HEARTBEAT_MS)
             }
@@ -209,7 +211,7 @@ class PlayHub(
                 Standing(it.playerId, it.name, it.reps, it.damage, it.fatigueBand, it.out, false, it.playerId == playerId)
             }
             else -> emptyList()
-        }.sortedWith(compareByDescending<Standing> { it.damage }.thenByDescending { it.reps })
+        }.sortedWith(compareByDescending<Standing> { it.damage }.thenByDescending { it.reps }.thenBy { it.name })
         val others = standings.filter { !it.me }
         _link.value = LinkHud(
             mode = a.mode,

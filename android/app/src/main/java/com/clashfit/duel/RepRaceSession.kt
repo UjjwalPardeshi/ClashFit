@@ -34,6 +34,8 @@ class RepRaceSession(
 ) {
     private companion object {
         const val TAG = "ClashFit/race"
+        const val HEARTBEAT_MS = 1200L
+        const val LOST_AFTER_MS = 4000L
     }
 
     // Race state
@@ -46,6 +48,8 @@ class RepRaceSession(
     // Player tracking
     private val playerReps = mutableMapOf<String, Int>()  // playerId -> reps count
     private val playerSeqs = mutableMapOf<String, MutableSet<Int>>()  // dedupe by seq
+    private val playerLastSeenMs = mutableMapOf<String, Long>()  // Track last message from each player
+    private var lastBeatMs = 0L  // Track last heartbeat send
 
     /** Subscription to the transport's incoming messages, cancelled on close(). */
     private val incomingJob: Job
@@ -53,6 +57,7 @@ class RepRaceSession(
     init {
         playerReps[playerId] = 0
         playerSeqs[playerId] = mutableSetOf()
+        playerLastSeenMs[playerId] = clock.nowMs()
 
         // Start listening for messages. UNDISPATCHED so the subscription is live before the
         // constructor returns, instead of whenever the scheduler next gets a turn.
@@ -113,6 +118,41 @@ class RepRaceSession(
         return elapsedMs >= durationSec * 1000L
     }
 
+    /** Heartbeat and player timeout detection. Call periodically (e.g., every 500ms). */
+    fun tick() {
+        val t = clock.nowMs()
+
+        // Send heartbeat PING if it's been > HEARTBEAT_MS since last beat
+        if (t - lastBeatMs > HEARTBEAT_MS) {
+            lastBeatMs = t
+            transport.send(
+                DuelMessage(
+                    v = 1,
+                    type = DuelMessage.PING,
+                    playerId = playerId,
+                    tMs = t
+                )
+            )
+        }
+
+        // Check for lost players and remove them from standings if silent for too long
+        val lostPlayers = playerReps.keys.filter { id ->
+            id != playerId && (t - (playerLastSeenMs[id] ?: t)) > LOST_AFTER_MS
+        }
+
+        var changed = false
+        for (lostId in lostPlayers) {
+            playerReps.remove(lostId)
+            playerSeqs.remove(lostId)
+            playerLastSeenMs.remove(lostId)
+            changed = true
+        }
+
+        if (changed) {
+            updateStandings()
+        }
+    }
+
     /** Tear down the race. Stops the collector; a session must not outlive its close(). */
     fun close() {
         incomingJob.cancel()
@@ -122,6 +162,11 @@ class RepRaceSession(
     // Private implementation
 
     private fun processMessage(msg: DuelMessage) {
+        // Track when we last saw this player (for non-self messages)
+        if (msg.playerId != playerId) {
+            playerLastSeenMs[msg.playerId] = clock.nowMs()
+        }
+
         when (msg.type) {
             DuelMessage.START -> {
                 if (msg.playerId != playerId) {

@@ -74,7 +74,8 @@ private fun Leaderboard(link: LinkHud) {
     }
     rows.forEachIndexed { i, s ->
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("${i + 1}  ${s.name.uppercase()}${if (s.me) " ·YOU" else ""}${if (s.out) " ·OUT" else ""}",
+            val displayName = s.name.takeIf { it.isNotBlank() }?.uppercase() ?: s.playerId
+            Text("${i + 1}  $displayName${if (s.me) " ·YOU" else ""}${if (s.out) " ·OUT" else ""}",
                 style = MaterialTheme.typography.labelLarge, color = if (s.me) Ember else Ink)
             Text("${s.damage}  ·  ${s.reps} REPS", style = MaterialTheme.typography.labelLarge, color = if (s.out) InkMuted else Ink)
         }
