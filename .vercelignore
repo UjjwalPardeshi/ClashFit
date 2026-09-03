@@ -22,3 +22,6 @@ deck-phase1/slides/
 deck-phase1/*.pdf
 deck-phase1/*.pptx
 deck-phase1/README.md
+# The Android app: sources, Gradle, and ~10 MB of bundled pose models. Built by CI, never served.
+android/
+.github/
