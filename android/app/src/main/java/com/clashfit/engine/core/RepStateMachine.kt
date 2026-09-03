@@ -80,6 +80,9 @@ class RepStateMachine(private val config: RepDetectorConfig) {
             seenValid = true
             stateEnteredMs = tMs
         }
+        // Fall back to the first observed pose when calibration never set a reference, so an
+        // uncalibrated machine still counts reps. Port of src/repFsm.js:71.
+        if (topRefU == null) topRefU = u
 
         rep?.let {
             if (u < it.uMin) it.uMin = u
@@ -141,7 +144,9 @@ class RepStateMachine(private val config: RepDetectorConfig) {
         val be = r.tBottomEnd ?: return null
         val ratio = if (r.frames > 0) r.validFrames.toFloat() / r.frames else 0f
         if (ratio < 0.9f) return null
-        require(topRefU != null) { "topRef must be set before FSM emits reps" }
+        // No topRef guard: onFrame above always has a reference by now (calibrated or the first
+        // observed pose), matching src/repFsm.js, which never throws here.
+        val topRef = topRefU ?: u
 
         val tEcc = (bs - r.tStartMs) / 1000f
         val tBottom = (be - bs) / 1000f
@@ -161,7 +166,7 @@ class RepStateMachine(private val config: RepDetectorConfig) {
             thetaMax = s * (if (s > 0) r.uMax else r.uMin),
             uMin = r.uMin,
             uMax = r.uMax,
-            uTopRef = topRefU!!,
+            uTopRef = topRef,
             uTarget = uTarget,
             tEccSec = tEcc,
             tBottomSec = tBottom,

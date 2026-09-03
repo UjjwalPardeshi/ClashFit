@@ -686,8 +686,7 @@ class SessionEngine(
     private fun topPercentile(): Float {
         val d = exercise.detector
         val dec = d.getValue("topEnter").jsonPrimitive.float > d.getValue("bottomEnter").jsonPrimitive.float
-        val sorted = if (dec) topRefSamples.sorted() else topRefSamples.sortedDescending()
-        return sorted[min(sorted.size - 1, floor(sorted.size * 0.9).toInt())]
+        return topPercentile(topRefSamples, dec)
     }
 
     private fun framingOf(image: Landmarks): Framing {
@@ -769,4 +768,19 @@ class SessionEngine(
         }
         return null
     }
+}
+
+/**
+ * The 90th percentile of calibration samples, in the direction of "top" for the exercise.
+ *
+ * Nearest-rank, never interpolated: sort so the top-most angles land LAST, then take index
+ * `min(n - 1, floor(n * 0.9))`. Port of `src/engine.js:470-473`.
+ *
+ * @param dec true when the exercise's top is the LARGER angle (squat, push-up: topEnter >
+ *   bottomEnter), so an ascending sort puts "top" last; false for increasing-angle exercises
+ *   (calf raise, glute bridge), which sort descending so the smaller "top" angles land last.
+ */
+internal fun topPercentile(samples: List<Float>, dec: Boolean): Float {
+    val sorted = if (dec) samples.sorted() else samples.sortedDescending()
+    return sorted[min(sorted.size - 1, floor(sorted.size * 0.9).toInt())]
 }
