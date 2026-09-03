@@ -41,6 +41,7 @@ class AppGraph(val app: Context) {
 
     val db: ClashDb by lazy {
         Room.databaseBuilder(app, ClashDb::class.java, "clashfit.db")
+            .addMigrations(com.clashfit.data.MIGRATION_1_2, com.clashfit.data.MIGRATION_2_3)
             .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
             .build()
     }

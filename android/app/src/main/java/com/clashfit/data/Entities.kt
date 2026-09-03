@@ -60,6 +60,8 @@ data class SetEntity(
     /** "LLM" or "TEMPLATE" — for our own honesty. */
     val coachSource: String,
     val restSec: Int,
+    val asymmetryPct: Int? = null,
+    val weakerSide: String? = null,
 )
 
 @Entity(tableName = "reps", indices = [Index("setId"), Index("sessionId")])
@@ -97,6 +99,15 @@ data class StreakEntity(
     val freezes: Int = 1,
     val restDaysUsedThisWeek: Int = 0,
     val weekKey: String? = null,
+)
+
+@Entity(tableName = "posture", indices = [Index("tMs")])
+data class PostureSampleEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val tMs: Long,
+    val score: Int,
+    val neckDeg: Float,
+    val elevation: Float,
 )
 
 @Entity(tableName = "bests")

@@ -105,3 +105,10 @@ interface GhostDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(g: GhostEntity)
     @Delete suspend fun delete(g: GhostEntity)
 }
+
+@Dao
+interface PostureDao {
+    @Insert suspend fun insert(p: PostureSampleEntity)
+    @Query("SELECT * FROM posture WHERE tMs >= :sinceMs ORDER BY tMs DESC") fun since(sinceMs: Long): Flow<List<PostureSampleEntity>>
+    @Query("SELECT * FROM posture ORDER BY tMs DESC LIMIT 1") suspend fun latest(): PostureSampleEntity?
+}
