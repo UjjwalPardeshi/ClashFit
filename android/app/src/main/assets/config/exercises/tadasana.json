@@ -1,0 +1,63 @@
+{
+  "id": "tadasana",
+  "family": "POSE_MATCH",
+  "name": "Tadasana (Mountain)",
+  "tags": [
+    "yoga",
+    "flexibility",
+    "balance"
+  ],
+  "framing": "side",
+  "difficulty": 1,
+  "games": [
+    "SIGIL",
+    "CIRCUIT"
+  ],
+  "detector": {
+    "reference": [
+      {
+        "angle": [
+          "SHOULDER",
+          "HIP",
+          "KNEE"
+        ],
+        "value": 178,
+        "tolerance": 10,
+        "weight": 1.0
+      },
+      {
+        "angle": [
+          "HIP",
+          "KNEE",
+          "ANKLE"
+        ],
+        "value": 178,
+        "tolerance": 8,
+        "weight": 1.0
+      },
+      {
+        "angle": [
+          "SHOULDER",
+          "ELBOW",
+          "WRIST"
+        ],
+        "value": 172,
+        "tolerance": 15,
+        "weight": 0.6
+      }
+    ],
+    "enterAccuracy": 0.7,
+    "enterHoldMs": 1500,
+    "breakToleranceMs": 800,
+    "targetDurationSec": 20
+  },
+  "fatigue": {
+    "signal": "ACCURACY_DRIFT",
+    "baselineReps": 3
+  },
+  "_calibration": "Reference angles are approximate. Capture them from a reference performer with the trace recorder before relying on them.",
+  "cues": {
+    "enter": "Move into Mountain.",
+    "hold": "Hold and breathe."
+  }
+}

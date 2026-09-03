@@ -1,0 +1,78 @@
+{
+  "type": "clashfit-ghost",
+  "v": 1,
+  "meta": {
+    "name": "Gold Pacer",
+    "exercise": "squat",
+    "reps": 16,
+    "totalDamage": 1472,
+    "note": "controlled eccentric, full range",
+    "shipped": true
+  },
+  "events": [
+    {
+      "t": 4300,
+      "damage": 92
+    },
+    {
+      "t": 8600,
+      "damage": 92
+    },
+    {
+      "t": 12900,
+      "damage": 92
+    },
+    {
+      "t": 17200,
+      "damage": 92
+    },
+    {
+      "t": 21500,
+      "damage": 92
+    },
+    {
+      "t": 25800,
+      "damage": 92
+    },
+    {
+      "t": 30100,
+      "damage": 92
+    },
+    {
+      "t": 34400,
+      "damage": 92
+    },
+    {
+      "t": 38700,
+      "damage": 92
+    },
+    {
+      "t": 43000,
+      "damage": 92
+    },
+    {
+      "t": 47300,
+      "damage": 92
+    },
+    {
+      "t": 51600,
+      "damage": 92
+    },
+    {
+      "t": 55900,
+      "damage": 92
+    },
+    {
+      "t": 60200,
+      "damage": 92
+    },
+    {
+      "t": 64500,
+      "damage": 92
+    },
+    {
+      "t": 68800,
+      "damage": 92
+    }
+  ]
+}

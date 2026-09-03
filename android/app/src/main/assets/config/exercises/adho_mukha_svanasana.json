@@ -1,0 +1,63 @@
+{
+  "id": "adho_mukha_svanasana",
+  "family": "POSE_MATCH",
+  "name": "Adho Mukha Svanasana (Downward Dog)",
+  "tags": [
+    "yoga",
+    "flexibility",
+    "balance"
+  ],
+  "framing": "side",
+  "difficulty": 2,
+  "games": [
+    "SIGIL",
+    "CIRCUIT"
+  ],
+  "detector": {
+    "reference": [
+      {
+        "angle": [
+          "SHOULDER",
+          "HIP",
+          "KNEE"
+        ],
+        "value": 90,
+        "tolerance": 14,
+        "weight": 1.0
+      },
+      {
+        "angle": [
+          "HIP",
+          "KNEE",
+          "ANKLE"
+        ],
+        "value": 172,
+        "tolerance": 12,
+        "weight": 1.0
+      },
+      {
+        "angle": [
+          "SHOULDER",
+          "ELBOW",
+          "WRIST"
+        ],
+        "value": 172,
+        "tolerance": 14,
+        "weight": 0.8
+      }
+    ],
+    "enterAccuracy": 0.7,
+    "enterHoldMs": 1500,
+    "breakToleranceMs": 800,
+    "targetDurationSec": 30
+  },
+  "fatigue": {
+    "signal": "ACCURACY_DRIFT",
+    "baselineReps": 3
+  },
+  "_calibration": "Reference angles are approximate. Capture them from a reference performer with the trace recorder before relying on them.",
+  "cues": {
+    "enter": "Move into Downward Dog.",
+    "hold": "Hold and breathe."
+  }
+}

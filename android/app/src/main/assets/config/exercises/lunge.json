@@ -1,0 +1,69 @@
+{
+  "id": "lunge",
+  "family": "REP_CYCLE",
+  "name": "Forward Lunge",
+  "tags": [
+    "strength",
+    "lower"
+  ],
+  "framing": "side",
+  "difficulty": 2,
+  "games": [
+    "BOSS_FIGHT",
+    "TIME_ATTACK",
+    "GHOST_RACE",
+    "SURVIVAL",
+    "BOSS_RUSH",
+    "DUEL"
+  ],
+  "detector": {
+    "primaryAngle": {
+      "a": "HIP",
+      "b": "KNEE",
+      "c": "ANKLE"
+    },
+    "topEnter": 160,
+    "topExit": 152,
+    "bottomEnter": 120,
+    "bottomExit": 130,
+    "targetAngle": 90,
+    "minDescendMs": 200,
+    "minBottomMs": 120,
+    "minRepMs": 800,
+    "maxRepMs": 8000,
+    "requiredJoints": [
+      "HIP",
+      "KNEE",
+      "ANKLE"
+    ]
+  },
+  "form": {
+    "weights": {
+      "depth": 0.4,
+      "rom": 0.25,
+      "tempo": 0.2,
+      "alignment": 0.15
+    },
+    "tempo": {
+      "eccentricTargetSec": 0.35,
+      "bottomPauseSec": 0.12,
+      "_note": "measured window: topExit crossing -> bottomEnter crossing, not the full descent"
+    },
+    "alignment": {
+      "type": "KNEE_TRACKING",
+      "fullMarksOffset": 0.15,
+      "zeroMarksOffset": 0.45
+    },
+    "depthExponent": 1.5
+  },
+  "fatigue": {
+    "signal": "VELOCITY_LOSS",
+    "baselineReps": 3
+  },
+  "cues": {
+    "enter": "Stand side-on, one step of clear space in front.",
+    "tooHigh": "Drop the back knee further.",
+    "tooFast": "Slow the descent.",
+    "framing": "I can't see your front knee — step back."
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "id": "chair_squat",
+  "family": "REP_CYCLE",
+  "name": "Chair Squat",
+  "tags": [
+    "accessible",
+    "lower",
+    "no-equipment"
+  ],
+  "framing": "side",
+  "difficulty": 1,
+  "games": [
+    "BOSS_FIGHT",
+    "TIME_ATTACK",
+    "GHOST_RACE",
+    "SURVIVAL",
+    "BOSS_RUSH",
+    "DUEL"
+  ],
+  "detector": {
+    "primaryAngle": {
+      "a": "HIP",
+      "b": "KNEE",
+      "c": "ANKLE"
+    },
+    "topEnter": 150,
+    "topExit": 143,
+    "bottomEnter": 130,
+    "bottomExit": 138,
+    "targetAngle": 110,
+    "minDescendMs": 200,
+    "minBottomMs": 120,
+    "minRepMs": 800,
+    "maxRepMs": 8000,
+    "requiredJoints": [
+      "HIP",
+      "KNEE",
+      "ANKLE"
+    ]
+  },
+  "form": {
+    "weights": {
+      "depth": 0.4,
+      "rom": 0.25,
+      "tempo": 0.2,
+      "alignment": 0.15
+    },
+    "tempo": {
+      "eccentricTargetSec": 0.35,
+      "bottomPauseSec": 0.12,
+      "_note": "measured window: topExit crossing -> bottomEnter crossing, not the full descent"
+    },
+    "alignment": {
+      "type": "KNEE_TRACKING",
+      "fullMarksOffset": 0.15,
+      "zeroMarksOffset": 0.45
+    },
+    "depthExponent": 1.5
+  },
+  "fatigue": {
+    "signal": "VELOCITY_LOSS",
+    "baselineReps": 3
+  },
+  "cues": {
+    "enter": "Stand in front of the chair, side-on.",
+    "tooHigh": "Sit back a little further.",
+    "tooFast": "Lower under control.",
+    "framing": "I can't see your knees — step back."
+  }
+}

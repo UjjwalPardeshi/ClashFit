@@ -1,0 +1,63 @@
+{
+  "id": "balasana",
+  "family": "POSE_MATCH",
+  "name": "Balasana (Child's Pose)",
+  "tags": [
+    "yoga",
+    "flexibility",
+    "balance"
+  ],
+  "framing": "side",
+  "difficulty": 1,
+  "games": [
+    "SIGIL",
+    "CIRCUIT"
+  ],
+  "detector": {
+    "reference": [
+      {
+        "angle": [
+          "SHOULDER",
+          "HIP",
+          "KNEE"
+        ],
+        "value": 45,
+        "tolerance": 18,
+        "weight": 1.0
+      },
+      {
+        "angle": [
+          "HIP",
+          "KNEE",
+          "ANKLE"
+        ],
+        "value": 35,
+        "tolerance": 18,
+        "weight": 1.0
+      },
+      {
+        "angle": [
+          "SHOULDER",
+          "ELBOW",
+          "WRIST"
+        ],
+        "value": 172,
+        "tolerance": 18,
+        "weight": 0.5
+      }
+    ],
+    "enterAccuracy": 0.7,
+    "enterHoldMs": 1500,
+    "breakToleranceMs": 800,
+    "targetDurationSec": 30
+  },
+  "fatigue": {
+    "signal": "ACCURACY_DRIFT",
+    "baselineReps": 3
+  },
+  "_calibration": "Reference angles are approximate. Capture them from a reference performer with the trace recorder before relying on them.",
+  "cues": {
+    "enter": "Move into Child's Pose.",
+    "hold": "Hold and breathe."
+  }
+}

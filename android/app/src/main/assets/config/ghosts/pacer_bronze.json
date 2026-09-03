@@ -1,0 +1,62 @@
+{
+  "type": "clashfit-ghost",
+  "v": 1,
+  "meta": {
+    "name": "Bronze Pacer",
+    "exercise": "squat",
+    "reps": 12,
+    "totalDamage": 744,
+    "note": "rushed reps, shallow depth",
+    "shipped": true
+  },
+  "events": [
+    {
+      "t": 3400,
+      "damage": 62
+    },
+    {
+      "t": 6800,
+      "damage": 62
+    },
+    {
+      "t": 10200,
+      "damage": 62
+    },
+    {
+      "t": 13600,
+      "damage": 62
+    },
+    {
+      "t": 17000,
+      "damage": 62
+    },
+    {
+      "t": 20400,
+      "damage": 62
+    },
+    {
+      "t": 23800,
+      "damage": 62
+    },
+    {
+      "t": 27200,
+      "damage": 62
+    },
+    {
+      "t": 30600,
+      "damage": 62
+    },
+    {
+      "t": 34000,
+      "damage": 62
+    },
+    {
+      "t": 37400,
+      "damage": 62
+    },
+    {
+      "t": 40800,
+      "damage": 62
+    }
+  ]
+}

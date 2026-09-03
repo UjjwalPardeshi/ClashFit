@@ -1,0 +1,67 @@
+{
+  "id": "calf_raise",
+  "family": "REP_CYCLE",
+  "name": "Calf Raise",
+  "tags": [
+    "strength",
+    "lower"
+  ],
+  "framing": "side",
+  "difficulty": 1,
+  "games": [
+    "BOSS_FIGHT",
+    "TIME_ATTACK",
+    "GHOST_RACE",
+    "SURVIVAL",
+    "BOSS_RUSH",
+    "DUEL"
+  ],
+  "detector": {
+    "primaryAngle": {
+      "a": "KNEE",
+      "b": "ANKLE",
+      "c": "FOOT_INDEX"
+    },
+    "topEnter": 100,
+    "topExit": 105,
+    "bottomEnter": 115,
+    "bottomExit": 110,
+    "targetAngle": 135,
+    "minDescendMs": 200,
+    "minBottomMs": 120,
+    "minRepMs": 800,
+    "maxRepMs": 8000,
+    "requiredJoints": [
+      "KNEE",
+      "ANKLE",
+      "FOOT_INDEX"
+    ]
+  },
+  "form": {
+    "weights": {
+      "depth": 0.47,
+      "rom": 0.29,
+      "tempo": 0.24,
+      "alignment": 0.0
+    },
+    "tempo": {
+      "eccentricTargetSec": 0.35,
+      "bottomPauseSec": 0.12,
+      "_note": "measured window: topExit crossing -> bottomEnter crossing, not the full descent"
+    },
+    "alignment": {
+      "type": "none"
+    },
+    "depthExponent": 1.5
+  },
+  "fatigue": {
+    "signal": "VELOCITY_LOSS",
+    "baselineReps": 3
+  },
+  "cues": {
+    "enter": "Stand side-on, feet hip width.",
+    "tooHigh": "Push higher onto your toes.",
+    "tooFast": "Hold the top for a beat.",
+    "framing": "I can't see your ankles — step back."
+  }
+}

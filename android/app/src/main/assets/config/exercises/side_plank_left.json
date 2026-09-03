@@ -1,0 +1,50 @@
+{
+  "id": "side_plank_left",
+  "family": "ISOMETRIC_HOLD",
+  "name": "Side Plank (Left)",
+  "tags": [
+    "core",
+    "isometric"
+  ],
+  "framing": "side",
+  "difficulty": 3,
+  "games": [
+    "SIEGE",
+    "CIRCUIT",
+    "DUEL"
+  ],
+  "detector": {
+    "targets": [
+      {
+        "angle": [
+          "SHOULDER",
+          "HIP",
+          "ANKLE"
+        ],
+        "value": 172,
+        "tolerance": 10,
+        "weight": 1.0
+      },
+      {
+        "angle": [
+          "SHOULDER",
+          "ELBOW",
+          "WRIST"
+        ],
+        "value": 88,
+        "tolerance": 18,
+        "weight": 0.5
+      }
+    ],
+    "breakToleranceMs": 500,
+    "targetDurationSec": 30
+  },
+  "fatigue": {
+    "signal": "TREMOR",
+    "baselineSec": 3
+  },
+  "cues": {
+    "enter": "Left forearm down, stack your hips.",
+    "break": "Hips are dropping — lift them."
+  }
+}

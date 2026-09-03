@@ -1,0 +1,32 @@
+{
+  "id": "broad_jump",
+  "family": "BALLISTIC",
+  "name": "Broad Jump",
+  "tags": [
+    "explosive",
+    "lower"
+  ],
+  "framing": "side",
+  "difficulty": 3,
+  "games": [
+    "BREAKER",
+    "CIRCUIT",
+    "DUEL"
+  ],
+  "detector": {
+    "takeoffRise": 0.035,
+    "landingWindowMs": 300,
+    "standingKnee": 170,
+    "softLandingFlexionDeg": 35,
+    "targetHeightCm": 16
+  },
+  "fatigue": {
+    "signal": "HEIGHT_DECAY",
+    "baselineReps": 3
+  },
+  "cues": {
+    "enter": "Stand side-on with room above you.",
+    "landing": "Land softer — bend the knees.",
+    "height": "Drive harder off the floor."
+  }
+}

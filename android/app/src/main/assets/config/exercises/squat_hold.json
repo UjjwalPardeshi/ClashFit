@@ -1,0 +1,40 @@
+{
+  "id": "squat_hold",
+  "family": "ISOMETRIC_HOLD",
+  "name": "Squat Hold",
+  "tags": [
+    "strength",
+    "lower"
+  ],
+  "framing": "side",
+  "difficulty": 2,
+  "games": [
+    "SIEGE",
+    "CIRCUIT",
+    "DUEL"
+  ],
+  "detector": {
+    "targets": [
+      {
+        "angle": [
+          "HIP",
+          "KNEE",
+          "ANKLE"
+        ],
+        "value": 95,
+        "tolerance": 14,
+        "weight": 1.0
+      }
+    ],
+    "breakToleranceMs": 500,
+    "targetDurationSec": 40
+  },
+  "fatigue": {
+    "signal": "TREMOR",
+    "baselineSec": 3
+  },
+  "cues": {
+    "enter": "Sit into the bottom of a squat and hold.",
+    "break": "You're standing up — sink back down."
+  }
+}

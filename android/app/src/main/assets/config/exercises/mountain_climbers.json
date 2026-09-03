@@ -1,0 +1,35 @@
+{
+  "id": "mountain_climbers",
+  "family": "CADENCE",
+  "name": "Mountain Climbers",
+  "tags": [
+    "cardio",
+    "core"
+  ],
+  "framing": "side",
+  "difficulty": 2,
+  "games": [
+    "PURSUIT",
+    "CIRCUIT",
+    "DUEL"
+  ],
+  "detector": {
+    "signalJoint": "KNEE",
+    "signalAxis": "x",
+    "minProminence": 0.03,
+    "refractoryMs": 260,
+    "targetCadence": {
+      "min": 110,
+      "max": 200
+    }
+  },
+  "fatigue": {
+    "signal": "CADENCE_DECAY",
+    "baselineReps": 4
+  },
+  "cues": {
+    "enter": "Face the camera, whole body in frame.",
+    "tooSmall": "Bigger range — drive higher.",
+    "tooSlow": "Pick the pace back up."
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "glute_bridge_hold",
+  "family": "ISOMETRIC_HOLD",
+  "name": "Glute Bridge Hold",
+  "tags": [
+    "posterior",
+    "isometric",
+    "accessible"
+  ],
+  "framing": "side",
+  "difficulty": 1,
+  "games": [
+    "SIEGE",
+    "CIRCUIT",
+    "DUEL"
+  ],
+  "detector": {
+    "targets": [
+      {
+        "angle": [
+          "SHOULDER",
+          "HIP",
+          "KNEE"
+        ],
+        "value": 170,
+        "tolerance": 10,
+        "weight": 1.0
+      }
+    ],
+    "breakToleranceMs": 500,
+    "targetDurationSec": 40
+  },
+  "fatigue": {
+    "signal": "TREMOR",
+    "baselineSec": 3
+  },
+  "cues": {
+    "enter": "Bridge up and hold at the top.",
+    "break": "Hips are dropping — drive them back up."
+  }
+}

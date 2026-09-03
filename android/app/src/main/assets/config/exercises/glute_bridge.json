@@ -1,0 +1,67 @@
+{
+  "id": "glute_bridge",
+  "family": "REP_CYCLE",
+  "name": "Glute Bridge",
+  "tags": [
+    "strength",
+    "posterior"
+  ],
+  "framing": "side",
+  "difficulty": 1,
+  "games": [
+    "BOSS_FIGHT",
+    "TIME_ATTACK",
+    "GHOST_RACE",
+    "SURVIVAL",
+    "BOSS_RUSH",
+    "DUEL"
+  ],
+  "detector": {
+    "primaryAngle": {
+      "a": "SHOULDER",
+      "b": "HIP",
+      "c": "KNEE"
+    },
+    "topEnter": 120,
+    "topExit": 128,
+    "bottomEnter": 150,
+    "bottomExit": 143,
+    "targetAngle": 170,
+    "minDescendMs": 200,
+    "minBottomMs": 120,
+    "minRepMs": 800,
+    "maxRepMs": 8000,
+    "requiredJoints": [
+      "SHOULDER",
+      "HIP",
+      "KNEE"
+    ]
+  },
+  "form": {
+    "weights": {
+      "depth": 0.47,
+      "rom": 0.29,
+      "tempo": 0.24,
+      "alignment": 0.0
+    },
+    "tempo": {
+      "eccentricTargetSec": 0.35,
+      "bottomPauseSec": 0.12,
+      "_note": "measured window: topExit crossing -> bottomEnter crossing, not the full descent"
+    },
+    "alignment": {
+      "type": "none"
+    },
+    "depthExponent": 1.5
+  },
+  "fatigue": {
+    "signal": "VELOCITY_LOSS",
+    "baselineReps": 3
+  },
+  "cues": {
+    "enter": "Lie down side-on to the camera, knees bent.",
+    "tooHigh": "Drive the hips higher.",
+    "tooFast": "Lower under control.",
+    "framing": "I can't see your hips — move back."
+  }
+}
