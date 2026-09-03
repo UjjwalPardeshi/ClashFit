@@ -100,7 +100,8 @@ class IsometricHoldDetector(
         tMs: Long,
         side: Side,
     ): MovementEvent? {
-        val lms = image ?: return null
+        // Angles come from the metric world landmarks, as in the JS; image space only as a fallback.
+        val lms = world ?: image ?: return null
         val e = evaluate(lms, side) ?: return null
         val tremor = calculateTremor(lms, side, tMs)
 

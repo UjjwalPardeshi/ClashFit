@@ -110,7 +110,8 @@ class PoseMatchDetector(
         tMs: Long,
         side: Side,
     ): MovementEvent? {
-        val lms = image ?: return null
+        // Angles come from the metric world landmarks, as in the JS; image space only as a fallback.
+        val lms = world ?: image ?: return null
 
         // Mirror tolerance: score both sides, keep the better reading.
         val a = accuracy(lms, Side.LEFT)
