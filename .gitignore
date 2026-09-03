@@ -7,3 +7,4 @@ img/_cand2/
 # MCP server config can carry API keys — never commit it to a public repo
 .mcp.json
 .claude/settings.local.json
+.playwright-mcp/
