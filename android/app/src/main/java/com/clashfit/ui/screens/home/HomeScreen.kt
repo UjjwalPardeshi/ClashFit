@@ -33,10 +33,12 @@ import com.clashfit.ui.nav.Breathing
 import com.clashfit.ui.nav.Challenge
 import com.clashfit.ui.nav.Character
 import com.clashfit.ui.nav.Clinic
+import com.clashfit.ui.nav.Desk
 import com.clashfit.ui.nav.ExercisePicker
 import com.clashfit.ui.nav.Ghosts
 import com.clashfit.ui.nav.History
 import com.clashfit.ui.nav.Library
+import com.clashfit.ui.nav.Posture
 import com.clashfit.ui.nav.Preflight
 import com.clashfit.ui.nav.Privacy
 import com.clashfit.ui.nav.Route
@@ -54,7 +56,7 @@ import com.clashfit.ui.theme.Rule
 private val SHELL: List<Pair<String, Route>> = listOf(
     "RUN" to RunHome, "ALARMS" to Alarms, "LIBRARY" to Library, "STREAKS" to Streaks, "HISTORY" to History,
     "CHARACTER" to Character, "GHOSTS" to Ghosts, "CHALLENGE" to Challenge, "BREATHE" to Breathing,
-    "CLINIC" to Clinic, "PREFLIGHT" to Preflight, "PRIVACY" to Privacy, "SETTINGS" to Settings,
+    "POSTURE" to Posture, "DESK" to Desk, "CLINIC" to Clinic, "PREFLIGHT" to Preflight, "PRIVACY" to Privacy, "SETTINGS" to Settings,
 )
 
 /**

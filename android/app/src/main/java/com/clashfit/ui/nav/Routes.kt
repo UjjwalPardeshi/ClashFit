@@ -33,6 +33,8 @@ sealed interface Route
 @Serializable data object Ghosts : Route
 @Serializable data object Challenge : Route
 @Serializable data object Breathing : Route
+@Serializable data object Posture : Route
+@Serializable data object Desk : Route
 @Serializable data object Settings : Route
 @Serializable data object Privacy : Route
 @Serializable data object Preflight : Route

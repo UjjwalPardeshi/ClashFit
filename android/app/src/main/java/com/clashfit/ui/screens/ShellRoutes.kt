@@ -13,6 +13,8 @@ import com.clashfit.ui.screens.settings.settingsRoutes
 import com.clashfit.ui.screens.privacy.privacyRoutes
 import com.clashfit.ui.screens.preflight.preflightRoutes
 import com.clashfit.ui.screens.clinic.clinicRoutes
+import com.clashfit.ui.screens.posture.postureRoutes
+import com.clashfit.ui.screens.desk.deskRoutes
 
 /** Wire all non-session screens into the nav host. */
 fun NavGraphBuilder.shellRoutes(graph: AppGraph, nav: NavHostController) {
@@ -25,5 +27,7 @@ fun NavGraphBuilder.shellRoutes(graph: AppGraph, nav: NavHostController) {
     settingsRoutes(graph, nav)
     privacyRoutes(graph, nav)
     preflightRoutes(graph, nav)
+    postureRoutes(graph, nav)
+    deskRoutes(graph, nav)
     clinicRoutes(graph, nav)
 }
