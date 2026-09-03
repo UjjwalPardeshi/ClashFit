@@ -18,7 +18,7 @@ the specification for the engine.
 | Pose | MediaPipe Tasks Vision 1.0 — Pose Landmarker, LIVE_STREAM, GPU with CPU fallback | models bundled in `assets/models` |
 | Coach | MediaPipe Tasks GenAI 0.10 — Gemma 3n E2B int4, side-loaded to `files/models/` | template bank always ships |
 | Speech | Android `TextToSpeech`; offline `SpeechRecognizer` for commands | |
-| Persistence | Room 2.8 (sessions, sets, reps, streaks, bests, ladders, runs, alarms, ghosts) · DataStore prefs | |
+| Persistence | Room 2.8 v3 (sessions, sets, reps, streaks, bests, ladders, runs, alarms, ghosts, posture samples; migrations 1→2→3) · DataStore prefs | |
 | Multiplayer | Nearby Connections `P2P_STAR`, event-sourced sync from `07-MULTIPLAYER-SPEC` | no server, no INTERNET permission |
 | Run tracker | Fused location in a foreground service; route stays on the phone | |
 | Alarm | `AlarmManager` exact + full-screen ring activity; dismissed by counted reps | |
@@ -32,11 +32,11 @@ The manifest requests **no `INTERNET` permission**. That is the privacy claim, m
 com.clashfit
 ├── core/            model (frozen contracts) · config (JSON mirrors + hot reload) · pose (PoseSource) · util
 ├── engine/          pure Kotlin port of src/*.js — JVM-tested, no Android imports
-│   ├── core/        OneEuro · Geometry · RepStateMachine · FormScorer · FatigueEstimator · Combat · Ghost · Challenge
+│   ├── core/        OneEuro · Geometry · RepStateMachine · FormScorer · FatigueEstimator · Combat · Ghost · Challenge · Asymmetry
 │   ├── detect/      IsometricHold · Cadence · Ballistic · PoseMatch detectors
 │   ├── games/       Siege · Pursuit · Breaker · Sigil · Roster
 │   ├── coach/       TelemetrySummariser · TemplateBank · OutputValidator
-│   ├── summary/     stats, curves, CSV/JSON export · Progression (streaks, bests, ladders) · Breathing · Clinic
+│   ├── summary/     stats, curves, CSV/JSON export · Progression (streaks, bests, ladders) · Breathing · Clinic · Posture
 │   └── session/     SessionEngine — the hub every mode plugs into
 ├── perception/      CameraX + MediaPipe PoseSource · trace replay · skeleton overlay
 ├── coach/           LlmEngine · CoachEngine · SpeechOut
@@ -45,9 +45,10 @@ com.clashfit
 ├── run/             RunTrackingService · run screens
 ├── alarm/           scheduler · receivers · ring activity with rep-gated dismiss · alarm screens
 ├── play/            PlayHub — a Nearby link or a pass-the-phone roster that outlives one screen
+├── desk/            the desk timer: inexact repeating alarm, quiet hours, a notification that opens a sixty-second set
 ├── data/            Room entities, DAOs, Prefs · ProgressionRepository (streaks, bests, ladders)
 └── ui/              theme · components kit · nav · screens/{home, modes, picker, session, duel, roster, ghosts,
-                     challenge, breathing, library, character, streaks, history, clinic, preflight, privacy, settings}
+                     challenge, breathing, desk, posture, library, character, streaks, history, clinic, preflight, privacy, settings}
 ```
 
 ## 3. Phases
