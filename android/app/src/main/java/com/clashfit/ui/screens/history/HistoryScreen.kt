@@ -27,7 +27,7 @@ import androidx.navigation.compose.composable
 import com.clashfit.AppGraph
 import com.clashfit.data.SessionEntity
 import com.clashfit.ui.components.EmptyState
-import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.nav.Summary
@@ -45,20 +45,19 @@ import java.time.format.DateTimeFormatter
 fun HistoryScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = Modifier) {
     val sessions by graph.db.sessions().recent(limit = 50).collectAsState(initial = emptyList())
 
-    Column(modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
-        Headline("HISTORY")
-        SectionGap(24)
-
-        if (sessions.isEmpty()) {
-            EmptyState("No sessions", "Start a fight to build your history")
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(sessions) { session ->
-                    SessionRow(session, nav)
+    ScreenScaffold(title = "History", onBack = { nav.navigateUp() }) { padding ->
+        Column(modifier.fillMaxWidth().padding(padding).padding(horizontal = 20.dp, vertical = 8.dp)) {
+            if (sessions.isEmpty()) {
+                EmptyState("No sessions", "Start a fight to build your history")
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(sessions) { session ->
+                        SessionRow(session, nav)
+                    }
                 }
             }
+            SectionGap(20)
         }
-        SectionGap(20)
     }
 }
 

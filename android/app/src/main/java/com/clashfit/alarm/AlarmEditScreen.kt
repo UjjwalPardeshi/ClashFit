@@ -22,7 +22,7 @@ import com.clashfit.AppGraph
 import com.clashfit.core.model.Family
 import com.clashfit.data.AlarmEntity
 import com.clashfit.ui.components.EmberButton
-import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.Tag
 import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.Ink
@@ -71,208 +71,208 @@ fun AlarmEditScreen(graph: AppGraph, alarmId: Long, navController: NavHostContro
     // Filter exercises to REP_CYCLE family only
     val repCycleExercises = exercises.filterValues { it.family == Family.REP_CYCLE.name }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Ground)
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Headline(if (alarmId > 0) "EDIT ALARM" else "NEW ALARM")
-
-        LazyColumn(
-            modifier = Modifier.weight(1f),
+    ScreenScaffold(title = if (alarmId > 0) "Edit alarm" else "New alarm", onBack = { navController.navigateUp() }) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize().padding(padding)
+                .background(Ground)
+                .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Time picker
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("TIME", style = MaterialTheme.typography.labelSmall, color = InkFaint)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Panel)
-                            .border(1.dp, Rule)
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TimeSelector(
-                            value = hour,
-                            range = 0..23,
-                            label = "HH",
-                            onValueChange = { hour = it }
-                        )
-                        Text(":", style = MaterialTheme.typography.headlineMedium, color = Ink)
-                        TimeSelector(
-                            value = minute,
-                            range = 0..59,
-                            label = "MM",
-                            onValueChange = { minute = it }
-                        )
-                    }
-                }
-            }
-
-            // Days selector
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("RECURRENCE", style = MaterialTheme.typography.labelSmall, color = InkFaint)
-                    RecurrenceSelector(
-                        daysMask = daysMask,
-                        onDaysMaskChange = { daysMask = it }
-                    )
-                }
-            }
-
-            // Exercise picker
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("EXERCISE", style = MaterialTheme.typography.labelSmall, color = InkFaint)
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Panel)
-                            .border(1.dp, Rule)
-                            .padding(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(repCycleExercises.values.toList()) { exercise ->
-                            Text(
-                                text = exercise.name.uppercase(),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = if (exercise.id == selectedExercise) Color(0xFFFF4F1F) else Ink,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { selectedExercise = exercise.id }
-                                    .padding(8.dp)
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Time picker
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("TIME", style = MaterialTheme.typography.labelSmall, color = InkFaint)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Panel)
+                                .border(1.dp, Rule)
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TimeSelector(
+                                value = hour,
+                                range = 0..23,
+                                label = "HH",
+                                onValueChange = { hour = it }
+                            )
+                            Text(":", style = MaterialTheme.typography.headlineMedium, color = Ink)
+                            TimeSelector(
+                                value = minute,
+                                range = 0..59,
+                                label = "MM",
+                                onValueChange = { minute = it }
                             )
                         }
                     }
                 }
-            }
 
-            // Rep count stepper (3..50)
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("REPS TO DISMISS", style = MaterialTheme.typography.labelSmall, color = InkFaint)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Panel)
-                            .border(1.dp, Rule)
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "-",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = Ink,
-                            modifier = Modifier.clickable { if (reps > 3) reps-- }
-                        )
-                        Text(reps.toString(), style = MaterialTheme.typography.headlineMedium, color = Ink)
-                        Text(
-                            "+",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = Ink,
-                            modifier = Modifier.clickable { if (reps < 50) reps++ }
-                        )
-                    }
-                }
-            }
-
-            // Snooze limit stepper
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("SNOOZE LIMIT", style = MaterialTheme.typography.labelSmall, color = InkFaint)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Panel)
-                            .border(1.dp, Rule)
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "-",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = Ink,
-                            modifier = Modifier.clickable { if (snoozeLimit > 0) snoozeLimit-- }
-                        )
-                        Text(snoozeLimit.toString(), style = MaterialTheme.typography.headlineMedium, color = Ink)
-                        Text(
-                            "+",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = Ink,
-                            modifier = Modifier.clickable { if (snoozeLimit < 10) snoozeLimit++ }
-                        )
-                    }
-                }
-            }
-
-            // Label field
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("LABEL", style = MaterialTheme.typography.labelSmall, color = InkFaint)
-                    TextField(
-                        value = label,
-                        onValueChange = { label = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .border(1.dp, Rule),
-                        placeholder = { Text("e.g., Morning Session", color = InkFaint) },
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                        colors = TextFieldDefaults.colors(
-                            unfocusedContainerColor = Panel,
-                            focusedContainerColor = Panel
-                        )
-                    )
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            val context = LocalContext.current
-
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .background(Panel)
-                    .border(1.dp, Rule)
-                    .clickable { navController.popBackStack() }
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("CANCEL", style = MaterialTheme.typography.labelMedium, color = Ink)
-            }
-
-            EmberButton(
-                text = if (alarmId > 0) "UPDATE" else "CREATE",
-                modifier = Modifier.weight(1f),
-                onClick = {
-                    scope.launch {
-                        val alarm = AlarmEntity(
-                            id = alarmId,
-                            hour = hour,
-                            minute = minute,
+                // Days selector
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("RECURRENCE", style = MaterialTheme.typography.labelSmall, color = InkFaint)
+                        RecurrenceSelector(
                             daysMask = daysMask,
-                            enabled = true,
-                            exerciseId = selectedExercise,
-                            reps = reps,
-                            snoozeLimit = snoozeLimit,
-                            label = label
+                            onDaysMaskChange = { daysMask = it }
                         )
-                        val id = dao.upsert(alarm)
-                        AlarmScheduler.schedule(context, alarm.copy(id = id))
-                        navController.popBackStack()
                     }
                 }
-            )
+
+                // Exercise picker
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("EXERCISE", style = MaterialTheme.typography.labelSmall, color = InkFaint)
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Panel)
+                                .border(1.dp, Rule)
+                                .padding(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(repCycleExercises.values.toList()) { exercise ->
+                                Text(
+                                    text = exercise.name.uppercase(),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = if (exercise.id == selectedExercise) Color(0xFFFF4F1F) else Ink,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { selectedExercise = exercise.id }
+                                        .padding(8.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Rep count stepper (3..50)
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("REPS TO DISMISS", style = MaterialTheme.typography.labelSmall, color = InkFaint)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Panel)
+                                .border(1.dp, Rule)
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "-",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = Ink,
+                                modifier = Modifier.clickable { if (reps > 3) reps-- }
+                            )
+                            Text(reps.toString(), style = MaterialTheme.typography.headlineMedium, color = Ink)
+                            Text(
+                                "+",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = Ink,
+                                modifier = Modifier.clickable { if (reps < 50) reps++ }
+                            )
+                        }
+                    }
+                }
+
+                // Snooze limit stepper
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("SNOOZE LIMIT", style = MaterialTheme.typography.labelSmall, color = InkFaint)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Panel)
+                                .border(1.dp, Rule)
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "-",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = Ink,
+                                modifier = Modifier.clickable { if (snoozeLimit > 0) snoozeLimit-- }
+                            )
+                            Text(snoozeLimit.toString(), style = MaterialTheme.typography.headlineMedium, color = Ink)
+                            Text(
+                                "+",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = Ink,
+                                modifier = Modifier.clickable { if (snoozeLimit < 10) snoozeLimit++ }
+                            )
+                        }
+                    }
+                }
+
+                // Label field
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("LABEL", style = MaterialTheme.typography.labelSmall, color = InkFaint)
+                        TextField(
+                            value = label,
+                            onValueChange = { label = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, Rule),
+                            placeholder = { Text("e.g., Morning Session", color = InkFaint) },
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            colors = TextFieldDefaults.colors(
+                                unfocusedContainerColor = Panel,
+                                focusedContainerColor = Panel
+                            )
+                        )
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                val context = LocalContext.current
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(Panel)
+                        .border(1.dp, Rule)
+                        .clickable { navController.popBackStack() }
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("CANCEL", style = MaterialTheme.typography.labelMedium, color = Ink)
+                }
+
+                EmberButton(
+                    text = if (alarmId > 0) "UPDATE" else "CREATE",
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        scope.launch {
+                            val alarm = AlarmEntity(
+                                id = alarmId,
+                                hour = hour,
+                                minute = minute,
+                                daysMask = daysMask,
+                                enabled = true,
+                                exerciseId = selectedExercise,
+                                reps = reps,
+                                snoozeLimit = snoozeLimit,
+                                label = label
+                            )
+                            val id = dao.upsert(alarm)
+                            AlarmScheduler.schedule(context, alarm.copy(id = id))
+                            navController.popBackStack()
+                        }
+                    }
+                )
+            }
         }
     }
 }

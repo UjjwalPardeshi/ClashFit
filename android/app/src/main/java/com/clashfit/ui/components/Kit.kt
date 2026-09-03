@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.clashfit.core.model.FatigueBand
 import com.clashfit.core.model.Verdict
@@ -177,14 +176,7 @@ fun SectionGap(height: Int = 28) = Spacer(Modifier.height(height.dp))
 @Composable
 fun Mark(size: Int = 12, color: Color = Ember) = Box(Modifier.size(size.dp).background(color))
 
-/** Centred empty state, never a bare spinner. */
-@Composable
-fun EmptyState(title: String, body: String, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title.uppercase(), style = MaterialTheme.typography.headlineMedium, color = Ink, textAlign = TextAlign.Center)
-        Text(body, style = MaterialTheme.typography.bodyMedium, color = InkMuted, textAlign = TextAlign.Center)
-    }
-}
+// EmptyState and LoadingState live in Shell.kt with the rest of the screen structure.
 
 @Composable
 fun BrassText(text: String, modifier: Modifier = Modifier) =

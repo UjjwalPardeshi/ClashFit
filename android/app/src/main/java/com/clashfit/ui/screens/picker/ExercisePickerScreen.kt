@@ -49,7 +49,7 @@ import com.clashfit.core.model.GameMode
 import com.clashfit.data.Prefs
 import com.clashfit.ui.components.EmberButton
 import com.clashfit.ui.components.EmptyState
-import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.RuleRow
 import com.clashfit.ui.components.SectionGap
@@ -93,36 +93,36 @@ fun ExercisePickerScreen(
         }
     }
 
-    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
-        if (!mode.enabled) {
-            Headline("GOES ONLINE", accent = "NOT IN THIS BUILD")
-            SectionGap(24)
-            EmptyState("MODE UNAVAILABLE", "This mode is not available in this build. Outbreak goes online and requires network permissions.")
-        } else {
-            Headline("PICK", accent = "YOUR MOVE")
-            SectionGap(20)
-
-            SearchBox(searchQuery) { searchQuery = it }
-            SectionGap(20)
-
-            if (filtered.isEmpty()) {
-                Text("No exercises found", style = MaterialTheme.typography.bodyLarge, color = InkFaint)
+    ScreenScaffold(title = mode.title, onBack = { nav.navigateUp() }) { padding ->
+        Column(modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
+            if (!mode.enabled) {
+                EmptyState("Goes online", "This mode is not in this build. Outbreak needs a network, and this build has none.")
             } else {
-                ExercisesList(filtered, selectedExerciseId) { selectedExerciseId = it }
+                Kicker("Pick your move")
+                SectionGap(14)
+
+                SearchBox(searchQuery) { searchQuery = it }
                 SectionGap(20)
 
-                if (selectedExerciseId.isNotEmpty()) {
-                    val selected = exercises[selectedExerciseId]
-                    if (selected != null) {
-                        ExercisePreview(selected)
-                        SectionGap(20)
+                if (filtered.isEmpty()) {
+                    Text("No exercises found", style = MaterialTheme.typography.bodyLarge, color = InkFaint)
+                } else {
+                    ExercisesList(filtered, selectedExerciseId) { selectedExerciseId = it }
+                    SectionGap(20)
 
-                        ConfirmButton(mode, selectedExerciseId, settings, graph, nav, scope)
+                    if (selectedExerciseId.isNotEmpty()) {
+                        val selected = exercises[selectedExerciseId]
+                        if (selected != null) {
+                            ExercisePreview(selected)
+                            SectionGap(20)
+
+                            ConfirmButton(mode, selectedExerciseId, settings, graph, nav, scope)
+                        }
                     }
                 }
             }
+            SectionGap(20)
         }
-        SectionGap(20)
     }
 }
 

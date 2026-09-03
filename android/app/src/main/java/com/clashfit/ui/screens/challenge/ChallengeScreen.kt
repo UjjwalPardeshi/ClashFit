@@ -44,7 +44,7 @@ import com.clashfit.data.Prefs
 import com.clashfit.engine.core.ChallengeCard
 import com.clashfit.engine.core.ChallengeCodec
 import com.clashfit.ui.components.EmberButton
-import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.OutlineButton
 import com.clashfit.ui.components.PanelBox
@@ -98,40 +98,37 @@ fun ChallengeScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier 
     }
     val code = remember(card) { card?.let { c -> runCatching { ChallengeCodec.encode(c) }.getOrNull() } }
 
-    Column(
-        modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 16.dp)
-    ) {
-        Kicker("SEND A DARE")
-        SectionGap(10)
-        Headline("THE", accent = "CHALLENGE")
-        SectionGap(24)
-
-        MakeOneSection(
-            exercises = exercises, exerciseId = exerciseId, onExercise = { exerciseId = it },
-            kind = kind, onKind = { kind = it },
-            target = target, onTarget = { target = it.coerceIn(MIN_TARGET, MAX_TARGET) },
-            lastGhost = lastGhost, ghostEventCount = ghostEvents.size, code = code,
-        )
-
-        SectionGap()
-
-        GotOneSection { pasted ->
-            acceptCode(
-                raw = pasted, graph = graph, exercises = exercises,
-                onGhost = { entity ->
-                    scope.launch {
-                        dao.upsert(entity)
-                        nav.navigate(Session(GameMode.GHOST_RACE.name, entity.exerciseId, ghostId = entity.id))
-                    }
-                },
-                onTargetCard = { mode, exercise -> nav.navigate(Session(mode = mode, exerciseId = exercise)) },
+    ScreenScaffold(title = "Challenge", onBack = { nav.navigateUp() }) { padding ->
+        Column(
+            modifier
+                .fillMaxWidth().padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+        ) {
+            MakeOneSection(
+                exercises = exercises, exerciseId = exerciseId, onExercise = { exerciseId = it },
+                kind = kind, onKind = { kind = it },
+                target = target, onTarget = { target = it.coerceIn(MIN_TARGET, MAX_TARGET) },
+                lastGhost = lastGhost, ghostEventCount = ghostEvents.size, code = code,
             )
-        }
 
-        SectionGap(20)
+            SectionGap()
+
+            GotOneSection { pasted ->
+                acceptCode(
+                    raw = pasted, graph = graph, exercises = exercises,
+                    onGhost = { entity ->
+                        scope.launch {
+                            dao.upsert(entity)
+                            nav.navigate(Session(GameMode.GHOST_RACE.name, entity.exerciseId, ghostId = entity.id))
+                        }
+                    },
+                    onTargetCard = { mode, exercise -> nav.navigate(Session(mode = mode, exerciseId = exercise)) },
+                )
+            }
+
+            SectionGap(20)
+        }
     }
 }
 

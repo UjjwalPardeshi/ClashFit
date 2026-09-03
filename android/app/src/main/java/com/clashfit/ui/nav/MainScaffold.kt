@@ -1,0 +1,120 @@
+package com.clashfit.ui.nav
+
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavDestination
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.clashfit.ui.components.AppIcons
+import com.clashfit.ui.theme.Ember
+import com.clashfit.ui.theme.Ground2
+import com.clashfit.ui.theme.InkMuted
+import com.clashfit.ui.theme.Panel
+import kotlin.reflect.KClass
+
+/**
+ * The four top-level destinations. Every other screen belongs to exactly one of them, which is
+ * how the bar knows which tab to light when you are three screens deep.
+ */
+enum class Tab(val label: String, val icon: ImageVector, val root: Route, val owns: Set<KClass<out Route>>) {
+    TRAIN(
+        "Train", AppIcons.Bolt, Home,
+        setOf(Home::class, Modes::class, ExercisePicker::class, Session::class, Summary::class,
+            DuelLobby::class, RaidRoom::class, Roster::class),
+    ),
+    LIBRARY(
+        "Library", AppIcons.Grid, Library,
+        setOf(Library::class, ExerciseDetail::class),
+    ),
+    PROGRESS(
+        "Progress", AppIcons.Chart, Progress,
+        setOf(Progress::class, Streaks::class, History::class, Character::class, Ghosts::class),
+    ),
+    YOU(
+        "You", AppIcons.Person, You,
+        setOf(You::class, Settings::class, Privacy::class, Preflight::class, Challenge::class,
+            RunHome::class, RunActive::class, RunSummary::class, Alarms::class, AlarmEdit::class,
+            Breathing::class, Posture::class, Desk::class, Clinic::class),
+    );
+
+    companion object {
+        fun owning(destination: NavDestination?): Tab? =
+            destination?.let { d -> entries.firstOrNull { tab -> tab.owns.any { d.hasRoute(it) } } }
+    }
+}
+
+/**
+ * Screens where the bar would be in the way: a fight, a run in progress, a hold, a breathing
+ * drill. The bar hides and the screen takes the whole display.
+ */
+private val IMMERSIVE: Set<KClass<out Route>> = setOf(
+    Splash::class, Onboarding::class, Session::class, RunActive::class,
+    DuelLobby::class, RaidRoom::class, Roster::class, Breathing::class, Posture::class,
+)
+
+private fun NavDestination.isImmersive(): Boolean = IMMERSIVE.any { hasRoute(it) }
+
+/**
+ * Switch tabs the way Android expects: each tab keeps its own stack, tapping a tab you are
+ * already on returns you to its root, and the stack under the home tab is never discarded.
+ */
+fun NavHostController.switchTo(tab: Tab) {
+    navigate(tab.root) {
+        popUpTo<Home> { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
+/** The Scaffold that wraps every routed screen. */
+@Composable
+fun MainScaffold(nav: NavHostController, content: @Composable (PaddingValues) -> Unit) {
+    val entry by nav.currentBackStackEntryAsState()
+    val destination = entry?.destination
+    val current = Tab.owning(destination)
+    val showBar = destination != null && !destination.isImmersive()
+
+    // Zero content insets here: the NavigationBar pads itself against the system bar, each
+    // screen's own top bar pads against the status bar, and AppNavHost consumes what this
+    // Scaffold hands down so the nested one never pads the same edge twice.
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            if (showBar) {
+                NavigationBar(containerColor = Ground2, contentColor = InkMuted, tonalElevation = 0.dp) {
+                    Tab.entries.forEach { tab ->
+                        NavigationBarItem(
+                            selected = tab == current,
+                            onClick = { nav.switchTo(tab) },
+                            icon = { Icon(tab.icon, contentDescription = tab.label) },
+                            label = { Text(tab.label.uppercase(), style = MaterialTheme.typography.labelMedium) },
+                            alwaysShowLabel = true,
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Ember,
+                                selectedTextColor = Ember,
+                                indicatorColor = Panel,
+                                unselectedIconColor = InkMuted,
+                                unselectedTextColor = InkMuted,
+                            ),
+                        )
+                    }
+                }
+            }
+        },
+        content = content,
+    )
+}

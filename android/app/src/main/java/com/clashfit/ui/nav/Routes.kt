@@ -6,7 +6,14 @@ import kotlinx.serialization.Serializable
 sealed interface Route
 
 @Serializable data object Splash : Route
-@Serializable data object Home : Route
+@Serializable data object Onboarding : Route
+
+// ── the four tab roots ───────────────────────────────────────────────────────
+@Serializable data object Home : Route       // Train
+@Serializable data object Library : Route
+@Serializable data object Progress : Route
+@Serializable data object You : Route
+
 @Serializable data object Modes : Route
 @Serializable data class ExercisePicker(val mode: String) : Route
 /** Calibration, fight, rest and victory are phases of one session, not separate screens. */
@@ -24,7 +31,6 @@ sealed interface Route
 @Serializable data object Alarms : Route
 @Serializable data class AlarmEdit(val alarmId: Long = 0L) : Route
 
-@Serializable data object Library : Route
 @Serializable data class ExerciseDetail(val exerciseId: String) : Route
 @Serializable data object Character : Route
 @Serializable data object Streaks : Route

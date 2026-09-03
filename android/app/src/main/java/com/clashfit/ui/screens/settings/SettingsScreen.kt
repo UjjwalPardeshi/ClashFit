@@ -1,154 +1,127 @@
 package com.clashfit.ui.screens.settings
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.clashfit.AppGraph
+import com.clashfit.data.Prefs
 import com.clashfit.ui.components.EmberButton
-import com.clashfit.ui.components.Headline
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.OutlineButton
 import com.clashfit.ui.components.RuleRow
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SectionGap
-import com.clashfit.ui.theme.Fresh
+import com.clashfit.ui.components.SwitchRow
+import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Gassed
 import com.clashfit.ui.theme.Ink
-import com.clashfit.ui.theme.InkFaint
+import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Panel
-import com.clashfit.ui.theme.Rule
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
-/** Every Prefs toggle, config version + reload, model file presence, clear data. */
+/** Every preference, config version and reload, model presence, and the one destructive action. */
 @Composable
-fun SettingsScreen(graph: AppGraph, modifier: Modifier = Modifier) {
-    val settings by graph.prefs.settings.collectAsState(initial = com.clashfit.data.Prefs.Settings())
-    val configVersion by graph.config.version.collectAsState(initial = 0)
+fun SettingsScreen(graph: AppGraph, nav: NavHostController) {
+    val settings by graph.prefs.settings.collectAsStateWithLifecycle(initialValue = Prefs.Settings())
+    val configVersion by graph.config.version.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    val modelFile = remember { File(graph.app.filesDir, "models/gemma-3n-e2b-int4.task") }
+    var confirmClear by remember { mutableStateOf(false) }
 
-    val modelFile = File(graph.app.filesDir, "models/gemma-3n-e2b-int4.task")
-
-    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
-        Headline("SETTINGS")
-        SectionGap(24)
-
-        // Display toggles
-        Kicker("Display")
-        SectionGap(12)
-        ToggleRow("Reduce Motion", settings.reduceMotion) {
-            scope.launch { graph.prefs.setReduceMotion(it) }
-        }
-        ToggleRow("Debug Overlay", settings.debugOverlay) {
-            scope.launch { graph.prefs.setDebugOverlay(it) }
-        }
-
-        SectionGap(28)
-
-        // Sound and haptics
-        Kicker("Audio & Haptics")
-        SectionGap(12)
-        ToggleRow("Haptics", settings.haptics) {
-            scope.launch { graph.prefs.setHaptics(it) }
-        }
-        ToggleRow("Speech", settings.speech) {
-            scope.launch { graph.prefs.setSpeech(it) }
-        }
-        ToggleRow("Voice Commands", settings.voiceCommands) {
-            scope.launch { graph.prefs.setVoiceCommands(it) }
-        }
-
-        SectionGap(28)
-
-        // Game settings
-        Kicker("Gameplay")
-        SectionGap(12)
-        ToggleRow("Casual Mode", settings.casual) {
-            scope.launch { graph.prefs.setCasual(it) }
-        }
-        ToggleRow("Arena Mode", settings.arenaMode) {
-            scope.launch { graph.prefs.setArenaMode(it) }
-        }
-
-        SectionGap(28)
-
-        // Config
-        Kicker("Configuration")
-        SectionGap(12)
-        RuleRow("Config Version", "$configVersion")
-        OutlineButton("RELOAD CONFIG") {
-            graph.config.reload()
-        }
-
-        SectionGap(12)
-        RuleRow("Model File", if (modelFile.exists()) "INSTALLED" else "MISSING")
-
-        SectionGap(28)
-
-        // Danger zone
-        Kicker("Danger Zone")
-        SectionGap(12)
-        EmberButton("CLEAR ALL DATA") {
-            scope.launch {
-                // Would clear database and prefs
-                // graph.db.clearAllTables()
-            }
-        }
-
-        SectionGap(20)
-    }
-}
-
-@Composable
-private fun ToggleRow(label: String, value: Boolean, onToggle: (Boolean) -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(Panel)
-            .border(1.dp, Rule)
-            .clickable { onToggle(!value) }
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(label, style = MaterialTheme.typography.bodyLarge, color = Ink)
-        Box(
-            Modifier
-                .height(24.dp)
-                .padding(2.dp)
-                .background(if (value) Fresh else Rule)
-                .padding(4.dp),
-            contentAlignment = Alignment.Center
+    ScreenScaffold(title = "Settings", onBack = { nav.navigateUp() }) { padding ->
+        Column(
+            Modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 8.dp),
         ) {
-            if (value) {
-                Text("ON", style = MaterialTheme.typography.labelSmall, color = Ink)
-            }
+            Kicker("Display")
+            SectionGap(4)
+            SwitchRow("Reduce motion", settings.reduceMotion, { v -> scope.launch { graph.prefs.setReduceMotion(v) } },
+                supporting = "Swaps shakes and flashes for a border pulse")
+            SwitchRow("Debug overlay", settings.debugOverlay, { v -> scope.launch { graph.prefs.setDebugOverlay(v) } },
+                supporting = "Landmarks and angles drawn over the camera")
+
+            SectionGap(28)
+            Kicker("Audio and haptics")
+            SectionGap(4)
+            SwitchRow("Haptics", settings.haptics, { v -> scope.launch { graph.prefs.setHaptics(v) } },
+                supporting = "Every counted rep, confirmed in the hand")
+            SwitchRow("Speech", settings.speech, { v -> scope.launch { graph.prefs.setSpeech(v) } },
+                supporting = "The coach and the boss, out loud")
+            SwitchRow("Voice commands", settings.voiceCommands, { v -> scope.launch { graph.prefs.setVoiceCommands(v) } },
+                supporting = "Offline. Nothing is sent anywhere.")
+
+            SectionGap(28)
+            Kicker("Gameplay")
+            SectionGap(4)
+            SwitchRow("Casual mode", settings.casual, { v -> scope.launch { graph.prefs.setCasual(v) } },
+                supporting = "The boss cannot win. Sets still count.")
+            SwitchRow("Arena mode", settings.arenaMode, { v -> scope.launch { graph.prefs.setArenaMode(v) } },
+                supporting = "Bigger numerals, for a phone on the floor")
+
+            SectionGap(28)
+            Kicker("Configuration")
+            SectionGap(4)
+            RuleRow("Config version", "$configVersion")
+            RuleRow("Coach model", if (modelFile.exists()) "Installed" else "Not installed · templates speak")
+            SectionGap(12)
+            OutlineButton("Reload config", Modifier.fillMaxWidth()) { graph.config.reload() }
+
+            SectionGap(36)
+            Kicker("Danger zone", color = Gassed)
+            SectionGap(8)
+            Text(
+                "Removes every session, streak, run and alarm on this phone. Nothing is backed up anywhere, so this cannot be undone.",
+                style = MaterialTheme.typography.bodySmall, color = InkMuted,
+            )
+            SectionGap(12)
+            EmberButton("Clear all data", Modifier.fillMaxWidth()) { confirmClear = true }
+            SectionGap(32)
         }
+    }
+
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            containerColor = Panel,
+            titleContentColor = Ink,
+            textContentColor = InkMuted,
+            title = { Text("CLEAR ALL DATA?", style = MaterialTheme.typography.headlineSmall) },
+            text = { Text("Every session, streak, run and alarm on this phone will be deleted. This cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmClear = false
+                    // App-scoped, so leaving the screen mid-wipe cannot cancel it half way.
+                    graph.scope.launch { withContext(Dispatchers.IO) { graph.db.clearAllTables() } }
+                }) { Text("DELETE", color = Gassed) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmClear = false }) { Text("KEEP", color = Ember) }
+            },
+        )
     }
 }
 
 fun NavGraphBuilder.settingsRoutes(graph: AppGraph, nav: NavHostController) {
-    composable<com.clashfit.ui.nav.Settings> {
-        SettingsScreen(graph)
-    }
+    composable<com.clashfit.ui.nav.Settings> { SettingsScreen(graph, nav) }
 }

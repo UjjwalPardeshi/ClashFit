@@ -33,7 +33,7 @@ import com.clashfit.core.model.GameMode
 import com.clashfit.data.GhostEntity
 import com.clashfit.ui.components.EmberButton
 import com.clashfit.ui.components.EmptyState
-import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.PanelBox
 import com.clashfit.ui.components.SectionGap
@@ -61,57 +61,54 @@ fun GhostsScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = M
     val exercises by graph.config.exercises.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
-    Column(
-        modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 16.dp)
-    ) {
-        Kicker("RACE THE PAST")
-        SectionGap(10)
-        Headline("THE", accent = "GHOSTS")
-        SectionGap(24)
-
-        Kicker("YOUR GHOSTS")
-        SectionGap(12)
-        if (saved.isEmpty()) {
-            EmptyState("Nothing saved", "Finish a fight and it becomes a ghost.")
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                saved.forEach { ghost ->
-                    SavedGhostRow(
-                        ghost = ghost,
-                        exerciseTitle = exercises.title(ghost.exerciseId),
-                        onRace = { nav.navigate(raceRoute(ghost.exerciseId, ghost.id)) },
-                        onDelete = { scope.launch { dao.delete(ghost) } },
-                    )
+    ScreenScaffold(title = "Ghosts", onBack = { nav.navigateUp() }) { padding ->
+        Column(
+            modifier
+                .fillMaxWidth().padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 8.dp)
+        ) {
+            Kicker("YOUR GHOSTS")
+            SectionGap(12)
+            if (saved.isEmpty()) {
+                EmptyState("Nothing saved", "Finish a fight and it becomes a ghost.")
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    saved.forEach { ghost ->
+                        SavedGhostRow(
+                            ghost = ghost,
+                            exerciseTitle = exercises.title(ghost.exerciseId),
+                            onRace = { nav.navigate(raceRoute(ghost.exerciseId, ghost.id)) },
+                            onDelete = { scope.launch { dao.delete(ghost) } },
+                        )
+                    }
                 }
             }
-        }
 
-        SectionGap()
+            SectionGap()
 
-        Kicker("SHIPPED")
-        SectionGap(12)
-        if (shipped.isEmpty()) {
-            Text(
-                "No pacers bundled with this build.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = InkFaint,
-            )
-        } else {
-            Column {
-                shipped.forEach { (id, data) ->
-                    ShippedGhostRow(
-                        data = data,
-                        exerciseTitle = exercises.title(data.meta.exercise),
-                        onRace = { nav.navigate(raceRoute(data.meta.exercise, id)) },
-                    )
+            Kicker("SHIPPED")
+            SectionGap(12)
+            if (shipped.isEmpty()) {
+                Text(
+                    "No pacers bundled with this build.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = InkFaint,
+                )
+            } else {
+                Column {
+                    shipped.forEach { (id, data) ->
+                        ShippedGhostRow(
+                            data = data,
+                            exerciseTitle = exercises.title(data.meta.exercise),
+                            onRace = { nav.navigate(raceRoute(data.meta.exercise, id)) },
+                        )
+                    }
                 }
             }
-        }
 
-        SectionGap(20)
+            SectionGap(20)
+        }
     }
 }
 

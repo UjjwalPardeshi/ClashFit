@@ -27,7 +27,7 @@ import com.clashfit.AppGraph
 import com.clashfit.R
 import com.clashfit.core.model.GameMode
 import com.clashfit.ui.components.EmberButton
-import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.RuleRow
 import com.clashfit.ui.components.SectionGap
@@ -48,83 +48,82 @@ fun ClinicScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = M
 
     val protocol = clinic["clinic_sts"]
 
-    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
-        Headline("CLINIC")
-        SectionGap(24)
-
-        if (protocol != null) {
-            // Protocol description
-            Kicker("30-Second Sit-to-Stand")
-            SectionGap(12)
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Panel)
-                    .border(1.dp, Rule)
-                    .padding(12.dp)
-            ) {
-                Text(
-                    protocol.protocol,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Ink
-                )
-            }
-
-            SectionGap(12)
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Panel)
-                    .border(1.dp, Rule)
-                    .padding(12.dp)
-            ) {
-                Text(
-                    stringResource(R.string.not_medical),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = InkFaint
-                )
-            }
-
-            SectionGap(28)
-
-            // Personal trend
-            if (sessions.isNotEmpty()) {
-                Kicker("Personal Trend")
+    ScreenScaffold(title = "Clinic", onBack = { nav.navigateUp() }) { padding ->
+        Column(modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
+            if (protocol != null) {
+                // Protocol description
+                Kicker("30-Second Sit-to-Stand")
                 SectionGap(12)
-                val bestSession = sessions.maxByOrNull { it.totalReps }
-                val recentSession = sessions.firstOrNull()
-
-                if (bestSession != null) {
-                    StatTile("${bestSession.totalReps}", "PERSONAL BEST", Modifier.fillMaxWidth(), color = Ember)
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(Panel)
+                        .border(1.dp, Rule)
+                        .padding(12.dp)
+                ) {
+                    Text(
+                        protocol.protocol,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Ink
+                    )
                 }
-                if (recentSession != null) {
+
+                SectionGap(12)
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .background(Panel)
+                        .border(1.dp, Rule)
+                        .padding(12.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.not_medical),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = InkFaint
+                    )
+                }
+
+                SectionGap(28)
+
+                // Personal trend
+                if (sessions.isNotEmpty()) {
+                    Kicker("Personal Trend")
                     SectionGap(12)
-                    StatTile("${recentSession.totalReps}", "LATEST", Modifier.fillMaxWidth(), color = Ink)
+                    val bestSession = sessions.maxByOrNull { it.totalReps }
+                    val recentSession = sessions.firstOrNull()
+
+                    if (bestSession != null) {
+                        StatTile("${bestSession.totalReps}", "PERSONAL BEST", Modifier.fillMaxWidth(), color = Ember)
+                    }
+                    if (recentSession != null) {
+                        SectionGap(12)
+                        StatTile("${recentSession.totalReps}", "LATEST", Modifier.fillMaxWidth(), color = Ink)
+                    }
+                } else {
+                    Kicker("No Results Yet")
+                    SectionGap(12)
+                    Text(
+                        "Start a sit-to-stand session to begin tracking your personal trend.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = InkFaint,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                }
+
+                SectionGap(28)
+
+                // Start button
+                EmberButton("START TEST") {
+                    nav.navigate(Session(GameMode.CLINIC_STS.name, "chair_squat"))
                 }
             } else {
-                Kicker("No Results Yet")
-                SectionGap(12)
-                Text(
-                    "Start a sit-to-stand session to begin tracking your personal trend.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = InkFaint,
-                    modifier = Modifier.padding(vertical = 12.dp)
-                )
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Protocol not found", style = MaterialTheme.typography.bodyLarge, color = InkFaint)
+                }
             }
 
-            SectionGap(28)
-
-            // Start button
-            EmberButton("START TEST") {
-                nav.navigate(Session(GameMode.CLINIC_STS.name, "chair_squat"))
-            }
-        } else {
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Protocol not found", style = MaterialTheme.typography.bodyLarge, color = InkFaint)
-            }
+            SectionGap(20)
         }
-
-        SectionGap(20)
     }
 }
 

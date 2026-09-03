@@ -43,7 +43,7 @@ import com.clashfit.AppGraph
 import com.clashfit.core.model.GameMode
 import com.clashfit.desk.DeskScheduler
 import com.clashfit.ui.components.EmberButton
-import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.RuleRow
 import com.clashfit.ui.components.SectionGap
@@ -147,146 +147,144 @@ fun DeskScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = Mod
         }
     }
 
-    Column(
-        modifier
-            .fillMaxSize()
-            .background(Ground)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 16.dp)
-    ) {
-        Headline("DESK")
-        Text("TIMER", style = MaterialTheme.typography.headlineLarge, color = Ember)
-        SectionGap(24)
-
-        // Toggle
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+    ScreenScaffold(title = "Desk timer", onBack = { nav.navigateUp() }) { padding ->
+        Column(
+            modifier
+                .fillMaxSize().padding(padding)
+                .background(Ground)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {
-            Text("Enable", style = MaterialTheme.typography.bodyMedium, color = Ink)
-            Switch(enabled, onCheckedChange = { enabled = it })
-        }
-
-        if (!enabled) return@Column
-
-        SectionGap(24)
-
-        // Interval chips
-        Kicker("Interval")
-        SectionGap(12)
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(listOf(30, 50, 60)) { minutes ->
-                Text(
-                    "$minutes min",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (intervalMin == minutes) Ground else Ink,
-                    modifier = Modifier
-                        .background(if (intervalMin == minutes) Ember else Panel)
-                        .border(1.dp, if (intervalMin == minutes) Ember else Rule)
-                        .clickable { intervalMin = minutes }
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                )
+            // Toggle
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Enable", style = MaterialTheme.typography.bodyMedium, color = Ink)
+                Switch(enabled, onCheckedChange = { enabled = it })
             }
-        }
 
-        SectionGap(24)
+            if (!enabled) return@Column
 
-        // Exercise picker
-        Kicker("Exercise")
-        SectionGap(12)
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(repCycleExercises) { (id, _) ->
-                Text(
-                    id.uppercase(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (exerciseId == id) Ground else Ink,
-                    modifier = Modifier
-                        .background(if (exerciseId == id) Ember else Panel)
-                        .border(1.dp, if (exerciseId == id) Ember else Rule)
-                        .clickable { exerciseId = id }
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                )
-            }
-        }
+            SectionGap(24)
 
-        SectionGap(24)
-
-        // Reps stepper
-        Kicker("Reps")
-        SectionGap(12)
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "−",
-                style = MaterialTheme.typography.headlineSmall,
-                color = Ink,
-                modifier = Modifier
-                    .background(Panel)
-                    .border(1.dp, Rule)
-                    .clickable { if (reps > 1) reps-- }
-                    .padding(10.dp)
-                    .width(40.dp)
-            )
-            Text("$reps", style = MaterialTheme.typography.headlineSmall, color = Ink)
-            Text(
-                "+",
-                style = MaterialTheme.typography.headlineSmall,
-                color = Ink,
-                modifier = Modifier
-                    .background(Panel)
-                    .border(1.dp, Rule)
-                    .clickable { reps++ }
-                    .padding(10.dp)
-                    .width(40.dp)
-            )
-        }
-
-        SectionGap(28)
-
-        // Quiet hours
-        Kicker("Quiet Hours")
-        SectionGap(12)
-        RuleRow(
-            "From",
-            "$quietFromHour:00",
-            onClick = { quietFromHour = (quietFromHour + 1) % 24 }
-        )
-        Spacer(Modifier.height(8.dp))
-        RuleRow(
-            "To",
-            "$quietToHour:00",
-            onClick = { quietToHour = (quietToHour + 1) % 24 }
-        )
-
-        SectionGap(24)
-
-        // Snooze button
-        EmberButton(
-            "QUIET FOR 2H",
-            onClick = {
-                scope.launch {
-                    val snoozedUntilMs = graph.clock.nowMs() + 2 * 60 * 60 * 1000
-                    graph.prefs.setDeskSnoozedUntilMs(snoozedUntilMs)
-                    DeskScheduler.schedule(context, graph.clock, scope)
+            // Interval chips
+            Kicker("Interval")
+            SectionGap(12)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(listOf(30, 50, 60)) { minutes ->
+                    Text(
+                        "$minutes min",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (intervalMin == minutes) Ground else Ink,
+                        modifier = Modifier
+                            .background(if (intervalMin == minutes) Ember else Panel)
+                            .border(1.dp, if (intervalMin == minutes) Ember else Rule)
+                            .clickable { intervalMin = minutes }
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
+            }
 
-        SectionGap(24)
+            SectionGap(24)
 
-        // Info text
-        Text(
-            "The camera grades this minute like a boss fight. One clean set counts.",
-            style = MaterialTheme.typography.bodySmall,
-            color = InkFaint,
-        )
+            // Exercise picker
+            Kicker("Exercise")
+            SectionGap(12)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(repCycleExercises) { (id, _) ->
+                    Text(
+                        id.uppercase(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (exerciseId == id) Ground else Ink,
+                        modifier = Modifier
+                            .background(if (exerciseId == id) Ember else Panel)
+                            .border(1.dp, if (exerciseId == id) Ember else Rule)
+                            .clickable { exerciseId = id }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
+            }
 
-        SectionGap(40)
+            SectionGap(24)
+
+            // Reps stepper
+            Kicker("Reps")
+            SectionGap(12)
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "−",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Ink,
+                    modifier = Modifier
+                        .background(Panel)
+                        .border(1.dp, Rule)
+                        .clickable { if (reps > 1) reps-- }
+                        .padding(10.dp)
+                        .width(40.dp)
+                )
+                Text("$reps", style = MaterialTheme.typography.headlineSmall, color = Ink)
+                Text(
+                    "+",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Ink,
+                    modifier = Modifier
+                        .background(Panel)
+                        .border(1.dp, Rule)
+                        .clickable { reps++ }
+                        .padding(10.dp)
+                        .width(40.dp)
+                )
+            }
+
+            SectionGap(28)
+
+            // Quiet hours
+            Kicker("Quiet Hours")
+            SectionGap(12)
+            RuleRow(
+                "From",
+                "$quietFromHour:00",
+                onClick = { quietFromHour = (quietFromHour + 1) % 24 }
+            )
+            Spacer(Modifier.height(8.dp))
+            RuleRow(
+                "To",
+                "$quietToHour:00",
+                onClick = { quietToHour = (quietToHour + 1) % 24 }
+            )
+
+            SectionGap(24)
+
+            // Snooze button
+            EmberButton(
+                "QUIET FOR 2H",
+                onClick = {
+                    scope.launch {
+                        val snoozedUntilMs = graph.clock.nowMs() + 2 * 60 * 60 * 1000
+                        graph.prefs.setDeskSnoozedUntilMs(snoozedUntilMs)
+                        DeskScheduler.schedule(context, graph.clock, scope)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            SectionGap(24)
+
+            // Info text
+            Text(
+                "The camera grades this minute like a boss fight. One clean set counts.",
+                style = MaterialTheme.typography.bodySmall,
+                color = InkFaint,
+            )
+
+            SectionGap(40)
+        }
     }
 }
 

@@ -22,7 +22,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.clashfit.AppGraph
-import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.RuleRow
 import com.clashfit.ui.components.SectionGap
@@ -37,7 +37,7 @@ import com.clashfit.ui.theme.Working
 
 /** Seven bars: POWER/STAMINA/FOCUS/MOBILITY/ENERGY/NOURISHMENT/RESILIENCE from Room data. */
 @Composable
-fun CharacterScreen(graph: AppGraph, modifier: Modifier = Modifier) {
+fun CharacterScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = Modifier) {
     val sessions by graph.db.sessions().recent(limit = 50).collectAsState(initial = emptyList())
     val streaks by graph.db.streak().observe().collectAsState(initial = null)
 
@@ -46,26 +46,25 @@ fun CharacterScreen(graph: AppGraph, modifier: Modifier = Modifier) {
         CharacterStats.compute(sessions, streaks)
     }
 
-    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
-        Headline("CHARACTER")
-        SectionGap(24)
+    ScreenScaffold(title = "Character", onBack = { nav.navigateUp() }) { padding ->
+        Column(modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
+            // Seven stat bars
+            StatBar("POWER", stats.power, 100)
+            StatBar("STAMINA", stats.stamina, 100)
+            StatBar("FOCUS", stats.focus, 100)
+            StatBar("MOBILITY", stats.mobility, 100)
+            StatBar("ENERGY", stats.energy, 100)
+            StatBar("NOURISHMENT", stats.nourishment, 100)
+            StatBar("RESILIENCE", stats.resilience, 100)
 
-        // Seven stat bars
-        StatBar("POWER", stats.power, 100)
-        StatBar("STAMINA", stats.stamina, 100)
-        StatBar("FOCUS", stats.focus, 100)
-        StatBar("MOBILITY", stats.mobility, 100)
-        StatBar("ENERGY", stats.energy, 100)
-        StatBar("NOURISHMENT", stats.nourishment, 100)
-        StatBar("RESILIENCE", stats.resilience, 100)
-
-        SectionGap(28)
-        Kicker("Summary")
-        SectionGap(12)
-        RuleRow("Total Reps", "${stats.totalReps}")
-        RuleRow("Sessions", "${stats.sessionCount}")
-        RuleRow("Form Avg", "%.1f%%".format(stats.formAvg * 100))
-        SectionGap(20)
+            SectionGap(28)
+            Kicker("Summary")
+            SectionGap(12)
+            RuleRow("Total Reps", "${stats.totalReps}")
+            RuleRow("Sessions", "${stats.sessionCount}")
+            RuleRow("Form Avg", "%.1f%%".format(stats.formAvg * 100))
+            SectionGap(20)
+        }
     }
 }
 
@@ -134,6 +133,6 @@ object CharacterStats {
 
 fun NavGraphBuilder.characterRoutes(graph: AppGraph, nav: NavHostController) {
     composable<com.clashfit.ui.nav.Character> {
-        CharacterScreen(graph)
+        CharacterScreen(graph, nav)
     }
 }

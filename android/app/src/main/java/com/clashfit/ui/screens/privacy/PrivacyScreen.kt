@@ -20,7 +20,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.clashfit.AppGraph
-import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.RuleRow
 import com.clashfit.ui.components.SectionGap
@@ -31,76 +31,75 @@ import com.clashfit.ui.theme.Rule
 
 /** No-cloud diagram text, list of permissions requested and why, INTERNET verification. */
 @Composable
-fun PrivacyScreen(graph: AppGraph, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
-        Headline("PRIVACY")
-        SectionGap(24)
+fun PrivacyScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = Modifier) {
+    ScreenScaffold(title = "Privacy", onBack = { nav.navigateUp() }) { padding ->
+        Column(modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
+            // No-cloud principles
+            Kicker("On-Device Only")
+            SectionGap(12)
+            PrivacyPrinciple("Offline", "No internet required. The app works in airplane mode.")
+            PrivacyPrinciple("On-Device", "Every rep is analysed on your phone, nowhere else.")
+            PrivacyPrinciple("No Account", "Sign up? Never. Your data stays yours.")
+            PrivacyPrinciple("No Upload", "No video, no images, no landmarks leave your device.")
+            PrivacyPrinciple("No Tracking", "Zero telemetry. Zero analytics. Zero ads.")
 
-        // No-cloud principles
-        Kicker("On-Device Only")
-        SectionGap(12)
-        PrivacyPrinciple("Offline", "No internet required. The app works in airplane mode.")
-        PrivacyPrinciple("On-Device", "Every rep is analysed on your phone, nowhere else.")
-        PrivacyPrinciple("No Account", "Sign up? Never. Your data stays yours.")
-        PrivacyPrinciple("No Upload", "No video, no images, no landmarks leave your device.")
-        PrivacyPrinciple("No Tracking", "Zero telemetry. Zero analytics. Zero ads.")
+            SectionGap(28)
 
-        SectionGap(28)
+            // Permissions requested
+            Kicker("Permissions")
+            SectionGap(12)
+            PermissionRow("Camera", "Measure your movement in real-time. The referee's eye.")
+            PermissionRow("Microphone", "Hear the rep impact sound even with the screen off.")
+            PermissionRow("Notification", "Wake-up alarms and activity reminders.")
+            PermissionRow("Location", "Run tracking only — maps stay on the phone.")
 
-        // Permissions requested
-        Kicker("Permissions")
-        SectionGap(12)
-        PermissionRow("Camera", "Measure your movement in real-time. The referee's eye.")
-        PermissionRow("Microphone", "Hear the rep impact sound even with the screen off.")
-        PermissionRow("Notification", "Wake-up alarms and activity reminders.")
-        PermissionRow("Location", "Run tracking only — maps stay on the phone.")
+            SectionGap(12)
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .background(Panel)
+                    .border(1.dp, Rule)
+                    .padding(12.dp)
+            ) {
+                Text(
+                    "Internet: NOT REQUESTED · This package declares zero network permissions.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = InkFaint
+                )
+            }
 
-        SectionGap(12)
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .background(Panel)
-                .border(1.dp, Rule)
-                .padding(12.dp)
-        ) {
+            SectionGap(28)
+
+            // Radio-off claim
+            Kicker("Radio Off")
+            SectionGap(12)
             Text(
-                "Internet: NOT REQUESTED · This package declares zero network permissions.",
-                style = MaterialTheme.typography.bodySmall,
-                color = InkFaint
+                "Everything that watches your body runs with the radio off. Outbreak is the one mode that goes online, and it says so before it starts. 0 frames uploaded — still literally true, and the stronger claim anyway: no video, no landmarks, no biometrics ever leave the device, in any mode, including this one.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Ink,
+                modifier = Modifier.padding(vertical = 8.dp)
             )
+
+            SectionGap(28)
+
+            // Data retention
+            Kicker("What We Keep")
+            SectionGap(12)
+            Text(
+                "Per-rep scalars: depth, range, tempo, alignment, damage. Fatigue state, form scores, boss health. Session metadata.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Ink,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+            Text(
+                "What we never keep: video, images, landmarks, audio recordings, phone identifiers.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = InkFaint,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            SectionGap(20)
         }
-
-        SectionGap(28)
-
-        // Radio-off claim
-        Kicker("Radio Off")
-        SectionGap(12)
-        Text(
-            "Everything that watches your body runs with the radio off. Outbreak is the one mode that goes online, and it says so before it starts. 0 frames uploaded — still literally true, and the stronger claim anyway: no video, no landmarks, no biometrics ever leave the device, in any mode, including this one.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Ink,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
-
-        SectionGap(28)
-
-        // Data retention
-        Kicker("What We Keep")
-        SectionGap(12)
-        Text(
-            "Per-rep scalars: depth, range, tempo, alignment, damage. Fatigue state, form scores, boss health. Session metadata.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Ink,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
-        Text(
-            "What we never keep: video, images, landmarks, audio recordings, phone identifiers.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = InkFaint,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
-
-        SectionGap(20)
     }
 }
 
@@ -130,6 +129,6 @@ private fun PermissionRow(permission: String, reason: String) {
 
 fun NavGraphBuilder.privacyRoutes(graph: AppGraph, nav: NavHostController) {
     composable<com.clashfit.ui.nav.Privacy> {
-        PrivacyScreen(graph)
+        PrivacyScreen(graph, nav)
     }
 }

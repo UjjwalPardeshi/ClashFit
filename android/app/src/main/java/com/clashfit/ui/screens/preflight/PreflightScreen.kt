@@ -33,7 +33,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.clashfit.AppGraph
-import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.theme.Fresh
@@ -49,7 +49,7 @@ enum class PreflightStatus { PASS, WARN, FAIL }
 
 /** Run Preflight-style checks: camera permission, pose model, config version, TTS, debug, calibration, ghosts, alarm, storage. */
 @Composable
-fun PreflightScreen(graph: AppGraph, modifier: Modifier = Modifier) {
+fun PreflightScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = Modifier) {
     var checks by remember { mutableStateOf<List<PreflightCheck>>(emptyList()) }
     val configVersion by graph.config.version.collectAsState(initial = 0)
     val ghosts by graph.config.ghosts.collectAsState(initial = emptyMap())
@@ -76,18 +76,17 @@ fun PreflightScreen(graph: AppGraph, modifier: Modifier = Modifier) {
         )
     }
 
-    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
-        Headline("PREFLIGHT")
-        SectionGap(24)
+    ScreenScaffold(title = "Camera check", onBack = { nav.navigateUp() }) { padding ->
+        Column(modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
+            Kicker("System Checks")
+            SectionGap(12)
 
-        Kicker("System Checks")
-        SectionGap(12)
+            checks.forEach { check ->
+                PreflightRow(check)
+            }
 
-        checks.forEach { check ->
-            PreflightRow(check)
+            SectionGap(20)
         }
-
-        SectionGap(20)
     }
 }
 
@@ -176,6 +175,6 @@ private fun checkStorage(context: Context): PreflightStatus {
 
 fun NavGraphBuilder.preflightRoutes(graph: AppGraph, nav: NavHostController) {
     composable<com.clashfit.ui.nav.Preflight> {
-        PreflightScreen(graph)
+        PreflightScreen(graph, nav)
     }
 }

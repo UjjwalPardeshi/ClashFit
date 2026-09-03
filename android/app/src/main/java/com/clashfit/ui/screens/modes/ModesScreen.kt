@@ -27,7 +27,7 @@ import androidx.navigation.compose.composable
 import com.clashfit.AppGraph
 import com.clashfit.core.model.GameMode
 import com.clashfit.core.model.ModeKind
-import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.Tag
@@ -43,23 +43,22 @@ import com.clashfit.ui.theme.Rule
 /** Every mode, grouped by kind: SOLO, VERSUS, GROUP, FAMILY, CLINIC. */
 @Composable
 fun ModesScreen(nav: NavHostController, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
-        Headline("CHOOSE", accent = "YOUR FIGHT")
-        SectionGap(24)
-
-        // Every mode of each kind, not just the sixteen tiles on the site's fixed home grid
-        // (GameMode.grid) — this screen is the full catalogue, e.g. Versus also includes
-        // TUG_OF_WAR and MIRROR_MATCH, and Group also includes RAID and TEAM_VS_TEAM.
-        ModeSection("Solo", GameMode.entries.filter { it.kind == ModeKind.SOLO }, nav)
-        SectionGap()
-        ModeSection("Versus", GameMode.entries.filter { it.kind == ModeKind.VERSUS }, nav)
-        SectionGap()
-        ModeSection("Group", GameMode.entries.filter { it.kind == ModeKind.GROUP }, nav)
-        SectionGap()
-        ModeSection("Family", GameMode.entries.filter { it.kind == ModeKind.FAMILY }, nav)
-        SectionGap()
-        ModeSection("Clinic", GameMode.entries.filter { it.kind == ModeKind.CLINIC }, nav)
-        SectionGap()
+    ScreenScaffold(title = "Choose your fight", onBack = { nav.navigateUp() }) { padding ->
+        Column(modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
+            // Every mode of each kind, not just the sixteen tiles on the site's fixed home grid
+            // (GameMode.grid) — this screen is the full catalogue, e.g. Versus also includes
+            // TUG_OF_WAR and MIRROR_MATCH, and Group also includes RAID and TEAM_VS_TEAM.
+            ModeSection("Solo", GameMode.entries.filter { it.kind == ModeKind.SOLO }, nav)
+            SectionGap()
+            ModeSection("Versus", GameMode.entries.filter { it.kind == ModeKind.VERSUS }, nav)
+            SectionGap()
+            ModeSection("Group", GameMode.entries.filter { it.kind == ModeKind.GROUP }, nav)
+            SectionGap()
+            ModeSection("Family", GameMode.entries.filter { it.kind == ModeKind.FAMILY }, nav)
+            SectionGap()
+            ModeSection("Clinic", GameMode.entries.filter { it.kind == ModeKind.CLINIC }, nav)
+            SectionGap()
+        }
     }
 }
 

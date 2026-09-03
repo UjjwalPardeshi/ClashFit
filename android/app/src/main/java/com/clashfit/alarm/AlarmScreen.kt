@@ -23,7 +23,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.clashfit.AppGraph
 import com.clashfit.data.AlarmEntity
 import com.clashfit.ui.components.EmberButton
-import com.clashfit.ui.components.Headline
+import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkFaint
@@ -42,50 +42,50 @@ fun AlarmsScreen(graph: AppGraph, navController: NavHostController) {
     val dao = graph.db.alarms()
     val alarms by dao.all().collectAsStateWithLifecycle(initialValue = emptyList())
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Ground)
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
-    ) {
-        Headline("ALARMS")
-
-        if (alarms.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Panel)
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "NO ALARMS YET",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = InkFaint
-                )
-            }
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                items(alarms, key = { it.id }) { alarm ->
-                    AlarmListItem(
-                        alarm = alarm,
-                        dao = dao,
-                        scope = scope,
-                        onEdit = { navController.navigate(com.clashfit.ui.nav.AlarmEdit(alarm.id)) }
+    ScreenScaffold(title = "Alarms", onBack = { navController.navigateUp() }) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize().padding(padding)
+                .background(Ground)
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            if (alarms.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Panel)
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "NO ALARMS YET",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = InkFaint
                     )
                 }
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    items(alarms, key = { it.id }) { alarm ->
+                        AlarmListItem(
+                            alarm = alarm,
+                            dao = dao,
+                            scope = scope,
+                            onEdit = { navController.navigate(com.clashfit.ui.nav.AlarmEdit(alarm.id)) }
+                        )
+                    }
+                }
             }
-        }
 
-        EmberButton(
-            text = "NEW ALARM",
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { navController.navigate(com.clashfit.ui.nav.AlarmEdit(0L)) }
-        )
+            EmberButton(
+                text = "NEW ALARM",
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { navController.navigate(com.clashfit.ui.nav.AlarmEdit(0L)) }
+            )
+        }
     }
 }
 
