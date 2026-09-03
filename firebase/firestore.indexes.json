@@ -1,0 +1,10 @@
+{
+  "_comment": [
+    "No composite indexes are needed. Every leaderboard query orders on a single field within one",
+    "collection, and the friends board selects by document id with no ordering, so Firestore's",
+    "automatic single-field indexes cover all of them. Add entries here only when a query starts",
+    "combining a filter with an order on a different field."
+  ],
+  "indexes": [],
+  "fieldOverrides": []
+}

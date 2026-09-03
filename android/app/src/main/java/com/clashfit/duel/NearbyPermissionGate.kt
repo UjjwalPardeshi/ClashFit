@@ -89,8 +89,8 @@ fun NearbyPermissionGate(
                 text = {
                     Text(
                         "This app needs Bluetooth and WiFi permissions to detect and connect " +
-                                "to other phones for duel, raid, and rep-race modes. All connections " +
-                                "are local and on-device; no internet is used."
+                                "to other phones for duel, raid, and rep-race modes. This connection is " +
+                                "phone-to-phone; no internet is used."
                     )
                 },
                 confirmButton = {
@@ -125,7 +125,7 @@ private fun NearbyPermissionFallback(onGrant: () -> Unit) {
         ) {
             Text("NEARBY PERMISSION NEEDED", style = androidx.compose.material3.MaterialTheme.typography.headlineSmall)
             Text(
-                "Phones find each other over Bluetooth and local Wi-Fi. Nothing leaves the room.",
+                "Phones find each other over Bluetooth and local Wi-Fi. The connection stays between your devices.",
                 style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )

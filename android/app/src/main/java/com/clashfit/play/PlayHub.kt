@@ -67,7 +67,8 @@ data class RemoteHit(val playerId: String, val seq: Int, val damage: Int)
  * remote hits from [remoteHits]. Pass-the-phone keeps its [Roster] here between turns so the
  * fight screen can be an ordinary session that pops back to the board when the turn ends.
  * Nothing here touches the network stack directly beyond the [DuelTransport] contract, and the
- * only transport is Nearby Connections — the app has no INTERNET permission.
+ * only multiplayer transport is Nearby Connections, deliberately serverless. The app's INTERNET
+ * permission is for accounts and score sync only, never for game play.
  */
 class PlayHub(
     private val app: Context,

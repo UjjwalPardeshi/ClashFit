@@ -8,3 +8,6 @@ img/_cand2/
 .mcp.json
 .claude/settings.local.json
 .playwright-mcp/
+
+# Firebase keys. Never commit these; see firebase/README.md.
+google-services.json

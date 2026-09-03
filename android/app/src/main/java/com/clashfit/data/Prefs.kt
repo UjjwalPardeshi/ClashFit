@@ -5,6 +5,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -31,7 +33,20 @@ class Prefs(private val context: Context) {
         val deskQuietFromHour: Int = 18,
         val deskQuietToHour: Int = 9,
         val deskSnoozedUntilMs: Long = 0L,
+        /** True once the first-run flow has been completed on this device. */
+        val onboarded: Boolean = false,
+        /** What the player said they are here for. One of [Goal]. */
+        val goal: String = Goal.GET_STRONGER.name,
+        /** Index into the avatar palette on the profile. */
+        val avatarColor: Int = 0,
     )
+
+    enum class Goal(val title: String, val blurb: String) {
+        GET_STRONGER("Get stronger", "Boss fights, survival, the clean-rep grind."),
+        BUILD_HABIT("Build the habit", "Short daily sets and a streak that protects rest days."),
+        PLAY_WITH_FRIENDS("Play with friends", "Duels, raids and the leaderboard."),
+        MOVE_BETTER("Move better", "Holds, yoga and the clinic tests."),
+    }
 
     val settings: Flow<Settings> = context.dataStore.data.map { p ->
         Settings(
@@ -50,6 +65,9 @@ class Prefs(private val context: Context) {
             deskQuietFromHour = p[DESK_QUIET_FROM_HOUR] ?: 18,
             deskQuietToHour = p[DESK_QUIET_TO_HOUR] ?: 9,
             deskSnoozedUntilMs = p[DESK_SNOOZED_UNTIL_MS] ?: 0L,
+            onboarded = p[ONBOARDED] ?: false,
+            goal = p[GOAL] ?: Goal.GET_STRONGER.name,
+            avatarColor = p[AVATAR_COLOR] ?: 0,
         )
     }
 
@@ -68,6 +86,17 @@ class Prefs(private val context: Context) {
     suspend fun setDeskQuietFromHour(v: Int) = context.dataStore.edit { it[DESK_QUIET_FROM_HOUR] = v }
     suspend fun setDeskQuietToHour(v: Int) = context.dataStore.edit { it[DESK_QUIET_TO_HOUR] = v }
     suspend fun setDeskSnoozedUntilMs(v: Long) = context.dataStore.edit { it[DESK_SNOOZED_UNTIL_MS] = v }
+    suspend fun setOnboarded(v: Boolean) = context.dataStore.edit { it[ONBOARDED] = v }
+    suspend fun setGoal(v: Goal) = context.dataStore.edit { it[GOAL] = v.name }
+    suspend fun setAvatarColor(v: Int) = context.dataStore.edit { it[AVATAR_COLOR] = v }
+
+    /** Everything the first-run flow decides, in one write. */
+    suspend fun completeOnboarding(goal: Goal, preferredExercise: String, avatarColor: Int) = context.dataStore.edit {
+        it[GOAL] = goal.name
+        it[PREFERRED_EXERCISE] = preferredExercise
+        it[AVATAR_COLOR] = avatarColor
+        it[ONBOARDED] = true
+    }
 
     private companion object {
         val REDUCE_MOTION = booleanPreferencesKey("reduce_motion")
@@ -79,11 +108,14 @@ class Prefs(private val context: Context) {
         val DEBUG = booleanPreferencesKey("debug_overlay")
         val PREFERRED_EXERCISE = stringPreferencesKey("preferred_exercise")
         val DESK_ENABLED = booleanPreferencesKey("desk_enabled")
-        val DESK_INTERVAL_MIN = androidx.datastore.preferences.core.intPreferencesKey("desk_interval_min")
+        val DESK_INTERVAL_MIN = intPreferencesKey("desk_interval_min")
         val DESK_EXERCISE_ID = stringPreferencesKey("desk_exercise_id")
-        val DESK_REPS = androidx.datastore.preferences.core.intPreferencesKey("desk_reps")
-        val DESK_QUIET_FROM_HOUR = androidx.datastore.preferences.core.intPreferencesKey("desk_quiet_from_hour")
-        val DESK_QUIET_TO_HOUR = androidx.datastore.preferences.core.intPreferencesKey("desk_quiet_to_hour")
-        val DESK_SNOOZED_UNTIL_MS = androidx.datastore.preferences.core.longPreferencesKey("desk_snoozed_until_ms")
+        val DESK_REPS = intPreferencesKey("desk_reps")
+        val DESK_QUIET_FROM_HOUR = intPreferencesKey("desk_quiet_from_hour")
+        val DESK_QUIET_TO_HOUR = intPreferencesKey("desk_quiet_to_hour")
+        val DESK_SNOOZED_UNTIL_MS = longPreferencesKey("desk_snoozed_until_ms")
+        val ONBOARDED = booleanPreferencesKey("onboarded")
+        val GOAL = stringPreferencesKey("goal")
+        val AVATAR_COLOR = intPreferencesKey("avatar_color")
     }
 }

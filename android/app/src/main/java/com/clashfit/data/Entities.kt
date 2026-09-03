@@ -174,3 +174,40 @@ data class GhostEntity(
     val eventsJson: String,
     val shipped: Boolean,
 )
+
+@Entity(tableName = "meta")
+data class MetaEntity(
+    @PrimaryKey val id: Int = 1,
+    val xp: Long = 0,
+    val level: Int = 1,
+    val sessions: Int = 0,
+    val wins: Int = 0,
+    val totalReps: Int = 0,
+    val cleanReps: Int = 0,
+    val totalDamage: Int = 0,
+    val familiesPlayedMask: Int = 0,
+    val pbCount: Int = 0,
+    val weeklyChallengesDone: Int = 0,
+    val bestStreak: Int = 0,
+)
+
+@Entity(tableName = "achievements")
+data class AchievementEntity(
+    @PrimaryKey val id: String,
+    val unlockedAtMs: Long,
+)
+
+@Entity(tableName = "weekly")
+data class WeeklyEntity(
+    @PrimaryKey val weekKey: String,
+    val metric: String,
+    val value: Int,
+    val completedAtMs: Long? = null,
+)
+
+@Entity(tableName = "xp_ledger")
+data class XpLedgerEntity(
+    @PrimaryKey val sessionId: Long,
+    val xp: Int,
+    val atMs: Long,
+)

@@ -4,10 +4,22 @@ import android.content.Context
 import androidx.room.Room
 import com.clashfit.audio.Haptics
 import com.clashfit.audio.Sfx
+import com.clashfit.auth.AuthService
+import com.clashfit.auth.FirebaseAuthService
+import com.clashfit.auth.LocalAuthService
 import com.clashfit.coach.CoachConfig
 import com.clashfit.coach.CoachEngine
 import com.clashfit.coach.LlmEngine
 import com.clashfit.coach.SpeechOut
+import com.clashfit.cloud.CloudConfig
+import com.clashfit.cloud.ScoreSync
+import com.clashfit.cloud.WeeklyTotals
+import com.clashfit.cloud.FirestoreLeaderboard
+import com.clashfit.cloud.FirestoreFriends
+import com.clashfit.cloud.LeaderboardRepository
+import com.clashfit.cloud.FriendsRepository
+import com.clashfit.cloud.NoCloudLeaderboard
+import com.clashfit.cloud.NoCloudFriends
 import com.clashfit.core.config.ConfigStore
 import com.clashfit.core.util.Clock
 import com.clashfit.data.ClashDb
@@ -17,6 +29,7 @@ import com.clashfit.voice.VoiceCommands
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 
 /**
@@ -41,12 +54,15 @@ class AppGraph(val app: Context) {
 
     val db: ClashDb by lazy {
         Room.databaseBuilder(app, ClashDb::class.java, "clashfit.db")
-            .addMigrations(com.clashfit.data.MIGRATION_1_2, com.clashfit.data.MIGRATION_2_3)
+            .addMigrations(com.clashfit.data.MIGRATION_1_2, com.clashfit.data.MIGRATION_2_3, com.clashfit.data.MIGRATION_3_4)
             .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
             .build()
     }
 
     val prefs: Prefs by lazy { Prefs(app) }
+
+    val meta: com.clashfit.meta.MetaRepository by lazy { com.clashfit.meta.RoomMetaRepository(db, clock) }
+    val rewards: com.clashfit.meta.RewardStore = com.clashfit.meta.RewardStore()
 
     // The coach and the villain are the same model; the template bank always ships beneath it.
     val llmEngine: LlmEngine by lazy { LlmEngine(app, CoachConfig(), clock, scope, json) }
@@ -60,6 +76,28 @@ class AppGraph(val app: Context) {
 
     // Multiplayer links and pass-the-phone rosters outlive any one screen.
     val playHub: PlayHub by lazy { PlayHub(app, json, clock, scope) }
+
+    val auth: AuthService by lazy { if (CloudConfig.isConfigured) FirebaseAuthService(scope) else LocalAuthService(app, scope) }
+    val leaderboard: LeaderboardRepository by lazy { if (CloudConfig.isConfigured) FirestoreLeaderboard(auth, scope) else NoCloudLeaderboard("This build has no cloud keys. Add FIREBASE_API_KEY, FIREBASE_APP_ID and FIREBASE_PROJECT_ID to android/local.properties.") }
+    val friends: FriendsRepository by lazy { if (CloudConfig.isConfigured) FirestoreFriends(auth, scope) else NoCloudFriends("This build has no cloud keys. Add FIREBASE_API_KEY, FIREBASE_APP_ID and FIREBASE_PROJECT_ID to android/local.properties.") }
+
+    /**
+     * Publishes the player's standing to the leaderboard. Started once by [ClashFitApp]; it does
+     * nothing at all until somebody is signed in, and nothing ever leaves here but scores.
+     */
+    val scoreSync: ScoreSync by lazy {
+        ScoreSync(
+            auth = auth,
+            leaderboard = leaderboard,
+            meta = meta,
+            streakFlow = db.streak().observe().map { it?.best },
+            scope = scope,
+            clock = clock,
+            weeklyTotals = { since ->
+                WeeklyTotals(db.sessions().damageSince(since), db.sessions().cleanRepsSince(since))
+            },
+        )
+    }
 
     companion object {
         fun of(context: Context): AppGraph = (context.applicationContext as ClashFitApp).graph

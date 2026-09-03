@@ -41,6 +41,14 @@ interface SessionDao {
     @Query("SELECT * FROM sessions WHERE mode = :mode AND endedAtMs IS NOT NULL ORDER BY startedAtMs DESC LIMIT :limit")
     suspend fun byMode(mode: String, limit: Int = 50): List<SessionEntity>
     @Query("SELECT COUNT(*) FROM sessions WHERE endedAtMs IS NOT NULL") fun count(): Flow<Int>
+
+    /** Damage dealt since a moment, for the weekly leaderboard. */
+    @Query("SELECT COALESCE(SUM(totalDamage), 0) FROM sessions WHERE startedAtMs >= :sinceMs AND endedAtMs IS NOT NULL")
+    suspend fun damageSince(sinceMs: Long): Long
+
+    /** Reps the referee graded CLEAN since a moment, for the weekly leaderboard. */
+    @Query("SELECT COUNT(*) FROM reps WHERE verdict = 'CLEAN' AND sessionId IN (SELECT id FROM sessions WHERE startedAtMs >= :sinceMs AND endedAtMs IS NOT NULL)")
+    suspend fun cleanRepsSince(sinceMs: Long): Long
     @Query("SELECT * FROM sessions WHERE endedAtMs IS NOT NULL ORDER BY startedAtMs DESC LIMIT 1") suspend fun last(): SessionEntity?
 
     /** Older sessions keep their aggregates but drop per-rep telemetry, so a phone never fills up. */
@@ -111,4 +119,32 @@ interface PostureDao {
     @Insert suspend fun insert(p: PostureSampleEntity)
     @Query("SELECT * FROM posture WHERE tMs >= :sinceMs ORDER BY tMs DESC") fun since(sinceMs: Long): Flow<List<PostureSampleEntity>>
     @Query("SELECT * FROM posture ORDER BY tMs DESC LIMIT 1") suspend fun latest(): PostureSampleEntity?
+}
+
+@Dao
+interface MetaDao {
+    @Query("SELECT * FROM meta WHERE id = 1") fun observe(): Flow<MetaEntity?>
+    @Query("SELECT * FROM meta WHERE id = 1") suspend fun get(): MetaEntity?
+    @Upsert suspend fun upsert(m: MetaEntity)
+}
+
+@Dao
+interface AchievementDao {
+    @Query("SELECT * FROM achievements ORDER BY unlockedAtMs DESC") fun all(): Flow<List<AchievementEntity>>
+    @Query("SELECT * FROM achievements WHERE id = :id") suspend fun get(id: String): AchievementEntity?
+    @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insert(a: AchievementEntity)
+    @Query("SELECT id FROM achievements") suspend fun allIds(): List<String>
+}
+
+@Dao
+interface WeeklyDao {
+    @Query("SELECT * FROM weekly WHERE weekKey = :weekKey") fun observe(weekKey: String): Flow<WeeklyEntity?>
+    @Query("SELECT * FROM weekly WHERE weekKey = :weekKey") suspend fun get(weekKey: String): WeeklyEntity?
+    @Upsert suspend fun upsert(w: WeeklyEntity)
+}
+
+@Dao
+interface XpLedgerDao {
+    @Query("SELECT * FROM xp_ledger WHERE sessionId = :sessionId") suspend fun get(sessionId: Long): XpLedgerEntity?
+    @Insert suspend fun insert(l: XpLedgerEntity)
 }

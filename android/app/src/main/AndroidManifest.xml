@@ -3,9 +3,17 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!-- ================================================================
-         Deliberately absent: android.permission.INTERNET.
-         The privacy claim is made checkable here. Do not add it.
+         The privacy contract, made checkable here.
+         INTERNET exists for sign-in and the leaderboard, and for nothing else.
+         Camera frames, pose landmarks and rep timelines never leave the phone:
+         the pose model and the coach both run on-device, and the camera pipeline
+         has no path to the network. Read the one package that does (cloud/); it
+         carries scores, display names and levels, and nothing more.
+         Android's own cloud backup is switched off in data_extraction_rules.xml,
+         so the training database never travels that way either.
          ================================================================ -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- The referee -->
     <uses-permission android:name="android.permission.CAMERA" />

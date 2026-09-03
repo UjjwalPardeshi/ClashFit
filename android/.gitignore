@@ -12,3 +12,6 @@
 *.apk
 *.aab
 *.hprof
+
+# Firebase keys. Never commit these; see firebase/README.md.
+google-services.json

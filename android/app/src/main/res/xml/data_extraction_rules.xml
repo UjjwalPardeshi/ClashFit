@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Nothing leaves the phone, including via cloud backup. -->
+<!-- Local database and preferences are excluded from Android cloud backup and device transfer. Training and pose data stay on device; score and account sync occurs only through the app's own Firestore integration. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" />

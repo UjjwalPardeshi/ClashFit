@@ -1,0 +1,60 @@
+rules_version = '2';
+
+// ClashFit. Only scores, display names and levels live here. No camera frame, no pose landmark
+// and no rep timeline is ever written to Firestore, so nothing in this file needs to guard them.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isMe(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // A public profile: the name, level and streak the leaderboard shows. Deliberately no email
+    // and no other personal data, because every signed-in player can read every profile and
+    // Firestore cannot hide a single field.
+    function validProfile(d) {
+      return d.displayName is string && d.displayName.size() > 0 && d.displayName.size() <= 24
+        && d.level is number && d.level >= 0
+        && d.xp is number && d.xp >= 0
+        && d.bestStreak is number && d.bestStreak >= 0
+        && !('email' in d);
+    }
+
+    function validScore(d) {
+      return d.displayName is string && d.displayName.size() > 0 && d.displayName.size() <= 24
+        && d.level is number && d.level >= 0
+        && d.weeklyDamage is number && d.weeklyDamage >= 0
+        && d.weeklyCleanReps is number && d.weeklyCleanReps >= 0;
+    }
+
+    match /users/{userId} {
+      // Signed in, not the whole internet: the boards are for players, not for scraping.
+      allow read: if signedIn();
+      allow create, update: if isMe(userId) && validProfile(request.resource.data);
+      allow delete: if isMe(userId);
+
+      // Friendship is mutual, so adding a friend writes an edge on BOTH sides. The second write
+      // targets someone else's document, which is why the friend's own id is enough to authorise
+      // it. Nothing else under another player's document is writable.
+      match /friends/{friendId} {
+        allow read: if signedIn();
+        allow write: if isMe(userId) || isMe(friendId);
+      }
+    }
+
+    match /scores/{weekKey}/entries/{userId} {
+      allow read: if signedIn();
+      allow create, update: if isMe(userId) && validScore(request.resource.data);
+      allow delete: if isMe(userId);
+    }
+
+    // Anything not named above is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
