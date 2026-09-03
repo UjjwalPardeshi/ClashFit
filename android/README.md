@@ -36,3 +36,18 @@ and a judge cannot tell the difference.
 The manifest requests **no `INTERNET` permission**. Open it and check.
 
 Design notes and the phase plan: [`../docs/30-ANDROID-APP.md`](../docs/30-ANDROID-APP.md).
+
+## Release build
+
+`./gradlew :app:assembleRelease` runs R8 with resource shrinking (rules in `app/proguard-rules.pro`) and
+packages only `arm64-v8a` and `x86_64`. Signing is read from the environment; without it the release
+APK is signed with the debug key so the build still proves the shrinker configuration:
+
+```bash
+export KEYSTORE_FILE=/path/to/release.jks KEYSTORE_PASSWORD=… KEY_ALIAS=clashfit KEY_PASSWORD=…
+./gradlew :app:assembleRelease      # app/build/outputs/apk/release/app-release.apk
+```
+
+Verification before a release: `:app:testDebugUnitTest` (JVM suite), `:app:lintDebug` (fails on errors),
+`:app:assembleDebug` and `:app:assembleRelease`, then a run on a real phone — the camera, Nearby and
+alarm paths cannot be exercised on the JVM.

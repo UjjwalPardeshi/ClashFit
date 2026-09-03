@@ -62,6 +62,8 @@ com.clashfit
 
 Commits are small and per package. Push to **both** remotes (`origin` and `fork`).
 
+Release builds: R8 + resource shrinking, ABIs `arm64-v8a`/`x86_64`, signing from `KEYSTORE_FILE` / `KEYSTORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD` with a debug-key fallback so `assembleRelease` always builds. See `android/README.md`.
+
 ## 4. Rules that hold across every package
 
 - The JS is the spec. Port semantics, keep every number in config.
