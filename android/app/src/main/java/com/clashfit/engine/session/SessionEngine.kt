@@ -33,6 +33,7 @@ import com.clashfit.core.model.Verdict
 import com.clashfit.engine.coach.TelemetrySummariser
 import com.clashfit.engine.core.BossConfig
 import com.clashfit.engine.core.BossPhase
+import com.clashfit.engine.core.CasualConfig
 import com.clashfit.engine.core.CombatEngine
 import com.clashfit.engine.core.ComboConfig
 import com.clashfit.engine.core.ComboTracker
@@ -183,6 +184,7 @@ class SessionEngine(
         return CombatEngine(
             baseDamage = c.baseDamage, formFloor = c.formFloor, formExponent = c.formExponent,
             boss = bossConfig, responses = responses, combo = combo, casual = casual,
+            casualConfig = CasualConfig(c.casual.damageMultiplier, c.casual.formFloor, c.casual.bossHpMultiplier),
         )
     }
 

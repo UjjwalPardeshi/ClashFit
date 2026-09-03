@@ -106,7 +106,7 @@ export class BreakerGame {
   }
   state() {
     return { game: 'BREAKER', broken: this.broken, floors: this.c.floors, jumps: this.jumps,
-             bestCm: this.bestCm, progress: this.broken / this.c.floors, outcome: this.outcome };
+             bestCm: this.bestCm, progress: this.c.floors > 0 ? this.broken / this.c.floors : 0, outcome: this.outcome };
   }
 }
 
@@ -132,7 +132,7 @@ export class SigilGame {
   }
   state() {
     return { game: 'SIGIL', lit: this.lit.length, segments: this.c.segments,
-             brightness: this.meanBrightness, progress: this.lit.length / this.c.segments,
+             brightness: this.meanBrightness, progress: this.c.segments > 0 ? this.lit.length / this.c.segments : 0,
              segmentsDetail: this.lit, outcome: this.outcome };
   }
 }

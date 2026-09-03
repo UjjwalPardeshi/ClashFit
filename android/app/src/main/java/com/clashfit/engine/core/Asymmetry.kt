@@ -81,12 +81,13 @@ class AsymmetryTracker {
 
         // A side-on camera foreshortens the far limb, which manufactures asymmetry that is not there.
         // Report how much to trust the reading rather than quietly presenting a number as fact.
-        val meanGap = window.map { kotlin.math.abs(it.left - it.right) }.average().toFloat()
+        val meanGapDouble = window.map { kotlin.math.abs(it.left - it.right) }.average()
+        val meanGap = meanGapDouble.toFloat()
         val spread = kotlin.math.abs(lRom - rRom)
 
         val confidence = when {
-            window.size >= 20 && meanGap < 25f -> Confidence.GOOD
-            window.size >= 12 && meanGap < 40f -> Confidence.FAIR
+            window.size >= 20 && meanGapDouble < 25.0 -> Confidence.GOOD
+            window.size >= 12 && meanGapDouble < 40.0 -> Confidence.FAIR
             else -> Confidence.POOR
         }
 

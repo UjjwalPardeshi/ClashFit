@@ -297,4 +297,22 @@ class CoachTest {
         val out = CoachFor(good).speakFor(tel)
         assertEquals(CoachSource.LLM, out.source)
     }
+
+    @Test
+    fun `trend calculation with 5 reps uses ceil split`() {
+        // With 5 reps: ceil(5/2) = 3, so first 3 and last 3 (overlap at index 2)
+        // Test: first 3 reps have form 0.5, last 3 reps have form 0.8 → improving
+        val reps = listOf(
+            RepRecord(0, "squat", com.clashfit.core.model.Family.REP_CYCLE, 0L, 1000L, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, "depth", Verdict.SHALLOW, 0.5f, FatigueState(0f, FatigueBand.FRESH, emptyMap(), 0, false), 50, 1f),
+            RepRecord(1, "squat", com.clashfit.core.model.Family.REP_CYCLE, 1000L, 2000L, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, "depth", Verdict.SHALLOW, 0.5f, FatigueState(0f, FatigueBand.FRESH, emptyMap(), 0, false), 50, 1f),
+            RepRecord(2, "squat", com.clashfit.core.model.Family.REP_CYCLE, 2000L, 3000L, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, "depth", Verdict.SHALLOW, 0.5f, FatigueState(0f, FatigueBand.FRESH, emptyMap(), 0, false), 50, 1f),
+            RepRecord(3, "squat", com.clashfit.core.model.Family.REP_CYCLE, 3000L, 4000L, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, "none", Verdict.OK, 0.8f, FatigueState(0f, FatigueBand.WORKING, emptyMap(), 3, true), 80, 1f),
+            RepRecord(4, "squat", com.clashfit.core.model.Family.REP_CYCLE, 4000L, 5000L, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, "none", Verdict.OK, 0.8f, FatigueState(0f, FatigueBand.WORKING, emptyMap(), 3, true), 80, 1f),
+        )
+        val tel = TelemetrySummariser.summarise(reps, null, "squat", 1, 45)
+        // Mean of first 3: (0.5 + 0.5 + 0.5) / 3 = 0.5
+        // Mean of last 3: (0.5 + 0.8 + 0.8) / 3 = 0.7 (includes rep 2, the pivot)
+        // Difference: 0.7 - 0.5 = 0.2 > 0.05 → IMPROVING
+        assertEquals(SetTelemetry.Trend.IMPROVING, tel.trend, "5-rep trend should split with ceil, detecting improvement")
+    }
 }

@@ -84,6 +84,23 @@ class GeometryTest {
         val offset = Geometry.kneeTracking(lms, Side.LEFT)
         assertTrue(offset.isNaN(), "Should return NaN for degenerate shin")
     }
+
+    @Test
+    fun `primaryAngle returns NaN when landmarks are below visibility threshold`() {
+        val lms = MutableList(33) { Landmark(0f, 0f, 0f, 0.4f) }  // All below 0.6 threshold
+        val result = Geometry.primaryAngle(
+            lms,
+            aName = "HIP",
+            bName = "KNEE",
+            cName = "ANKLE",
+            jointNames = listOf("HIP", "KNEE", "ANKLE"),
+            threshold = 0.6f
+        )
+        assertTrue(result.angle.isNaN(), "Angle should be NaN when invalid")
+        assertTrue(result.left.isNaN(), "Left should be NaN when invalid")
+        assertTrue(result.right.isNaN(), "Right should be NaN when invalid")
+        assertFalse(result.valid, "Valid should be false when visibility below threshold")
+    }
 }
 
 class RepStateMachineTest {
@@ -294,6 +311,26 @@ class FatigueEstimatorTest {
         assertTrue(bands.contains(FatigueBand.WORKING), "Should see WORKING band")
         assertTrue(bands.contains(FatigueBand.FADING), "Should see FADING band")
     }
+
+    @Test
+    fun `bandLatchReps 0 latches immediately`() {
+        val cfg = FatigueConfig(baselineReps = 3, bandLatchReps = 0, working = 0.15f)
+        val est = FatigueEstimator(cfg)
+
+        // Pre-set samples and baseline
+        est.onSignals(mapOf("velocity" to 100f, "rom" to 90f, "gap" to 0.4f))
+        est.onSignals(mapOf("velocity" to 100f, "rom" to 90f, "gap" to 0.4f))
+        est.onSignals(mapOf("velocity" to 100f, "rom" to 90f, "gap" to 0.4f))
+
+        val bands = mutableListOf<FatigueBand>()
+        // With bandLatchReps=0, band should change immediately on first candidate >= threshold
+        for (v in listOf(79f, 81f, 79f, 81f)) {
+            val state = est.onSignals(mapOf("velocity" to v, "rom" to 90f, "gap" to 0.4f))
+            bands += state.band
+        }
+        // With latch reps = 0, band should flip on every change, not stay locked
+        assertTrue(bands.size > 1, "Band should flip when latchReps is 0")
+    }
 }
 
 /**
@@ -445,6 +482,58 @@ class CombatEngineTest {
         events.reversed().forEach { (seq, dmg) -> b.onRemoteDamage("P2", seq, dmg) }
 
         assertEquals(a.hp, b.hp, "Out-of-order should converge")
+    }
+
+    @Test
+    fun `casual mode uses correct form floor, damage multiplier, and boss HP multiplier`() {
+        val casualCfg = CasualConfig(damageMultiplier = 1.6f, formFloor = 0.6f, bossHpMultiplier = 0.5f)
+        val normalEngine = CombatEngine(
+            baseDamage = 100, formFloor = 0.35f, formExponent = 1.2f,
+            boss = BossConfig("p", "P", 1000, emptyList()),
+            responses = mapOf(FatigueBand.WORKING to FatigueResponse()),
+            combo = ComboTracker(ComboConfig()),
+            casual = false,
+        )
+        val casualEngine = CombatEngine(
+            baseDamage = 100, formFloor = 0.35f, formExponent = 1.2f,
+            boss = BossConfig("p", "P", 1000, emptyList()),
+            responses = mapOf(FatigueBand.WORKING to FatigueResponse()),
+            combo = ComboTracker(ComboConfig()),
+            casual = true,
+            casualConfig = casualCfg,
+        )
+
+        // Test form floor: casual floor is 0.6, normal is 0.35
+        val casualFloor = casualEngine.damageFor(0.5f, FatigueBand.WORKING)
+        val normalFloor = normalEngine.damageFor(0.5f, FatigueBand.WORKING)
+        assertTrue(casualFloor > normalFloor, "Casual mode should have higher floor damage")
+
+        // Test damage multiplier: casual uses 1.6x base damage
+        val casualDmg = casualEngine.damageFor(1.0f, FatigueBand.WORKING)
+        val normalDmg = normalEngine.damageFor(1.0f, FatigueBand.WORKING)
+        assertTrue(casualDmg > normalDmg, "Casual mode should have higher base damage multiplier")
+
+        // Test boss HP multiplier: casual uses 0.5x boss HP
+        normalEngine.reset()
+        casualEngine.reset()
+        assertEquals(1000, normalEngine.maxHp, "Normal engine should have full boss HP")
+        assertEquals(500, casualEngine.maxHp, "Casual engine should have 0.5x boss HP")
+    }
+
+    @Test
+    fun `casual mode with zero form score and WORKING band`() {
+        val casualCfg = CasualConfig(damageMultiplier = 1.6f, formFloor = 0.6f, bossHpMultiplier = 0.5f)
+        val casualEngine = CombatEngine(
+            baseDamage = 100, formFloor = 0.35f, formExponent = 1.2f,
+            boss = BossConfig("p", "P", 2000, emptyList()),
+            responses = mapOf(FatigueBand.WORKING to FatigueResponse()),
+            combo = ComboTracker(ComboConfig()),
+            casual = true,
+            casualConfig = casualCfg,
+        )
+        val dmg = casualEngine.damageFor(0.0f, FatigueBand.WORKING)
+        // With form floor 0.6 and base damage 100 * 1.6 = 160, damage should be 160 * 0.6 = 96
+        assertEquals(96, dmg, "Casual zero-form damage should be (100 * 1.6) * 0.6 = 96")
     }
 }
 

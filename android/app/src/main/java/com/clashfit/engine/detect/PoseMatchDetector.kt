@@ -175,6 +175,7 @@ class PoseMatchDetector(
                 signals = mapOf("accuracy" to accuracy),
                 accuracy = accuracy,
                 heldSec = held,
+                completed = completed,
                 worstJoint = best.worst?.joint,
                 cue = generateCue(best.worst),
             )

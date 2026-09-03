@@ -104,7 +104,7 @@ object TelemetrySummariser {
 
     private fun trendOf(reps: List<RepRecord>): SetTelemetry.Trend {
         if (reps.size < 4) return SetTelemetry.Trend.FLAT
-        val splitIndex = (reps.size / 2f).toInt().coerceAtLeast(1)
+        val splitIndex = kotlin.math.ceil(reps.size / 2f).toInt().coerceAtLeast(1)
         val a = reps.subList(0, splitIndex)
         val b = reps.subList(reps.size - splitIndex, reps.size)
         val meanA = a.map { it.formScore }.sum() / a.size

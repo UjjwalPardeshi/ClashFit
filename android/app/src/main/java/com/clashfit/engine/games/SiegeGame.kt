@@ -36,7 +36,7 @@ class SiegeGame(config: SiegeConfig = SiegeConfig()) : FamilyGame {
         if (outcome != GameOutcome.RUNNING) return state()
         holds += 1
         totalHeldSec += event.holdSec
-        val dealt = (event.holdSec * cfg.dpsPerQuality * event.quality).toInt()
+        val dealt = kotlin.math.round(event.holdSec * cfg.dpsPerQuality * event.quality).toInt()
         bossHp = max(0, bossHp - dealt)
         if (!event.completed) {
             playerHp = max(0, playerHp - cfg.hitOnBreak)

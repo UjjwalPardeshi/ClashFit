@@ -136,6 +136,7 @@ class CadenceDetector(
             signals = mapOf("cadence" to cadence, "amplitude" to amplitude),
             cadence = cadence,
             amplitude = amplitude,
+            prominence = prominence,
         )
     }
 

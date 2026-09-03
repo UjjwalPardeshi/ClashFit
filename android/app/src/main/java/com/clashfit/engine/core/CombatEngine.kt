@@ -67,6 +67,13 @@ data class FatigueResponse(
     val mercyRepsToFinish: Int = 0,
 )
 
+/** Casual mode configuration. */
+data class CasualConfig(
+    val damageMultiplier: Float = 1.6f,
+    val formFloor: Float = 0.6f,
+    val bossHpMultiplier: Float = 0.5f,
+)
+
 /** Combat engine: damage, combo, boss phases, fatigue-adaptive behaviour. */
 class CombatEngine(
     private val baseDamage: Int = 100,
@@ -76,6 +83,7 @@ class CombatEngine(
     private val responses: Map<FatigueBand, FatigueResponse>,
     val combo: ComboTracker,
     private val casual: Boolean = false,
+    private val casualConfig: CasualConfig = CasualConfig(),
 ) {
     var maxHp = boss.maxHp
         internal set
@@ -113,7 +121,8 @@ class CombatEngine(
 
     /** Compute damage for a form score at a fatigue band. */
     fun damageFor(formScore: Float, band: FatigueBand): Int {
-        val factor = formFloor + (1 - formFloor) * maxOf(0f, formScore).pow(formExponent)
+        val floor = if (casual) casualConfig.formFloor else formFloor
+        val factor = floor + (1 - floor) * maxOf(0f, formScore).pow(formExponent)
         val fr = responses[band] ?: FatigueResponse()
         val fatigueMod = if (staggerRepsLeft > 0) {
             responses[FatigueBand.FADING]?.modifier ?: 1f
@@ -121,7 +130,8 @@ class CombatEngine(
             fr.modifier
         }
         val phase = phaseModifier().first
-        return round(baseDamage * factor * combo.multiplier * phase * fatigueMod).toInt()
+        val base = baseDamage * (if (casual) casualConfig.damageMultiplier else 1f)
+        return round(base * factor * combo.multiplier * phase * fatigueMod).toInt()
     }
 
     /** Process one local rep. */
@@ -176,7 +186,7 @@ class CombatEngine(
     /** Reset with an optional new boss. */
     fun reset(newBoss: BossConfig = boss) {
         boss = newBoss
-        maxHp = if (casual) (newBoss.maxHp * 0.5f).toInt() else newBoss.maxHp
+        maxHp = if (casual) (newBoss.maxHp * casualConfig.bossHpMultiplier).toInt() else newBoss.maxHp
         hp = maxHp
         reps = 0
         totalDamage = 0

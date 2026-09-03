@@ -92,6 +92,15 @@ object Geometry {
         threshold: Float = 0.6f,
     ): PrimaryAngleResult {
         val sel = chooseSide(landmarks, jointNames, threshold)
+        if (!sel.valid) return PrimaryAngleResult(
+            angle = Float.NaN,
+            left = Float.NaN,
+            right = Float.NaN,
+            side = sel.side,
+            both = sel.both,
+            visibility = sel.visibility,
+            valid = sel.valid,
+        )
         fun one(side: Side): Float {
             val ai = idx(aName, side)
             val bi = idx(bName, side)

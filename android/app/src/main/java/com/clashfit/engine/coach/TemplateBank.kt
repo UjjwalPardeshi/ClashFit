@@ -101,9 +101,9 @@ object TemplateBank {
 
         val reason = t.worstRep?.reason ?: "*"
         val match = COACH.find { it.band == t.fatigueBand && it.reason == reason && it.trend == t.trend }
-            ?: COACH.find { it.band == t.fatigueBand && it.reason == reason && it.trend == SetTelemetry.Trend.IMPROVING }
+            ?: COACH.find { it.band == t.fatigueBand && it.reason == reason }
             ?: COACH.find { it.band == t.fatigueBand && it.reason == "*" && it.trend == t.trend }
-            ?: COACH.find { it.band == t.fatigueBand && it.reason == "*" && it.trend == SetTelemetry.Trend.IMPROVING }
+            ?: COACH.find { it.band == t.fatigueBand && it.reason == "*" }
             ?: COACH.last()
 
         return out(match.line, pickBoss(t), t)

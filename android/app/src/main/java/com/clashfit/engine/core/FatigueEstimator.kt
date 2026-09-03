@@ -171,6 +171,7 @@ class FatigueEstimator(
             pendingBand = candidate
             pendingCount = 1
         }
+        if (config.bandLatchReps == 0) band = candidate
     }
 
     /** Snapshot of the current fatigue state. */

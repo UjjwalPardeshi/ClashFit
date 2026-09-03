@@ -89,6 +89,7 @@ data class CadenceEvent(
     override val signals: Map<String, Float>,
     val cadence: Float,
     val amplitude: Float,
+    val prominence: Float,
 ) : MovementEvent
 
 data class JumpEvent(
@@ -108,6 +109,7 @@ data class PoseEvent(
     override val signals: Map<String, Float>,
     val accuracy: Float,
     val heldSec: Float,
+    val completed: Boolean,
     val worstJoint: String?,
     val cue: String?,
 ) : MovementEvent

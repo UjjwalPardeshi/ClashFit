@@ -45,4 +45,25 @@ class SiegeGameTest {
         lose.onEvent(SiegeEvent(holdSec = 2f, quality = 0.3f, completed = false))
         assertEquals(GameOutcome.LOST, lose.state().outcome)
     }
+
+    @Test
+    fun `damage calculation uses rounding not truncation`() {
+        val g = SiegeGame(
+            SiegeGame.SiegeConfig(
+                bossHp = 10000,
+                dpsPerQuality = 20f,
+            )
+        )
+        // holdSec * dpsPerQuality * quality = 0.75 * 20 * 1.0 = 15.0
+        val held1 = g.onEvent(SiegeEvent(holdSec = 0.75f, quality = 1.0f, completed = true))
+        assertEquals(9985, held1.bossHp, "0.75 * 20 * 1.0 should deal 15 damage")
+
+        // holdSec * dpsPerQuality * quality = 1.25 * 20 * 1.0 = 25.0 (exact)
+        val held2 = g.onEvent(SiegeEvent(holdSec = 1.25f, quality = 1.0f, completed = true))
+        assertEquals(9960, held2.bossHp, "1.25 * 20 * 1.0 should deal 25 damage")
+
+        // holdSec * dpsPerQuality * quality = 1.3 * 20 * 0.5 = 13.0
+        val held3 = g.onEvent(SiegeEvent(holdSec = 1.3f, quality = 0.5f, completed = true))
+        assertEquals(9947, held3.bossHp, "1.3 * 20 * 0.5 should deal 13 damage")
+    }
 }
