@@ -50,6 +50,8 @@ fun computeSessionStats(reps: List<RepRecord>, exercise: String): SessionStats {
         )
     }
 
+    // first/last three, exactly as coach.js slices them: with fewer than three reps the slice is
+    // simply shorter, so a two-rep set averages both reps rather than reporting one of them.
     val formMean = reps.map { it.formScore }.average().toFloat()
     val first3 = reps.take(3).map { it.formScore }.average().toFloat()
     val last3 = reps.takeLast(3).map { it.formScore }.average().toFloat()
@@ -72,11 +74,11 @@ fun computeSessionStats(reps: List<RepRecord>, exercise: String): SessionStats {
         exercise = exercise,
         reps = reps.size,
         formMean = formMean,
-        formFirst3 = if (reps.size >= 3) first3 else if (reps.isNotEmpty()) reps[0].formScore else 0f,
-        formLast3 = if (reps.size >= 3) last3 else if (reps.isNotEmpty()) reps.last().formScore else 0f,
+        formFirst3 = first3,
+        formLast3 = last3,
         formMeanPct = (formMean * 100).roundToInt(),
-        formFirst3Pct = ((if (reps.size >= 3) first3 else if (reps.isNotEmpty()) reps[0].formScore else 0f) * 100).roundToInt(),
-        formLast3Pct = ((if (reps.size >= 3) last3 else if (reps.isNotEmpty()) reps.last().formScore else 0f) * 100).roundToInt(),
+        formFirst3Pct = (first3 * 100).roundToInt(),
+        formLast3Pct = (last3 * 100).roundToInt(),
         depthCm = if (reps.any { it.depthCm.isFinite() }) reps.filter { it.depthCm.isFinite() }.maxOf { it.depthCm }.roundToInt() else null,
         velocityLossPct = velocityLossPct,
         romLossPct = romLossPct,

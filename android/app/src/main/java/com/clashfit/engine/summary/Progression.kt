@@ -1,6 +1,12 @@
 package com.clashfit.engine.summary
 
-import kotlin.math.roundToInt
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.DateTimeParseException
+import java.time.temporal.ChronoUnit
+import java.util.Locale
+import kotlin.math.ceil
 
 /**
  * Streak, personal bests, and ladder progression. All rules are from store.js:
@@ -52,24 +58,36 @@ object Ladders {
     )
 }
 
-/** The day key (YYYY-MM-DD) for a timestamp. */
-fun dayKey(ms: Long): String {
-    val cal = java.util.Calendar.getInstance().apply { timeInMillis = ms }
-    return String.format("%04d-%02d-%02d", cal.get(java.util.Calendar.YEAR),
-        cal.get(java.util.Calendar.MONTH) + 1, cal.get(java.util.Calendar.DAY_OF_MONTH))
+/**
+ * The day key (YYYY-MM-DD) for a timestamp, in UTC. store.js uses `toISOString().slice(0, 10)`,
+ * so the key never shifts with the device timezone and is safe to compare across days.
+ */
+fun dayKey(ms: Long): String =
+    Instant.ofEpochMilli(ms).atZone(ZoneOffset.UTC).toLocalDate().toString()
+
+/**
+ * The week key (YYYY-Wxx) for a timestamp: weeks start on Sunday and are counted from Jan 1,
+ * matching store.js. Computed wholly in UTC so it is stable whatever timezone the device is in.
+ */
+fun weekKey(ms: Long): String {
+    val date = Instant.ofEpochMilli(ms).atZone(ZoneOffset.UTC).toLocalDate()
+    val jan1 = LocalDate.of(date.year, 1, 1)
+    // Sunday-based index of Jan 1 (JS Date#getDay: Sunday = 0), so the first partial week counts as 1.
+    val jan1Dow = jan1.dayOfWeek.value % 7
+    val daysIn = ChronoUnit.DAYS.between(jan1, date).toInt()
+    val week = ceil((daysIn + jan1Dow + 1) / 7.0).toInt()
+    return String.format(Locale.ROOT, "%04d-W%02d", date.year, week)
 }
 
-/** The week key (YYYY-Wxx) per ISO 8601 for a timestamp. */
-fun weekKey(ms: Long): String {
-    val cal = java.util.Calendar.getInstance().apply {
-        timeInMillis = ms
-        firstDayOfWeek = java.util.Calendar.SUNDAY
-    }
-    val week = ((cal.timeInMillis - java.util.Calendar.getInstance().apply {
-        set(cal.get(java.util.Calendar.YEAR), 0, 1)
-        firstDayOfWeek = java.util.Calendar.SUNDAY
-    }.timeInMillis) / DAY_MS + cal.getFirstDayOfWeek() + 1) / 7
-    return String.format("%04d-W%02d", cal.get(java.util.Calendar.YEAR), week.toInt() + 1)
+/**
+ * Whole days between two day keys. A key that predates this format (or is otherwise unparseable)
+ * reads as an unbounded gap, which is how store.js behaves when Date.parse returns NaN: no branch
+ * matches and the streak simply restarts.
+ */
+private fun dayGap(fromDayKey: String, toDayKey: String): Int = try {
+    ChronoUnit.DAYS.between(LocalDate.parse(fromDayKey), LocalDate.parse(toDayKey)).toInt()
+} catch (e: DateTimeParseException) {
+    Int.MAX_VALUE
 }
 
 /** Manage streak state: current streak, freezes, rest day tracking per week. */
@@ -81,36 +99,38 @@ class Progression(
     fun getStreak(): StreakState = streakState.copy()
 
     fun updateStreak(atMs: Long) {
-        val st = streakState
         val today = dayKey(atMs)
         val wk = weekKey(atMs)
 
-        if (st.weekKey != wk) {
-            streakState = st.copy(weekKey = wk, restDaysUsedThisWeek = 0)
+        var st = streakState
+        if (st.weekKey != wk) st = st.copy(weekKey = wk, restDaysUsedThisWeek = 0)
+        if (st.lastDayKey == today) {
+            streakState = st
+            return
         }
-        if (st.lastDayKey == today) return
 
-        if (st.lastDayKey == null) {
-            streakState = streakState.copy(current = 1)
+        val last = st.lastDayKey
+        st = if (last == null) {
+            st.copy(current = 1)
         } else {
-            val gapDays = ((java.util.Date(dayKey(atMs)).time - java.util.Date(st.lastDayKey!!).time) / DAY_MS).toInt()
-            val newStreakState = when {
+            val gapDays = dayGap(last, today)
+            when {
                 gapDays == 1 -> st.copy(current = st.current + 1)
+                // One protected rest day per week: rest is training, and breaking a streak
+                // because someone took a day off is how fitness apps lose people.
                 gapDays == 2 && st.restDaysUsedThisWeek < 1 ->
                     st.copy(current = st.current + 1, restDaysUsedThisWeek = st.restDaysUsedThisWeek + 1)
+                // A freeze covers a missed day or two. It does not cover a month away.
                 gapDays > 1 && gapDays <= MAX_FREEZE_GAP_DAYS && st.freezes > 0 ->
                     st.copy(current = st.current + 1, freezes = st.freezes - 1)
                 else -> st.copy(current = 1)
             }
-            streakState = newStreakState
         }
-        streakState = streakState.copy(lastDayKey = today)
-        if (streakState.current > st.best) {
-            streakState = streakState.copy(best = streakState.current)
-        }
-        if (streakState.current > 0 && streakState.current % 10 == 0) {
-            streakState = streakState.copy(freezes = minOf(3, streakState.freezes + 1))
-        }
+
+        st = st.copy(lastDayKey = today)
+        if (st.current > st.best) st = st.copy(best = st.current)
+        if (st.current > 0 && st.current % 10 == 0) st = st.copy(freezes = minOf(3, st.freezes + 1))
+        streakState = st
     }
 
     /** A broken streak never shows a number lost. */
@@ -126,44 +146,31 @@ class Progression(
     fun getBests(exerciseId: String): PersonalBests = bests[exerciseId] ?: PersonalBests()
 
     fun updateBests(exerciseId: String, reps: Int, formMean: Float, repDetails: List<RepDetail> = emptyList()) {
-        val b = bests.getOrPut(exerciseId) { PersonalBests() }
-        var updated = false
+        var b = bests[exerciseId] ?: PersonalBests()
 
-        if (reps > (b.reps ?: 0)) {
-            bests[exerciseId] = b.copy(reps = reps)
-            updated = true
-        }
-        if (formMean > (b.formScore ?: 0f)) {
-            bests[exerciseId] = bests[exerciseId]!!.copy(formScore = formMean)
-            updated = true
-        }
+        if (reps > (b.reps ?: 0)) b = b.copy(reps = reps)
+        if (formMean > (b.formScore ?: 0f)) b = b.copy(formScore = formMean)
+        // Each rep is compared against the running best, not the value this session started with.
         for (r in repDetails) {
-            if (r.depthCm.isFinite()) {
-                if (r.depthCm > (b.depthCm ?: 0f)) {
-                    bests[exerciseId] = bests[exerciseId]!!.copy(depthCm = r.depthCm)
-                    updated = true
-                }
-            }
-            if (r.heightCm.isFinite()) {
-                if (r.heightCm > (b.heightCm ?: 0f)) {
-                    bests[exerciseId] = bests[exerciseId]!!.copy(heightCm = r.heightCm)
-                    updated = true
-                }
-            }
-            if (r.holdSec.isFinite()) {
-                if (r.holdSec > (b.holdSec ?: 0f)) {
-                    bests[exerciseId] = bests[exerciseId]!!.copy(holdSec = r.holdSec)
-                    updated = true
-                }
-            }
+            if (r.depthCm.isFinite() && r.depthCm > (b.depthCm ?: 0f)) b = b.copy(depthCm = r.depthCm)
+            if (r.heightCm.isFinite() && r.heightCm > (b.heightCm ?: 0f)) b = b.copy(heightCm = r.heightCm)
+            if (r.holdSec.isFinite() && r.holdSec > (b.holdSec ?: 0f)) b = b.copy(holdSec = r.holdSec)
         }
+
+        bests[exerciseId] = b
     }
 
+    /**
+     * What actually improved, phrased for the coach. Nothing to say is a valid answer: a tie is
+     * not an improvement, and an exercise with no history yet has no best to beat.
+     */
     fun personalBestsIn(exerciseId: String, reps: Int, formMean: Float): List<PersonalBestRef> {
-        val b = bests[exerciseId] ?: PersonalBests()
+        val b = bests[exerciseId] ?: return emptyList()
         val out = mutableListOf<PersonalBestRef>()
-        if (reps >= (b.reps ?: 0)) out.add(PersonalBestRef("reps", reps))
-        if (formMean >= (b.formScore ?: 0f)) out.add(PersonalBestRef("form", formMean))
+        val bestReps = b.reps
+        val bestForm = b.formScore
+        if (bestReps != null && reps > bestReps) out.add(PersonalBestRef("reps", reps))
+        if (bestForm != null && formMean > bestForm) out.add(PersonalBestRef("form", formMean))
         return out
     }
 

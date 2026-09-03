@@ -43,6 +43,9 @@ class BreathingSession(
     private var phaseIndex: Int = 0
     private var done: Boolean = false
 
+    /** No tick has been reported since [start]; the first one is a transition into phase one. */
+    private var pending: Boolean = true
+
     val totalSec: Float get() = plan.sumOf { it.second.toDouble() }.toFloat() * this.cycles
 
     val phase: BreathPhase get() = plan[phaseIndex].first
@@ -58,6 +61,7 @@ class BreathingSession(
         cycle = 0
         phaseIndex = 0
         done = false
+        pending = true
     }
 
     fun start(tMs: Long) {
@@ -71,7 +75,7 @@ class BreathingSession(
             return BreathTick(phase, label, 0f, cycle, cycles, done, false)
         }
 
-        var elapsed = (tMs - startMs!!) / 1000f
+        val elapsed = (tMs - startMs!!) / 1000f
         val cycleSec = plan.sumOf { it.second.toDouble() }.toFloat()
         val cycleNum = (elapsed / cycleSec).toInt()
 
@@ -87,7 +91,11 @@ class BreathingSession(
             i++
         }
 
-        val changed = i != phaseIndex || cycleNum != cycle
+        // The first tick after start is a change too: nothing was showing before it, and the UI
+        // pulses on `changed`, so without this the opening "Breathe in" is the one phase that
+        // never gets its cue.
+        val changed = pending || i != phaseIndex || cycleNum != cycle
+        pending = false
         phaseIndex = min(i, plan.size - 1)
         cycle = cycleNum
 
@@ -118,7 +126,9 @@ fun recoveryFraction(
     targetCycles: Int,
     rateInBand: Boolean = true,
 ): Float {
-    val completion = max(0f, min(1f, cyclesCompleted.toFloat() / max(1, targetCycles)))
-    val quality = if (rateInBand) 1f else 0.6f
-    return min(0.35f, 0.35f * completion * quality)
+    // Computed in double, like breathing.js, and narrowed once at the end: doing the same
+    // arithmetic in Float accumulates error (0.35f * 0.6f lands on 0.21000001).
+    val completion = max(0.0, min(1.0, cyclesCompleted.toDouble() / max(1, targetCycles)))
+    val quality = if (rateInBand) 1.0 else 0.6
+    return min(0.35, 0.35 * completion * quality).toFloat()
 }
