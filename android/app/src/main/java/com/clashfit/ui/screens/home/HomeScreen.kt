@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items as rowItems
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,12 +28,34 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.clashfit.AppGraph
 import com.clashfit.core.model.GameMode
+import com.clashfit.ui.nav.Alarms
+import com.clashfit.ui.nav.Breathing
+import com.clashfit.ui.nav.Challenge
+import com.clashfit.ui.nav.Character
+import com.clashfit.ui.nav.Clinic
 import com.clashfit.ui.nav.ExercisePicker
+import com.clashfit.ui.nav.Ghosts
+import com.clashfit.ui.nav.History
+import com.clashfit.ui.nav.Library
+import com.clashfit.ui.nav.Preflight
+import com.clashfit.ui.nav.Privacy
+import com.clashfit.ui.nav.Route
+import com.clashfit.ui.nav.RunHome
 import com.clashfit.ui.nav.Session
+import com.clashfit.ui.nav.Settings
+import com.clashfit.ui.nav.Streaks
 import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Ground
+import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.Panel
 import com.clashfit.ui.theme.Rule
+
+/** Everything that is not a fight, one tap from Home. Order is the order of use. */
+private val SHELL: List<Pair<String, Route>> = listOf(
+    "RUN" to RunHome, "ALARMS" to Alarms, "LIBRARY" to Library, "STREAKS" to Streaks, "HISTORY" to History,
+    "CHARACTER" to Character, "GHOSTS" to Ghosts, "CHALLENGE" to Challenge, "BREATHE" to Breathing,
+    "CLINIC" to Clinic, "PREFLIGHT" to Preflight, "PRIVACY" to Privacy, "SETTINGS" to Settings,
+)
 
 /**
  * Get into a fight in one tap. FIGHT is the largest thing on screen; the sixteen modes sit
@@ -54,7 +78,16 @@ fun HomeScreen(graph: AppGraph, nav: NavHostController) {
             Text("FIGHT", style = MaterialTheme.typography.headlineLarge, color = Ground)
             Text("SQUAT · BOSS FIGHT", style = MaterialTheme.typography.labelLarge, color = Ground)
         }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(12.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            rowItems(SHELL) { (label, route) ->
+                Text(
+                    label, style = MaterialTheme.typography.labelLarge, color = Ink,
+                    modifier = Modifier.border(1.dp, Rule).clickable { nav.navigate(route) }.padding(horizontal = 12.dp, vertical = 8.dp),
+                )
+            }
+        }
+        Spacer(Modifier.height(16.dp))
         Text("${GameMode.grid.size} WAYS IN · ${exercises.size} EXERCISES", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(10.dp))
         LazyVerticalGrid(

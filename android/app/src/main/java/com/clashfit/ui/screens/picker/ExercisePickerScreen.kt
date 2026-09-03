@@ -1,5 +1,13 @@
 package com.clashfit.ui.screens.picker
 
+import com.clashfit.ui.nav.Roster
+
+import com.clashfit.ui.nav.RaidRoom
+
+import com.clashfit.ui.nav.DuelLobby
+
+import com.clashfit.core.model.ModeKind
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -220,40 +228,15 @@ private fun ConfirmButton(
     nav: NavHostController,
     scope: kotlinx.coroutines.CoroutineScope
 ) {
-    when (mode) {
-        GameMode.REP_RACE -> RepRaceSelector(mode, exerciseId, settings, nav)
-        GameMode.GHOST_RACE -> GhostSelector(mode, exerciseId, settings, graph, nav)
-        else -> {
-            EmberButton("START FIGHT") {
-                nav.navigate(Session(mode.name, exerciseId, casual = settings.casual))
-            }
-        }
+    when {
+        mode.kind == ModeKind.VERSUS -> EmberButton("FIND A PHONE") { nav.navigate(DuelLobby(mode.name, exerciseId)) }
+        mode == GameMode.RAID || mode == GameMode.TEAM_VS_TEAM -> EmberButton("OPEN THE RAID") { nav.navigate(RaidRoom(exerciseId)) }
+        mode.kind == ModeKind.GROUP -> EmberButton("SET THE ROSTER") { nav.navigate(Roster(mode.name, exerciseId)) }
+        mode == GameMode.GHOST_RACE -> GhostSelector(mode, exerciseId, settings, graph, nav)
+        else -> EmberButton("START FIGHT") { nav.navigate(Session(mode.name, exerciseId, casual = settings.casual)) }
     }
 }
 
-@Composable
-private fun RepRaceSelector(
-    mode: GameMode,
-    exerciseId: String,
-    settings: Prefs.Settings,
-    nav: NavHostController
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Kicker("Duration")
-        listOf(30, 60, 180).forEach { sec ->
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Panel)
-                    .border(1.dp, Rule)
-                    .clickable { nav.navigate(Session(mode.name, exerciseId, casual = settings.casual, durationSec = sec)) }
-                    .padding(12.dp)
-            ) {
-                Text("${sec}s", style = MaterialTheme.typography.labelLarge, color = Ink)
-            }
-        }
-    }
-}
 
 @Composable
 private fun GhostSelector(
@@ -267,13 +250,13 @@ private fun GhostSelector(
     Column {
         Kicker("Choose opponent")
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ghosts.values.forEach { ghost ->
+            ghosts.entries.forEach { (ghostId, ghost) ->
                 Box(
                     Modifier
                         .fillMaxWidth()
                         .background(Panel)
                         .border(1.dp, Rule)
-                        .clickable { nav.navigate(Session(mode.name, exerciseId, casual = settings.casual, ghostId = ghost.meta.name)) }
+                        .clickable { nav.navigate(Session(mode.name, exerciseId, casual = settings.casual, ghostId = ghostId)) }
                         .padding(12.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

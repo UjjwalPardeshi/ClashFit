@@ -31,9 +31,6 @@ import com.clashfit.ui.components.Headline
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.nav.ExercisePicker
-import com.clashfit.ui.nav.DuelLobby
-import com.clashfit.ui.nav.RaidRoom
-import com.clashfit.ui.nav.Roster
 import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.Ink
@@ -86,25 +83,7 @@ private fun ModeTile(mode: GameMode, nav: NavHostController, modifier: Modifier 
             .fillMaxWidth()
             .background(Panel)
             .border(1.dp, Rule)
-            .clickable {
-                when (mode.kind) {
-                    ModeKind.VERSUS -> {
-                        when (mode) {
-                            GameMode.DUEL -> nav.navigate(DuelLobby(mode.name, ""))
-                            GameMode.REP_RACE -> nav.navigate(ExercisePicker(mode.name))
-                            else -> nav.navigate(ExercisePicker(mode.name))
-                        }
-                    }
-                    ModeKind.GROUP -> {
-                        when (mode) {
-                            GameMode.RAID -> nav.navigate(RaidRoom(""))
-                            GameMode.RELAY, GameMode.LAST_STANDING, GameMode.CIRCUIT -> nav.navigate(Roster(mode.name, ""))
-                            else -> nav.navigate(ExercisePicker(mode.name))
-                        }
-                    }
-                    else -> nav.navigate(ExercisePicker(mode.name))
-                }
-            }
+            .clickable { nav.navigate(ExercisePicker(mode.name)) }
             .padding(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
