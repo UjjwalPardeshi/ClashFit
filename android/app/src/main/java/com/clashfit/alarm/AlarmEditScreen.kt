@@ -30,6 +30,7 @@ import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.Panel
 import com.clashfit.ui.theme.Rule
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 /**
  * Screen to create or edit an alarm.
@@ -287,7 +288,7 @@ private fun TimeSelector(value: Int, range: IntRange, label: String, onValueChan
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = String.format("%02d", value),
+            text = String.format(Locale.US, "%02d", value),
             style = MaterialTheme.typography.headlineMedium,
             color = Ink
         )

@@ -15,13 +15,13 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Location
-import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.clashfit.AppGraph
+import com.clashfit.R
 import com.clashfit.data.RunPointEntity
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Granularity
@@ -364,12 +364,10 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(CHANNEL_ID, "Run Tracker", NotificationManager.IMPORTANCE_LOW)
-            channel.setShowBadge(false)
-            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            nm.createNotificationChannel(channel)
-        }
+        val channel = NotificationChannel(CHANNEL_ID, getString(R.string.notif_channel_run), NotificationManager.IMPORTANCE_LOW)
+        channel.setShowBadge(false)
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.createNotificationChannel(channel)
     }
 
     companion object {

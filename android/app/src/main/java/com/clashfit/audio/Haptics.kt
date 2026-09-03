@@ -40,12 +40,7 @@ class Haptics(
     fun repTick() {
         if (!hapticsEnabled) return
         try {
-            val effect = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
-            } else {
-                @Suppress("DEPRECATION")
-                VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)
-            }
+            val effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
             vibrator.vibrate(effect)
         } catch (e: Exception) {
             Log.w(tag, "Error vibrating rep tick", e)
@@ -58,12 +53,7 @@ class Haptics(
     fun shallowThud() {
         if (!hapticsEnabled) return
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK)
-            } else {
-                @Suppress("DEPRECATION")
-                VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE)
-            }.let { vibrator.vibrate(it) }
+            vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK))
         } catch (e: Exception) {
             Log.w(tag, "Error vibrating shallow thud", e)
         }
@@ -75,16 +65,11 @@ class Haptics(
     fun milestone() {
         if (!hapticsEnabled) return
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // Pattern: short-long-short
-                val timings = longArrayOf(0, 50, 100, 50)
-                val amplitudes = intArrayOf(0, 255, 100, 255)
-                val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
-                vibrator.vibrate(effect)
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(longArrayOf(0, 50, 100, 50), -1)
-            }
+            // Pattern: short-long-short
+            val timings = longArrayOf(0, 50, 100, 50)
+            val amplitudes = intArrayOf(0, 255, 100, 255)
+            val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
+            vibrator.vibrate(effect)
         } catch (e: Exception) {
             Log.w(tag, "Error vibrating milestone", e)
         }
@@ -96,12 +81,7 @@ class Haptics(
     fun phase() {
         if (!hapticsEnabled) return
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                VibrationEffect.createPredefined(VibrationEffect.EFFECT_DOUBLE_CLICK)
-            } else {
-                @Suppress("DEPRECATION")
-                VibrationEffect.createOneShot(150, VibrationEffect.DEFAULT_AMPLITUDE)
-            }.let { vibrator.vibrate(it) }
+            vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_DOUBLE_CLICK))
         } catch (e: Exception) {
             Log.w(tag, "Error vibrating phase", e)
         }
@@ -113,12 +93,7 @@ class Haptics(
     fun tempoPulse() {
         if (!hapticsEnabled) return
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
-            } else {
-                @Suppress("DEPRECATION")
-                VibrationEffect.createOneShot(30, VibrationEffect.DEFAULT_AMPLITUDE)
-            }.let { vibrator.vibrate(it) }
+            vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
         } catch (e: Exception) {
             Log.w(tag, "Error vibrating tempo pulse", e)
         }
@@ -130,15 +105,10 @@ class Haptics(
     fun framingLostWarning() {
         if (!hapticsEnabled) return
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val timings = longArrayOf(0, 100, 100, 100)
-                val amplitudes = intArrayOf(0, 255, 0, 255)
-                val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
-                vibrator.vibrate(effect)
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(longArrayOf(0, 100, 100, 100), -1)
-            }
+            val timings = longArrayOf(0, 100, 100, 100)
+            val amplitudes = intArrayOf(0, 255, 0, 255)
+            val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
+            vibrator.vibrate(effect)
         } catch (e: Exception) {
             Log.w(tag, "Error vibrating framing lost", e)
         }
@@ -151,19 +121,17 @@ class Haptics(
     fun breathingPattern(durationSec: Float = 4f) {
         if (!hapticsEnabled) return
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // Gradual rise over ~1.5s, hold, fall, repeat
-                val stepMs = 150L
-                val steps = (durationSec * 1000 / stepMs).toInt()
-                val timings = LongArray(steps * 2) { i ->
-                    if (i % 2 == 0) stepMs else stepMs / 2
-                }
-                val amplitudes = IntArray(steps * 2) { i ->
-                    if (i % 2 == 0) (255 * (i / 2) / steps) else 0
-                }
-                val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
-                vibrator.vibrate(effect)
+            // Gradual rise over ~1.5s, hold, fall, repeat
+            val stepMs = 150L
+            val steps = (durationSec * 1000 / stepMs).toInt()
+            val timings = LongArray(steps * 2) { i ->
+                if (i % 2 == 0) stepMs else stepMs / 2
             }
+            val amplitudes = IntArray(steps * 2) { i ->
+                if (i % 2 == 0) (255 * (i / 2) / steps) else 0
+            }
+            val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
+            vibrator.vibrate(effect)
         } catch (e: Exception) {
             Log.w(tag, "Error vibrating breathing pattern", e)
         }

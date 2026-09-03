@@ -1,6 +1,7 @@
 package com.clashfit.engine.coach
 
 import com.clashfit.core.model.SetTelemetry
+import java.util.Locale
 
 /** Validation result with rejection reason. */
 data class ValidationResult(
@@ -65,7 +66,7 @@ object OutputValidator {
         listOfNotNull(
             t.formMean, t.formFirst3, t.formLast3, t.bestRep?.form, t.worstRep?.form, t.comboMax
         ).forEach { f ->
-            val s = String.format("%.2f", f)
+            val s = String.format(Locale.US, "%.2f", f)
             s.split(Regex("[^0-9]")).filter { it.isNotEmpty() }.forEach { digit ->
                 digit.toIntOrNull()?.let { numbers.add(it) }
             }

@@ -22,6 +22,7 @@ import androidx.core.app.NotificationCompat
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
+import com.clashfit.R
 import com.clashfit.data.AlarmEntity
 import com.clashfit.data.AlarmDao
 import com.clashfit.ui.theme.ClashFitTheme
@@ -178,24 +179,18 @@ class AlarmService : Service() {
         fun start(context: Context, alarmId: Long) {
             val intent = Intent(context, AlarmService::class.java)
                 .putExtra(AlarmReceiver.EXTRA_ALARM_ID, alarmId)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            context.startForegroundService(intent)
         }
 
         private fun ensureNotificationChannel(context: Context) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val channel = NotificationChannel(
-                    ALARM_CHANNEL_ID,
-                    "Alarms",
-                    NotificationManager.IMPORTANCE_HIGH
-                )
-                channel.description = "Wake-up alarm notifications"
-                val notificationManager = context.getSystemService(NotificationManager::class.java)
-                notificationManager?.createNotificationChannel(channel)
-            }
+            val channel = NotificationChannel(
+                ALARM_CHANNEL_ID,
+                context.getString(R.string.notif_channel_alarm),
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            channel.description = "Wake-up alarm notifications"
+            val notificationManager = context.getSystemService(NotificationManager::class.java)
+            notificationManager?.createNotificationChannel(channel)
         }
     }
 }

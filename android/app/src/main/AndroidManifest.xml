@@ -65,7 +65,7 @@
             android:configChanges="orientation|screenSize|keyboardHidden|uiMode"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.ClashFit.Splash"
-            tools:ignore="DiscouragedApi">
+            tools:ignore="DiscouragedApi,LockedOrientationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -84,7 +84,7 @@
             android:turnScreenOn="true"
             android:taskAffinity=""
             android:theme="@style/Theme.ClashFit"
-            tools:ignore="DiscouragedApi" />
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
 
         <receiver android:name=".alarm.AlarmReceiver" android:exported="false" />
         <receiver android:name=".alarm.BootReceiver" android:exported="false">
@@ -107,6 +107,6 @@
             android:foregroundServiceType="location" />
 
         <!-- Profile-guided startup. -->
-        <profileable android:shell="true" tools:targetApi="q" />
+        <profileable android:shell="true" />
     </application>
 </manifest>

@@ -113,7 +113,7 @@ private fun AlarmListItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = String.format("%02d:%02d", alarm.hour, alarm.minute),
+                    text = String.format(Locale.US, "%02d:%02d", alarm.hour, alarm.minute),
                     style = MaterialTheme.typography.headlineMedium,
                     color = Ink
                 )
@@ -219,7 +219,7 @@ private fun getNextRingTime(alarm: AlarmEntity): String {
     val sdf = SimpleDateFormat("EEE", Locale.getDefault())
     val dayName = sdf.format(cal.time)
 
-    return "$dayName @ ${String.format("%02d:%02d", alarm.hour, alarm.minute)}"
+    return "$dayName @ ${String.format(Locale.US, "%02d:%02d", alarm.hour, alarm.minute)}"
 }
 
 // Import the necessary function
