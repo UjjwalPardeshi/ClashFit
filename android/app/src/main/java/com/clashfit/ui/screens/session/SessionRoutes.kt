@@ -39,7 +39,11 @@ fun NavGraphBuilder.sessionRoutes(graph: AppGraph, nav: NavHostController) {
             SessionScreen(
                 graph, deps, args,
                 skeleton = { m -> LiveSkeleton(graph, deps, args, m) },
-                onSummary = { id -> nav.navigate(Summary(id)) { popUpTo(Home) } },
+                onSummary = { id ->
+                    // A pass-the-phone turn goes back to the board; everything else gets a summary.
+                    if (graph.playHub.roster.value != null) nav.popBackStack()
+                    else nav.navigate(Summary(id)) { popUpTo(Home) }
+                },
                 onExit = { nav.popBackStack(Home, inclusive = false) },
             )
         }

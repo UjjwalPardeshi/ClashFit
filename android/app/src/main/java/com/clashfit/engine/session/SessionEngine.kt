@@ -94,6 +94,8 @@ class SessionEngine(
     private val durationOverrideSec: Int? = null,
     private val listener: Listener = Listener.NONE,
 ) {
+    /** Timed by the mode itself, or by an explicit duration (a pass-the-phone turn, a rep race). */
+    private val timed: Boolean = mode.timed || durationOverrideSec != null
     interface Listener {
         fun onRep(rec: RepRecord, combat: CombatState) {}
         fun onBand(band: FatigueBand) {}
@@ -284,7 +286,7 @@ class SessionEngine(
         ghost?.reset()
 
         // Modes scored on a clock must not have the boss die out from under them.
-        if (mode.timed) { combat.maxHp = 10_000_000; combat.hp = 10_000_000 }
+        if (timed) { combat.maxHp = 10_000_000; combat.hp = 10_000_000 }
         // Family games own their own state. SIGIL has no boss, no damage and no ranking.
         game = FamilyGames.create(mode.name, combatCfg)
         if (mode == GameMode.SURVIVAL) {
@@ -306,7 +308,7 @@ class SessionEngine(
     val timeLeftMs: Long?
         get() {
             val start = fightStartMs
-            if (!mode.timed || start == null) return null
+            if (!timed || start == null) return null
             return max(0L, durationMs - (lastTMs - start))
         }
 
@@ -372,7 +374,7 @@ class SessionEngine(
                     ghostDamage += e.damage
                 }
             }
-            if (mode.timed && timeLeftMs == 0L) end(EndReason.TIME)
+            if (timed && timeLeftMs == 0L) end(EndReason.TIME)
         }
         if (ended) return state()
 

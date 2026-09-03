@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.clashfit.AppGraph
+import com.clashfit.core.config.GhostData
 import com.clashfit.core.model.CombatState
+import com.clashfit.core.model.ModeKind
 import com.clashfit.core.model.EndReason
 import com.clashfit.core.model.FatigueBand
 import com.clashfit.core.model.GameMode
@@ -16,10 +18,15 @@ import com.clashfit.core.model.SessionState
 import com.clashfit.core.model.SetTelemetry
 import com.clashfit.core.model.Verdict
 import com.clashfit.core.pose.CameraFacing
+import com.clashfit.data.GhostEntity
+import com.clashfit.data.ProgressionRepository
 import com.clashfit.data.RepEntity
 import com.clashfit.data.SessionEntity
 import com.clashfit.data.SetEntity
 import com.clashfit.engine.session.SessionEngine
+import com.clashfit.engine.summary.Progression
+import com.clashfit.play.LinkHud
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
@@ -99,6 +106,17 @@ class SessionViewModel(
     private var setStartedAtMs = startedAtMs
     private var saved = false
 
+    private val hub = graph.playHub
+    /** The other phones, when this is a duel, race or raid. Null otherwise. */
+    val link: StateFlow<LinkHud?> = hub.link
+    /** True when this session is one turn of a pass-the-phone game. */
+    val rosterTurn: Boolean = hub.roster.value != null
+    private var linkJob: Job? = null
+
+    /** What the session changed in streaks, bests and ladders. Set once, with [finished]. */
+    private val _progress = MutableStateFlow<ProgressionRepository.Outcome?>(null)
+    val progress: StateFlow<ProgressionRepository.Outcome?> = _progress.asStateFlow()
+
     private class SetSnapshot(
         val index: Int, val reps: List<RepRecord>, val startedAtMs: Long, val endedAtMs: Long,
         val telemetry: SetTelemetry?, val restSec: Int, val coachLine: String?, val bossLine: String?, val coachSource: String,
@@ -118,9 +136,32 @@ class SessionViewModel(
             durationOverrideSec = args.durationSec,
             listener = EngineListener(),
         )
-        args.ghostId?.let { id -> cfg.ghosts.value[id]?.let { engine.loadGhost(it) } }
+        args.ghostId?.let { id ->
+            val shipped = cfg.ghosts.value[id]
+            if (shipped != null) engine.loadGhost(shipped) else viewModelScope.launch { loadSavedGhost(id) }
+        }
+        if ((args.mode.kind == ModeKind.VERSUS || args.mode.kind == ModeKind.GROUP) && hub.active) attachLink()
         _state.value = engine.state()
         startCamera()
+    }
+
+    /** A ghost saved from an earlier fight, or accepted from a challenge code. */
+    private suspend fun loadSavedGhost(id: String) {
+        val entity = withContext(Dispatchers.IO) { graph.db.ghosts().get(id) } ?: return
+        val data = runCatching { graph.json.decodeFromString(GhostData.serializer(), entity.eventsJson) }.getOrElse {
+            runCatching {
+                val events = graph.json.decodeFromString(ListSerializer(GhostData.Event.serializer()), entity.eventsJson)
+                GhostData(meta = GhostData.Meta(entity.name, entity.exerciseId, entity.reps, entity.totalDamage), events = events)
+            }.getOrNull()
+        } ?: return
+        withContext(engineThread) { engine.loadGhost(data); _state.value = engine.state() }
+    }
+
+    /** Remote hits flow into the engine's idempotent path; local reps go out through the hub. */
+    private fun attachLink() {
+        linkJob = viewModelScope.launch {
+            hub.remoteHits.collect { applyRemoteDamage(it.playerId, it.seq, it.damage) }
+        }
     }
 
     private fun startCamera() {
@@ -166,6 +207,7 @@ class SessionViewModel(
             if (combat.comboStreak > 0 && combat.comboStreak % 5 == 0) {
                 deps.sfx.milestone(); deps.haptics.milestone(); _events.tryEmit(HudEvent.Milestone)
             }
+            if (hub.active) hub.onLocalRep(combat.reps, rec.damage, rec.formScore, rec.fatigue.band)
         }
 
         override fun onBand(band: FatigueBand) {
@@ -194,6 +236,7 @@ class SessionViewModel(
             restJob?.cancel()
             if (reason == EndReason.BOSS_DOWN || reason == EndReason.GAME_WON) deps.sfx.bossDown()
             _events.tryEmit(HudEvent.BossDown)
+            if (hub.active) hub.onLocalOut()
             viewModelScope.launch { persist(reason) }
         }
     }
@@ -284,19 +327,55 @@ class SessionViewModel(
             sessionId
         }
         Log.i(TAG, "session $id saved: ${all.size} reps, ${s.playerDamage} damage, $reason")
+        bank(id, all, formMean, now, s.playerDamage)
         _finished.tryEmit(id)
+    }
+
+    /** Streaks, bests, ladders, the session's own ghost, and the roster turn — none of it blocks the summary. */
+    private suspend fun bank(sessionId: Long, all: List<RepRecord>, formMean: Float, now: Long, damage: Int) {
+        val outcome = withContext(Dispatchers.IO) {
+            runCatching {
+                ProgressionRepository(graph.db).onSessionFinished(
+                    exerciseId = args.exerciseId, reps = all.size, formMean = formMean, atMs = now, casual = args.casual,
+                    repDetails = all.map { Progression.RepDetail(it.depthCm, it.heightCm, it.holdSec) },
+                )
+            }.onFailure { Log.w(TAG, "progression not banked", it) }.getOrNull()
+        }
+        _progress.value = outcome
+        if (all.size >= MIN_GHOST_REPS && !args.casual && args.mode.kind == ModeKind.SOLO) {
+            val t0 = all.first().tStartMs
+            val ghost = GhostData(
+                meta = GhostData.Meta(name = "You · ${java.text.SimpleDateFormat("d MMM", java.util.Locale.US).format(java.util.Date(now))}",
+                    exercise = args.exerciseId, reps = all.size, totalDamage = damage),
+                events = all.map { GhostData.Event(t = it.tEndMs - t0, damage = it.damage) },
+            )
+            withContext(Dispatchers.IO) {
+                runCatching {
+                    graph.db.ghosts().upsert(GhostEntity(
+                        id = "session-$sessionId", name = ghost.meta.name, exerciseId = args.exerciseId, reps = all.size,
+                        totalDamage = damage, createdAtMs = now, eventsJson = graph.json.encodeToString(GhostData.serializer(), ghost), shipped = false,
+                    ))
+                }.onFailure { Log.w(TAG, "ghost not saved", it) }
+            }
+        }
+        val gassed = all.lastOrNull()?.fatigue?.band == FatigueBand.GASSED
+        hub.onSessionEnded(reps = all.size, damage = damage, bestForm = all.maxOfOrNull { it.formScore } ?: 0f, gassed = gassed)
     }
 
     override fun onCleared() {
         frameJob?.cancel()
         restJob?.cancel()
+        linkJob?.cancel()
         deps.pose.stop()
         deps.speech.stop()
+        // The session owned the link once the lobby handed it over; nothing outlives the fight.
+        if (hub.active) hub.release()
         super.onCleared()
     }
 
     companion object {
         private const val TAG = "ClashFit/session"
+        private const val MIN_GHOST_REPS = 3
         private val PRONE_HINTS = listOf("push_up", "pushup", "plank", "sit_up", "situp", "bridge", "superman", "hollow", "bird_dog", "dead_bug")
 
         fun factory(graph: AppGraph, deps: SessionDeps, args: SessionArgs) = object : ViewModelProvider.Factory {

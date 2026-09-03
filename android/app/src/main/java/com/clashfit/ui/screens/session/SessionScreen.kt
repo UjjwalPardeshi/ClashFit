@@ -115,6 +115,7 @@ private fun FightLayout(
     paused: Boolean, reduceMotion: Boolean, skeleton: @Composable (Modifier) -> Unit,
 ) {
     val prone = vm.isProne
+    val link by vm.link.collectAsStateWithLifecycle()
     Box(Modifier.fillMaxSize()) {
         // The boss and the hit surface fill the screen; the skeleton sits in a dim corner inset.
         BossFigure(s.combat, jolt, shake, Modifier.fillMaxSize().padding(bottom = if (prone) 220.dp else 160.dp, top = 90.dp))
@@ -125,6 +126,7 @@ private fun FightLayout(
 
         Column(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)) {
             if (!prone) BossHeader(s.combat, timeLeftMs = s.timeLeftMs)
+            link?.let { l -> Spacer(Modifier.height(8.dp)); LinkStrip(l, myReps = s.reps, myDamage = s.playerDamage) }
             Spacer(Modifier.weight(1f))
             if (s.phase == Phase.FRAMING_LOST) { FramingLostBanner(s.cue); Spacer(Modifier.height(12.dp)) }
             else s.cue?.let { cue ->
