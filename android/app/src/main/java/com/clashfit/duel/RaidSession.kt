@@ -1,0 +1,184 @@
+package com.clashfit.duel
+
+import com.clashfit.core.model.DuelMessage
+import com.clashfit.core.util.Clock
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+/** Immutable snapshot of a raid player's performance. */
+data class RaidStanding(
+    val playerId: String,
+    val name: String,
+    val damage: Int,
+    val reps: Int,
+    val fatigueBand: String,
+    val out: Boolean,  // Has this player finished or quit?
+)
+
+/**
+ * Raid session: N players in a star topology where each phone computes the boss independently.
+ * The host relays messages between all players; every phone receives everyone's damage and
+ * maintains a live leaderboard. Last Standing sends OUT when local fatigue band hits GASSED.
+ */
+class RaidSession(
+    private val transport: DuelTransport,
+    private val playerId: String,
+    private val playerName: String,
+    private val clock: Clock,
+    private val scope: CoroutineScope,
+    private val isHost: Boolean,
+    private val onRemote: (playerId: String, seq: Int, damage: Int) -> Unit = { _, _, _ -> },
+    private val onStandingChanged: (List<RaidStanding>) -> Unit = { _ -> },
+) {
+    private companion object {
+        const val TAG = "ClashFit/raid"
+    }
+
+    // Leaderboard state
+    private val _standings = MutableStateFlow<List<RaidStanding>>(emptyList())
+    val standings: StateFlow<List<RaidStanding>> = _standings.asStateFlow()
+
+    // Player tracking
+    private val playerStates = mutableMapOf<String, PlayerRaidState>()
+    private val appliedDamage = mutableMapOf<String, MutableSet<Int>>()  // playerId -> set of applied seqs
+
+    init {
+        // Register ourselves
+        playerStates[playerId] = PlayerRaidState(playerId, playerName)
+        appliedDamage[playerId] = mutableSetOf()
+
+        // Start listening for messages
+        scope.launch {
+            transport.incoming.collect { msg ->
+                processMessage(msg)
+            }
+        }
+    }
+
+    /** Broadcast a rep in the raid. */
+    fun sendRep(damage: Int, reps: Int, exerciseId: String, fatigueBand: String, formScore: Float) {
+        val playerState = playerStates[playerId] ?: return
+        val seq = ++playerState.seq
+
+        appliedDamage.getOrPut(playerId) { mutableSetOf() }.add(seq)
+
+        // Update local state
+        playerState.damage += damage
+        playerState.reps = reps
+        playerState.fatigueBand = fatigueBand
+
+        transport.send(
+            DuelMessage(
+                v = 1,
+                type = DuelMessage.REP,
+                playerId = playerId,
+                name = playerName,
+                seq = seq,
+                tMs = clock.nowMs(),
+                damage = damage,
+                reps = reps,
+                exerciseId = exerciseId,
+                fatigueBand = fatigueBand,
+                formScore = formScore
+            )
+        )
+
+        updateLeaderboard()
+    }
+
+    /** Player is out of the raid (finished or quit). */
+    fun sendOut() {
+        val playerState = playerStates[playerId] ?: return
+
+        transport.send(
+            DuelMessage(
+                v = 1,
+                type = DuelMessage.OUT,
+                playerId = playerId,
+                name = playerName,
+                tMs = clock.nowMs()
+            )
+        )
+
+        playerState.out = true
+        updateLeaderboard()
+    }
+
+    /** Get the current leaderboard. */
+    fun getStandings(): List<RaidStanding> = _standings.value
+
+    /** Tear down the raid. */
+    fun close() {
+        transport.close()
+    }
+
+    // Private implementation
+
+    private fun processMessage(msg: DuelMessage) {
+        if (msg.playerId == playerId) return  // Ignore self
+
+        when (msg.type) {
+            DuelMessage.REP -> {
+                val playerState = playerStates.getOrPut(msg.playerId) {
+                    PlayerRaidState(msg.playerId, msg.name)
+                }
+
+                // Apply damage if not already applied
+                val seqs = appliedDamage.getOrPut(msg.playerId) { mutableSetOf() }
+                if (msg.seq !in seqs) {
+                    seqs.add(msg.seq)
+                    playerState.damage += msg.damage
+                    onRemote(msg.playerId, msg.seq, msg.damage)
+                }
+
+                // Update player info
+                playerState.reps = msg.reps
+                playerState.fatigueBand = msg.fatigueBand
+                updateLeaderboard()
+            }
+
+            DuelMessage.OUT -> {
+                val playerState = playerStates.getOrPut(msg.playerId) {
+                    PlayerRaidState(msg.playerId, msg.name)
+                }
+                playerState.out = true
+                updateLeaderboard()
+            }
+
+            else -> {
+                // Ignore other message types
+            }
+        }
+    }
+
+    private fun updateLeaderboard() {
+        val standings = playerStates.values
+            .sortedByDescending { it.damage }
+            .map { state ->
+                RaidStanding(
+                    playerId = state.playerId,
+                    name = state.name,
+                    damage = state.damage,
+                    reps = state.reps,
+                    fatigueBand = state.fatigueBand,
+                    out = state.out
+                )
+            }
+
+        _standings.value = standings
+        onStandingChanged(standings)
+    }
+
+    private data class PlayerRaidState(
+        val playerId: String,
+        val name: String,
+        var seq: Int = 0,
+        var damage: Int = 0,
+        var reps: Int = 0,
+        var fatigueBand: String = "FRESH",
+        var out: Boolean = false,
+    )
+}
