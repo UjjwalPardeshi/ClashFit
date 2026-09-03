@@ -7,6 +7,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
@@ -71,6 +74,16 @@ fun ClashFitTheme(content: @Composable () -> Unit) {
         colorScheme = Scheme,
         typography = ClashTypography,
         shapes = ClashShapes,
-        content = content,
-    )
+    ) {
+        // MaterialTheme does not set LocalContentColor; Surface does. Without this
+        // wrapper every Text that does not name a colour inherits the default black
+        // and disappears against a black app. It is why the home headline, the screen
+        // titles and most body copy were invisible on device.
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            content = content,
+        )
+    }
 }

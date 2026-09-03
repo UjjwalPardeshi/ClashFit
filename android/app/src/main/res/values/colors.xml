@@ -2,5 +2,5 @@
 <resources>
     <!-- Brand tokens; the Compose theme is the source of truth, these exist for XML surfaces. -->
     <color name="ground">#FF0B0B0C</color>
-    <color name="ic_launcher_background">#FF0B0B0C</color>
+    <color name="ic_launcher_background">#FFFF4F1F</color>
 </resources>

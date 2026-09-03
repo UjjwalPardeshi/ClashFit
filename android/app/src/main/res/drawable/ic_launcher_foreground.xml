@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The brand mark: an ember square with a bolt cut out of it. Drawn, not lettered. -->
+<!--
+  Adaptive icon foreground. Only the central 66dp of this 108dp canvas is
+  guaranteed visible once a launcher applies its mask, so the bolt is drawn
+  between 39.5 and 68.5 horizontally and 28 to 80 vertically, well inside it.
+  The ember field is the background layer, not a square drawn in here: a square
+  inside a round mask reads as a mistake, and it was also what flattened the
+  monochrome layer into a featureless blob.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
-        android:fillColor="#FF4F1F"
-        android:pathData="M30,30 h48 v48 h-48 z" />
-    <path
         android:fillColor="#0B0B0C"
-        android:pathData="M58,36 L44,57 L53,57 L49,72 L64,50 L55,50 Z" />
+        android:pathData="M60,28 L39.5,58.5 L52.5,58.5 L46.8,80 L68.5,48 L55.5,48 Z" />
 </vector>
