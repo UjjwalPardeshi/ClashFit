@@ -370,7 +370,6 @@ class SessionViewModel(
         deps.speech.stop()
         // The session owned the link once the lobby handed it over; nothing outlives the fight.
         if (hub.active) hub.release()
-        super.onCleared()
     }
 
     companion object {

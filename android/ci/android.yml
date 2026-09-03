@@ -1,3 +1,7 @@
+# ClashFit Android CI. Lives in android/ci/ because the token that pushes this repo lacks the
+# `workflow` scope GitHub requires to add files under .github/workflows/. To enable it:
+#   git mv android/ci/android.yml .github/workflows/android.yml   (with a token that has `workflow` scope)
+# It runs the JVM tests, lint, builds the debug APK and proves the merged manifest has no INTERNET permission.
 name: android
 
 on:

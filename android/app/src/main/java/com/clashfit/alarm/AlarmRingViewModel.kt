@@ -36,9 +36,10 @@ data class AlarmRingUiState(
  * the camera lifecycle and hands the gate over with [attachGate]. Until then the state reads
  * "0 of `reps`", which is also what a user with no camera permission sees.
  */
-class AlarmRingViewModel(private val context: Context, private val alarmId: Long) : ViewModel() {
+class AlarmRingViewModel(context: Context, private val alarmId: Long) : ViewModel() {
 
-    private val graph = AppGraph.of(context)
+    private val appContext = context.applicationContext
+    private val graph = AppGraph.of(appContext)
     private val dao = graph.db.alarms()
 
     private val _uiState = MutableStateFlow<AlarmRingUiState?>(null)
@@ -118,7 +119,7 @@ class AlarmRingViewModel(private val context: Context, private val alarmId: Long
         // Reschedule the alarm for its next slot.
         viewModelScope.launch(Dispatchers.IO) {
             val alarm = dao.get(state.alarmId)
-            if (alarm != null) AlarmScheduler.schedule(context, alarm)
+            if (alarm != null) AlarmScheduler.schedule(appContext, alarm)
         }
     }
 
@@ -165,7 +166,6 @@ class AlarmRingViewModel(private val context: Context, private val alarmId: Long
     }
 
     override fun onCleared() {
-        super.onCleared()
         gateJob?.cancel()
         holdJob?.cancel()
     }
