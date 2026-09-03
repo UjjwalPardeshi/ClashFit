@@ -31,6 +31,8 @@ data class PostureSample(
  */
 object PostureScorer {
     private const val VISIBILITY_THRESHOLD = 0.4f
+    /** Ear-to-shoulder gap over torso length for a relaxed, upright figure. */
+    private const val NEUTRAL_GAP_RATIO = 0.38f
 
     fun score(world: Landmarks, image: Landmarks?): PostureSample? {
         // Six required points: ears, shoulders, hips.
@@ -83,19 +85,27 @@ object PostureScorer {
         )
     }
 
-    /** Angle of ear→shoulder vector from vertical (y-axis). 0° is upright, positive is forward. */
+    /**
+     * Forward head: the angle of the ear→shoulder segment from vertical in the sagittal plane. With
+     * the camera facing the user, "forward" is depth (z); lateral offset (x) is a head tilt, not
+     * flexion, and is deliberately ignored. 0° is upright.
+     */
     private fun neckFlexionDeg(ear: Landmark, shoulder: Landmark): Float {
-        val dy = shoulder.y - ear.y
-        val dx = shoulder.x - ear.x
-        val angleRad = atan2(dx, dy)
-        return Math.toDegrees(angleRad.toDouble()).toFloat()
+        val forward = abs(ear.z - shoulder.z)
+        val up = abs(ear.y - shoulder.y)
+        return Math.toDegrees(atan2(forward, up).toDouble()).toFloat()
     }
 
-    /** Vertical distance from ear to shoulder, normalized by torso length (shoulder→hip distance). */
+    /**
+     * Shoulder elevation, 0 relaxed → 1 fully shrugged. A shrug closes the ear-to-shoulder gap, so
+     * the signal is how far that gap (normalised by torso length) has shrunk below neutral.
+     */
     private fun shoulderElevation(ear: Landmark, shoulder: Landmark, hip: Landmark): Float {
-        val verticalDist = abs(shoulder.y - ear.y)
+        val gap = abs(ear.y - shoulder.y)
         val torsoLen = sqrt((shoulder.x - hip.x) * (shoulder.x - hip.x) + (shoulder.y - hip.y) * (shoulder.y - hip.y))
-        return if (torsoLen > 0f) verticalDist / torsoLen else 0f
+        if (torsoLen <= 0f) return 0f
+        val ratio = gap / torsoLen
+        return (1f - (ratio / NEUTRAL_GAP_RATIO)).coerceIn(0f, 1f)
     }
 
     private fun postureDescription(flexDeg: Int, elevation: Float): String {

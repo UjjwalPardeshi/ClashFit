@@ -46,7 +46,7 @@ class PostureTest {
 
     @Test
     fun `missing critical landmarks returns null`() {
-        val landmarks = MutableList(33) { Landmark(0f, 0f, 0f, 0.9f) }
+        val landmarks = MutableList(33) { Landmark(0f, 0f, 0f, 0f) }   // unset points are invisible
         // Only set ear L and shoulder L (2 points, need at least 4)
         landmarks[7] = Landmark(0f, 1f, 0f, 0.9f)  // ear L
         landmarks[11] = Landmark(0f, 0.9f, 0f, 0.9f)  // shoulder L
@@ -66,6 +66,8 @@ class PostureTest {
         }
     }
 
+    private val NECK = 0.17
+
     private fun createLandmarksWithNeckFlexion(flexDeg: Float): List<Landmark> {
         val landmarks = MutableList(33) { Landmark(0f, 1.05f, 0f, 1f) }
 
@@ -77,12 +79,12 @@ class PostureTest {
         landmarks[11] = Landmark(-0.1f, 0.95f, 0f, 1f)  // left shoulder
         landmarks[12] = Landmark(0.1f, 0.95f, 0f, 1f)   // right shoulder
 
-        // Ear points adjusted for flexion angle
+        // Ears sit one neck-length above the shoulders and swing FORWARD (toward the camera, -z) by the flexion angle.
         val flexRad = kotlin.math.PI * flexDeg / 180f
-        val earOffsetX = (-0.1 + 0.2 * kotlin.math.sin(flexRad)).toFloat()
-        val earOffsetY = (0.95 + 0.17 * kotlin.math.cos(flexRad)).toFloat()
-        landmarks[7] = Landmark(earOffsetX - 0.03f, earOffsetY, 0f, 1f)   // left ear
-        landmarks[8] = Landmark(earOffsetX + 0.03f, earOffsetY, 0f, 1f)   // right ear
+        val earY = (0.95 + NECK * kotlin.math.cos(flexRad)).toFloat()
+        val earZ = (-NECK * kotlin.math.sin(flexRad)).toFloat()
+        landmarks[7] = Landmark(-0.1f, earY, earZ, 1f)   // left ear
+        landmarks[8] = Landmark(0.1f, earY, earZ, 1f)    // right ear
 
         return landmarks
     }
