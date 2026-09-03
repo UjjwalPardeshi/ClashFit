@@ -30,38 +30,55 @@ object ChallengeCodec {
     private const val PREFIX = "CF1:"
     private const val B36 = 36
 
+    /** The wire shape. Short keys keep the code short; the checksum keeps it honest. */
+    @Serializable
+    private data class Wire(
+        val v: Int = 1,
+        val k: String,
+        val e: String,
+        val m: String,
+        val n: String = "",
+        val t: Int? = null,
+        val g: String = "",
+    )
+
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+
     /** Encode a challenge card into a short shareable code. */
     fun encode(card: ChallengeCard): String {
-        val body = """
-            {"v":1,"k":"${card.kind}","e":"${card.exerciseId}","m":"${card.mode}","n":"${(card.name ?: "").take(24)}","t":${card.target},"g":"${packEvents(card.ghost?.events ?: emptyList())}"}
-        """.trimIndent().replace("\n", "")
+        val wire = Wire(
+            k = card.kind, e = card.exerciseId, m = card.mode,
+            n = (card.name ?: "").take(24), t = card.target,
+            g = packEvents(card.ghost?.events ?: emptyList()),
+        )
+        val body = json.encodeToString(Wire.serializer(), wire)
         return PREFIX + toB64(body) + "." + checksum(body)
     }
 
-    /** Decode a challenge code into a card. */
+    /** Decode a challenge code into a card. Throws [IllegalArgumentException] with a friendly message. */
     fun decode(code: String): ChallengeCard {
         val raw = code.trim()
         if (!raw.startsWith(PREFIX)) throw IllegalArgumentException("Not a ClashFit challenge code.")
         val rest = raw.drop(PREFIX.length)
         val dot = rest.lastIndexOf('.')
         if (dot < 0) throw IllegalArgumentException("Challenge code is incomplete.")
-        val body = fromB64(rest.substring(0, dot))
+        val body = runCatching { fromB64(rest.substring(0, dot)) }
+            .getOrElse { throw IllegalArgumentException("Challenge code is damaged.") }
         if (checksum(body) != rest.substring(dot + 1)) {
             throw IllegalArgumentException("Challenge code is damaged — probably truncated in transit.")
         }
-        val json = Json { ignoreUnknownKeys = true }
-        val p = json.decodeFromString<Map<String, Any>>(body)
-        val v = (p["v"] as? Number)?.toInt() ?: 1
-        if (v != 1) throw IllegalArgumentException("Challenge code is version $v, this build reads version 1.")
+        val p = runCatching { json.decodeFromString(Wire.serializer(), body) }
+            .getOrElse { throw IllegalArgumentException("Challenge code did not read.") }
+        if (p.v != 1) throw IllegalArgumentException("Challenge code is version ${p.v}, this build reads version 1.")
         return ChallengeCard(
-            kind = p["k"] as? String ?: "GHOST",
-            exerciseId = p["e"] as? String ?: "squat",
-            mode = p["m"] as? String ?: "GHOST_RACE",
-            name = (p["n"] as? String)?.takeIf { it.isNotEmpty() },
-            target = (p["t"] as? Number)?.toInt(),
-            ghost = (p["g"] as? String)?.takeIf { it.isNotEmpty() }?.let { packed ->
+            kind = p.k.ifEmpty { "GHOST" },
+            exerciseId = p.e.ifEmpty { "squat" },
+            mode = p.m.ifEmpty { "GHOST_RACE" },
+            name = p.n.takeIf { it.isNotEmpty() },
+            target = p.t,
+            ghost = p.g.takeIf { it.isNotEmpty() }?.let { packed ->
                 ChallengeCard.GhostDataPayload(
-                    events = unpackEvents(packed).map { ChallengeCard.GhostDataPayload.GhostEventPayload(it.t, it.damage) }
+                    events = unpackEvents(packed).map { ChallengeCard.GhostDataPayload.GhostEventPayload(it.t, it.damage) },
                 )
             },
         )
