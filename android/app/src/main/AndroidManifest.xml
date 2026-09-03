@@ -96,6 +96,15 @@
             </intent-filter>
         </receiver>
 
+        <receiver android:name=".desk.DeskReceiver" android:exported="false" />
+        <receiver android:name=".desk.DeskSnoozeReceiver" android:exported="false" />
+        <receiver android:name=".desk.DeskBootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
         <service
             android:name=".alarm.AlarmService"
             android:exported="false"

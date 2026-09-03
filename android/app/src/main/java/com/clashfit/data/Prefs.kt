@@ -24,6 +24,13 @@ class Prefs(private val context: Context) {
         val casual: Boolean = false,
         val debugOverlay: Boolean = false,
         val preferredExercise: String = "squat",
+        val deskEnabled: Boolean = false,
+        val deskIntervalMin: Int = 50,
+        val deskExerciseId: String = "squat",
+        val deskReps: Int = 10,
+        val deskQuietFromHour: Int = 18,
+        val deskQuietToHour: Int = 9,
+        val deskSnoozedUntilMs: Long = 0L,
     )
 
     val settings: Flow<Settings> = context.dataStore.data.map { p ->
@@ -36,6 +43,13 @@ class Prefs(private val context: Context) {
             casual = p[CASUAL] ?: false,
             debugOverlay = p[DEBUG] ?: false,
             preferredExercise = p[PREFERRED_EXERCISE] ?: "squat",
+            deskEnabled = p[DESK_ENABLED] ?: false,
+            deskIntervalMin = p[DESK_INTERVAL_MIN] ?: 50,
+            deskExerciseId = p[DESK_EXERCISE_ID] ?: "squat",
+            deskReps = p[DESK_REPS] ?: 10,
+            deskQuietFromHour = p[DESK_QUIET_FROM_HOUR] ?: 18,
+            deskQuietToHour = p[DESK_QUIET_TO_HOUR] ?: 9,
+            deskSnoozedUntilMs = p[DESK_SNOOZED_UNTIL_MS] ?: 0L,
         )
     }
 
@@ -47,6 +61,13 @@ class Prefs(private val context: Context) {
     suspend fun setCasual(v: Boolean) = context.dataStore.edit { it[CASUAL] = v }
     suspend fun setDebugOverlay(v: Boolean) = context.dataStore.edit { it[DEBUG] = v }
     suspend fun setPreferredExercise(v: String) = context.dataStore.edit { it[PREFERRED_EXERCISE] = v }
+    suspend fun setDeskEnabled(v: Boolean) = context.dataStore.edit { it[DESK_ENABLED] = v }
+    suspend fun setDeskIntervalMin(v: Int) = context.dataStore.edit { it[DESK_INTERVAL_MIN] = v }
+    suspend fun setDeskExerciseId(v: String) = context.dataStore.edit { it[DESK_EXERCISE_ID] = v }
+    suspend fun setDeskReps(v: Int) = context.dataStore.edit { it[DESK_REPS] = v }
+    suspend fun setDeskQuietFromHour(v: Int) = context.dataStore.edit { it[DESK_QUIET_FROM_HOUR] = v }
+    suspend fun setDeskQuietToHour(v: Int) = context.dataStore.edit { it[DESK_QUIET_TO_HOUR] = v }
+    suspend fun setDeskSnoozedUntilMs(v: Long) = context.dataStore.edit { it[DESK_SNOOZED_UNTIL_MS] = v }
 
     private companion object {
         val REDUCE_MOTION = booleanPreferencesKey("reduce_motion")
@@ -57,5 +78,12 @@ class Prefs(private val context: Context) {
         val CASUAL = booleanPreferencesKey("casual")
         val DEBUG = booleanPreferencesKey("debug_overlay")
         val PREFERRED_EXERCISE = stringPreferencesKey("preferred_exercise")
+        val DESK_ENABLED = booleanPreferencesKey("desk_enabled")
+        val DESK_INTERVAL_MIN = androidx.datastore.preferences.core.intPreferencesKey("desk_interval_min")
+        val DESK_EXERCISE_ID = stringPreferencesKey("desk_exercise_id")
+        val DESK_REPS = androidx.datastore.preferences.core.intPreferencesKey("desk_reps")
+        val DESK_QUIET_FROM_HOUR = androidx.datastore.preferences.core.intPreferencesKey("desk_quiet_from_hour")
+        val DESK_QUIET_TO_HOUR = androidx.datastore.preferences.core.intPreferencesKey("desk_quiet_to_hour")
+        val DESK_SNOOZED_UNTIL_MS = androidx.datastore.preferences.core.longPreferencesKey("desk_snoozed_until_ms")
     }
 }
