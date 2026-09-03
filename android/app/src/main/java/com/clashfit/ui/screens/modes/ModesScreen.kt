@@ -30,6 +30,7 @@ import com.clashfit.core.model.ModeKind
 import com.clashfit.ui.components.Headline
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.SectionGap
+import com.clashfit.ui.components.Tag
 import com.clashfit.ui.nav.ExercisePicker
 import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Ground
@@ -84,17 +85,22 @@ private fun ModeTile(mode: GameMode, nav: NavHostController, modifier: Modifier 
     Box(
         modifier
             .fillMaxWidth()
-            .background(Panel)
-            .border(1.dp, Rule)
-            .clickable { nav.navigate(ExercisePicker(mode.name)) }
+            .background(if (mode.enabled) Panel else InkFaint.copy(alpha = 0.1f))
+            .border(1.dp, if (mode.enabled) Rule else InkMuted.copy(alpha = 0.3f))
+            .clickable(enabled = mode.enabled) { nav.navigate(ExercisePicker(mode.name)) }
             .padding(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text(mode.title.uppercase(), style = MaterialTheme.typography.labelLarge, color = Ink)
-                Text("→", style = MaterialTheme.typography.titleMedium, color = Ink)
+                Text(mode.title.uppercase(), style = MaterialTheme.typography.labelLarge, color = if (mode.enabled) Ink else InkMuted)
+                Text("→", style = MaterialTheme.typography.titleMedium, color = if (mode.enabled) Ink else InkMuted)
             }
-            Text(mode.blurb, style = MaterialTheme.typography.bodySmall, color = InkFaint, maxLines = 2)
+            Text(mode.blurb, style = MaterialTheme.typography.bodySmall, color = if (mode.enabled) InkFaint else InkMuted.copy(alpha = 0.7f), maxLines = 2)
+            if (!mode.enabled) {
+                Row(modifier = Modifier.padding(top = 8.dp)) {
+                    Tag("GOES ONLINE · NOT IN THIS BUILD", color = InkMuted.copy(alpha = 0.7f))
+                }
+            }
         }
     }
 }

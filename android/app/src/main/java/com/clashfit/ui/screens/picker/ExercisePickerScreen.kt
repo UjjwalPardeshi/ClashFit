@@ -41,12 +41,14 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.clashfit.AppGraph
 import com.clashfit.core.config.ExerciseSpec
 import com.clashfit.core.model.Family
 import com.clashfit.core.model.GameMode
 import com.clashfit.data.Prefs
 import com.clashfit.ui.components.EmberButton
+import com.clashfit.ui.components.EmptyState
 import com.clashfit.ui.components.Headline
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.RuleRow
@@ -92,25 +94,31 @@ fun ExercisePickerScreen(
     }
 
     Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp)) {
-        Headline("PICK", accent = "YOUR MOVE")
-        SectionGap(20)
-
-        SearchBox(searchQuery) { searchQuery = it }
-        SectionGap(20)
-
-        if (filtered.isEmpty()) {
-            Text("No exercises found", style = MaterialTheme.typography.bodyLarge, color = InkFaint)
+        if (!mode.enabled) {
+            Headline("GOES ONLINE", accent = "NOT IN THIS BUILD")
+            SectionGap(24)
+            EmptyState("MODE UNAVAILABLE", "This mode is not available in this build. Outbreak goes online and requires network permissions.")
         } else {
-            ExercisesList(filtered, selectedExerciseId) { selectedExerciseId = it }
+            Headline("PICK", accent = "YOUR MOVE")
             SectionGap(20)
 
-            if (selectedExerciseId.isNotEmpty()) {
-                val selected = exercises[selectedExerciseId]
-                if (selected != null) {
-                    ExercisePreview(selected)
-                    SectionGap(20)
+            SearchBox(searchQuery) { searchQuery = it }
+            SectionGap(20)
 
-                    ConfirmButton(mode, selectedExerciseId, settings, graph, nav, scope)
+            if (filtered.isEmpty()) {
+                Text("No exercises found", style = MaterialTheme.typography.bodyLarge, color = InkFaint)
+            } else {
+                ExercisesList(filtered, selectedExerciseId) { selectedExerciseId = it }
+                SectionGap(20)
+
+                if (selectedExerciseId.isNotEmpty()) {
+                    val selected = exercises[selectedExerciseId]
+                    if (selected != null) {
+                        ExercisePreview(selected)
+                        SectionGap(20)
+
+                        ConfirmButton(mode, selectedExerciseId, settings, graph, nav, scope)
+                    }
                 }
             }
         }
@@ -271,7 +279,7 @@ private fun GhostSelector(
 
 fun NavGraphBuilder.pickerRoutes(graph: AppGraph, nav: NavHostController) {
     composable<ExercisePicker> { backStackEntry ->
-        val args = backStackEntry.arguments?.getString("mode") ?: ""
-        ExercisePickerScreen(args, graph, nav)
+        val pickerRoute = backStackEntry.toRoute<ExercisePicker>()
+        ExercisePickerScreen(pickerRoute.mode, graph, nav)
     }
 }

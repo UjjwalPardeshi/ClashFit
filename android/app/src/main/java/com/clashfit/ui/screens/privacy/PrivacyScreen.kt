@@ -72,6 +72,18 @@ fun PrivacyScreen(graph: AppGraph, modifier: Modifier = Modifier) {
 
         SectionGap(28)
 
+        // Radio-off claim
+        Kicker("Radio Off")
+        SectionGap(12)
+        Text(
+            "Everything that watches your body runs with the radio off. Outbreak is the one mode that goes online, and it says so before it starts. 0 frames uploaded — still literally true, and the stronger claim anyway: no video, no landmarks, no biometrics ever leave the device, in any mode, including this one.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Ink,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+
+        SectionGap(28)
+
         // Data retention
         Kicker("What We Keep")
         SectionGap(12)

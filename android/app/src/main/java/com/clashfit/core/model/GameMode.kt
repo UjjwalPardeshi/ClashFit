@@ -10,6 +10,7 @@ enum class GameMode(
     val family: Family?,
     val timed: Boolean,
     val blurb: String,
+    val enabled: Boolean = true,
 ) {
     BOSS_FIGHT("Boss Fight", ModeKind.SOLO, Family.REP_CYCLE, false,
         "Phases, a health pool, and behaviour that adapts to your fatigue."),
@@ -54,7 +55,10 @@ enum class GameMode(
         "No boss, no damage, no ranking. Each asana lights a constellation point."),
 
     CLINIC_STS("30s Sit-to-Stand", ModeKind.CLINIC, Family.REP_CYCLE, true,
-        "A published protocol. A count, and your own trend over time.");
+        "A published protocol. A count, and your own trend over time."),
+
+    OUTBREAK("Outbreak", ModeKind.SOLO, Family.CADENCE, false,
+        "The outdoor chase, on a real map. The one mode that goes online — not in this build.", enabled = false);
 
     /** Which family game a family's movements are naturally shaped for. */
     val isFamilyGame: Boolean get() = kind == ModeKind.FAMILY

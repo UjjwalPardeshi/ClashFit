@@ -1,9 +1,11 @@
 package com.clashfit.ui.screens
 
+import com.clashfit.core.model.Family
 import com.clashfit.core.model.GameMode
 import com.clashfit.core.model.ModeKind
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ModesScreenTest {
@@ -93,5 +95,28 @@ class ModesScreenTest {
         val soloModes = GameMode.grid.filter { it.kind == ModeKind.SOLO }
         val timedCount = soloModes.count { it.timed }
         assertEquals(1, timedCount)
+    }
+
+    @Test
+    fun `outbreak is present in all modes`() {
+        assertTrue(GameMode.entries.contains(GameMode.OUTBREAK))
+    }
+
+    @Test
+    fun `outbreak is disabled`() {
+        assertFalse(GameMode.OUTBREAK.enabled)
+    }
+
+    @Test
+    fun `outbreak is absent from game mode grid`() {
+        assertFalse(GameMode.grid.contains(GameMode.OUTBREAK))
+    }
+
+    @Test
+    fun `outbreak has correct properties`() {
+        assertEquals("Outbreak", GameMode.OUTBREAK.title)
+        assertEquals(ModeKind.SOLO, GameMode.OUTBREAK.kind)
+        assertEquals(Family.CADENCE, GameMode.OUTBREAK.family)
+        assertFalse(GameMode.OUTBREAK.timed)
     }
 }
