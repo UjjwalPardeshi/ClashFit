@@ -60,6 +60,8 @@ import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Success
 import com.clashfit.ui.nav.Compete
+import com.clashfit.ui.nav.switchTo
+import com.clashfit.ui.nav.Tab
 
 /** The You tab: who you are, how far you have come, who you play with, and the tools. */
 @Composable
@@ -104,7 +106,10 @@ fun YouScreen(graph: AppGraph, nav: NavHostController) {
 
             meta?.weekly?.let { w ->
                 SectionGap(20)
-                AppCard(Modifier.fillMaxWidth(), onClick = { nav.navigate(Weekly) }) {
+                AppCard(
+                    Modifier.fillMaxWidth(),
+                    onClick = { nav.switchTo(Tab.LEADERBOARD); nav.navigate(Weekly) },
+                ) {
                     Column {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
@@ -121,35 +126,27 @@ fun YouScreen(graph: AppGraph, nav: NavHostController) {
                 }
             }
 
-            // Competing moved to its own tab. One row points at it so anyone who learned where
-            // it used to be is not left hunting.
+            // Two pointers, to the tabs that now own these things. Switching the tab rather than
+            // pushing onto this one keeps the bar honest: a route belongs to one tab, and arriving
+            // at it from somewhere else used to light a tab you were not in.
             SectionGap(26)
             ListGroup {
                 NavRow(
-                    "Compete",
-                    { nav.navigate(Compete) },
+                    "Leaderboard",
+                    { nav.switchTo(Tab.LEADERBOARD) },
                     icon = AppIcons.Trophy,
                     tint = Brass,
                     value = "$badges of ${AchievementCatalog.all.size}",
-                    supporting = "Boards, friends, badges and challenges are their own tab now",
+                    supporting = "Boards, friends, badges and challenges",
                 )
-            }
-
-            SectionGap(26)
-            SectionTitle("Health tools")
-            SectionGap(10)
-            ListGroup {
-                NavRow("Run tracker", { nav.navigate(RunHome) }, icon = AppIcons.Run, tint = Success, supporting = "Distance, pace, splits. The route never leaves the phone")
                 InnerDivider()
-                NavRow("Wake-up alarm", { nav.navigate(Alarms) }, icon = AppIcons.Bell, tint = Success, supporting = "Stops when the reps stop it")
-                InnerDivider()
-                NavRow("Desk timer", { nav.navigate(Desk) }, icon = AppIcons.Bolt, tint = Success, supporting = "Sixty seconds, every fifty minutes")
-                InnerDivider()
-                NavRow("Posture", { nav.navigate(Posture) }, icon = AppIcons.Person, tint = Success, supporting = "A frame every few minutes, read and discarded")
-                InnerDivider()
-                NavRow("Breathing", { nav.navigate(Breathing) }, icon = AppIcons.Heart, tint = Success, supporting = "Verified from your chest, not assumed")
-                InnerDivider()
-                NavRow("Clinic", { nav.navigate(Clinic) }, icon = AppIcons.Heart, tint = Success, supporting = "The tests a physio uses")
+                NavRow(
+                    "Health tools",
+                    { nav.switchTo(Tab.TRAIN) },
+                    icon = AppIcons.Heart,
+                    tint = Success,
+                    supporting = "Run, breathing, clinic, posture, desk and the alarm, on Train",
+                )
             }
 
             SectionGap(26)

@@ -32,37 +32,41 @@ import com.clashfit.ui.theme.Panel
 import kotlin.reflect.KClass
 
 /**
- * The five top-level destinations. Every other screen belongs to exactly one of them, which is
+ * The four top-level destinations. Every other screen belongs to exactly one of them, which is
  * how the bar knows which tab to light when you are three screens deep.
  *
- * Compete was promoted out of the profile page. Leaderboards, friends, badges and challenges sat
- * halfway down a scroll between your stats and the privacy policy, which put "race your friends"
- * in the same list as "what version is this". It is half the game and it gets its own door.
+ * The social tab is called Leaderboard because that is what people open it for. It still holds
+ * friends, badges and challenges underneath, but naming a tab after the hub rather than after the
+ * thing in the hub makes somebody read a label and guess.
+ *
+ * Library left the bar and moved under Train. Choosing what to train is part of training, and a
+ * permanent tab for a list you visit once a week was spending a fifth of the bar on browsing.
  */
 enum class Tab(val label: String, val icon: ImageVector, val root: Route, val owns: Set<KClass<out Route>>) {
     TRAIN(
         "Train", AppIcons.Bolt, Home,
         setOf(Home::class, Modes::class, ExercisePicker::class, Session::class, Summary::class,
-            DuelLobby::class, RaidRoom::class, Roster::class),
+            DuelLobby::class, RaidRoom::class, Roster::class,
+            Library::class, ExerciseDetail::class,
+            // The health tools are opened from this tab, so this tab owns them. A route belongs to
+            // exactly one tab: reachable from two, the bar lights whichever one the owns-set
+            // happens to name and disagrees with the stack you are actually in.
+            RunHome::class, RunActive::class, RunSummary::class, Alarms::class, AlarmEdit::class,
+            Breathing::class, Posture::class, Desk::class, Clinic::class),
     ),
-    LIBRARY(
-        "Library", AppIcons.Grid, Library,
-        setOf(Library::class, ExerciseDetail::class),
+
+    LEADERBOARD(
+        "Leaderboard", AppIcons.Trophy, Compete,
+        setOf(Compete::class, Leaderboard::class, Friends::class, Achievements::class,
+            Weekly::class, Challenge::class),
     ),
     PROGRESS(
         "Progress", AppIcons.Chart, Progress,
         setOf(Progress::class, Streaks::class, History::class, Character::class, Ghosts::class),
     ),
-    COMPETE(
-        "Compete", AppIcons.Trophy, Compete,
-        setOf(Compete::class, Leaderboard::class, Friends::class, Achievements::class,
-            Weekly::class, Challenge::class),
-    ),
     YOU(
         "You", AppIcons.Person, You,
         setOf(You::class, Settings::class, Privacy::class, Preflight::class,
-            RunHome::class, RunActive::class, RunSummary::class, Alarms::class, AlarmEdit::class,
-            Breathing::class, Posture::class, Desk::class, Clinic::class,
             Account::class, About::class, Help::class, BossPreview::class),
     );
 

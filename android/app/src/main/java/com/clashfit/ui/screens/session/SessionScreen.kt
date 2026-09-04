@@ -131,6 +131,13 @@ fun SessionScreen(
     LaunchedEffect(Unit) { vm.finished.collect { id -> onSummary(id) } }
 
     val s = state ?: return
+
+    // Five seconds to put the phone down and walk into frame, over the live camera so you can see
+    // whether you fit. The engine calibrates underneath: calibration needs you in shot too, so the
+    // two want the same five seconds.
+    var readying by remember { mutableStateOf(true) }
+    val exerciseNames by graph.config.exercises.collectAsStateWithLifecycle()
+
     Box(Modifier.fillMaxSize().background(Ground)) {
         when (s.phase) {
             Phase.CALIBRATING -> {
@@ -159,6 +166,14 @@ fun SessionScreen(
         if (s.ended && s.phase != Phase.DEAD) EndPanel(s, onSummary = {}, onExit = onExit)
         // Over the top of whatever is showing: the fight has to end on screen, not on the next one.
         BossDownStamp(s.combat.dead, reduceMotion)
+
+        if (readying && !s.ended) {
+            GetReady(
+                exerciseName = exerciseNames[args.exerciseId]?.name
+                    ?: args.exerciseId.replace('_', ' ').replaceFirstChar { it.uppercase() },
+                reduceMotion = reduceMotion,
+            ) { readying = false }
+        }
 
         // A replayed session says so, the whole time, in the frame. A judge who is told this is a
         // recording is fine with it; a judge who works it out on their own is not.

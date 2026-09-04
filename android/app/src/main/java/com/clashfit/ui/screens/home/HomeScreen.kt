@@ -67,6 +67,7 @@ import com.clashfit.ui.nav.Alarms
 import com.clashfit.ui.components.AppCard
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.width
+import com.clashfit.ui.nav.Library
 
 /**
  * The Train tab. One tap into a fight, then every way to play as carousels grouped by how many
@@ -95,11 +96,9 @@ fun HomeScreen(graph: AppGraph, nav: NavHostController) {
         ) {
             val reason = remember(sessions, preferredId, zone) { todayLine(sessions, preferredId, zone) }
             HeroCard(
-                exerciseName = preferredName,
                 streak = streak?.current ?: 0,
                 reason = reason,
-                onFight = { nav.navigate(Session(mode = GameMode.BOSS_FIGHT.name, exerciseId = preferredId)) },
-                onChange = { nav.navigate(ExercisePicker(GameMode.BOSS_FIGHT.name)) },
+                onFight = { nav.navigate(ExercisePicker(GameMode.BOSS_FIGHT.name)) },
                 modifier = Modifier.padding(horizontal = 20.dp),
             )
 
@@ -112,6 +111,31 @@ fun HomeScreen(graph: AppGraph, nav: NavHostController) {
                 ),
                 Modifier.padding(horizontal = 20.dp),
             )
+
+            SectionGap(22)
+            // Library lost its tab. It needs a door people can actually find, on the tab where
+            // choosing what to train already happens.
+            AppCard(
+                Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                padding = 16,
+                onClick = { nav.navigate(Library) },
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Box(
+                        Modifier.size(38.dp).clip(CircleShape).background(Ember.copy(alpha = 0.18f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(AppIcons.Grid, contentDescription = null, tint = Ember, modifier = Modifier.size(20.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text("Exercise library", style = MaterialTheme.typography.titleSmall, color = Ink)
+                        Text(
+                            "${exercises.size} movements across strength, holds, yoga and cardio",
+                            style = MaterialTheme.typography.bodySmall, color = InkMuted,
+                        )
+                    }
+                }
+            }
 
             SectionGap(28)
             SectionTitle("Ways to play", Modifier.padding(horizontal = 20.dp), action = "All modes") { nav.navigate(Modes) }
@@ -183,11 +207,9 @@ private fun ToolCard(tool: Tool, onClick: () -> Unit) {
 /** The one thing on the tab that asks for a tap. */
 @Composable
 private fun HeroCard(
-    exerciseName: String,
     streak: Int,
     reason: String,
     onFight: () -> Unit,
-    onChange: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -207,7 +229,7 @@ private fun HeroCard(
         Spacer(Modifier.height(14.dp))
         Text("READY\nTO FIGHT?", style = MaterialTheme.typography.headlineLarge, color = Ground)
         Text(
-            "$exerciseName · Boss Fight",
+            "Pick a movement, then fight.",
             style = MaterialTheme.typography.bodyMedium, color = Ground.copy(alpha = 0.85f),
             modifier = Modifier.padding(top = 6.dp),
         )
@@ -219,16 +241,12 @@ private fun HeroCard(
             modifier = Modifier.padding(top = 10.dp),
         )
         Spacer(Modifier.height(18.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Button(
-                onClick = onFight,
-                shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(containerColor = Ground, contentColor = Ink),
-                modifier = Modifier.weight(1f).height(52.dp),
-            ) { Text("Start a fight", style = MaterialTheme.typography.titleMedium) }
-            Spacer(Modifier.size(8.dp))
-            LinkButton("Change", color = Ground, onClick = onChange)
-        }
+        Button(
+            onClick = onFight,
+            shape = CircleShape,
+            colors = ButtonDefaults.buttonColors(containerColor = Ground, contentColor = Ink),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+        ) { Text("Start a fight", style = MaterialTheme.typography.titleMedium) }
     }
 }
 

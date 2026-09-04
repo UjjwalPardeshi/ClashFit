@@ -152,6 +152,10 @@ class RaidSession(
             playerStates.remove(lostId)
             playerLastSeenMs.remove(lostId)
             appliedDamage.remove(lostId)
+            // And the sequence high-water mark. Leaving it behind meant a player who dropped and
+            // came back with a restarted counter had every message rejected as stale, so their
+            // reps stopped moving on the board and nothing said why.
+            newestSeq.remove(lostId)
             changed = true
         }
 

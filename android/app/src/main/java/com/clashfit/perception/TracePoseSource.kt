@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -27,7 +28,15 @@ import kotlinx.serialization.json.jsonPrimitive
  * and as-fast-as-possible mode (no delay between frames).
  */
 class TracePoseSource(
-    private val traceJsonLines: String,
+    /**
+     * Reads the trace, called once when the replay starts.
+     *
+     * A lambda rather than a String because the caller used to read 903 KB from assets inside a
+     * `remember` block — on the main thread, during composition, with no guard if the asset were
+     * missing. Deferring it means the read happens on IO inside the replay coroutine, where a
+     * failure can be caught and reported as an empty replay instead of a crash.
+     */
+    private val traceJsonLines: () -> String,
     private val clock: Clock,
     private val scope: CoroutineScope,
     private val replayRealTiming: Boolean = true,
@@ -70,7 +79,14 @@ class TracePoseSource(
 
     private suspend fun replayTrace() {
         try {
-            val lines = traceJsonLines.split('\n').filter { it.isNotBlank() }
+            // Off the main thread, and guarded. A missing or unreadable trace ends the replay
+            // quietly instead of taking the app down with it.
+            val text = withContext(Dispatchers.IO) {
+                runCatching { traceJsonLines() }
+                    .onFailure { Log.e(TAG, "Could not read the trace", it) }
+                    .getOrNull()
+            } ?: return
+            val lines = text.split('\n').filter { it.isNotBlank() }
             if (lines.isEmpty()) {
                 Log.e(TAG, "Empty trace")
                 return

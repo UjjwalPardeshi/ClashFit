@@ -148,6 +148,9 @@ class RepRaceSession(
             playerReps.remove(lostId)
             playerSeqs.remove(lostId)
             playerLastSeenMs.remove(lostId)
+            // Same reason as the raid: a reconnecting player restarts their counter, and a stale
+            // high-water mark rejects everything they send afterwards.
+            playerNewestSeq.remove(lostId)
             changed = true
         }
 

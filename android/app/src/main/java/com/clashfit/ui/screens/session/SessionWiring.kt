@@ -31,7 +31,10 @@ object SessionWiring {
             // this as the escape when the lighting beats the pose model, and until now it was a
             // class nothing constructed.
             replay -> TracePoseSource(
-                traceJsonLines = graph.app.assets.open(DEMO_TRACE).bufferedReader().use { it.readText() },
+                // Passed as a reader, not as a String: this used to do 903 KB of asset IO on the
+                // main thread inside a remember block, and would have crashed the app outright if
+                // the asset were ever missing from a build.
+                traceJsonLines = { graph.app.assets.open(DEMO_TRACE).bufferedReader().use { it.readText() } },
                 clock = graph.clock,
                 scope = graph.scope,
             )

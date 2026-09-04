@@ -315,7 +315,10 @@ class SessionViewModel(
         val id = withContext(Dispatchers.IO) {
             graph.db.withTransaction {
             val sessionId = dao.insertSession(SessionEntity(
-                startedAtMs = startedAtMs, endedAtMs = now, mode = args.mode.name, exerciseId = args.exerciseId,
+                // A replayed session is labelled in the data, not only on screen, so History can
+                // never present a recording as something you did.
+                startedAtMs = startedAtMs, endedAtMs = now,
+                mode = if (args.replay) REPLAY_MODE else args.mode.name, exerciseId = args.exerciseId,
                 bossId = s.combat.bossId, outcome = reason.name, totalDamage = s.playerDamage, totalReps = all.size,
                 formMean = formMean, peakFatigue = last?.fatigue?.value ?: 0f, peakBand = (last?.fatigue?.band ?: FatigueBand.FRESH).name,
                 casual = args.casual, ghostId = args.ghostId,
@@ -339,7 +342,18 @@ class SessionViewModel(
             }
         }
         Log.i(TAG, "session $id saved: ${all.size} reps, ${s.playerDamage} damage, $reason")
-        bank(id, all, formMean, now, s.playerDamage, reason, startedAtMs)
+        // A replay is a recording, so nothing it does counts.
+        //
+        // Without this a demo rescue would advance the streak, award XP, unlock badges, set
+        // personal bests and push a score to the shared leaderboard — every one of them earned by
+        // a file rather than by a body. On a board other people are on, that is not a rounding
+        // error, it is cheating. The session is still written so the summary can show the fatigue
+        // curve, which is the whole reason to run a replay in front of anyone.
+        if (!args.replay) {
+            bank(id, all, formMean, now, s.playerDamage, reason, startedAtMs)
+        } else {
+            Log.i(TAG, "session $id was a replay: no xp, no streak, no board")
+        }
         _finished.tryEmit(id)
     }
 
@@ -426,3 +440,12 @@ private fun RepRecord.toEntity(sessionId: Long) = RepEntity(
     fatigueValue = fatigue.value, fatigueBand = fatigue.band.name, validFrameRatio = validFrameRatio,
     depthCm = depthCm.takeUnless { it.isNaN() }, heightCm = heightCm.takeUnless { it.isNaN() }, holdSec = holdSec.takeUnless { it.isNaN() },
 )
+
+/**
+ * The mode a replayed session is recorded under.
+ *
+ * Not a GameMode: a replay is not a way to play, it is a recording being pushed through the engine
+ * so a demo can carry on when the room beats the camera. Giving it its own name keeps it out of
+ * every count that groups by mode, and keeps History honest about what it is.
+ */
+const val REPLAY_MODE = "REPLAY"

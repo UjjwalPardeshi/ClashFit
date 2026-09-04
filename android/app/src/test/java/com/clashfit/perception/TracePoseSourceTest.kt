@@ -40,7 +40,7 @@ class TracePoseSourceTest {
             {"t":33,"lm":[[-0.12,-0.45,0,0.95],[0.12,-0.45,0,0.95],[-0.12,-0.25,0,0.9],[0.12,-0.25,0,0.9],[-0.12,-0.05,0,0.9],[0.12,-0.05,0,0.9],[-0.12,0,0,0.95],[0.12,0,0,0.95],[-0.12,0.42,0,0.95],[0.12,0.42,0,0.95],[-0.0615,0.8359,0,0.95],[0.1785,0.8359,0,0.95],[-0.0615,0.8359,0,0.95],[0.1785,0.8359,0,0.95],[-0.0615,0.8359,0,0.95],[0.1785,0.8359,0,0.95]]}
         """.trimIndent()
 
-        val source = TracePoseSource(trace, clock, scope, replayRealTiming = false)
+        val source = TracePoseSource({ trace }, clock, scope, replayRealTiming = false)
         source.start()
 
         // Collect first two frames
@@ -62,7 +62,7 @@ class TracePoseSourceTest {
             {"t":0,"lm":[[1.0,2.0,3.0,0.9],[4.0,5.0,6.0,0.8],[7.0,8.0,9.0,0.7]]}
         """.trimIndent()
 
-        val source = TracePoseSource(trace, clock, scope, replayRealTiming = false)
+        val source = TracePoseSource({ trace }, clock, scope, replayRealTiming = false)
         source.start()
 
         val frames = source.frames.take(1).toList()
@@ -102,7 +102,7 @@ class TracePoseSourceTest {
             }}
         """.trimIndent()
 
-        val source = TracePoseSource(trace, clock, scope, replayRealTiming = false)
+        val source = TracePoseSource({ trace }, clock, scope, replayRealTiming = false)
         source.start()
 
         // Consume all frames to trigger FPS updates
@@ -121,7 +121,7 @@ class TracePoseSourceTest {
             {"type":"clashfit-trace","v":1,"keep":[],"meta":{},"frames":0}
         """.trimIndent()
 
-        val source = TracePoseSource(trace, clock, scope, replayRealTiming = false)
+        val source = TracePoseSource({ trace }, clock, scope, replayRealTiming = false)
         source.start()
 
         // Should not crash; just emit nothing
@@ -139,7 +139,7 @@ class TracePoseSourceTest {
             {"t":33,"invalid":"json"}
         """.trimIndent()
 
-        val source = TracePoseSource(trace, clock, scope, replayRealTiming = false)
+        val source = TracePoseSource({ trace }, clock, scope, replayRealTiming = false)
         source.start()
 
         // Should emit first frame and skip second
