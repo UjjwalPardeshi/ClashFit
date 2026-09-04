@@ -52,6 +52,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import com.clashfit.ui.screens.session.BossPreviewScreen
 
 /**
  * Renders every non-camera screen on the JVM and writes a PNG under app/screenshots. This is how
@@ -135,6 +136,7 @@ class ScreenshotTest {
     @Test fun challenge() = shot("18-challenge", Challenge) { ChallengeScreen(graph, it) }
     @Test fun about() = shot("24-about", About) { AboutScreen(graph, it, onPrivacy = {}, onHelp = {}) }
     @Test fun help() = shot("25-help", Help) { HelpScreen(graph, it, onStart = {}) }
+    @Test fun bossPreview() = shot("26-boss-preview", BossPreview) { BossPreviewScreen(graph, it) }
 }
 
 /**

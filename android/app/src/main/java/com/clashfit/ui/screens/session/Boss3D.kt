@@ -5,6 +5,7 @@ import android.view.Choreographer
 import android.view.TextureView
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -257,6 +258,7 @@ private class BossRig(view: TextureView, glb: ByteArray) {
  *
  * [allow3d] is the manual override from Settings. Automatic fallback only catches failures loud
  * enough to throw; a renderer that starts and looks wrong needs a switch a person can reach.
+ * [onRenderer] reports which boss is actually on screen, so a caller can say so honestly.
  */
 @Composable
 fun BossStage(
@@ -265,9 +267,14 @@ fun BossStage(
     shake: Float,
     modifier: Modifier = Modifier,
     allow3d: Boolean = true,
+    onRenderer: (Boolean) -> Unit = {},
 ) {
     var use3d by remember { mutableStateOf(true) }
-    if (allow3d && use3d) {
+    val live = allow3d && use3d
+    // Report what is actually on screen, not what was asked for. A caller that says "showing the
+    // 3D model" while the fallback quietly took over is worse than saying nothing.
+    LaunchedEffect(live) { onRenderer(live) }
+    if (live) {
         Boss3D(combat, jolt, modifier, onUnavailable = { use3d = false })
     } else {
         BossFigure(combat, jolt, shake, modifier)

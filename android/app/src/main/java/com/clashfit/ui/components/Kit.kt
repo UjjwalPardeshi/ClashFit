@@ -59,6 +59,8 @@ import com.clashfit.ui.theme.Rule
 import com.clashfit.ui.theme.RuleSoft
 import com.clashfit.ui.theme.Shallow
 import com.clashfit.ui.theme.Working
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 
 /*
  * The shared kit. Material 3 underneath, one accent on top. Every screen builds from these so
@@ -383,3 +385,28 @@ fun CenteredCopy(text: String, modifier: Modifier = Modifier, color: Color = Ink
 
 /** A one-pixel border for the rare element that needs an outline instead of a tone. */
 fun Modifier.outlined(): Modifier = this.border(1.dp, Rule, androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+
+/**
+ * A selectable pill, for filter rows and small state pickers.
+ *
+ * Promoted out of the library screen when a second screen needed one. Two private copies of the
+ * same chip is how a design system starts drifting: one gets a new selected colour and the other
+ * does not, and nobody notices until they are side by side in a screenshot.
+ */
+@Composable
+fun FilterPill(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        modifier = modifier,
+        label = { Text(label, style = MaterialTheme.typography.labelLarge) },
+        shape = CircleShape,
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = Panel, labelColor = InkMuted,
+            selectedContainerColor = Ember, selectedLabelColor = Ink,
+        ),
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = true, selected = selected, borderColor = Rule, selectedBorderColor = Ember,
+        ),
+    )
+}

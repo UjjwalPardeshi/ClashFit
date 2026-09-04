@@ -57,6 +57,7 @@ sealed interface Route
 @Serializable data object Desk : Route
 @Serializable data object Settings : Route
 @Serializable data object Privacy : Route
+@Serializable data object BossPreview : Route
 @Serializable data object Preflight : Route
 
 // ── help ────────────────────────────────────────────────────────────────────

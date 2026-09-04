@@ -63,6 +63,7 @@ import com.clashfit.ui.theme.Panel
 import com.clashfit.ui.theme.PanelLift
 import com.clashfit.ui.theme.Rule
 import com.clashfit.ui.theme.RuleSoft
+import com.clashfit.ui.components.FilterPill
 
 fun Family.displayName(): String = when (this) {
     Family.REP_CYCLE -> "Strength"
@@ -113,9 +114,9 @@ fun LibraryScreen(graph: AppGraph, nav: NavHostController) {
                     Modifier.padding(top = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    item { FamilyChip("All", family == null) { family = null } }
+                    item { FilterPill("All", family == null, onClick = { family = null }) }
                     items(Family.entries, key = { it.name }) { f ->
-                        FamilyChip(f.displayName(), family == f) { family = if (family == f) null else f }
+                        FilterPill(f.displayName(), family == f, onClick = { family = if (family == f) null else f })
                     }
                 }
             }
@@ -139,21 +140,6 @@ fun LibraryScreen(graph: AppGraph, nav: NavHostController) {
             }
         }
     }
-}
-
-@Composable
-private fun FamilyChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label, style = MaterialTheme.typography.labelLarge) },
-        shape = CircleShape,
-        colors = FilterChipDefaults.filterChipColors(
-            containerColor = Panel, labelColor = InkMuted,
-            selectedContainerColor = Ember, selectedLabelColor = Ink,
-        ),
-        border = FilterChipDefaults.filterChipBorder(enabled = true, selected = selected, borderColor = Rule, selectedBorderColor = Ember),
-    )
 }
 
 @Composable

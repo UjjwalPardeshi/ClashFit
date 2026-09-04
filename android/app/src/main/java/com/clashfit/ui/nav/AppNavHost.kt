@@ -44,6 +44,7 @@ import com.clashfit.ui.screens.splash.SplashScreen
 import com.clashfit.ui.screens.you.YouScreen
 import com.clashfit.ui.theme.Motion
 import kotlinx.coroutines.flow.Flow
+import com.clashfit.ui.screens.session.bossPreviewRoutes
 
 /**
  * The whole navigation graph, inside the app shell. The shell draws the bottom bar and hides it
@@ -155,6 +156,7 @@ fun AppNavHost(
 
             shellRoutes(graph, nav)      // modes · picker · library · character · streaks · history · settings · privacy · preflight · clinic · posture · desk
             sessionRoutes(graph, nav)    // calibration → fight → rest → victory, and the summary
+            bossPreviewRoutes(graph, nav) // the boss on its own, to check the renderer at a venue
             runRoutes(graph, nav)        // the run tracker
             alarmRoutes(graph, nav)      // the rep-gated wake-up alarm
 

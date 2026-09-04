@@ -39,6 +39,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import com.clashfit.ui.nav.BossPreview
+import com.clashfit.ui.components.NavRow
+import com.clashfit.ui.components.AppIcons
 
 /** Every preference, config version and reload, model presence, and the one destructive action. */
 @Composable
@@ -62,6 +65,8 @@ fun SettingsScreen(graph: AppGraph, nav: NavHostController) {
                 supporting = "Landmarks and angles drawn over the camera")
             SwitchRow("3D boss", settings.boss3d, { v -> scope.launch { graph.prefs.setBoss3d(v) } },
                 supporting = "Off draws the boss in flat shapes instead. Same fight either way.")
+            NavRow("Boss preview", { nav.navigate(BossPreview) }, icon = AppIcons.Bolt,
+                supporting = "Every state, without starting a fight")
 
             SectionGap(28)
             Kicker("Audio and haptics")
