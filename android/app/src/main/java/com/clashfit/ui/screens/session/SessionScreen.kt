@@ -99,6 +99,7 @@ fun SessionScreen(
                     cue = s.cue, progress = s.calibProgress,
                     tooFar = s.calib == com.clashfit.core.model.CalibState.TOO_FAR,
                     tooClose = s.calib == com.clashfit.core.model.CalibState.TOO_CLOSE,
+                    exerciseId = s.exerciseId,
                 )
                 ExitCorner(onExit)
             }

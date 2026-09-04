@@ -39,7 +39,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
@@ -49,12 +48,11 @@ import com.clashfit.core.model.FatigueBand
 import com.clashfit.core.model.Verdict
 import com.clashfit.ui.components.AppCard
 import com.clashfit.ui.components.AppIcons
-import com.clashfit.ui.components.Bar
 import com.clashfit.ui.components.FatiguePips
+import com.clashfit.ui.components.SegmentedBar
 import com.clashfit.ui.components.color
 import androidx.compose.material3.Icon
 import com.clashfit.ui.theme.Ember
-import com.clashfit.ui.theme.EmberDeep
 import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.Heavy
 import com.clashfit.ui.theme.Ink
@@ -81,7 +79,7 @@ fun BossHeader(combat: CombatState, modifier: Modifier = Modifier, timeLeftMs: L
             }
         }
         Spacer(Modifier.height(8.dp))
-        Bar(fraction = combat.hpPct, color = hpColor(combat.hpPct), height = 10)
+        SegmentedBar(fraction = combat.hpPct, color = hpColor(combat.hpPct), height = 10, segments = 20)
         Spacer(Modifier.height(6.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(combat.phaseLabel, style = MaterialTheme.typography.labelSmall, color = InkFaint)
@@ -102,32 +100,8 @@ fun formatClock(ms: Long): String {
     return "%d:%02d".format(s / 60, s % 60)
 }
 
-/**
- * The boss. No key art in the APK, so the boss is the brand mark made large: a slow breathing
- * square that jolts on a hit, shifts colour with its phase and shakes on a phase change.
- */
-@Composable
-fun BossFigure(combat: CombatState, jolt: Float, shake: Float, modifier: Modifier = Modifier) {
-    val breath by rememberInfiniteTransition(label = "breath").animateFloat(
-        initialValue = 0.96f, targetValue = 1.04f,
-        animationSpec = infiniteRepeatable(tween(Motion.bossBreathMs / 2), RepeatMode.Reverse), label = "breath",
-    )
-    val tone = when (combat.phaseLabel) { "enrage" -> EmberDeep; "desperation" -> Ember; else -> Panel }
-    val edge = when (combat.phaseLabel) { "phase1" -> Ember; else -> Ink }
-    Canvas(modifier.fillMaxSize()) {
-        val side = size.minDimension * 0.42f * breath * (1f - 0.08f * jolt)
-        val c = Offset(size.width / 2f + shake, size.height / 2f)
-        rotate(45f, c) {
-            drawRect(tone, topLeft = Offset(c.x - side / 2, c.y - side / 2), size = Size(side, side))
-            drawRect(edge, topLeft = Offset(c.x - side / 2, c.y - side / 2), size = Size(side, side), style = Stroke(width = 6f + 30f * jolt))
-        }
-        // Health as an inner core that shrinks as HP falls.
-        val core = side * 0.55f * combat.hpPct.coerceIn(0.05f, 1f)
-        rotate(45f, c) {
-            drawRect(edge.copy(alpha = 0.85f), topLeft = Offset(c.x - core / 2, c.y - core / 2), size = Size(core, core))
-        }
-    }
-}
+// The boss character lives in BossCharacter.kt: THE PACEMAKER, drawn in code with the six
+// states the asset brief specifies. docs/15-ASSET-BRIEF.md §1
 
 /** Damage numeral: punches in at the boss, scales 1.0 → 1.25 → 1.0, drifts up, fades over 700ms. */
 @Composable
@@ -205,7 +179,7 @@ fun HitFlash(hit: HudEvent.Hit?, reduceMotion: Boolean, modifier: Modifier = Mod
 
 /** Calibration guide: a silhouette in the target framing band, the named cue, the 2s hold ring. */
 @Composable
-fun CalibrationOverlay(cue: String?, progress: Float, tooFar: Boolean, tooClose: Boolean, modifier: Modifier = Modifier) {
+fun CalibrationOverlay(cue: String?, progress: Float, tooFar: Boolean, tooClose: Boolean, exerciseId: String? = null, modifier: Modifier = Modifier) {
     Box(modifier.fillMaxSize()) {
         Canvas(Modifier.fillMaxSize()) {
             val w = size.width; val h = size.height
@@ -213,14 +187,38 @@ fun CalibrationOverlay(cue: String?, progress: Float, tooFar: Boolean, tooClose:
             val top = h * 0.06f; val bottom = h * 0.94f
             val stroke = Stroke(width = 4f)
             drawRect(Ember.copy(alpha = 0.55f), topLeft = Offset(w * 0.22f, top), size = Size(w * 0.56f, bottom - top), style = stroke)
-            // Silhouette: head, torso, legs — enough to say "stand here, whole body".
+
+            // Draw appropriate silhouette based on exercise
+            val isProne = isProneExercise(exerciseId)
             val cx = w / 2f
-            drawCircle(Ink.copy(alpha = 0.35f), radius = w * 0.06f, center = Offset(cx, top + h * 0.12f), style = stroke)
-            drawLine(Ink.copy(alpha = 0.35f), Offset(cx, top + h * 0.19f), Offset(cx, top + h * 0.52f), strokeWidth = 4f)
-            drawLine(Ink.copy(alpha = 0.35f), Offset(cx, top + h * 0.52f), Offset(cx - w * 0.09f, bottom - h * 0.02f), strokeWidth = 4f)
-            drawLine(Ink.copy(alpha = 0.35f), Offset(cx, top + h * 0.52f), Offset(cx + w * 0.09f, bottom - h * 0.02f), strokeWidth = 4f)
-            drawLine(Ink.copy(alpha = 0.35f), Offset(cx, top + h * 0.25f), Offset(cx - w * 0.14f, top + h * 0.42f), strokeWidth = 4f)
-            drawLine(Ink.copy(alpha = 0.35f), Offset(cx, top + h * 0.25f), Offset(cx + w * 0.14f, top + h * 0.42f), strokeWidth = 4f)
+            val silhouetteAlpha = 0.35f
+
+            if (isProne) {
+                // Horizontal prone figure (push-up, plank position)
+                val neckY = h * 0.45f
+                val shoulderY = neckY + h * 0.06f
+                val hipY = shoulderY + h * 0.2f
+                val footY = hipY + h * 0.12f
+
+                // Head
+                drawCircle(Ink.copy(alpha = silhouetteAlpha), radius = w * 0.04f, center = Offset(cx - w * 0.2f, neckY - h * 0.06f), style = stroke)
+                // Horizontal torso
+                drawLine(Ink.copy(alpha = silhouetteAlpha), Offset(cx - w * 0.15f, shoulderY), Offset(cx + w * 0.22f, hipY), strokeWidth = 4f)
+                // Legs
+                drawLine(Ink.copy(alpha = silhouetteAlpha), Offset(cx + w * 0.22f, hipY), Offset(cx + w * 0.28f, footY), strokeWidth = 4f)
+                // Arms extended
+                drawLine(Ink.copy(alpha = silhouetteAlpha), Offset(cx - w * 0.15f, shoulderY), Offset(cx - w * 0.28f, shoulderY - h * 0.08f), strokeWidth = 4f)
+                drawLine(Ink.copy(alpha = silhouetteAlpha), Offset(cx - w * 0.15f, shoulderY), Offset(cx - w * 0.28f, shoulderY + h * 0.08f), strokeWidth = 4f)
+            } else {
+                // Standing figure (default: squat, side/front standing)
+                drawCircle(Ink.copy(alpha = silhouetteAlpha), radius = w * 0.06f, center = Offset(cx, top + h * 0.12f), style = stroke)
+                drawLine(Ink.copy(alpha = silhouetteAlpha), Offset(cx, top + h * 0.19f), Offset(cx, top + h * 0.52f), strokeWidth = 4f)
+                drawLine(Ink.copy(alpha = silhouetteAlpha), Offset(cx, top + h * 0.52f), Offset(cx - w * 0.09f, bottom - h * 0.02f), strokeWidth = 4f)
+                drawLine(Ink.copy(alpha = silhouetteAlpha), Offset(cx, top + h * 0.52f), Offset(cx + w * 0.09f, bottom - h * 0.02f), strokeWidth = 4f)
+                drawLine(Ink.copy(alpha = silhouetteAlpha), Offset(cx, top + h * 0.25f), Offset(cx - w * 0.14f, top + h * 0.42f), strokeWidth = 4f)
+                drawLine(Ink.copy(alpha = silhouetteAlpha), Offset(cx, top + h * 0.25f), Offset(cx + w * 0.14f, top + h * 0.42f), strokeWidth = 4f)
+            }
+
             // Hold ring.
             if (progress > 0f) {
                 drawArc(Ember, startAngle = -90f, sweepAngle = 360f * progress, useCenter = false,
@@ -233,6 +231,14 @@ fun CalibrationOverlay(cue: String?, progress: Float, tooFar: Boolean, tooClose:
             Text(cue ?: "Step into frame.", fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.Medium, color = Ink)
         }
     }
+}
+
+/** Helper to classify whether an exercise is prone (horizontal) or upright. */
+private fun isProneExercise(exerciseId: String?): Boolean {
+    if (exerciseId == null) return false
+    val id = exerciseId.lowercase()
+    return id.contains("plank") || id.contains("push") || id.contains("burpee") ||
+           id.contains("prone") || id.contains("mountain_climber")
 }
 
 /** A framing-lost banner inline over the fight; the fight pauses, it never navigates away. */
