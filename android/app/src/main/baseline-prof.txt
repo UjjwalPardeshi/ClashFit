@@ -1,0 +1,61 @@
+# Baseline profile — what to compile ahead of time.
+#
+# profileinstaller has been a dependency of this app for a while with nothing to install. Without
+# a profile in this file the library is dead weight: it ships, it runs, and it has no rules to
+# apply. With one, ART compiles these methods at install time instead of interpreting them on the
+# first run, which is where a cold start and the first scroll spend most of their budget.
+#
+# The rules use AGP's wildcard form, so they survive a rename or a refactor. An entry that does not
+# resolve is skipped silently rather than failing the build or the install, which is the right
+# trade for a profile written by reading the code rather than by recording a device — the risk is
+# a rule that does nothing, not a rule that breaks something.
+#
+# Flags: H = hot, S = startup, P = post-startup.
+#
+# This only takes effect in the minified release build. A debug build ignores it entirely, so the
+# development loop is unaffected.
+
+# ---------------------------------------------------------------- startup path
+# Everything between the launcher icon and the first frame of Train.
+HSPLcom/clashfit/ClashFitApp;->**(**)**
+HSPLcom/clashfit/MainActivity;->**(**)**
+HSPLcom/clashfit/AppGraph;->**(**)**
+HSPLcom/clashfit/AppGraph$Companion;->**(**)**
+HSPLcom/clashfit/util/CrashLog;->**(**)**
+
+# The theme is read before anything can be drawn at all.
+HSPLcom/clashfit/ui/theme/**->**(**)**
+
+# Navigation decides what the first frame even is.
+HSPLcom/clashfit/ui/nav/**->**(**)**
+
+# ------------------------------------------------------------- drawn every frame
+# The kit is on every screen, and the drawn art is real Canvas work on the main thread — a sigil,
+# a rank emblem, a bar and a card are re-run on each recomposition of anything that holds them.
+HSPLcom/clashfit/ui/components/**->**(**)**
+
+# ------------------------------------------------------------------ first screen
+HSPLcom/clashfit/ui/screens/home/**->**(**)**
+HSPLcom/clashfit/ui/screens/onboarding/**->**(**)**
+
+# ----------------------------------------------------------------- the hot loop
+# A fight runs the pose source, the engine and the HUD at camera frame rate. This is the one part
+# of the app where interpretation shows up as dropped frames rather than as a slower launch.
+HSPLcom/clashfit/perception/**->**(**)**
+HSPLcom/clashfit/engine/**->**(**)**
+HSPLcom/clashfit/core/**->**(**)**
+HSPLcom/clashfit/ui/screens/session/**->**(**)**
+
+# ------------------------------------------------------------------ data access
+# Room's generated implementations and the entities they carry are on the path of the first frame
+# of Train, Progress and You alike.
+HSPLcom/clashfit/data/**->**(**)**
+
+# ------------------------------------------------------------- reached from Train
+# Not startup, but the next thing a hand does. Post-startup compilation costs nothing at launch.
+PLcom/clashfit/ui/screens/progress/**->**(**)**
+PLcom/clashfit/ui/screens/you/**->**(**)**
+PLcom/clashfit/ui/screens/social/**->**(**)**
+PLcom/clashfit/ui/screens/library/**->**(**)**
+PLcom/clashfit/ui/screens/modes/**->**(**)**
+PLcom/clashfit/ui/insight/**->**(**)**
