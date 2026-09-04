@@ -27,6 +27,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import com.clashfit.ui.components.FamilyMark
+import com.clashfit.core.model.Family
 
 /**
  * The drawn marks, on a sheet, at the sizes they are used.
@@ -71,6 +73,31 @@ class GameArtScreenshotTest {
         }
         repeat(3) { Thread.sleep(200); compose.waitForIdle() }
         compose.onRoot().captureRoboImage("screenshots/70-rank-ladder.png")
+    }
+
+    @Test
+    fun familyMarks() {
+        compose.setContent {
+            ClashFitTheme {
+                Row(
+                    Modifier.fillMaxSize().background(Ground).padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Family.entries.forEach { family ->
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            FamilyMark(family, size = 56)
+                            Text(
+                                family.name.replace('_', ' ').lowercase(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = InkMuted,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        repeat(3) { Thread.sleep(200); compose.waitForIdle() }
+        compose.onRoot().captureRoboImage("screenshots/72-family-marks.png")
     }
 
     @Test

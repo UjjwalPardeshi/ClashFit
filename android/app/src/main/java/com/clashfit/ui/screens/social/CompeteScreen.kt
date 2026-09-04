@@ -44,6 +44,7 @@ import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Success
+import com.clashfit.ui.components.RankInsignia
 
 /**
  * Everything to do with other people, in one place.
@@ -106,11 +107,17 @@ fun CompeteScreen(graph: AppGraph, nav: NavHostController) {
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(
-                                        "${entry.rank}   ${entry.displayName}${if (entry.isMe) "  ·  you" else ""}",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = if (entry.isMe) Ember else Ink,
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    ) {
+                                        RankInsignia(entry.level, size = 26)
+                                        Text(
+                                            "${entry.rank}   ${entry.displayName}${if (entry.isMe) "  ·  you" else ""}",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = if (entry.isMe) Ember else Ink,
+                                        )
+                                    }
                                     Text(
                                         "${entry.value}",
                                         style = MaterialTheme.typography.bodyMedium,

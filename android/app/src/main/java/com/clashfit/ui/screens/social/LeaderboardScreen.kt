@@ -58,6 +58,7 @@ import com.clashfit.ui.theme.Panel
 import com.clashfit.ui.theme.PanelLift
 import com.clashfit.ui.theme.Rule
 import com.clashfit.ui.theme.Silver
+import com.clashfit.ui.components.RankInsignia
 
 /** Global and friends boards for the week and all time. Honest when the cloud is not there. */
 @Composable
@@ -156,6 +157,9 @@ private fun EntryRow(e: LeaderboardEntry, unit: String) {
             Text(if (e.isMe) "${e.displayName} (you)" else e.displayName, style = MaterialTheme.typography.bodyLarge, color = Ink)
             Text("Level ${e.level}", style = MaterialTheme.typography.bodySmall, color = InkMuted)
         }
+        // Their rank, worn. A board of names and numbers tells you who is ahead; a board of
+        // emblems tells you what they are, which is the part worth catching up to.
+        RankInsignia(e.level, size = 32)
         Text("${e.value} $unit", style = MaterialTheme.typography.titleSmall, color = if (e.isMe) Ember else Ink)
     }
 }

@@ -64,6 +64,7 @@ import com.clashfit.ui.theme.PanelLift
 import com.clashfit.ui.theme.Rule
 import com.clashfit.ui.theme.RuleSoft
 import com.clashfit.ui.components.FilterPill
+import com.clashfit.ui.components.FamilyMark
 
 fun Family.displayName(): String = when (this) {
     Family.REP_CYCLE -> "Strength"
@@ -149,6 +150,9 @@ private fun ExerciseRow(exercise: ExerciseSpec, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        // What kind of movement this is, before the name is read. The five families were the only
+        // structure a list of fifty-one had, and they lived in a filter chip above it.
+        FamilyMark(exercise.familyEnum)
         Column(Modifier.weight(1f)) {
             Text(exercise.name, style = MaterialTheme.typography.bodyLarge, color = Ink)
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
