@@ -2,6 +2,10 @@ package com.clashfit.ui.screens.session
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Typeface
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -76,6 +80,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
 
 /** The session as evidence: the fatigue curve, the form trend, the best and worst rep. */
 data class SummaryData(
@@ -138,6 +143,117 @@ class SummaryViewModel(private val graph: AppGraph, private val sessionId: Long)
             }
             context.startActivity(Intent.createChooser(shareIntent, "Share CSV export"))
         }
+    }
+
+    /** Render a summary card to PNG and share it as an image. Falls back to text summary if capture fails. */
+    fun shareAsImage(context: Context) {
+        val d = _data.value ?: return
+        viewModelScope.launch {
+            try {
+                val pngFile = withContext(Dispatchers.IO) {
+                    val dir = File(context.filesDir, "export").apply { mkdirs() }
+                    val f = File(dir, "clashfit-${d.session.exerciseId}-${d.session.id}.png")
+
+                    // Render summary card to a bitmap
+                    val bitmap = createSummaryCardBitmap(d)
+
+                    // Write bitmap to PNG
+                    FileOutputStream(f).use { fos ->
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos)
+                    }
+                    bitmap.recycle()
+                    f
+                }
+
+                // Share the PNG via intent
+                val uri = FileProvider.getUriForFile(context, "${context.packageName}.csv_provider", pngFile)
+                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "image/png"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_SUBJECT, "ClashFit Session · ${d.session.exerciseId}")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(Intent.createChooser(shareIntent, "Share result"))
+            } catch (e: Exception) {
+                // Fallback to text summary on any error (e.g., out of memory, canvas issues)
+                shareTextSummary(context, d)
+            }
+        }
+    }
+
+    private fun createSummaryCardBitmap(d: SummaryData): Bitmap {
+        val width = 800
+        val height = 1000
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+
+        // Draw background
+        val bgPaint = Paint().apply { color = 0xFF1A1A1A.toInt(); style = Paint.Style.FILL }
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
+
+        // Title
+        var y = 60f
+        drawTextCentered(canvas, "ClashFit", y, 48f, 0xFFFFFFFF.toInt())
+        y += 80f
+
+        // Exercise name
+        drawTextCentered(canvas, d.session.exerciseId.replace('_', ' '), y, 36f, 0xFFBB86FC.toInt())
+        y += 70f
+
+        // Stats section
+        val stats = listOf(
+            "Reps" to "${d.session.totalReps}",
+            "Damage" to "${d.session.totalDamage}",
+            "Form" to "${d.formMeanPct}%",
+        )
+
+        for ((label, value) in stats) {
+            y += 50f
+            drawTextLeft(canvas, label, y, 24f, 0xFF999999.toInt())
+            drawTextLeft(canvas, value, y + 35f, 32f, 0xFFFFFFFF.toInt())
+        }
+
+        return bitmap
+    }
+
+    private fun drawTextCentered(canvas: Canvas, text: String, y: Float, size: Float, color: Int) {
+        val paint = Paint().apply {
+            this.color = color
+            textSize = size
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            isAntiAlias = true
+        }
+        val bounds = android.graphics.Rect()
+        paint.getTextBounds(text, 0, text.length, bounds)
+        val x = (canvas.width - bounds.width()) / 2f - bounds.left
+        canvas.drawText(text, x, y, paint)
+    }
+
+    private fun drawTextLeft(canvas: Canvas, text: String, y: Float, size: Float, color: Int) {
+        val paint = Paint().apply {
+            this.color = color
+            textSize = size
+            isAntiAlias = true
+        }
+        canvas.drawText(text, 60f, y, paint)
+    }
+
+    private fun shareTextSummary(context: Context, d: SummaryData) {
+        val text = """
+            ClashFit Session
+            ${d.session.exerciseId.replace('_', ' ')}
+
+            Reps: ${d.session.totalReps}
+            Damage: ${d.session.totalDamage}
+            Form: ${d.formMeanPct}%
+        """.trimIndent()
+
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+            putExtra(Intent.EXTRA_SUBJECT, "ClashFit Session · ${d.session.exerciseId}")
+        }
+        context.startActivity(Intent.createChooser(shareIntent, "Share result"))
     }
 
     companion object {
@@ -298,6 +414,8 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
         // Action buttons
         val ctx = androidx.compose.ui.platform.LocalContext.current
         PrimaryButton("Fight again", Modifier.fillMaxWidth()) { onAgain(d.session) }
+        Spacer(Modifier.height(10.dp))
+        SecondaryButton("Share result", Modifier.fillMaxWidth()) { vm.shareAsImage(ctx) }
         Spacer(Modifier.height(10.dp))
         SecondaryButton(if (exported == null) "Export CSV" else "Exported", Modifier.fillMaxWidth()) { vm.exportCsv(ctx) }
         exported?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = InkFaint, modifier = Modifier.padding(top = 6.dp)) }

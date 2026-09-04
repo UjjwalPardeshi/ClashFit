@@ -1,6 +1,7 @@
 package com.clashfit.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,6 +32,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
@@ -215,7 +218,7 @@ fun PanelBox(modifier: Modifier = Modifier, padding: Int = 16, content: @Composa
 @Composable
 fun StatTile(value: String, label: String, modifier: Modifier = Modifier, color: Color = Ink) {
     AppCard(modifier, padding = 14) {
-        Column {
+        Column(Modifier.semantics(mergeDescendants = true) { contentDescription = "$value ${label.lowercase()}" }) {
             Text(value, style = MaterialTheme.typography.headlineLarge, color = color)
             Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = InkMuted, modifier = Modifier.padding(top = 4.dp))
         }
@@ -265,7 +268,7 @@ fun Avatar(name: String, modifier: Modifier = Modifier, size: Int = 56, color: C
 @Composable
 fun FatiguePips(band: FatigueBand, modifier: Modifier = Modifier, showLabel: Boolean = true) {
     val lit = band.ordinal + 1
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(modifier.semantics { contentDescription = "${band.label}, $lit of 4" }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             repeat(4) { i ->
                 Box(Modifier.width(22.dp).height(6.dp).clip(CircleShape).background(if (i < lit) band.color() else RuleSoft))
@@ -279,8 +282,49 @@ fun FatiguePips(band: FatigueBand, modifier: Modifier = Modifier, showLabel: Boo
 @Composable
 fun Bar(fraction: Float, modifier: Modifier = Modifier, color: Color = Ember, track: Color = RuleSoft, height: Int = 8) {
     val f by animateFloatAsState(fraction.coerceIn(0f, 1f), animationSpec = Motion.hpBar, label = "bar")
-    Box(modifier.fillMaxWidth().height(height.dp).clip(CircleShape).background(track)) {
+    val pct = (f * 100).toInt()
+    Box(modifier.fillMaxWidth().height(height.dp).clip(CircleShape).background(track).semantics { contentDescription = "$pct percent" }) {
         Box(Modifier.fillMaxWidth(f).height(height.dp).clip(CircleShape).background(color))
+    }
+}
+
+/** Segmented bar with discrete filled segments, overshooting spring, readable at distance. */
+@Composable
+fun SegmentedBar(
+    fraction: Float,
+    modifier: Modifier = Modifier,
+    color: Color = Ember,
+    track: Color = RuleSoft,
+    height: Int = 8,
+    segments: Int = 20,
+) {
+    val f by animateFloatAsState(fraction.coerceIn(0f, 1f), animationSpec = Motion.hpBar, label = "segmentedBar")
+    Canvas(modifier.fillMaxWidth().height(height.dp)) {
+        val w = size.width
+        val h = size.height
+        val segmentWidth = w / segments
+        val gapWidth = segmentWidth * 0.12f // ~12% gap between segments
+        val drawWidth = segmentWidth - gapWidth
+
+        // Draw track background
+        for (i in 0 until segments) {
+            val x = i * segmentWidth + gapWidth / 2
+            drawRect(track, topLeft = androidx.compose.ui.geometry.Offset(x, 0f), size = androidx.compose.ui.geometry.Size(drawWidth, h))
+        }
+
+        // Draw filled segments
+        val filledSegments = (f * segments).toInt()
+        for (i in 0 until filledSegments) {
+            val x = i * segmentWidth + gapWidth / 2
+            drawRect(color, topLeft = androidx.compose.ui.geometry.Offset(x, 0f), size = androidx.compose.ui.geometry.Size(drawWidth, h))
+        }
+
+        // Draw partial segment if needed
+        val partial = (f * segments) - filledSegments
+        if (partial > 0.01f && filledSegments < segments) {
+            val x = filledSegments * segmentWidth + gapWidth / 2
+            drawRect(color, topLeft = androidx.compose.ui.geometry.Offset(x, 0f), size = androidx.compose.ui.geometry.Size(drawWidth * partial, h))
+        }
     }
 }
 

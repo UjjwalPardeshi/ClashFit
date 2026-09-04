@@ -88,14 +88,17 @@ fun GhostsScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = M
             if (shipped.isEmpty()) {
                 EmptyState("No pacers bundled", "Add more challenge codes to unlock pacers.")
             } else {
+                // Easiest first. A config map has no order of its own, so the bronze/silver/gold
+                // ladder arrived shuffled and read as if the tiers meant nothing.
+                val ladder = shipped.entries.sortedBy { it.value.meta.reps }
                 ListGroup {
-                    shipped.entries.forEachIndexed { index, (id, data) ->
+                    ladder.forEachIndexed { index, (id, data) ->
                         ShippedGhostRow(
                             data = data,
                             exerciseTitle = exercises.title(data.meta.exercise),
                             onRace = { nav.navigate(raceRoute(data.meta.exercise, id)) },
                         )
-                        if (index < shipped.size - 1) InnerDivider()
+                        if (index < ladder.size - 1) InnerDivider()
                     }
                 }
             }

@@ -41,7 +41,7 @@ import com.clashfit.ui.theme.RuleSoft
 private data class Page(val icon: ImageVector, val title: String, val body: String)
 
 private val PAGES = listOf(
-    Page(AppIcons.Bolt, "Your body is\nthe controller.", "Your camera counts every rep and grades the form. Clean reps hit harder. Nothing you do on camera leaves the phone."),
+    Page(AppIcons.Bolt, "Exercise in front\nof the camera.", "Your phone watches your form, counts each rep, and scores the quality. Clean reps do more damage. Your camera never leaves your phone."),
     Page(AppIcons.Trophy, "Sixteen ways\nto fight.", "Boss fights, time attacks, survival, duels, raids, yoga sigils and a clinic protocol. Fifty-one exercises across five kinds of movement."),
     Page(AppIcons.People, "Race your\nfriends.", "Weekly challenges, a global and friends leaderboard, badges, and a level that only clean reps can raise."),
 )

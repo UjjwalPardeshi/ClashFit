@@ -54,10 +54,10 @@ fun CameraPrimerScreen(onDone: () -> Unit) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             IconBubble(AppIcons.Camera, size = 96)
             Spacer(Modifier.height(24.dp))
-            Text("THE REFEREE\nNEEDS TO SEE YOU", style = MaterialTheme.typography.headlineLarge, color = Ink, textAlign = TextAlign.Center)
+            Text("WE GRADE YOUR REPS", style = MaterialTheme.typography.headlineLarge, color = Ink, textAlign = TextAlign.Center)
             Spacer(Modifier.height(12.dp))
             Text(
-                "The front camera watches your form and counts reps. It runs entirely on this phone.",
+                "The camera watches your form, counts every rep, and scores quality. Everything runs on this phone.",
                 style = MaterialTheme.typography.bodyLarge, color = InkMuted, textAlign = TextAlign.Center,
             )
         }
