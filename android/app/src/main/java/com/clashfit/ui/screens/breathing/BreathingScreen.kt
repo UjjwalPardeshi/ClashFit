@@ -56,6 +56,12 @@ import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.LocalReduceMotion
+import com.clashfit.ui.components.BreathMark
+import com.clashfit.ui.components.FilterPill
+import com.clashfit.ui.theme.Panel
+import com.clashfit.ui.theme.PanelLift
+import com.clashfit.ui.components.ScreenScaffold
+import androidx.compose.foundation.layout.consumeWindowInsets
 
 // The between-rounds recovery ritual. Pick a pattern, follow the square, bank the fatigue drop.
 // docs/22-HEALTH-DOMAINS.md §3 — breathing during rest recovers a fatigue band faster.
@@ -126,6 +132,31 @@ fun BreathingScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier 
         }
     }
 
+    // The intro is a normal screen and gets the app's top bar, which is also the only way back out
+    // of here — it had none, so reaching this screen on a gesture-less phone was a dead end. A
+    // running session is deliberately bare: nothing to press but stop.
+    if (stage == Stage.INTRO) {
+        ScreenScaffold(title = "Breathing", onBack = { nav.popBackStack() }) { padding ->
+            Column(
+                modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .consumeWindowInsets(padding)
+                    .padding(horizontal = 20.dp),
+            ) {
+                Intro(
+                    protocol = protocol,
+                    cycles = cycles,
+                    totalSec = session.totalSec,
+                    onProtocol = { protocolId = it },
+                    onCycles = { cycles = it },
+                    onBegin = { stage = Stage.RUNNING },
+                )
+            }
+        }
+        return
+    }
+
     Column(
         modifier
             .fillMaxSize()
@@ -134,14 +165,7 @@ fun BreathingScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier 
             .padding(horizontal = 20.dp, vertical = 16.dp),
     ) {
         when (stage) {
-            Stage.INTRO -> Intro(
-                protocol = protocol,
-                cycles = cycles,
-                totalSec = session.totalSec,
-                onProtocol = { protocolId = it },
-                onCycles = { cycles = it },
-                onBegin = { stage = Stage.RUNNING },
-            )
+            Stage.INTRO -> Unit
 
             Stage.RUNNING -> Running(
                 protocol = protocol,
@@ -177,16 +201,12 @@ private fun Intro(
     onBegin: () -> Unit,
 ) {
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-        Text("Recovery", style = MaterialTheme.typography.labelMedium, color = InkMuted)
-        SectionGap(12)
-        Text("Breathe between rounds", style = MaterialTheme.typography.displayMedium, color = Ink)
-        SectionGap(12)
         Text(
-            "Follow the square. Every cycle you finish pulls the fatigue band back before the next set.",
-            style = MaterialTheme.typography.bodyLarge,
+            "Every cycle you finish pulls the fatigue band back before the next set.",
+            style = MaterialTheme.typography.bodyMedium,
             color = InkMuted,
         )
-        SectionGap(28)
+        SectionGap(20)
 
         Text("Pattern", style = MaterialTheme.typography.labelMedium, color = InkMuted)
         SectionGap(12)
@@ -195,28 +215,39 @@ private fun Intro(
             AppCard(
                 Modifier.fillMaxWidth(),
                 onClick = { onProtocol(p.id) },
+                container = if (selected) PanelLift else Panel,
             ) {
                 Row(
                     Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
+                    BreathMark(p.inSec, p.holdInSec, p.outSec, p.holdOutSec, selected)
                     Column(Modifier.weight(1f)) {
-                        Text(p.name, style = MaterialTheme.typography.bodyMedium, color = Ink)
+                        Text(
+                            p.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (selected) Ink else InkMuted,
+                        )
+                        Text(p.detail, style = MaterialTheme.typography.labelSmall, color = InkFaint)
                     }
-                    Tag(p.detail, color = if (selected) Ember else InkMuted)
+                    // A tick, not a colour: the chosen pattern stays obvious to anyone who cannot
+                    // separate an ember tag from a grey one.
+                    if (selected) Icon(AppIcons.Check, contentDescription = "Selected", tint = Ember)
                 }
             }
         }
         SectionGap(24)
 
-        Text("Cycles", style = MaterialTheme.typography.labelMedium, color = InkMuted)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Cycles", style = MaterialTheme.typography.labelMedium, color = InkMuted)
+            Text(mmss(totalSec.toInt()), style = MaterialTheme.typography.labelMedium, color = Ember)
+        }
         SectionGap(12)
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
             CycleChoices.forEach { n ->
-                Tag("$n", Modifier.clickable { onCycles(n) }, color = if (n == cycles) Ember else InkMuted)
+                FilterPill("$n", selected = n == cycles, onClick = { onCycles(n) })
             }
-            Text(mmss(totalSec.toInt()), style = MaterialTheme.typography.labelSmall, color = InkFaint)
         }
         SectionGap(28)
 

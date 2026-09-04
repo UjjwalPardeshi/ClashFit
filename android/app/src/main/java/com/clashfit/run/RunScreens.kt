@@ -83,7 +83,7 @@ private fun hasPermission(context: android.content.Context, p: String) =
     ContextCompat.checkSelfPermission(context, p) == PackageManager.PERMISSION_GRANTED
 
 @Composable
-private fun RunHomeScreen(graph: AppGraph, nav: NavHostController) {
+fun RunHomeScreen(graph: AppGraph, nav: NavHostController) {
     val context = LocalContext.current
     val repo = remember(graph) { RunRepository(graph.db.runs(), graph.clock) }
     val runsFlow = remember(repo) { repo.recentRuns(20) }

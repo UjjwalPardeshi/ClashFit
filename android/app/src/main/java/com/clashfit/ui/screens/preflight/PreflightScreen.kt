@@ -56,6 +56,8 @@ import com.clashfit.ui.components.SwitchRow
 import com.clashfit.ui.components.SectionTitle
 import com.clashfit.ui.components.SecondaryButton
 import com.clashfit.util.CrashLog
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 
 enum class PreflightStatus { PASS, WARN, FAIL }
 
@@ -123,14 +125,22 @@ fun PreflightScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier 
             }
 
             // Whatever last went wrong, readable without a laptop.
-            val crash = remember { CrashLog.latest(graph.app) }
-            if (crash != null) {
+            //
+            // Loaded off the main thread: a remember block runs during composition, so reading the
+            // file there is disk IO on the UI thread — precisely what the StrictMode policy added
+            // alongside this is there to catch.
+            var crash by remember { mutableStateOf<String?>(null) }
+            LaunchedEffect(Unit) {
+                crash = withContext(Dispatchers.IO) { CrashLog.latest(graph.app) }
+            }
+            val lastCrash = crash
+            if (lastCrash != null) {
                 SectionGap(28)
                 SectionTitle("Last crash")
                 SectionGap(10)
                 AppCard(Modifier.fillMaxWidth(), padding = 16) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(crash, style = MaterialTheme.typography.bodySmall, color = Gassed)
+                        Text(lastCrash, style = MaterialTheme.typography.bodySmall, color = Gassed)
                         Text(
                             "Written to the app's own storage, so it survives the restart. " +
                                 "Read it out and it is usually enough to say what happened.",

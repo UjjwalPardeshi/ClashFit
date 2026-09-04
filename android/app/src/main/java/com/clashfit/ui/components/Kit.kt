@@ -72,6 +72,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
 
 /*
  * The shared kit. Material 3 underneath, one accent on top. Every screen builds from these so
@@ -238,7 +240,12 @@ fun AppCard(
             .border(1.dp, edge, shape)
             .then(
                 if (onClick != null) {
-                    Modifier.clickable(interactionSource = interaction, indication = null, onClick = onClick)
+                    // Role.Button, explicitly. The Material Card this replaced announced itself as
+                    // a button for free; a Box with clickable announces nothing, so every tappable
+                    // card in the app had silently stopped being reachable as a control.
+                    Modifier
+                        .semantics { role = Role.Button }
+                        .clickable(interactionSource = interaction, indication = null, onClick = onClick)
                 } else {
                     Modifier
                 },

@@ -26,6 +26,9 @@ object CrashLog {
     private const val TAG = "ClashFit/crash"
     private const val FILE = "crash.log"
 
+    /** Serialises the read-modify-write, since crashes do not queue politely. */
+    private val lock = Any()
+
     /** Keep the file small enough to read on a phone and to never matter for storage. */
     private const val MAX_BYTES = 64 * 1024
 
@@ -65,12 +68,18 @@ object CrashLog {
             append(stack.lineSequence().take(40).joinToString("\n"))
         }
 
-        val f = File(context.filesDir, FILE)
-        val existing = if (f.exists()) f.readText() else ""
-        // Oldest first out, so the newest crash is always the one that survives.
-        val combined = (existing + entry).let {
-            if (it.length > MAX_BYTES) it.takeLast(MAX_BYTES) else it
+        // Locked, because two threads can crash at the same instant and each handler runs on its
+        // own thread. Unsynchronised, both would read the same file, both would append, and the
+        // second write would erase the first — losing exactly one of the two crashes somebody
+        // needs to explain.
+        synchronized(lock) {
+            val f = File(context.filesDir, FILE)
+            val existing = if (f.exists()) f.readText() else ""
+            // Oldest first out, so the newest crash is always the one that survives.
+            val combined = (existing + entry).let {
+                if (it.length > MAX_BYTES) it.takeLast(MAX_BYTES) else it
+            }
+            f.writeText(combined)
         }
-        f.writeText(combined)
     }
 }
