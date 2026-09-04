@@ -61,6 +61,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import kotlinx.coroutines.launch
 import com.clashfit.meta.MetaState
 import com.clashfit.data.Prefs
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * One screen for the whole fight. The engine's phase decides what is drawn: calibration guide,
@@ -83,6 +84,9 @@ fun SessionScreen(
     // Not every pose source has a camera: a recorded trace and the synthetic source do not, and
     // the fight has to work with either.
     val camera = deps.pose as? CameraPreviewSource
+    // Null until the first camera frame; the rig falls back to stretching until then.
+    val sourceAspect by (camera?.sourceAspect ?: MutableStateFlow(null))
+        .collectAsStateWithLifecycle(initialValue = null)
     // Your rank and this week's target, live, in the fight rather than on a profile page.
     val meta by graph.meta.state.collectAsStateWithLifecycle(initialValue = null)
     val settings by graph.prefs.settings.collectAsStateWithLifecycle(initialValue = Prefs.Settings())
@@ -126,7 +130,10 @@ fun SessionScreen(
                 // Full frame from the first second. Getting your whole body in shot is the thing
                 // calibration is asking for, and it is very hard to do against a corner inset.
                 CameraStage(camera, Modifier.fillMaxSize())
-                ExoRig(landmarks, s.fatigue.band, 0f, null, Modifier.fillMaxSize(), level = meta?.progress?.level ?: 1)
+                ExoRig(
+                    landmarks, s.fatigue.band, 0f, null, Modifier.fillMaxSize(),
+                    level = meta?.progress?.level ?: 1, sourceAspect = sourceAspect,
+                )
                 CalibrationOverlay(
                     cue = s.cue, progress = s.calibProgress,
                     tooFar = s.calib == com.clashfit.core.model.CalibState.TOO_FAR,
@@ -136,7 +143,7 @@ fun SessionScreen(
                 ExitCorner(onExit)
             }
             Phase.FIGHTING, Phase.FRAMING_LOST -> {
-                FightLayout(s, vm, lastHit, jolt.value, shake.value, paused, reduceMotion, camera, landmarks, meta, settings)
+                FightLayout(s, vm, lastHit, jolt.value, shake.value, paused, reduceMotion, camera, landmarks, meta, settings, sourceAspect)
             }
             Phase.REST -> RestPanel(s, restLeft, onSkip = vm::skipRest, onStop = vm::stop)
             Phase.DEAD -> EndPanel(s, onSummary = { /* wait for persistence */ }, onExit = onExit)
@@ -151,7 +158,7 @@ fun SessionScreen(
 private fun FightLayout(
     s: SessionState, vm: SessionViewModel, lastHit: HudEvent.Hit?, jolt: Float, shake: Float,
     paused: Boolean, reduceMotion: Boolean, camera: CameraPreviewSource?, landmarks: Landmarks?,
-    meta: MetaState?, settings: Prefs.Settings,
+    meta: MetaState?, settings: Prefs.Settings, sourceAspect: Float?,
 ) {
     val prone = vm.isProne
     val link by vm.link.collectAsStateWithLifecycle()
@@ -160,7 +167,10 @@ private fun FightLayout(
         // it: the same landmarks the scorer reads, drawn on your own body as armour that lights up
         // when a rep lands clean and changes colour as you tire.
         CameraStage(camera, Modifier.fillMaxSize())
-        ExoRig(landmarks, s.fatigue.band, jolt, lastHit?.verdict, Modifier.fillMaxSize(), level = meta?.progress?.level ?: 1)
+        ExoRig(
+            landmarks, s.fatigue.band, jolt, lastHit?.verdict, Modifier.fillMaxSize(),
+            level = meta?.progress?.level ?: 1, sourceAspect = sourceAspect,
+        )
 
         // The boss stands in the room with you, in the upper part of the frame so it never covers
         // the body it is reacting to. Its renderer draws with a transparent background.

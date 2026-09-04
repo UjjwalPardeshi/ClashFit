@@ -1,6 +1,7 @@
 package com.clashfit.perception
 
 import androidx.camera.view.PreviewView
+import kotlinx.coroutines.flow.StateFlow
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -36,6 +37,14 @@ import kotlin.math.sin
 /** A pose source that can also show the camera image it is reading. */
 interface CameraPreviewSource {
     val previewView: PreviewView
+
+    /**
+     * Width over height of the analysis image, or null before the first frame.
+     *
+     * Needed to place an overlay: the preview is scaled to fill the view and centre-cropped, so
+     * normalised landmarks only land on the body once the same crop is applied to them.
+     */
+    val sourceAspect: StateFlow<Float?>
 }
 
 /** The live camera image, filling whatever it is given. */
@@ -108,6 +117,7 @@ fun ExoRig(
     verdict: Verdict?,
     modifier: Modifier = Modifier,
     level: Int = 1,
+    sourceAspect: Float? = null,
 ) {
     // A slow pulse along the energy lines, so the suit looks powered even when you are still.
     val pulse = rememberInfiniteTransition(label = "exo").animateFloat(
@@ -151,7 +161,32 @@ fun ExoRig(
             else -> Color(0xFF8A93A6)
         }
 
-        fun pt(i: Int) = Offset(lm[i].x * size.width, lm[i].y * size.height)
+        // PreviewView fills the view and crops the overflow. Reproduce that exactly, or the rig
+        // sits offset from the body by however much the preview was cropped — which on a tall
+        // phone reading a 9:16 camera is most of a limb.
+        val aspect = sourceAspect
+        val scale: Float
+        val offsetX: Float
+        val offsetY: Float
+        if (aspect == null || aspect <= 0f) {
+            // No frame yet: stretch to the view, which is what the old overlay always did.
+            scale = 1f
+            offsetX = 0f
+            offsetY = 0f
+        } else {
+            val srcW = aspect
+            val srcH = 1f
+            val fill = maxOf(size.width / srcW, size.height / srcH)
+            val shownW = srcW * fill
+            val shownH = srcH * fill
+            scale = fill
+            offsetX = (size.width - shownW) / 2f
+            offsetY = (size.height - shownH) / 2f
+        }
+        val spanX = if (aspect == null || aspect <= 0f) size.width else aspect * scale
+        val spanY = if (aspect == null || aspect <= 0f) size.height else scale
+
+        fun pt(i: Int) = Offset(offsetX + lm[i].x * spanX, offsetY + lm[i].y * spanY)
         fun visible(i: Int) = lm[i].visibility > 0.35f
 
         // Chest rig: shoulders to hips, as a single closed plate with a lit border.

@@ -70,6 +70,17 @@ class MediaPipePoseSource(
         }
     }
 
+    /**
+     * The analysis image's shape, as width over height, once it is on screen.
+     *
+     * The overlay needs this. PreviewView scales the camera image to FILL the view and crops the
+     * overflow, so a rig that maps landmarks onto the full view rect lands offset from the body by
+     * exactly the crop. Normalised landmarks are relative to the analysis image, not to the view,
+     * and those two only agree when their aspect ratios do.
+     */
+    private val _sourceAspect = MutableStateFlow<Float?>(null)
+    override val sourceAspect: StateFlow<Float?> = _sourceAspect.asStateFlow()
+
     private val _facing = MutableStateFlow(CameraFacing.FRONT)
     override val facing: StateFlow<CameraFacing> = _facing.asStateFlow()
 
@@ -206,6 +217,17 @@ class MediaPipePoseSource(
 
     private fun processImageProxy(imageProxy: ImageProxy) {
         val now = clock.nowMs()
+
+        if (_sourceAspect.value == null && imageProxy.height > 0) {
+            _sourceAspect.value = imageProxy.width.toFloat() / imageProxy.height
+            // Logged once, because the answer decides whether the overlay lines up at all and it
+            // cannot be read off anything but a real camera.
+            Log.i(
+                TAG,
+                "analysis frame ${imageProxy.width}x${imageProxy.height}, " +
+                    "rotation ${imageProxy.imageInfo.rotationDegrees}deg",
+            )
+        }
 
         // Low power mode: skip frames (5fps target)
         if (lowPowerEnabled && frameCount % 6 != 0L) {
