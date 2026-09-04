@@ -6,6 +6,8 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.clashfit.cloud.CloudConfig
 import com.clashfit.util.CrashLog
+import com.clashfit.BuildConfig
+import android.os.StrictMode
 
 class ClashFitApp : Application() {
     lateinit var graph: AppGraph
@@ -15,6 +17,7 @@ class ClashFitApp : Application() {
         super.onCreate()
         // First, so a crash during the rest of startup is still recorded.
         CrashLog.install(this)
+        installStrictMode()
         CloudConfig.initialize(this)
         graph = AppGraph(this)
         graph.config.reload()
@@ -25,6 +28,37 @@ class ClashFitApp : Application() {
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) { graph.config.reload() }
         })
+    }
+
+    /**
+     * Complain, in debug builds, about work that does not belong on the main thread.
+     *
+     * Disk and network on the UI thread are invisible on a fast phone in a quiet room and very
+     * visible on a warm phone running pose inference at thirty frames a second — which is the only
+     * condition this app is ever used in. StrictMode turns "it felt a bit janky" into a line in
+     * logcat naming the exact call.
+     *
+     * It logs rather than crashes: a violation is worth knowing about, not worth ending a demo
+     * over, and release builds never install it at all.
+     */
+    private fun installStrictMode() {
+        if (!BuildConfig.DEBUG) return
+        StrictMode.setThreadPolicy(
+            StrictMode.ThreadPolicy.Builder()
+                .detectDiskReads()
+                .detectDiskWrites()
+                .detectNetwork()
+                .detectCustomSlowCalls()
+                .penaltyLog()
+                .build(),
+        )
+        StrictMode.setVmPolicy(
+            StrictMode.VmPolicy.Builder()
+                .detectLeakedClosableObjects()
+                .detectLeakedRegistrationObjects()
+                .penaltyLog()
+                .build(),
+        )
     }
 
     /**

@@ -228,17 +228,13 @@ private fun HeroCard(
         }
         Spacer(Modifier.height(14.dp))
         Text("READY\nTO FIGHT?", style = MaterialTheme.typography.headlineLarge, color = Ground)
-        Text(
-            "Pick a movement, then fight.",
-            style = MaterialTheme.typography.bodyMedium, color = Ground.copy(alpha = 0.85f),
-            modifier = Modifier.padding(top = 6.dp),
-        )
-        // Why this session, in the app's own measurements. "Ready to fight?" is a slogan; a
-        // number you set last Tuesday is a reason.
+        // One line under the headline, and it is the reason rather than an instruction. The
+        // button already says what happens next, so "pick a movement, then fight" was a caption
+        // for a button sitting directly beneath it.
         Text(
             reason,
-            style = MaterialTheme.typography.bodyMedium, color = Ground.copy(alpha = 0.95f),
-            modifier = Modifier.padding(top = 10.dp),
+            style = MaterialTheme.typography.bodyMedium, color = Ground.copy(alpha = 0.92f),
+            modifier = Modifier.padding(top = 8.dp),
         )
         Spacer(Modifier.height(18.dp))
         Button(
