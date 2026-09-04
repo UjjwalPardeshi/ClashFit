@@ -31,9 +31,10 @@ fun NavGraphBuilder.sessionRoutes(graph: AppGraph, nav: NavHostController) {
             casual = route.casual,
             ghostId = route.ghostId,
             durationSec = route.durationSec,
+            replay = route.replay,
         )
         val owner = LocalLifecycleOwner.current
-        val deps = remember(route, owner) { SessionWiring.deps(graph, owner) }
+        val deps = remember(route, owner) { SessionWiring.deps(graph, owner, replay = route.replay) }
         CameraPermissionGate {
             SessionScreen(
                 graph, deps, args,

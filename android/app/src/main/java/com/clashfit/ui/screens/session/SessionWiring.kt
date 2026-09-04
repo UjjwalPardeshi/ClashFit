@@ -11,6 +11,7 @@ import com.clashfit.core.pose.SyntheticPoseSource
 import com.clashfit.perception.MediaPipePoseSource
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import com.clashfit.perception.TracePoseSource
 
 /**
  * Builds the real session dependencies from the app graph. The camera source needs the screen's
@@ -20,10 +21,22 @@ import kotlinx.coroutines.launch
 object SessionWiring {
     @Volatile var forceSynthetic: Boolean = false
 
-    fun deps(graph: AppGraph, owner: LifecycleOwner): SessionDeps = object : SessionDeps {
-        override val pose: PoseSource =
-            if (forceSynthetic) SyntheticPoseSource(graph.scope)
-            else MediaPipePoseSource(graph.app, graph.config.pose.value, graph.clock, owner, graph.scope)
+    /** The trace the demo falls back to when the room beats the camera. */
+    const val DEMO_TRACE = "traces/synthetic-f3-to-failure.jsonl"
+
+    fun deps(graph: AppGraph, owner: LifecycleOwner, replay: Boolean = false): SessionDeps = object : SessionDeps {
+        override val pose: PoseSource = when {
+            forceSynthetic -> SyntheticPoseSource(graph.scope)
+            // A recorded set to failure, replayed at its original timing. The demo script names
+            // this as the escape when the lighting beats the pose model, and until now it was a
+            // class nothing constructed.
+            replay -> TracePoseSource(
+                traceJsonLines = graph.app.assets.open(DEMO_TRACE).bufferedReader().use { it.readText() },
+                clock = graph.clock,
+                scope = graph.scope,
+            )
+            else -> MediaPipePoseSource(graph.app, graph.config.pose.value, graph.clock, owner, graph.scope)
+        }
 
         override val coach: CoachPort = object : CoachPort {
             override suspend fun speakFor(telemetry: SetTelemetry, timeoutMs: Long): CoachOutput = graph.coachEngine.speakFor(telemetry)

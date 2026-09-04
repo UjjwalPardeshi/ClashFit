@@ -32,7 +32,21 @@ sealed interface Route
 @Serializable data object Modes : Route
 @Serializable data class ExercisePicker(val mode: String) : Route
 /** Calibration, fight, rest and victory are phases of one session, not separate screens. */
-@Serializable data class Session(val mode: String, val exerciseId: String, val casual: Boolean = false, val ghostId: String? = null, val durationSec: Int? = null) : Route
+@Serializable data class Session(
+    val mode: String,
+    val exerciseId: String,
+    val casual: Boolean = false,
+    val ghostId: String? = null,
+    val durationSec: Int? = null,
+    /**
+     * Drive this session from a recorded trace instead of the camera.
+     *
+     * The demo script names trace replay as the escape when the room's lighting beats the
+     * pose model, and it was written but wired to nothing. A replayed session is labelled
+     * on screen throughout: a judge who is told is fine, a judge who finds out is not.
+     */
+    val replay: Boolean = false,
+) : Route
 @Serializable data class Summary(val sessionId: Long) : Route
 
 @Serializable data class DuelLobby(val mode: String, val exerciseId: String) : Route

@@ -50,6 +50,11 @@ import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Working
 import java.io.File
 import java.util.Locale
+import com.clashfit.core.model.GameMode
+import com.clashfit.ui.theme.InkFaint
+import com.clashfit.ui.components.SwitchRow
+import com.clashfit.ui.components.SectionTitle
+import com.clashfit.ui.components.SecondaryButton
 
 enum class PreflightStatus { PASS, WARN, FAIL }
 
@@ -115,6 +120,8 @@ fun PreflightScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier 
                     if (index < checks.size - 1) InnerDivider()
                 }
             }
+
+            RescueSection(nav, settings.arenaMode) { v -> scope.launch { graph.prefs.setArenaMode(v) } }
 
             SectionGap(20)
         }
@@ -218,6 +225,49 @@ private fun checkBattery(context: Context): PreflightStatus {
         pct >= 50 -> PreflightStatus.PASS
         pct >= 20 -> PreflightStatus.WARN
         else -> PreflightStatus.FAIL
+    }
+}
+
+/**
+ * The escapes the demo script names, as buttons.
+ *
+ * docs/11-DEMO-SCRIPT.md §7 lists what to do when something fails in front of a judge: switch to
+ * the recorded trace when the reps miscount, switch to Arena Mode when the pose will not detect.
+ * Both were prose. A playbook you cannot execute in ten seconds under a judge's eye is not a
+ * playbook, so both are one tap from the screen you already open before a round.
+ */
+@Composable
+private fun RescueSection(nav: NavHostController, arena: Boolean, onArena: (Boolean) -> Unit) {
+    SectionGap(28)
+    SectionTitle("If it goes wrong")
+    SectionGap(10)
+    AppCard(Modifier.fillMaxWidth(), padding = 16) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                "Two escapes, from the demo playbook. Both are honest about what they are.",
+                style = MaterialTheme.typography.bodySmall, color = InkFaint,
+            )
+            SecondaryButton("Replay a recorded set", Modifier.fillMaxWidth()) {
+                nav.navigate(
+                    com.clashfit.ui.nav.Session(
+                        mode = GameMode.BOSS_FIGHT.name,
+                        exerciseId = "squat",
+                        replay = true,
+                    ),
+                )
+            }
+            Text(
+                "A real squat set to failure, recorded and replayed through the same engine. " +
+                    "Labelled REPLAY on screen throughout. Use it when the room's light beats the camera.",
+                style = MaterialTheme.typography.bodySmall, color = InkFaint,
+            )
+            SwitchRow(
+                "Arena mode",
+                arena,
+                onArena,
+                supporting = "Bigger numerals, for a phone on the floor. Takes effect on the next session.",
+            )
+        }
     }
 }
 

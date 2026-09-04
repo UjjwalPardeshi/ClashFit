@@ -47,6 +47,8 @@ data class SessionArgs(
     val casual: Boolean = false,
     val ghostId: String? = null,
     val durationSec: Int? = null,
+    /** Replay a recorded trace instead of opening the camera. Always labelled on screen. */
+    val replay: Boolean = false,
 )
 
 /** Transient things the HUD animates once. Never state — they are fired and forgotten. */
