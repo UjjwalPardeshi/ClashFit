@@ -1,8 +1,11 @@
 package com.clashfit.ui.screens.preflight
 
+import android.os.BatteryManager
 import android.os.Build
 
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.speech.tts.TextToSpeech
 import androidx.compose.foundation.layout.Arrangement
@@ -76,10 +79,11 @@ fun PreflightScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier 
             PreflightCheck("Ghosts", if (ghosts.isNotEmpty()) PreflightStatus.PASS else PreflightStatus.WARN, "Ghost race opponents"),
             PreflightCheck("Exact Alarms", checkAlarms(graph.app), "Wake-up and training bells"),
             PreflightCheck("Storage", checkStorage(graph.app), "Database and model cache"),
+            PreflightCheck("Battery", checkBattery(graph.app), "A fight is hard on the camera and the screen"),
         )
     }
 
-    ScreenScaffold(title = "Camera check", onBack = { nav.navigateUp() }) { padding ->
+    ScreenScaffold(title = "System check", onBack = { nav.navigateUp() }) { padding ->
         Column(modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
             val passCount = checks.count { it.status == PreflightStatus.PASS }
             val failCount = checks.count { it.status == PreflightStatus.FAIL }
@@ -194,6 +198,27 @@ private fun checkStorage(context: Context): PreflightStatus {
     val db = File(context.filesDir, "clashfit.db")
     val space = context.filesDir.usableSpace
     return if (space > 100 * 1024 * 1024) PreflightStatus.PASS else PreflightStatus.WARN
+}
+
+/**
+ * Battery headroom. Item one of the pre-demo ritual in docs/14-TEST-PLAN.md §6, and the failure
+ * most likely to end a session halfway through: a fight holds the camera, the screen and an
+ * inference loop open at once. Charging counts as fine whatever the level.
+ */
+private fun checkBattery(context: Context): PreflightStatus {
+    val status = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        ?: return PreflightStatus.WARN
+    val plugged = status.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
+    if (plugged) return PreflightStatus.PASS
+    val level = status.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+    val scale = status.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+    if (level < 0 || scale <= 0) return PreflightStatus.WARN
+    val pct = level * 100 / scale
+    return when {
+        pct >= 50 -> PreflightStatus.PASS
+        pct >= 20 -> PreflightStatus.WARN
+        else -> PreflightStatus.FAIL
+    }
 }
 
 fun NavGraphBuilder.preflightRoutes(graph: AppGraph, nav: NavHostController) {

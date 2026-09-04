@@ -30,7 +30,7 @@ What is built and verified, what is deliberately event-only, and what is genuine
 | **Summary** — fatigue curve, PNG for the deck, CSV of raw telemetry | ✅ | [02](02-APP-FLOW.md) §2 |
 | **Traces** — record and headless replay | ✅ | [14](14-TEST-PLAN.md) §1 |
 | **Arena Mode + reduced motion + accessible rungs** | ✅ | [03](03-UI-UX-SPEC.md) §9 |
-| **Preflight** — the pre-demo ritual as a button, 11 checks | ✅ | [14](14-TEST-PLAN.md) §6 |
+| **Preflight** — the pre-demo ritual as a button, 10 checks | ✅ | [14](14-TEST-PLAN.md) §6 |
 | **Mode grid** — all 16 modes on one screen | ✅ | [17](17-GAME-MODES.md) §9 |
 | **Challenge codes** — a run becomes a ~300-char shareable string, no server | ✅ | [20](20-MULTIPLAYER-MODES.md) §5 |
 | **Trend chart** — session over session, form and reps | ✅ | [23](23-META-PROGRESSION.md) |

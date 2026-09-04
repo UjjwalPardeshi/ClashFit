@@ -156,7 +156,13 @@ fun YouScreen(graph: AppGraph, nav: NavHostController) {
             ListGroup {
                 NavRow("Account", { nav.navigate(Account) }, icon = AppIcons.Person, tint = InkMuted)
                 InnerDivider()
-                NavRow("Camera check", { nav.navigate(Preflight) }, icon = AppIcons.Camera, tint = InkMuted)
+                NavRow(
+                    "System check",
+                    { nav.navigate(Preflight) },
+                    icon = AppIcons.Camera,
+                    supporting = "Camera, pose model, audio, storage and battery",
+                    tint = InkMuted,
+                )
                 InnerDivider()
                 NavRow("Settings", { nav.navigate(Settings) }, icon = AppIcons.Gear, tint = InkMuted)
                 InnerDivider()

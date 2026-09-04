@@ -37,6 +37,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import androidx.compose.foundation.layout.Arrangement
+import com.clashfit.ui.theme.InkMuted
 
 /** 30-second sit-to-stand protocol: text, not-a-medical-device, personal trend from SessionDao. */
 @Composable
@@ -110,6 +112,36 @@ fun ClinicScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = M
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                SectionGap(28)
+
+                // The clinic is designed as five protocols; one is measured well enough to ship.
+                // Naming the other four is more useful than pretending the set is complete, and
+                // more honest than a greyed-out button that does nothing.
+                SectionTitle("Designed, not in this build")
+                SectionGap(10)
+                AppCard(Modifier.fillMaxWidth()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        PLANNED.forEach { (name, what) ->
+                            Column {
+                                Text(name, style = MaterialTheme.typography.titleSmall, color = InkMuted)
+                                Text(
+                                    what,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = InkFaint,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                )
+                            }
+                        }
+                        Text(
+                            "Each needs its own reference angles and a validated scoring window. " +
+                                "A protocol measured approximately is worth less than no protocol at all.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkFaint,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                }
             } else {
                 SectionGap(8)
                 EmptyState(
@@ -129,3 +161,11 @@ fun NavGraphBuilder.clinicRoutes(graph: AppGraph, nav: NavHostController) {
         ClinicScreen(graph, nav)
     }
 }
+
+/** The other four protocols from docs/25-CLINIC-MODE.md §1, none of which ship yet. */
+private val PLANNED = listOf(
+    "Five-times sit-to-stand" to "The same movement, timed to five reps instead of counted for thirty seconds",
+    "Single-leg stance" to "Static balance, timed until the raised foot touches down",
+    "Functional reach" to "How far you can reach forward with your feet planted",
+    "Timed up-and-go" to "Stand, walk three metres, turn, come back, sit",
+)
