@@ -195,7 +195,9 @@ fun ProgressScreen(graph: AppGraph, nav: NavHostController) {
                 ) {
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         RadarChart(
-                            stats = Domain.entries.map { it.short to sheet.value(it) / 100f },
+                            // The full name. "NUT" is not a word for nourishment, and a chart whose
+                            // axes need a decoder is not showing anybody anything.
+                            stats = Domain.entries.map { it.title to sheet.value(it) / 100f },
                             size = 240,
                             color = Ember,
                         )

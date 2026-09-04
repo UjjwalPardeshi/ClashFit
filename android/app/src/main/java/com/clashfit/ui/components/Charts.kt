@@ -259,8 +259,11 @@ fun RadarChart(
         if (stats.size < 3) return@Canvas
         val n = stats.size
         val c = Offset(this.size.width / 2f, this.size.height / 2f)
-        // Leave room for the labels around the outside.
-        val r = this.size.minDimension * 0.34f
+        // Leave room for the labels around the outside. The web used to take 0.34 of the box and
+        // put its labels at 1.34 of that, which left about twelve device-independent pixels of
+        // clearance at the widest points — enough for "RES" and nothing else, which is why the
+        // domains were showing as three-letter codes nobody can read.
+        val r = this.size.minDimension * 0.30f
         fun point(i: Int, frac: Float): Offset {
             val a = -TAU / 4f + i * TAU / n
             return Offset(c.x + cos(a) * r * frac, c.y + sin(a) * r * frac)
@@ -293,12 +296,13 @@ fun RadarChart(
         // Labels, placed just outside their spoke.
         for (i in 0 until n) {
             val a = -TAU / 4f + i * TAU / n
-            val lp = Offset(c.x + cos(a) * r * 1.34f, c.y + sin(a) * r * 1.34f)
+            val lp = Offset(c.x + cos(a) * r * 1.22f, c.y + sin(a) * r * 1.22f)
             val laid = measurer.measure(stats[i].first, labelStyle)
-            drawText(
-                textLayoutResult = laid,
-                topLeft = Offset(lp.x - laid.size.width / 2f, lp.y - laid.size.height / 2f),
-            )
+            // Held inside the canvas whatever the word is, so a longer domain name shifts rather
+            // than running off the edge of the card.
+            val x = (lp.x - laid.size.width / 2f).coerceIn(0f, (this.size.width - laid.size.width).coerceAtLeast(0f))
+            val y = (lp.y - laid.size.height / 2f).coerceIn(0f, (this.size.height - laid.size.height).coerceAtLeast(0f))
+            drawText(textLayoutResult = laid, topLeft = Offset(x, y))
         }
     }
 }

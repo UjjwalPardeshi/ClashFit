@@ -116,7 +116,7 @@ fun HistoryScreen(graph: AppGraph, nav: NavHostController) {
                 item(key = "group-$day") {
                     ListGroup {
                         list.forEachIndexed { i, s ->
-                            SessionRow(s, exercises[s.exerciseId]?.name ?: s.exerciseId.replace('_', ' '), zone) { nav.navigate(Summary(s.id)) }
+                            SessionRow(s, exercises[s.exerciseId]?.name ?: s.exerciseId.titleCaseFromId(), zone) { nav.navigate(Summary(s.id)) }
                             if (i < list.lastIndex) InnerDivider()
                         }
                     }
@@ -167,5 +167,14 @@ fun NavGraphBuilder.historyRoutes(graph: AppGraph, nav: NavHostController) {
     composable<com.clashfit.ui.nav.History> { HistoryScreen(graph, nav) }
 }
 
-
-
+/**
+ * A readable name for an exercise id the config no longer knows about.
+ *
+ * The fallback used to swap underscores for spaces and stop, so a session recorded against an id
+ * that has since been renamed showed as "jumping jack" in a list where everything else was
+ * "Squat" and "Plank". History is the one screen guaranteed to hold ids older than the config.
+ */
+internal fun String.titleCaseFromId(): String =
+    split('_', '-', ' ')
+        .filter { it.isNotBlank() }
+        .joinToString(" ") { w -> w.replaceFirstChar { it.uppercase() } }
