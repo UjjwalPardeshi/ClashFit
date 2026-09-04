@@ -108,3 +108,22 @@ String.format("%04d-W%02d", year, weekOfYear)
 ```
 
 The MetaRepository's weekly progress is synced to Firestore if the metric matches (DAMAGE → weeklyDamage, CLEAN_REPS → weeklyCleanReps).
+
+## Checking the rules actually work
+
+`firebase deploy` tells you the rules compiled and were released. It does not tell you whether
+they refuse what they are meant to refuse. This does:
+
+```bash
+FIREBASE_TEST_EMAIL=omkar.test@clashfit.app \
+FIREBASE_TEST_PASSWORD=... \
+python3 firebase/verify-rules.py
+```
+
+It signs in against the live project and tries nine things: the three the rules should allow, and
+the six they should block — reading the board signed out, writing a profile that carries an email
+address, writing somebody else's profile or score, writing a collection the rules never mention,
+and writing an empty display name. It restores the profile it touched, so running it costs
+nothing. Exit code 0 means every rule behaved as written.
+
+Run it after any change to `firestore.rules`, and once at the venue.
