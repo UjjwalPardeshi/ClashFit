@@ -79,6 +79,10 @@ import com.clashfit.ui.theme.LocalReduceMotion
 import com.clashfit.ui.theme.Panel
 import com.clashfit.ui.theme.Rule
 import com.clashfit.ui.theme.RuleSoft
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.offset
+import com.clashfit.ui.components.AppIcons
 
 /**
  * One phone, a room full of people. Relay, Last Standing, Team vs Team and Circuit all land here.
@@ -98,7 +102,7 @@ private const val MAX_PLAYERS = 8
 private val TURN_CHOICES = listOf(20, 30, 45, 60)
 
 @Composable
-private fun RosterScreen(graph: AppGraph, nav: NavHostController, route: Roster) {
+fun RosterScreen(graph: AppGraph, nav: NavHostController, route: Roster) {
     val hub = graph.playHub
     val state by hub.roster.collectAsStateWithLifecycle()
     val exercises by graph.config.exercises.collectAsStateWithLifecycle()
@@ -126,6 +130,7 @@ private fun RosterScreen(graph: AppGraph, nav: NavHostController, route: Roster)
             snapshot == null -> Setup(
                 mode = mode, exerciseName = exerciseName, teamed = teamed,
                 names = names, teams = teams, turnSec = turnSec, onTurnSec = { turnSec = it },
+                onBack = { nav.popBackStack() },
                 onStart = {
                     val entered = names.indices
                         .map { i -> names[i].trim() to teams.getOrElse(i) { "A" } }
@@ -179,8 +184,13 @@ private fun RosterScreen(graph: AppGraph, nav: NavHostController, route: Roster)
 private fun Setup(
     mode: GameMode, exerciseName: String, teamed: Boolean,
     names: SnapshotStateList<String>, teams: SnapshotStateList<String>,
-    turnSec: Int, onTurnSec: (Int) -> Unit, onStart: () -> Unit,
+    turnSec: Int, onTurnSec: (Int) -> Unit, onStart: () -> Unit, onBack: () -> Unit,
 ) {
+    // Pushed from the picker with no top bar and no bottom bar, this screen had no way out but
+    // to start a game you had changed your mind about.
+    IconButton(onClick = onBack, modifier = Modifier.offset(x = (-12).dp)) {
+        Icon(AppIcons.Back, contentDescription = "Back", tint = Ink)
+    }
     Kicker("Pass the phone")
     SectionGap(12)
     Headline("ONE PHONE", accent = mode.title)

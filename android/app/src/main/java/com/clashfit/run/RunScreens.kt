@@ -71,6 +71,7 @@ import com.clashfit.ui.theme.PanelLift
 import com.clashfit.ui.theme.Success
 import kotlin.math.PI
 import kotlin.math.cos
+import com.clashfit.data.RunPointEntity
 
 /** Register run routes in the nav graph. */
 fun NavGraphBuilder.runRoutes(graph: AppGraph, nav: NavHostController) {
@@ -227,15 +228,19 @@ private fun RunActiveScreen(graph: AppGraph, nav: NavHostController) {
 }
 
 @Composable
-private fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
+fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
     val repo = remember(graph) { RunRepository(graph.db.runs(), graph.clock) }
     var run by remember { mutableStateOf<RunSummary?>(null) }
     var splits by remember { mutableStateOf<List<Float>>(emptyList()) }
+    var points by remember { mutableStateOf<List<RunPointEntity>>(emptyList()) }
 
     LaunchedEffect(runId) {
         run = repo.getRun(runId)
         val entity = repo.dao.run(runId)
-        if (entity != null && entity.splitsJson.isNotEmpty()) splits = entity.splitsJson.split(",").mapNotNull { it.toFloatOrNull() }
+        if (entity != null && entity.splitsJson.isNotEmpty()) splits = parseSplits(entity.splitsJson)
+        // The route was drawn the whole way round and then thrown away at the finish line. It is
+        // the one thing about a run worth looking at afterwards, and it was already on the phone.
+        points = repo.getRunPoints(runId)
     }
 
     ScreenScaffold(title = "Run summary", onBack = { nav.popBackStack() }) { padding ->
@@ -248,6 +253,12 @@ private fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Lon
             Modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp).padding(top = 4.dp, bottom = 28.dp),
         ) {
+            if (points.size >= 2) {
+                AppCard(Modifier.fillMaxWidth(), padding = 0) {
+                    RouteTrace(points = points, modifier = Modifier.fillMaxWidth().height(220.dp))
+                }
+                SectionGap(14)
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 StatTile("%.2f".format(r.distanceM / 1000f), "km", Modifier.weight(1f))
                 StatTile(formatDuration(r.movingMs), "Moving", Modifier.weight(1f))
@@ -280,10 +291,28 @@ private fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Lon
                 }
             }
             SectionGap(20)
-            Text("The route is stored on this phone only.", style = MaterialTheme.typography.bodySmall, color = InkFaint)
+            Text(
+                if (points.size >= 2) "The route above never left this phone."
+                else "The route is stored on this phone only.",
+                style = MaterialTheme.typography.bodySmall,
+                color = InkFaint,
+            )
         }
     }
 }
+
+/**
+ * Per-kilometre splits from the stored column.
+ *
+ * The column is called splitsJson and holds a bare comma-joined list, not JSON. Anything that ever
+ * writes the format the name promises would have had its first and last split silently dropped by
+ * a plain split-on-comma, and the remaining ones relabelled — km 2 shown as km 1, and no error
+ * anywhere. Tolerating the brackets costs one trim.
+ */
+internal fun parseSplits(raw: String): List<Float> =
+    raw.trim().removeSurrounding("[", "]")
+        .split(",")
+        .mapNotNull { it.trim().toFloatOrNull() }
 
 @Composable
 private fun RouteTrace(points: List<com.clashfit.data.RunPointEntity>, modifier: Modifier = Modifier) {

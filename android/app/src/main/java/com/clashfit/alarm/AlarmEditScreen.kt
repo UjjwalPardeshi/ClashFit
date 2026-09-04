@@ -51,6 +51,9 @@ import com.clashfit.ui.theme.PanelLift
 import com.clashfit.ui.theme.Rule
 import kotlinx.coroutines.launch
 import java.util.Locale
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 
 /**
  * Screen to create or edit an alarm.
@@ -155,23 +158,37 @@ fun AlarmEditScreen(graph: AppGraph, alarmId: Long, navController: NavHostContro
                         )
                     }
 
-                    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+                    // A week is a row of seven, not a three-by-three grid with Sunday stranded
+                    // alone on a full-width row of its own. Two letters fit the column a seventh
+                    // of a phone gives you and still clear the 44dp a thumb needs.
+                    val days = listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
+                    val dayNames = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        for (row in 0..2) {
+                        run {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                for (col in 0..2) {
-                                    val idx = row * 3 + col
-                                    if (idx < days.size) {
-                                        val day = days[idx]
+                                days.forEachIndexed { idx, day ->
+                                    run {
                                         val isSelected = (daysMask and (1 shl idx)) != 0
                                         FilterChip(
                                             selected = isSelected,
                                             onClick = { daysMask = daysMask xor (1 shl idx) },
-                                            label = { Text(day) },
-                                            modifier = Modifier.weight(1f),
+                                            // A chip a seventh of a phone wide has room for two
+                                            // letters at label size, not at body size — at body
+                                            // size Saturday and Sunday both truncated to "S".
+                                            label = {
+                                                Text(
+                                                    day,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                )
+                                            },
+                                            modifier = Modifier.weight(1f).heightIn(min = 44.dp)
+                                            .padding(horizontal = 0.dp)
+                                                .semantics { contentDescription = dayNames[idx] },
                                             colors = FilterChipDefaults.filterChipColors(
                                                 containerColor = PanelLift,
                                                 labelColor = InkMuted,
