@@ -91,7 +91,9 @@ fun ModeCard(mode: GameMode, onClick: () -> Unit, modifier: Modifier = Modifier,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
             }
-            Spacer(Modifier.weight(1f))
+            // Not a weighted spacer: the card's height is a minimum, not a fixed size, so the
+            // column measures unbounded and a weight would resolve to nothing at all.
+            Spacer(Modifier.height(2.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 when {
                     !mode.enabled -> Tag("Coming online", color = InkMuted)

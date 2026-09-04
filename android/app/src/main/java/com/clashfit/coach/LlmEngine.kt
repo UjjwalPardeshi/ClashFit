@@ -98,6 +98,11 @@ class LlmEngine(
             Log.e(tag, "OOM loading LLM, switching to templates", e)
             releaseInference()
             _status.value = LlmStatus.OFFLINE
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             Log.e(tag, "Error loading LLM", e)
             releaseInference()
@@ -141,6 +146,11 @@ class LlmEngine(
                 // The caller went away. That is not a model failure, and swallowing it would keep
                 // this coroutine alive past the point its scope was cancelled.
                 throw e
+            } catch (cancelled: CancellationException) {
+                // Cancellation is not a failure. CancellationException is an Exception,
+                // so a catch-all below would swallow it and carry on running work whose
+                // caller has already gone.
+                throw cancelled
             } catch (e: Exception) {
                 Log.e(tag, "Error generating coach output", e)
                 null

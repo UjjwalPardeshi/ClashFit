@@ -22,6 +22,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.coroutines.CancellationException
 
 /**
  * Replay pose frames from a JSON Lines trace file. Supports both real timing (replaying at recorded speed)
@@ -107,12 +108,12 @@ class TracePoseSource(
                         try {
                             val array = elem.jsonArray
                             array.map { it.jsonPrimitive.content.toFloat() }
-                        } catch (e: Exception) {
+                        } catch (e: Exception) { // no suspension — parsing one landmark array
                             null
                         }
                     } ?: emptyList()
                     frames.add(TraceFrame(t, lmArray))
-                } catch (e: Exception) {
+                } catch (e: Exception) { // no suspension — parsing one line of the trace file
                     Log.w(TAG, "Skipping malformed frame at line $i: ${e.message}")
                 }
             }
@@ -168,6 +169,11 @@ class TracePoseSource(
             }
 
             Log.i(TAG, "Trace replay complete: $frameCount frames")
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             Log.e(TAG, "Error replaying trace", e)
         }

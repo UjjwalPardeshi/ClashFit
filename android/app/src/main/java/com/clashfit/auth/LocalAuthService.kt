@@ -17,6 +17,7 @@ import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
 
 private val Context.accountDataStore: DataStore<Preferences> by preferencesDataStore(name = "clashfit_account")
 
@@ -109,6 +110,11 @@ class LocalAuthService(
                 emailVerified = false
             )
             AuthResult.Ok(user)
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             if (e.message == AuthError.EMAIL_IN_USE.name) {
                 AuthResult.Failed(AuthError.EMAIL_IN_USE)
@@ -155,6 +161,11 @@ class LocalAuthService(
                 emailVerified = false
             )
             AuthResult.Ok(user)
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             AuthResult.Failed(AuthError.UNKNOWN)
         }
@@ -170,6 +181,11 @@ class LocalAuthService(
             }
 
             null
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             AuthError.UNKNOWN
         }
@@ -185,6 +201,11 @@ class LocalAuthService(
                 it[DISPLAY_NAME] = name
             }
             null
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             AuthError.UNKNOWN
         }
@@ -202,6 +223,11 @@ class LocalAuthService(
                 it.clear()
             }
             null
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             AuthError.UNKNOWN
         }

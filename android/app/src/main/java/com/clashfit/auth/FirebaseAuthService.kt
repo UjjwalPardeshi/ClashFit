@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.CancellationException
 
 class FirebaseAuthService(private val scope: CoroutineScope) : AuthService {
     private val auth = FirebaseAuth.getInstance()
@@ -110,6 +111,11 @@ class FirebaseAuthService(private val scope: CoroutineScope) : AuthService {
             AuthResult.Ok(user)
         } catch (e: FirebaseAuthException) {
             AuthResult.Failed(mapFirebaseError(e.errorCode))
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             AuthResult.Failed(mapException(e))
         }
@@ -132,6 +138,11 @@ class FirebaseAuthService(private val scope: CoroutineScope) : AuthService {
             AuthResult.Ok(user)
         } catch (e: FirebaseAuthException) {
             AuthResult.Failed(mapFirebaseError(e.errorCode))
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             AuthResult.Failed(mapException(e))
         }
@@ -143,6 +154,11 @@ class FirebaseAuthService(private val scope: CoroutineScope) : AuthService {
             null
         } catch (e: FirebaseAuthException) {
             mapFirebaseError(e.errorCode)
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             mapException(e)
         }
@@ -166,6 +182,11 @@ class FirebaseAuthService(private val scope: CoroutineScope) : AuthService {
                 .await()
 
             null
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             mapException(e)
         }
@@ -187,6 +208,11 @@ class FirebaseAuthService(private val scope: CoroutineScope) : AuthService {
             user.delete().await()
 
             null
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             mapException(e)
         }

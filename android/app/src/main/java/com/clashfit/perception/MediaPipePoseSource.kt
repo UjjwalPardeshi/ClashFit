@@ -38,6 +38,7 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs
+import kotlinx.coroutines.CancellationException
 
 /**
  * Live camera pose source using CameraX and MediaPipe Tasks Vision PoseLandmarker.
@@ -157,6 +158,11 @@ class MediaPipePoseSource(
                     .build()
             )
             startCamera()
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize PoseLandmarker", e)
         }

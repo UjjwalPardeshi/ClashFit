@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.Locale
+import kotlinx.coroutines.CancellationException
 
 /**
  * Wraps Android TextToSpeech with a queue, flush on new set, audio focus management, and ready flow.
@@ -166,6 +167,11 @@ class SpeechOut(
                 null,
                 currentUtteranceId,
             )
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             Log.e(tag, "Error speaking utterance", e)
             currentUtteranceId = null

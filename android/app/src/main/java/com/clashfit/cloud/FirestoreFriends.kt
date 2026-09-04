@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.CancellationException
 
 class FirestoreFriends(
     private val auth: AuthService,
@@ -160,6 +161,11 @@ class FirestoreFriends(
                 .await()
 
             return FriendResult.Added(Friend(targetUid, targetDisplayName, targetLevel))
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             // A raw Firestore message ("PERMISSION_DENIED: Missing or insufficient
             // permissions.") tells a player nothing they can act on.
@@ -184,6 +190,11 @@ class FirestoreFriends(
                 .collection("friends").document(currentAuth.user.uid)
                 .delete()
                 .await()
+        } catch (cancelled: CancellationException) {
+            // Cancellation is not a failure. CancellationException is an Exception,
+            // so a catch-all below would swallow it and carry on running work whose
+            // caller has already gone.
+            throw cancelled
         } catch (e: Exception) {
             // Error removing friend
         }
