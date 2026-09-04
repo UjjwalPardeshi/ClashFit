@@ -69,6 +69,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.width
 import com.clashfit.ui.nav.Library
 import com.clashfit.ui.theme.InkFaint
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.clashfit.ui.components.Tag
 
 /**
  * The Train tab. One tap into a fight, then every way to play as carousels grouped by how many
@@ -183,30 +187,45 @@ fun HomeScreen(graph: AppGraph, nav: NavHostController) {
     }
 }
 
-/** One health tool on the Train tab. */
-private data class Tool(val title: String, val blurb: String, val icon: ImageVector, val route: Route)
+/** One health tool on the Train tab. The hook is a card's worth; the blurb is a screen's. */
+private data class Tool(val title: String, val hook: String, val icon: ImageVector, val route: Route)
 
 private val HEALTH_TOOLS = listOf(
-    Tool("Run tracker", "Distance, pace and splits. The route never leaves the phone.", AppIcons.Run, RunHome),
-    Tool("Breathing", "Six breaths a minute, verified from your chest rather than assumed.", AppIcons.Heart, Breathing),
-    Tool("Clinic", "The sit-to-stand test a physiotherapist uses.", AppIcons.Heart, Clinic),
-    Tool("Desk timer", "Sixty seconds of movement, every fifty minutes.", AppIcons.Bolt, Desk),
-    Tool("Posture", "One frame every few minutes, scored and discarded.", AppIcons.Person, Posture),
-    Tool("Wake-up alarm", "It rings until the reps stop it.", AppIcons.Bell, Alarms),
+    Tool("Run tracker", "Distance, pace, splits", AppIcons.Run, RunHome),
+    Tool("Breathing", "Pull the band back", AppIcons.Heart, Breathing),
+    Tool("Clinic", "The sit-to-stand test", AppIcons.Heart, Clinic),
+    Tool("Desk timer", "A minute every fifty", AppIcons.Bolt, Desk),
+    Tool("Posture", "Scored, then discarded", AppIcons.Person, Posture),
+    Tool("Wake-up alarm", "Reps stop the ringing", AppIcons.Bell, Alarms),
 )
 
 @Composable
 private fun ToolCard(tool: Tool, onClick: () -> Unit) {
-    AppCard(Modifier.width(210.dp), padding = 16, onClick = onClick) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    // The same tile as a mode, on the same page, at the same width. These sat directly beneath
+    // sixteen mode tiles carrying three lines of prose each, which made the bottom of Train look
+    // like a different app had been pasted onto the end of it.
+    AppCard(Modifier.width(210.dp).heightIn(min = 148.dp), padding = 16, onClick = onClick) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(
-                Modifier.size(34.dp).clip(CircleShape).background(Success.copy(alpha = 0.16f)),
+                Modifier
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Success.copy(alpha = 0.20f), Success.copy(alpha = 0.07f)),
+                        ),
+                    )
+                    .border(1.dp, Success.copy(alpha = 0.28f), RoundedCornerShape(15.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(tool.icon, contentDescription = null, tint = Success, modifier = Modifier.size(18.dp))
+                Icon(tool.icon, contentDescription = null, tint = Success, modifier = Modifier.size(24.dp))
             }
-            Text(tool.title, style = MaterialTheme.typography.titleSmall, color = Ink)
-            Text(tool.blurb, style = MaterialTheme.typography.bodySmall, color = InkMuted, maxLines = 3)
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(tool.title, style = MaterialTheme.typography.titleMedium, color = Ink, maxLines = 1)
+                Text(tool.hook, style = MaterialTheme.typography.labelMedium, color = InkMuted, maxLines = 1)
+            }
+            Spacer(Modifier.height(2.dp))
+            Tag("Health", color = Success)
         }
     }
 }
