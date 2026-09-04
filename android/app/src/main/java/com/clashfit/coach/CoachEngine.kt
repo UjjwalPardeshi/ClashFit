@@ -16,7 +16,7 @@ class CoachEngine(
 ) {
     private val tag = "ClashFit/coach"
     private val coachFor = CoachFor(
-        llm = if (llm != null) { telemetry ->
+        llm = if (llm != null) suspend { telemetry ->
             llm.generate(telemetry)
         } else null,
         timeoutMs = 5_000L,

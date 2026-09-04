@@ -4,4 +4,8 @@
     <string name="not_medical">Not a medical device</string>
     <string name="notif_channel_alarm">Wake-up alarm</string>
     <string name="notif_channel_run">Run tracking</string>
+    <string name="shortcut_start_fight_short">Start a fight</string>
+    <string name="shortcut_start_fight_long">Pick an exercise and start a boss fight</string>
+    <string name="shortcut_run_short">Run</string>
+    <string name="shortcut_run_long">Start the outdoor run tracker</string>
 </resources>

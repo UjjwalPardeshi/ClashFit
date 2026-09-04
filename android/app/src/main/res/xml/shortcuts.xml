@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- "Start a fight" shortcut - deep-links to the exercise picker for boss fights. -->
+    <shortcut
+        android:shortcutId="start_fight"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/shortcut_start_fight_short"
+        android:shortcutLongLabel="@string/shortcut_start_fight_long">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.clashfit"
+            android:targetClass="com.clashfit.MainActivity">
+            <extra android:name="shortcut_action" android:value="start_fight" />
+        </intent>
+    </shortcut>
+
+    <!-- "Run" shortcut - deep-links to the run tracker. -->
+    <shortcut
+        android:shortcutId="run"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/shortcut_run_short"
+        android:shortcutLongLabel="@string/shortcut_run_long">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetPackage="com.clashfit"
+            android:targetClass="com.clashfit.MainActivity">
+            <extra android:name="shortcut_action" android:value="run" />
+        </intent>
+    </shortcut>
+
+</shortcuts>
