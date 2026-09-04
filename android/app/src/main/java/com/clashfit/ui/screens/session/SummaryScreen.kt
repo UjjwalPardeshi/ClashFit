@@ -372,10 +372,18 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
             SectionGap()
         }
 
-        // Stat tiles
+        // Two by two, not four across.
+        //
+        // Four tiles on a phone gave each about eighty pixels, and the values that go in them are
+        // not short: a four-figure damage total broke as "128 / 7" and WORKING came out as three
+        // stacked syllables. Half as many per row is twice the width, and it holds at 1.5x text
+        // as well, which four never could.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StatTile("${d.session.totalReps}", "reps", Modifier.weight(1f))
             StatTile("${d.session.totalDamage}", "damage", Modifier.weight(1f))
+        }
+        SectionGap(10)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StatTile("${d.formMeanPct}%", "form", Modifier.weight(1f))
             StatTile(d.peakBand.label, "peak", Modifier.weight(1f), color = d.peakBand.color())
         }

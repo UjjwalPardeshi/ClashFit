@@ -71,6 +71,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.ui.text.style.TextOverflow
 
 /*
  * The shared kit. Material 3 underneath, one accent on top. Every screen builds from these so
@@ -260,7 +261,16 @@ fun PanelBox(modifier: Modifier = Modifier, padding: Int = 16, content: @Composa
 fun StatTile(value: String, label: String, modifier: Modifier = Modifier, color: Color = Ink) {
     AppCard(modifier, padding = 14) {
         Column(Modifier.semantics(mergeDescendants = true) { contentDescription = "$value ${label.lowercase()}" }) {
-            Text(value, style = MaterialTheme.typography.headlineLarge, color = color)
+            // One line, and never split. A big numeral broken across two lines reads as two
+            // numbers, which is worse than a numeral that has been shrunk to fit.
+            Text(
+                value,
+                style = MaterialTheme.typography.headlineLarge,
+                color = color,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Visible,
+            )
             Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = InkMuted, modifier = Modifier.padding(top = 4.dp))
         }
     }

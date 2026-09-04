@@ -45,6 +45,7 @@ import kotlin.math.sin
 import kotlin.random.Random
 import com.clashfit.ui.nav.Compete
 import com.clashfit.ui.screens.social.CompeteScreen
+import com.clashfit.ui.screens.session.SummaryScreen
 
 /**
  * The data screens, with a database that has something in it.
@@ -58,6 +59,9 @@ import com.clashfit.ui.screens.social.CompeteScreen
 @Config(sdk = [36], qualifiers = RobolectricDeviceQualifiers.Pixel7)
 class SeededScreenshotTest {
     @get:Rule val compose = createComposeRule()
+
+    /** The most recent seeded session, so the summary has a real one to open. */
+    private var lastSessionId: Long = 0
 
     private val graph: AppGraph get() = AppGraph.of(ApplicationProvider.getApplicationContext())
 
@@ -124,6 +128,7 @@ class SeededScreenshotTest {
                     )
                 },
             )
+            lastSessionId = id
             sessionIndex++
         }
         db.streak().upsert(StreakEntity(id = 1, current = 9, best = 21, lastDayKey = today.toString(), freezes = 2, restDaysUsedThisWeek = 1, weekKey = "2026-W36"))
@@ -150,4 +155,22 @@ class SeededScreenshotTest {
     @Test fun characterWithData() = shot("33-seeded-character", Character) { CharacterScreen(graph, it) }
     @Test fun youWithData() = shot("34-seeded-you", You) { YouScreen(graph, it) }
     @Test fun competeWithData() = shot("35-seeded-compete", Compete) { CompeteScreen(graph, it) }
+
+    /**
+     * The summary, which is seen after every single fight and had never been rendered once.
+     *
+     * It has no reward attached here — banking happens in the view model after a real session
+     * ends, and this opens a row the seeder wrote directly — so this is the screen at its most
+     * bare. That is worth looking at: if it reads well with no XP block, it reads well always.
+     */
+    @Test
+    fun summaryWithData() {
+        compose.setContent {
+            ClashFitTheme {
+                SummaryScreen(graph, lastSessionId, onHome = {}, onAgain = {})
+            }
+        }
+        repeat(4) { Thread.sleep(250); compose.waitForIdle() }
+        compose.onRoot().captureRoboImage("screenshots/36-seeded-summary.png")
+    }
 }
