@@ -11,6 +11,12 @@
          carries scores, display names and levels, and nothing more.
          Android's own cloud backup is switched off in data_extraction_rules.xml,
          so the training database never travels that way either.
+
+         This list is the whole list. The checkPermissions<Variant> Gradle task
+         compares the merged manifest against it on every assemble and fails the
+         build on anything extra, so a transitive Google library cannot quietly
+         widen what this app is allowed to do. Adding a permission means editing
+         PERMISSION_ALLOW_LIST in app/build.gradle.kts and saying why.
          ================================================================ -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

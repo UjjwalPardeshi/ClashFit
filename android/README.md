@@ -57,9 +57,16 @@ Baselines are in `app/screenshots/`. Use these to verify Material 3 theme tokens
 | `…/ui` | Theme, the shared component kit, type-safe navigation, screens |
 | `app/src/main/assets/config` | The same JSON the prototype tunes against; a copy under `files/config/` on the phone overrides it on resume |
 
-The manifest requests `INTERNET` and `ACCESS_NETWORK_STATE` (Firebase Auth + leaderboards only).
-Camera frames and pose data never use these permissions: pose scoring runs on-device (MediaPipe GPU)
-and coaching runs on-device (Gemma 3n). Only scores, names and levels are sent to Firestore.
+The manifest requests `INTERNET` and `ACCESS_NETWORK_STATE`, for Firebase Auth and the leaderboard
+and for nothing else. Camera frames, pose landmarks and rep timelines never travel: pose scoring runs
+on-device (MediaPipe, GPU) and coaching runs on-device (Gemma 3n). Only scores, display names and
+levels reach Firestore.
+
+The claim is checked rather than promised. `PERMISSION_ALLOW_LIST` in `app/build.gradle.kts` names
+every permission the app may hold, with the reason on the line, and `checkPermissions<Variant>` runs
+on every assemble: the merged manifest must match the list exactly. A transitive Google library
+cannot widen what the app is allowed to do, and a permission a feature depends on cannot silently
+disappear either. To read a built APK yourself: `aapt2 dump permissions app-release.apk`.
 
 Design notes and the phase plan: [`../docs/30-ANDROID-APP.md`](../docs/30-ANDROID-APP.md).
 

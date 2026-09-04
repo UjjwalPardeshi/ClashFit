@@ -46,9 +46,8 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew :app:assembleDebug --no-daemon
 
-      - name: Prove there is no INTERNET permission
-        run: |
-          ! grep -q 'android.permission.INTERNET' app/build/intermediates/merged_manifest/debug/*/AndroidManifest.xml
+      - name: Prove the permission set is exactly the one we declare
+        run: ./gradlew :app:checkPermissionsDebug
 
       - uses: actions/upload-artifact@v4
         with:

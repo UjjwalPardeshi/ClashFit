@@ -28,6 +28,13 @@ The manifest requests `INTERNET` and `ACCESS_NETWORK_STATE` (for cloud accounts 
 only). Camera frames, pose data and rep timelines never use these permissions: pose runs on-device,
 leaderboards receive only scores and names.
 
+That is enforced, not asserted. `PERMISSION_ALLOW_LIST` in `app/build.gradle.kts` names every
+permission the app may hold and why, and `checkPermissions<Variant>` fails any assemble whose merged
+manifest does not match it exactly — in either direction. Two entries on that list are not ours:
+Play services adds `READ_GSERVICES` under `firebase-auth`, and androidx adds a signature-level
+receiver permission scoped to this package. They are listed because the point of a lock file is that
+nothing is unaccounted for.
+
 ## 1a. Shell and Onboarding
 
 **App Shell**: Material 3 bottom navigation bar with four tabs: Train (home, modes, exercise picker,

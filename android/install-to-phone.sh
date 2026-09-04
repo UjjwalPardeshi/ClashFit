@@ -9,15 +9,17 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# The pinned toolchain if the setup left one, else the first JDK under ~/.jdks (17 or newer).
+if [ -z "${JAVA_HOME:-}" ] && [ -f "$HOME/.clashfit-android-env.sh" ]; then . "$HOME/.clashfit-android-env.sh"; fi
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Android/Sdk}"
-export JAVA_HOME="${JAVA_HOME:-$(ls -d "$HOME"/.jdks/jdk-21* 2>/dev/null | head -1)}"
+export JAVA_HOME="${JAVA_HOME:-$(ls -d "$HOME"/.jdks/* 2>/dev/null | head -1)}"
 export PATH="$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$PATH"
 ADB="$ANDROID_HOME/platform-tools/adb"
 
 say() { printf '\n\033[1;38;5;202m%s\033[0m\n' "$*"; }
 die() { printf '\n\033[1;31m%s\033[0m\n' "$*" >&2; exit 1; }
 
-[ -x "$JAVA_HOME/bin/javac" ] || die "No JDK at $JAVA_HOME. Expected ~/.jdks/jdk-21*"
+[ -x "$JAVA_HOME/bin/javac" ] || die "No JDK at '$JAVA_HOME'. Put a JDK 17+ under ~/.jdks or export JAVA_HOME."
 [ -d "$ANDROID_HOME/platforms" ] || die "No Android SDK at $ANDROID_HOME"
 
 VARIANT="debug"; APK_ONLY=0
