@@ -2,7 +2,7 @@
 
 What is built and verified, what is deliberately event-only, and what is genuinely still open.
 
-**Last updated:** 4 Sep 2026 · Android app shipping · 541 tests passing · 51 exercises · 16 modes · 56 screenshot baselines · 170 commits
+**Last updated:** 5 Sep 2026 · Android app shipping · 556 tests passing · 51 exercises · 16 modes · 60 screenshot baselines · 180 commits
 
 ---
 
@@ -46,7 +46,7 @@ What is built and verified, what is deliberately event-only, and what is genuine
 | **The Pacemaker** — a rigged glTF model, five clips, rendered by Filament over the camera | ✅ | [15](15-ASSET-BRIEF.md) §1 |
 | **Boss fallback** — the Compose-drawn boss, same six states, if the renderer will not start | ✅ | [15](15-ASSET-BRIEF.md) §1 |
 | **Exo-suit overlay** — the player on full-screen camera with armour drawn from the landmarks | ✅ | [03](03-UI-UX-SPEC.md) |
-| **Five tabs** — Train · Library · Progress · Compete · You, each a hub with its own sections | ✅ | [03](03-UI-UX-SPEC.md) §2 |
+| **Four tabs** — Train · Leaderboard · Progress · You, each a hub with its own sections. Library sits on Train | ✅ | [03](03-UI-UX-SPEC.md) §2 |
 | **Progress dashboard** — the trend, the verdict donut and the radar on the page, not behind a list | ✅ | [23](23-META-PROGRESSION.md) |
 | **Game feel** — damage-weighted shake, impact sparks, crit stamp, combo fire, staged rewards | ✅ | [04](04-GAME-DESIGN.md) |
 | **Character sheet** — seven health domains on a radar, two honestly marked unmeasured | ✅ | [22](22-HEALTH-DOMAINS.md) §1 |
@@ -118,8 +118,8 @@ The Android app:
 ```bash
 cd android
 ./gradlew :app:installDebug          # onto a connected phone
-./gradlew :app:testDebugUnitTest     # 519 tests, no phone needed
-./gradlew :app:recordRoborazziDebug  # re-render the 40 screenshot baselines
+./gradlew :app:testDebugUnitTest     # 556 tests, no phone needed
+./gradlew :app:recordRoborazziDebug  # re-render the 60 screenshot baselines
 ```
 
 Firebase keys live in `android/local.properties`, which is git-ignored. `android/README.md`

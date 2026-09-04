@@ -130,6 +130,10 @@ class SessionEngine(
     private var ghostData: GhostData? = null
 
     private var romBaselineU: Float? = null
+
+    /** The landmarks at the deepest point of the rep in progress, and how deep that was. */
+    private var deepestLms: Landmarks? = null
+    private var deepestAngle: Float = Float.MAX_VALUE
     private val topRefSamples = ArrayList<Float>(128)
     private var topRef: Float? = null
 
@@ -389,6 +393,17 @@ class SessionEngine(
 
         val machine = fsm
         if (machine != null) {
+            // Remember the frame at the bottom of the rep, for alignment.
+            //
+            // A rep completes when you come back UP, so the landmarks at that moment are of
+            // someone standing. Knee tracking measured there is knee-over-ankle offset with the
+            // legs straight, which is nearly zero for everybody — the sub-score returned close to
+            // full marks whatever the rep looked like, and discriminated nothing. The deepest
+            // point is where alignment either holds or fails, so that is where it is sampled.
+            if (phase == Phase.FIGHTING && !angle.isNaN() && angle < deepestAngle) {
+                deepestAngle = angle
+                deepestLms = lms
+            }
             if (phase == Phase.FIGHTING) machine.onFrame(angle, tMs)?.let { completeRep(it, lms) }
         } else {
             val det = detector
@@ -430,10 +445,19 @@ class SessionEngine(
 
     fun setCoach(output: CoachOutput) { coach = output }
 
+    /**
+     * How long to rest, scaled from fresh to gassed by how tired the last set left you.
+     *
+     * The divisor is the GASSED band threshold from config, not a hardcoded 0.5. It was written as
+     * a literal that happened to equal the default, so tuning the band in pose.json moved when the
+     * app calls you gassed without moving how long it then rests you — two numbers that are
+     * supposed to be the same number.
+     */
     private fun restSeconds(): Int {
         val r = combatCfg.rest
         val v = fatigue.state().value
-        return (r.freshSeconds + (r.gassedSeconds - r.freshSeconds) * min(1f, v / 0.5f)).roundToInt()
+        val gassedAt = poseCfg.fatigue.bands.gassed.coerceAtLeast(0.01f)
+        return (r.freshSeconds + (r.gassedSeconds - r.freshSeconds) * min(1f, v / gassedAt)).roundToInt()
     }
 
     /** Begin the next set. Fatigue baselines reset; boss HP and combo carry. */
@@ -450,6 +474,8 @@ class SessionEngine(
         topRef?.let { fsm?.setTopRef(it) }
         detector?.reset()
         asymmetryTracker.reset()
+        deepestLms = null
+        deepestAngle = Float.MAX_VALUE
         // The filter too. Everything else that carries state across a rep was reset above, and
         // leaving this one holding the previous set's last sample and timestamp means the first
         // frame after a rest is blended with wherever you were standing when the last set ended.
@@ -518,7 +544,11 @@ class SessionEngine(
     private fun completeRep(raw: RepEvent, lms: Landmarks) {
         // First completed rep sets the ROM baseline — every score is relative to this player.
         if (romBaselineU == null) romBaselineU = raw.uMax - raw.uMin
-        val align = alignmentSample(lms, side, exercise.form?.alignment?.type)
+        // The bottom of this rep, falling back to the current frame if nothing was recorded.
+        val alignAt = deepestLms ?: lms
+        deepestLms = null
+        deepestAngle = Float.MAX_VALUE
+        val align = alignmentSample(alignAt, side, exercise.form?.alignment?.type)
         var score = scoreRep(raw, align)
         if (mode == GameMode.TEMPO_TRIAL) {
             val c = combatCfg.modes.tempoTrial

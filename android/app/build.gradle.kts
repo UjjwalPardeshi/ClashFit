@@ -64,6 +64,21 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
+
+            // Phones only.
+            //
+            // Measured on the 117 MB release apk: x86_64 native code was 49.5 MB of it, 42 per
+            // cent, and no phone will ever execute a byte of it. The MediaPipe LLM engine alone
+            // ships 28.8 MB for x86_64 and 25.4 MB for arm64. Dropping the one nothing runs takes
+            // the download to roughly seventy megabytes, which is the difference between a quick
+            // sideload and standing at a table waiting.
+            //
+            // Debug keeps both, so an emulator still works.
+            //
+            // Done at packaging rather than with ndk.abiFilters: a build type's abiFilters are
+            // unioned with defaultConfig's rather than replacing them, so setting it there changed
+            // nothing and the release still carried both architectures.
+            packaging { jniLibs { excludes += "lib/x86_64/**" } }
         }
         debug {
             isMinifyEnabled = false
@@ -113,6 +128,29 @@ kotlin {
             "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
             "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
         )
+    }
+}
+
+/**
+ * Compose compiler metrics, on demand.
+ *
+ * Run with `-PcomposeMetrics` to write two reports next to the build: which composables are
+ * skippable and restartable, and which parameters are unstable. An unstable parameter means the
+ * compiler cannot prove a composable's inputs are unchanged, so it recomposes on every parent
+ * recomposition whether anything changed or not — which is the usual cause of a Compose app being
+ * slow for no visible reason.
+ *
+ * Off by default: it slows every build, and it is a diagnostic rather than a setting.
+ */
+if (project.hasProperty("composeMetrics")) {
+    val dir = layout.buildDirectory.dir("compose-metrics").get().asFile.absolutePath
+    kotlin {
+        compilerOptions {
+            freeCompilerArgs.addAll(
+                "-P", "plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=$dir",
+                "-P", "plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=$dir",
+            )
+        }
     }
 }
 

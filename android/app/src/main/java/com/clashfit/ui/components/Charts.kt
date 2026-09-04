@@ -212,7 +212,9 @@ fun Heatmap(
         modifier.fillMaxWidth().aspectRatio(weeks / 7f)
             .semantics { contentDescription = description },
     ) {
-        val cols = weeks
+        // At least one column. Float division by zero does not throw, it yields Infinity, which
+    // travels silently into every cell position and draws nothing at all.
+    val cols = weeks.coerceAtLeast(1)
         val gap = size.width * 0.006f
         val cell = (size.width - gap * (cols - 1)) / cols
         val cellH = cell

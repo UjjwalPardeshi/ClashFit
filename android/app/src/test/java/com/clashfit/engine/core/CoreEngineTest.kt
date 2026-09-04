@@ -312,24 +312,47 @@ class FatigueEstimatorTest {
         assertTrue(bands.contains(FatigueBand.FADING), "Should see FADING band")
     }
 
+    /**
+     * The latch is what stops the band flickering, so the test for it has to show a difference.
+     *
+     * This used to feed velocities that never moved the band at all — the whole run came back
+     * `[FRESH, FRESH, FRESH, FRESH]` — and then asserted only that the list had more than one
+     * entry, which is true after any four samples. It passed while proving nothing, and would have
+     * gone on passing if the latch had been deleted outright.
+     *
+     * Running the same decaying set through both settings is the only assertion that means
+     * anything: without a latch the band moves as soon as the estimate crosses, with one it waits.
+     */
     @Test
-    fun `bandLatchReps 0 latches immediately`() {
-        val cfg = FatigueConfig(baselineReps = 3, bandLatchReps = 0, working = 0.15f)
-        val est = FatigueEstimator(cfg)
-
-        // Pre-set samples and baseline
-        est.onSignals(mapOf("velocity" to 100f, "rom" to 90f, "gap" to 0.4f))
-        est.onSignals(mapOf("velocity" to 100f, "rom" to 90f, "gap" to 0.4f))
-        est.onSignals(mapOf("velocity" to 100f, "rom" to 90f, "gap" to 0.4f))
-
-        val bands = mutableListOf<FatigueBand>()
-        // With bandLatchReps=0, band should change immediately on first candidate >= threshold
-        for (v in listOf(79f, 81f, 79f, 81f)) {
-            val state = est.onSignals(mapOf("velocity" to v, "rom" to 90f, "gap" to 0.4f))
-            bands += state.band
+    fun `the band latch delays a change rather than preventing it`() {
+        fun bandsFor(latch: Int): List<FatigueBand> {
+            val est = FatigueEstimator(
+                FatigueConfig(baselineReps = 3, bandLatchReps = latch, working = 0.15f, fading = 0.30f),
+            )
+            val fsm = RepStateMachine(RepDetectorConfig(158f, 150f, 100f, 110f, 90f))
+            fsm.setTopRef(170f)
+            val out = mutableListOf<FatigueBand>()
+            for ((angle, time) in Synth.set(14, 170f, 80f, decay = 0.030f, restGrowth = 0.55f)) {
+                fsm.onFrame(angle, time)?.let { out += est.onRep(it).band }
+            }
+            return out
         }
-        // With latch reps = 0, band should flip on every change, not stay locked
-        assertTrue(bands.size > 1, "Band should flip when latchReps is 0")
+
+        val unlatched = bandsFor(0)
+        val latched = bandsFor(3)
+
+        assertTrue(
+            unlatched.toSet().size > 1,
+            "with no latch the band must actually change during a decaying set: $unlatched",
+        )
+        val firstUnlatched = unlatched.indexOfFirst { it != FatigueBand.FRESH }
+        val firstLatched = latched.indexOfFirst { it != FatigueBand.FRESH }
+        assertTrue(firstUnlatched >= 0, "unlatched never left FRESH: $unlatched")
+        assertTrue(
+            firstLatched < 0 || firstLatched >= firstUnlatched,
+            "a latch must delay the first band change, never bring it forward: " +
+                "unlatched at $firstUnlatched, latched at $firstLatched",
+        )
     }
 }
 

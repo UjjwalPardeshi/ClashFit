@@ -40,7 +40,10 @@ private const val TAU = (2 * PI).toFloat()
 @Composable
 fun RankInsignia(level: Int, modifier: Modifier = Modifier, size: Int = 44) {
     val tier = tierOf(level)
-    val chevrons = ((level - 1) % 3) + 1
+    // Coerced, because Kotlin's modulo keeps the sign of the dividend: at level 0 this was
+    // ((-1) % 3) + 1 = 0 and the emblem drew no chevrons at all. A level below one should
+    // never reach here, and if it does the answer is the lowest rank, not a blank plate.
+    val chevrons = ((level.coerceAtLeast(1) - 1) % 3) + 1
 
     Canvas(modifier.size(size.dp)) {
         val r = this.size.minDimension / 2f

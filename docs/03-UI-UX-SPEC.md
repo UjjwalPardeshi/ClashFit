@@ -59,11 +59,14 @@ The app uses Material 3 on dark background with custom token overrides for fitne
 
 **UI Elements**:
 - Buttons: pill-shaped (full height border radius) with tonal background, Material weight
-- Navigation bar: bottom, five tabs (Train / Library / Progress / Compete / You), tonal.
-  Compete was promoted out of the profile page on 4 Sep 2026: leaderboards, friends, badges
-  and challenges sat halfway down a scroll between your own stats and the privacy policy,
-  which put "race your friends" in the same list as "what version is this". On a display
-  wider than 600dp the same five become a navigation rail
+- Navigation bar: bottom, four tabs (Train / Leaderboard / Progress / You), tonal.
+  The social screens were promoted out of the profile page on 4 Sep 2026: leaderboards, friends,
+  badges and challenges sat halfway down a scroll between your own stats and the privacy policy,
+  which put "race your friends" in the same list as "what version is this". The tab is named
+  Leaderboard because that is what people open it for. Library left the bar on 5 Sep and moved
+  under Train — choosing what to train is part of training, and a permanent tab for a list you
+  visit weekly was spending a fifth of the bar on browsing. On a display wider than 600dp the
+  same four become a navigation rail
 - Top app bar: every screen has a back arrow on the left (or menu), title centre, icons right
 - Cards: round corners (16 dp), tonal background, subtle elevation
 
