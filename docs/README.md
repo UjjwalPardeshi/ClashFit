@@ -58,11 +58,16 @@ check-in we open a fresh repository and implement against these specs.
 | 23 | [Meta-Progression](23-META-PROGRESSION.md) | XP, levels, achievements and weekly challenges shipped. Seasons and energy roadmap. |
 | 24 | [**Build Setup**](24-BUILD-SETUP.md) | **Read before you type.** Dependencies, Firebase keys in local.properties, manifest, screenshot tests. |
 | 25 | [Clinic Mode](25-CLINIC-MODE.md) | Validated functional assessments — sit-to-stand, balance, reach. The impact play. |
-| 26 | [Deck Copy](26-DECK-COPY.md) | All nine slides, written. Due 27 Aug. |
+| 26 | [Deck Copy](26-DECK-COPY.md) | Every slide, written. The built deck is 15 frames, PDF and PPTX at 1920×1080. |
 | 27 | [Impact & Business Case](27-IMPACT-BUSINESS.md) | Who it's for, who pays, why India, and the risks we raise before a judge does. |
 | 28 | [**Judge-Proofing**](28-JUDGE-PROOFING.md) | Every claim, its defence, and the evidence to show. Rehearse it. |
 | 30 | [🚨 **Rules Delta**](30-RULES-DELTA.md) | **Read first.** Organiser clarifications the other 41 docs predate — including the Office Kit / Linux blocker. |
 | 29 | [**Build Status**](29-BUILD-STATUS.md) | **What is built, what is event-only, what is still open.** Start here to see where things stand. |
+| 30 | [Android App](30-ANDROID-APP.md) | The Kotlin build plan — stack, package map, phases, and the rules that hold across every package. |
+| 31 | [Feature · Alarm](31-FEATURE-ALARM.md) | Wake up and earn the snooze. Roadmap. |
+| 32 | [Feature · Beyond the Game](32-FEATURE-BEYOND-THE-GAME.md) | Where the movement data goes once the fight is over. Roadmap. |
+| 33 | [Feature · Outbreak](33-FEATURE-OUTBREAK.md) | The outdoor chase mode, on a real map. Roadmap. |
+| 34 | [Accounts and Social](34-ACCOUNTS-SOCIAL.md) | Sign-in, friend codes, four leaderboards, levels, 18 badges, the weekly challenge — and the line none of it crosses. |
 
 ### Reference pack — copy-ready data
 | File | Contents |

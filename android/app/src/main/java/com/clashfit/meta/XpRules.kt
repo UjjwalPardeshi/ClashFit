@@ -52,8 +52,16 @@ object XpRules {
         return lines
     }
 
-    private fun factsValue(metric: Metric, facts: SessionFacts): Int = when (metric) {
-        Metric.DAMAGE -> facts.damage
+    /**
+     * How much a finished session moves the weekly challenge along.
+     *
+     * Casual damage does not count. The weekly screen promises exactly that, and it is the rule
+     * that keeps casual mode safe to offer: a mode with a softer form floor and a weaker boss
+     * must not be the cheapest route to a damage target. Its reps and its sessions still count,
+     * because those are honest work either way.
+     */
+    fun factsValue(metric: Metric, facts: SessionFacts): Int = when (metric) {
+        Metric.DAMAGE -> if (facts.casual) 0 else facts.damage
         Metric.CLEAN_REPS -> {
             // Count of reps with verdict "CLEAN" — parsed from RepEntity verdicts during session
             // This will be provided in SessionFacts as cleanReps

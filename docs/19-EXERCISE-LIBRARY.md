@@ -204,6 +204,11 @@ Burpee · Squat thrust · Jump squat · Tuck jump · Star jump · Lateral bound 
 
 **Total: 61 exercises across 5 detectors.**
 
+> **Shipped, as of 4 Sep 2026: 51 of these 61.** The ten still to come need reference angles
+> captured from a performer who can hold the pose properly, and shipping an approximate one is
+> worse than shipping none. The app's About screen reads its count from the config at runtime,
+> so it always states the honest number rather than this one.
+
 ---
 
 ## 6. Exercise as data

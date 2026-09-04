@@ -2,7 +2,7 @@
 
 What is built and verified, what is deliberately event-only, and what is genuinely still open.
 
-**Last updated:** 22 Aug 2026 · 140 assertions passing · 31 modules · 51 exercises · 33 commits
+**Last updated:** 4 Sep 2026 · Android app shipping · 519 tests passing · 51 exercises · 16 modes · 40 screenshot baselines · 152 commits
 
 ---
 
@@ -31,11 +31,23 @@ What is built and verified, what is deliberately event-only, and what is genuine
 | **Traces** — record and headless replay | ✅ | [14](14-TEST-PLAN.md) §1 |
 | **Arena Mode + reduced motion + accessible rungs** | ✅ | [03](03-UI-UX-SPEC.md) §9 |
 | **Preflight** — the pre-demo ritual as a button, 11 checks | ✅ | [14](14-TEST-PLAN.md) §6 |
-| **Mode grid** — all 15 modes on one screen | ✅ | [17](17-GAME-MODES.md) §9 |
+| **Mode grid** — all 16 modes on one screen | ✅ | [17](17-GAME-MODES.md) §9 |
 | **Challenge codes** — a run becomes a ~300-char shareable string, no server | ✅ | [20](20-MULTIPLAYER-MODES.md) §5 |
 | **Trend chart** — session over session, form and reps | ✅ | [23](23-META-PROGRESSION.md) |
-| **The deck** — 10 slides, print-to-PDF at 16:9 | ✅ | [26](26-DECK-COPY.md), `deck/` |
+| **The deck** — 15 slides, PDF and PPTX at 1920×1080 | ✅ | [26](26-DECK-COPY.md), `deck/` |
 | **Tuning harness** — record once, sweep thresholds offline, rank by robustness | ✅ | `tools/tune.js` |
+| **The Android app** — Kotlin, Jetpack Compose, Material 3 dark, type-safe navigation | ✅ | `android/` |
+| **Accounts** — email and password, Firebase Auth, profile setup, password reset | ✅ | [34](34-ACCOUNTS-SOCIAL.md) |
+| **Leaderboards** — weekly and all-time, everyone and friends, Firestore-backed | ✅ | [34](34-ACCOUNTS-SOCIAL.md) |
+| **Friends** — a shareable code, no email or phone number required | ✅ | [34](34-ACCOUNTS-SOCIAL.md) |
+| **XP, levels and ranks** — earned from measured reps, never from opening the app | ✅ | [23](23-META-PROGRESSION.md) |
+| **Badges** — 18 achievements across bronze, silver and gold | ✅ | [23](23-META-PROGRESSION.md) |
+| **Weekly challenge** — one target a week, same for everyone, resets on Monday | ✅ | [23](23-META-PROGRESSION.md) |
+| **The Pacemaker** — six animated states, drawn in Compose, no bitmap to ship | ✅ | [15](15-ASSET-BRIEF.md) §1 |
+| **Character sheet** — seven health domains on a radar, two honestly marked unmeasured | ✅ | [22](22-HEALTH-DOMAINS.md) §1 |
+| **Charts** — trend, bar, stacked, heatmap, radar and donut, all drawn on a Canvas | ✅ | [03](03-UI-UX-SPEC.md) |
+| **About and How to play** — the vocabulary of a fight, explained for a stranger | ✅ | [03](03-UI-UX-SPEC.md) |
+| **Screenshot suite** — 40 baselines rendered on the JVM, no phone needed to review the UI | ✅ | [14](14-TEST-PLAN.md) |
 
 ---
 
@@ -45,13 +57,12 @@ None of these can exist outside the venue. All are specified and their seams are
 
 | Item | Why it waits | Seam that is ready |
 |---|---|---|
-| **Gemma 3n on-device** | Needs the phone and the NPU | `coachFor(telemetry, llm)` — pass an llm and it takes over; validation and fallback already run |
+| **Gemma 3n on-device** | The 3GB model is pushed to the phone at the venue, not committed | `LlmEngine` loads it if present and falls back to the template bank if not — both paths are tested |
 | **NFC tap-to-pair** | Needs two phones | `DuelTransport` interface — swap the transport, nothing else changes |
 | **Hotspot socket transport** | Needs two phones | same interface |
 | **Proximity push-up depth** | Needs the loaner's sensor, which may be binary | verify at check-in, [24](24-BUILD-SETUP.md) §7 |
 | **IMU plank sag** | Needs a second phone on the body | [21](21-SENSOR-PLAYBOOK.md) §2.2 |
 | **Office Kit** | Needs the loaner | [11](11-DEMO-SCRIPT.md) §5 |
-| **The Android app itself** | Original work must be created at the event | [KOTLIN-CORE](reference/KOTLIN-CORE.md), retype not copy |
 
 ---
 
@@ -97,9 +108,23 @@ Every one of these would have surfaced at hour 20 instead. This is the argument 
 
 ## 5. Run it
 
+The Android app:
+
+```bash
+cd android
+./gradlew :app:installDebug          # onto a connected phone
+./gradlew :app:testDebugUnitTest     # 519 tests, no phone needed
+./gradlew :app:recordRoborazziDebug  # re-render the 40 screenshot baselines
+```
+
+Firebase keys live in `android/local.properties`, which is git-ignored. `android/README.md`
+says what to put there and where to push the coach model.
+
+The phase-one web prototype, still the fastest way to replay a trace:
+
 ```bash
 npm start     # http://localhost:8080
-npm test      # 126 assertions, no camera or browser needed
+npm test      # no camera or browser needed
 npm run manifest
 node test/replay.js traces/*.jsonl
 ```
