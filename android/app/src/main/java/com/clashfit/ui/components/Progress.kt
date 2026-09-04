@@ -45,8 +45,13 @@ import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Motion
 import com.clashfit.ui.theme.Panel
 import com.clashfit.ui.theme.PanelLift
+import com.clashfit.ui.theme.Rule
 import com.clashfit.ui.theme.RuleSoft
 import com.clashfit.ui.theme.Silver
+import kotlin.math.sin
+import kotlin.math.cos
+import androidx.compose.ui.graphics.Path
+import androidx.compose.foundation.layout.fillMaxSize
 
 /* The progression widgets: rings, XP bars and badges. All animate on first composition. */
 
@@ -121,11 +126,55 @@ fun BadgeTile(achievement: Achievement, unlocked: Boolean, icon: ImageVector, mo
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(
-            Modifier.size(48.dp).clip(CircleShape).background(if (unlocked) tint.copy(alpha = 0.18f) else PanelLift),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
+        // A medal, not a circle with a glyph in it.
+        //
+        // A badge that looks like every other badge is a checkbox. The tier is the whole point of
+        // an achievement — bronze, silver, gold say how hard it was — and it was carried only by
+        // the tint of an icon and a word underneath. Now the shape itself says it: bronze gets a
+        // plain plate, silver a notched one, gold a rayed one, and a locked badge is the same
+        // outline with nothing in it, so you can see what shape is missing from the set.
+        Box(Modifier.size(52.dp), contentAlignment = Alignment.Center) {
+            Canvas(Modifier.fillMaxSize()) {
+                val r = size.minDimension / 2f
+                val c = Offset(r, r)
+                val rays = achievement.tier == Tier.GOLD
+                val notches = achievement.tier != Tier.BRONZE
+
+                if (unlocked && rays) {
+                    for (i in 0 until 12) {
+                        val a = i * (2 * Math.PI.toFloat()) / 12
+                        drawLine(
+                            tint.copy(alpha = 0.55f),
+                            Offset(c.x + cos(a) * r * 0.80f, c.y + sin(a) * r * 0.80f),
+                            Offset(c.x + cos(a) * r * 0.99f, c.y + sin(a) * r * 0.99f),
+                            strokeWidth = r * 0.10f,
+                        )
+                    }
+                }
+
+                val sides = if (notches) 8 else 6
+                val plate = Path().apply {
+                    for (i in 0 until sides) {
+                        val a = i * (2 * Math.PI.toFloat()) / sides - (Math.PI.toFloat() / 2)
+                        val rad = r * 0.72f
+                        val p = Offset(c.x + cos(a) * rad, c.y + sin(a) * rad)
+                        if (i == 0) moveTo(p.x, p.y) else lineTo(p.x, p.y)
+                    }
+                    close()
+                }
+                drawPath(plate, if (unlocked) tint.copy(alpha = 0.20f) else PanelLift)
+                drawPath(
+                    plate,
+                    if (unlocked) tint else Rule,
+                    style = Stroke(width = r * 0.09f),
+                )
+            }
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = if (unlocked) tint else InkFaint.copy(alpha = 0.4f),
+                modifier = Modifier.size(22.dp),
+            )
         }
         Text(
             achievement.title, style = MaterialTheme.typography.labelLarge, color = if (unlocked) Ink else InkMuted,

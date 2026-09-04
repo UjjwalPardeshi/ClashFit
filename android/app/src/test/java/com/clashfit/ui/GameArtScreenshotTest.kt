@@ -29,6 +29,10 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import com.clashfit.ui.components.FamilyMark
 import com.clashfit.core.model.Family
+import com.clashfit.ui.components.BadgeTile
+import com.clashfit.ui.components.AppIcons
+import com.clashfit.meta.Tier
+import com.clashfit.meta.Achievement
 
 /**
  * The drawn marks, on a sheet, at the sizes they are used.
@@ -73,6 +77,39 @@ class GameArtScreenshotTest {
         }
         repeat(3) { Thread.sleep(200); compose.waitForIdle() }
         compose.onRoot().captureRoboImage("screenshots/70-rank-ladder.png")
+    }
+
+    @Test
+    fun badgeTiers() {
+        val samples = listOf(Tier.BRONZE, Tier.SILVER, Tier.GOLD)
+        compose.setContent {
+            ClashFitTheme {
+                Column(
+                    Modifier.fillMaxSize().background(Ground).padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    listOf(true, false).forEach { unlocked ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            samples.forEach { tier ->
+                                BadgeTile(
+                                    Achievement(
+                                        id = tier.name.lowercase(),
+                                        title = tier.name.lowercase().replaceFirstChar { it.uppercase() },
+                                        description = if (unlocked) "Earned" else "Locked",
+                                        tier = tier,
+                                    ),
+                                    unlocked = unlocked,
+                                    icon = AppIcons.Star,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        repeat(3) { Thread.sleep(200); compose.waitForIdle() }
+        compose.onRoot().captureRoboImage("screenshots/73-badge-tiers.png")
     }
 
     @Test
