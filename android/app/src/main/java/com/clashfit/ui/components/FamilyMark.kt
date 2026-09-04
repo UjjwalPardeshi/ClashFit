@@ -21,6 +21,7 @@ import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Fresh
 import com.clashfit.ui.theme.Success
 import com.clashfit.ui.theme.Working
+import androidx.compose.ui.graphics.StrokeCap
 
 /** The colour a movement family is drawn in, so a list of fifty-one sorts itself by eye. */
 fun Family.tint(): Color = when (this) {
@@ -58,25 +59,39 @@ fun FamilyMark(family: Family, modifier: Modifier = Modifier, size: Int = 34) {
                 // above an inverted V is an hourglass, and an hourglass says "wrong", not "again".
                 Family.REP_CYCLE -> {
                     val inset = stroke * 0.9f
+                    // The gap sits at the top, not at the right. With the opening on the right
+                    // this was the letter C, and a list of fifty-one movements showed a column of
+                    // nine identical Cs where a mark was supposed to be. A ring broken at the top
+                    // with a head pointing into the break is the shape everything else in the
+                    // world uses for "again".
+                    val startAngle = -55f
+                    val sweep = 290f
                     drawArc(
                         colour,
-                        startAngle = 40f,
-                        sweepAngle = 280f,
+                        startAngle = startAngle,
+                        sweepAngle = sweep,
                         useCenter = false,
                         topLeft = Offset(inset, inset),
                         size = Size(w - inset * 2, h - inset * 2),
-                        style = Stroke(width = stroke),
+                        style = Stroke(width = stroke, cap = StrokeCap.Round),
                     )
-                    // The head, at the open end of the loop.
-                    val a = Math.toRadians(40.0)
+                    // The head, at the end of the travel, pointing on into the opening.
+                    val a = Math.toRadians((startAngle + sweep).toDouble())
                     val rx = (w - inset * 2) / 2f
-                    val cx = w / 2f + kotlin.math.cos(a).toFloat() * rx
-                    val cy = h / 2f + kotlin.math.sin(a).toFloat() * rx
+                    val cosA = kotlin.math.cos(a).toFloat()
+                    val sinA = kotlin.math.sin(a).toFloat()
+                    val px = w / 2f + cosA * rx
+                    val py = h / 2f + sinA * rx
+                    // Clockwise tangent, and the radius as its normal.
+                    val tx = -sinA
+                    val ty = cosA
+                    val len = stroke * 1.9f
+                    val half = stroke * 1.15f
                     drawPath(
                         Path().apply {
-                            moveTo(cx + w * 0.16f, cy - h * 0.02f)
-                            lineTo(cx - w * 0.08f, cy - h * 0.14f)
-                            lineTo(cx - w * 0.04f, cy + h * 0.16f)
+                            moveTo(px + tx * len, py + ty * len)
+                            lineTo(px - tx * len * 0.25f + cosA * half, py - ty * len * 0.25f + sinA * half)
+                            lineTo(px - tx * len * 0.25f - cosA * half, py - ty * len * 0.25f - sinA * half)
                             close()
                         },
                         colour,

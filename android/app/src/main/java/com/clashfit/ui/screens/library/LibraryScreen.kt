@@ -65,6 +65,7 @@ import com.clashfit.ui.theme.Rule
 import com.clashfit.ui.theme.RuleSoft
 import com.clashfit.ui.components.FilterPill
 import com.clashfit.ui.components.FamilyMark
+import com.clashfit.core.model.GameMode
 
 fun Family.displayName(): String = when (this) {
     Family.REP_CYCLE -> "Strength"
@@ -186,7 +187,12 @@ fun ExerciseDetailScreen(exerciseId: String, graph: AppGraph, nav: NavHostContro
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Tag(exercise.familyEnum.displayName(), color = Ember)
                 Tag(when (exercise.difficulty) { 1 -> "Easy"; 2 -> "Moderate"; else -> "Hard" })
-                exercise.games.take(2).forEach { Tag(it) }
+                // The stored ids are enum names. "BOSS_FIGHT" and "TIME_ATTACK" were being
+                // printed at people, underscores and all, on the screen that introduces a
+                // movement.
+                exercise.games.take(2).forEach { id ->
+                    Tag(GameMode.entries.firstOrNull { it.name == id }?.title ?: id)
+                }
             }
             SectionGap(16)
             ListGroup {
