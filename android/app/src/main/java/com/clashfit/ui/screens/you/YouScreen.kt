@@ -62,6 +62,8 @@ import com.clashfit.ui.theme.Success
 import com.clashfit.ui.nav.Compete
 import com.clashfit.ui.nav.switchTo
 import com.clashfit.ui.nav.Tab
+import com.clashfit.ui.components.rankColour
+import com.clashfit.ui.components.RankInsignia
 
 /** The You tab: who you are, how far you have come, who you play with, and the tools. */
 @Composable
@@ -90,11 +92,14 @@ fun YouScreen(graph: AppGraph, nav: NavHostController) {
                         Column(Modifier.weight(1f)) {
                             Text(name, style = MaterialTheme.typography.titleLarge, color = Ink)
                             Text(
-                                meta?.progress?.let { "Level ${it.level} · ${it.title}" } ?: "Level 1 · Recruit",
-                                style = MaterialTheme.typography.bodyMedium, color = Brass,
+                                meta?.progress?.title ?: "Recruit",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = rankColour(meta?.progress?.level ?: 1),
                             )
                         }
-                        meta?.progress?.let { LevelRing(it, size = 56) }
+                        // The emblem, not a ring with a number in it. A rank you can recognise
+                        // is a rank worth climbing; a number in a circle is a database row.
+                        meta?.progress?.let { RankInsignia(it.level, size = 60) }
                     }
                     Spacer(Modifier.height(16.dp))
                     meta?.progress?.let { XpBar(it) }

@@ -70,29 +70,43 @@ fun ModeSigil(mode: GameMode, modifier: Modifier = Modifier, size: Int = 34, ena
             )
         }
 
-        // The core mark, which says what kind of thing this is.
-        when (mode.kind) {
-            ModeKind.SOLO -> hexagon(c, r * 0.52f, colour)
-            ModeKind.VERSUS -> {
-                triangle(c + Offset(-r * 0.22f, 0f), r * 0.40f, colour, pointingRight = true)
-                triangle(c + Offset(r * 0.22f, 0f), r * 0.40f, colour, pointingRight = false)
-            }
-            ModeKind.GROUP -> for (i in 0 until 3) {
-                val a = i * TAU / 3f - TAU / 4f
-                drawCircle(colour, radius = r * 0.17f, center = c + Offset(cos(a) * r * 0.36f, sin(a) * r * 0.36f))
-            }
-            ModeKind.FAMILY -> rotate(45f, c) {
-                drawRect(
-                    colour,
-                    topLeft = Offset(c.x - r * 0.36f, c.y - r * 0.36f),
-                    size = androidx.compose.ui.geometry.Size(r * 0.72f, r * 0.72f),
-                )
-            }
-            ModeKind.CLINIC -> {
-                val arm = r * 0.46f
-                val thick = r * 0.20f
-                drawRect(colour, Offset(c.x - arm, c.y - thick / 2), androidx.compose.ui.geometry.Size(arm * 2, thick))
-                drawRect(colour, Offset(c.x - thick / 2, c.y - arm), androidx.compose.ui.geometry.Size(thick, arm * 2))
+        // The core mark. Its shape says what KIND of mode this is; how it is filled and how far
+        // it is turned says WHICH one, so two modes of the same kind never share a mark. Tick
+        // count alone was too subtle at 34dp — four orange hexagons in a row were four orange
+        // hexagons.
+        val fill = ordinal % 3
+        val turn = (ordinal * 18f) % 60f
+        rotate(turn, c) {
+            when (mode.kind) {
+                ModeKind.SOLO -> hexagon(c, r * 0.52f, colour, fill)
+                ModeKind.VERSUS -> {
+                    triangle(c + Offset(-r * 0.22f, 0f), r * 0.40f, colour, pointingRight = true, fill = fill)
+                    triangle(c + Offset(r * 0.22f, 0f), r * 0.40f, colour, pointingRight = false, fill = fill)
+                }
+                ModeKind.GROUP -> for (i in 0 until 3 + fill) {
+                    val a = i * TAU / (3 + fill) - TAU / 4f
+                    drawCircle(colour, radius = r * 0.15f, center = c + Offset(cos(a) * r * 0.38f, sin(a) * r * 0.38f))
+                }
+                ModeKind.FAMILY -> rotate(45f, c) {
+                    val half = r * 0.36f
+                    val box = androidx.compose.ui.geometry.Size(half * 2, half * 2)
+                    val at = Offset(c.x - half, c.y - half)
+                    when (fill) {
+                        0 -> drawRect(colour, at, box)
+                        1 -> drawRect(colour, at, box, style = Stroke(width = r * 0.14f))
+                        else -> {
+                            drawRect(colour, at, box, style = Stroke(width = r * 0.12f))
+                            drawRect(colour, Offset(c.x - half * 0.34f, c.y - half * 0.34f),
+                                androidx.compose.ui.geometry.Size(half * 0.68f, half * 0.68f))
+                        }
+                    }
+                }
+                ModeKind.CLINIC -> {
+                    val arm = r * 0.46f
+                    val thick = r * 0.20f
+                    drawRect(colour, Offset(c.x - arm, c.y - thick / 2), androidx.compose.ui.geometry.Size(arm * 2, thick))
+                    drawRect(colour, Offset(c.x - thick / 2, c.y - arm), androidx.compose.ui.geometry.Size(thick, arm * 2))
+                }
             }
         }
 
@@ -112,7 +126,8 @@ fun ModeSigil(mode: GameMode, modifier: Modifier = Modifier, size: Int = 34, ena
     }
 }
 
-private fun DrawScope.hexagon(centre: Offset, radius: Float, colour: Color) {
+/** @param fill 0 solid, 1 hollow, 2 hollow with a core */
+private fun DrawScope.hexagon(centre: Offset, radius: Float, colour: Color, fill: Int = 0) {
     val path = Path()
     for (i in 0 until 6) {
         val a = i * TAU / 6f - TAU / 4f
@@ -120,10 +135,23 @@ private fun DrawScope.hexagon(centre: Offset, radius: Float, colour: Color) {
         if (i == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y)
     }
     path.close()
-    drawPath(path, colour)
+    when (fill) {
+        0 -> drawPath(path, colour)
+        1 -> drawPath(path, colour, style = Stroke(width = radius * 0.30f))
+        else -> {
+            drawPath(path, colour, style = Stroke(width = radius * 0.24f))
+            drawCircle(colour, radius = radius * 0.34f, center = centre)
+        }
+    }
 }
 
-private fun DrawScope.triangle(centre: Offset, radius: Float, colour: Color, pointingRight: Boolean) {
+private fun DrawScope.triangle(
+    centre: Offset,
+    radius: Float,
+    colour: Color,
+    pointingRight: Boolean,
+    fill: Int = 0,
+) {
     val d = if (pointingRight) 1f else -1f
     val path = Path().apply {
         moveTo(centre.x + d * radius, centre.y)
@@ -131,5 +159,6 @@ private fun DrawScope.triangle(centre: Offset, radius: Float, colour: Color, poi
         lineTo(centre.x - d * radius * 0.55f, centre.y + radius * 0.85f)
         close()
     }
-    drawPath(path, colour)
+    if (fill == 1) drawPath(path, colour, style = Stroke(width = radius * 0.30f))
+    else drawPath(path, colour)
 }
