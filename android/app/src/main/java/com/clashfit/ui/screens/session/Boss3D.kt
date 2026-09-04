@@ -254,11 +254,20 @@ private class BossRig(view: TextureView, glb: ByteArray) {
  * problem — a missing native library, a driver that will not give us a context, a frame that
  * throws. The fallback is not a placeholder: it is a complete boss with the same six states, so a
  * phone that cannot run the renderer still gets a fight rather than an apology.
+ *
+ * [allow3d] is the manual override from Settings. Automatic fallback only catches failures loud
+ * enough to throw; a renderer that starts and looks wrong needs a switch a person can reach.
  */
 @Composable
-fun BossStage(combat: CombatState, jolt: Float, shake: Float, modifier: Modifier = Modifier) {
+fun BossStage(
+    combat: CombatState,
+    jolt: Float,
+    shake: Float,
+    modifier: Modifier = Modifier,
+    allow3d: Boolean = true,
+) {
     var use3d by remember { mutableStateOf(true) }
-    if (use3d) {
+    if (allow3d && use3d) {
         Boss3D(combat, jolt, modifier, onUnavailable = { use3d = false })
     } else {
         BossFigure(combat, jolt, shake, modifier)

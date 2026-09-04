@@ -60,6 +60,8 @@ fun SettingsScreen(graph: AppGraph, nav: NavHostController) {
                 supporting = "Swaps shakes and flashes for a border pulse")
             SwitchRow("Debug overlay", settings.debugOverlay, { v -> scope.launch { graph.prefs.setDebugOverlay(v) } },
                 supporting = "Landmarks and angles drawn over the camera")
+            SwitchRow("3D boss", settings.boss3d, { v -> scope.launch { graph.prefs.setBoss3d(v) } },
+                supporting = "Off draws the boss in flat shapes instead. Same fight either way.")
 
             SectionGap(28)
             Kicker("Audio and haptics")

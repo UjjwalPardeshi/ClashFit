@@ -39,6 +39,16 @@ class Prefs(private val context: Context) {
         val goal: String = Goal.GET_STRONGER.name,
         /** Index into the avatar palette on the profile. */
         val avatarColor: Int = 0,
+        /**
+         * Render the boss as the 3D model. Off falls back to the Compose-drawn boss, which is a
+         * complete boss with the same six states rather than a placeholder.
+         *
+         * This exists as a switch a human can reach in five seconds. The 3D renderer is native
+         * code running on a device we may be meeting for the first time, and the automatic
+         * fallback only catches failures loud enough to throw. If it starts but looks wrong on a
+         * venue's projector, nobody wants to be recompiling.
+         */
+        val boss3d: Boolean = true,
     )
 
     enum class Goal(val title: String, val blurb: String) {
@@ -68,10 +78,12 @@ class Prefs(private val context: Context) {
             onboarded = p[ONBOARDED] ?: false,
             goal = p[GOAL] ?: Goal.GET_STRONGER.name,
             avatarColor = p[AVATAR_COLOR] ?: 0,
+            boss3d = p[BOSS_3D] ?: true,
         )
     }
 
     suspend fun setReduceMotion(v: Boolean) = context.dataStore.edit { it[REDUCE_MOTION] = v }
+    suspend fun setBoss3d(v: Boolean) = context.dataStore.edit { it[BOSS_3D] = v }
     suspend fun setHaptics(v: Boolean) = context.dataStore.edit { it[HAPTICS] = v }
     suspend fun setVoiceCommands(v: Boolean) = context.dataStore.edit { it[VOICE] = v }
     suspend fun setSpeech(v: Boolean) = context.dataStore.edit { it[SPEECH] = v }
@@ -100,6 +112,7 @@ class Prefs(private val context: Context) {
 
     private companion object {
         val REDUCE_MOTION = booleanPreferencesKey("reduce_motion")
+        val BOSS_3D = booleanPreferencesKey("boss_3d")
         val HAPTICS = booleanPreferencesKey("haptics")
         val VOICE = booleanPreferencesKey("voice_commands")
         val SPEECH = booleanPreferencesKey("speech")

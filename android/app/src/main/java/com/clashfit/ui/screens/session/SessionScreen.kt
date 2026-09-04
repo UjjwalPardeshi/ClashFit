@@ -60,6 +60,7 @@ import com.clashfit.perception.ExoRig
 import androidx.compose.foundation.layout.fillMaxHeight
 import kotlinx.coroutines.launch
 import com.clashfit.meta.MetaState
+import com.clashfit.data.Prefs
 
 /**
  * One screen for the whole fight. The engine's phase decides what is drawn: calibration guide,
@@ -84,6 +85,7 @@ fun SessionScreen(
     val camera = deps.pose as? CameraPreviewSource
     // Your rank and this week's target, live, in the fight rather than on a profile page.
     val meta by graph.meta.state.collectAsStateWithLifecycle(initialValue = null)
+    val settings by graph.prefs.settings.collectAsStateWithLifecycle(initialValue = Prefs.Settings())
 
     var lastHit by remember { mutableStateOf<HudEvent.Hit?>(null) }
     val jolt = remember { Animatable(0f) }
@@ -134,7 +136,7 @@ fun SessionScreen(
                 ExitCorner(onExit)
             }
             Phase.FIGHTING, Phase.FRAMING_LOST -> {
-                FightLayout(s, vm, lastHit, jolt.value, shake.value, paused, reduceMotion, camera, landmarks, meta)
+                FightLayout(s, vm, lastHit, jolt.value, shake.value, paused, reduceMotion, camera, landmarks, meta, settings)
             }
             Phase.REST -> RestPanel(s, restLeft, onSkip = vm::skipRest, onStop = vm::stop)
             Phase.DEAD -> EndPanel(s, onSummary = { /* wait for persistence */ }, onExit = onExit)
@@ -149,7 +151,7 @@ fun SessionScreen(
 private fun FightLayout(
     s: SessionState, vm: SessionViewModel, lastHit: HudEvent.Hit?, jolt: Float, shake: Float,
     paused: Boolean, reduceMotion: Boolean, camera: CameraPreviewSource?, landmarks: Landmarks?,
-    meta: MetaState?,
+    meta: MetaState?, settings: Prefs.Settings,
 ) {
     val prone = vm.isProne
     val link by vm.link.collectAsStateWithLifecycle()
@@ -164,7 +166,8 @@ private fun FightLayout(
         // the body it is reacting to. Its renderer draws with a transparent background.
         BossStage(
             s.combat, jolt, shake,
-            Modifier
+            allow3d = settings.boss3d,
+            modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth(if (prone) 0.52f else 0.66f)
                 .fillMaxHeight(if (prone) 0.34f else 0.44f)
