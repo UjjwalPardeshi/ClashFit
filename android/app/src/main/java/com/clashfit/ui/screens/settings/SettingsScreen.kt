@@ -46,7 +46,7 @@ fun SettingsScreen(graph: AppGraph, nav: NavHostController) {
     val settings by graph.prefs.settings.collectAsStateWithLifecycle(initialValue = Prefs.Settings())
     val configVersion by graph.config.version.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    val modelFile = remember { File(graph.app.filesDir, "models/gemma-3n-e2b-int4.task") }
+    val modelInstalled = remember { graph.llmEngine.modelInstalled }
     var confirmClear by remember { mutableStateOf(false) }
 
     ScreenScaffold(title = "Settings", onBack = { nav.navigateUp() }) { padding ->
@@ -83,7 +83,7 @@ fun SettingsScreen(graph: AppGraph, nav: NavHostController) {
             Kicker("Configuration")
             SectionGap(4)
             RuleRow("Config version", "$configVersion")
-            RuleRow("Coach model", if (modelFile.exists()) "Installed" else "Not installed · templates speak")
+            RuleRow("Coach model", if (modelInstalled) "Installed" else "Not installed · templates speak")
             SectionGap(12)
             OutlineButton("Reload config", Modifier.fillMaxWidth()) { graph.config.reload() }
 

@@ -33,6 +33,8 @@ import com.clashfit.ui.screens.progress.ProgressScreen
 import com.clashfit.ui.screens.roster.rosterRoutes
 import com.clashfit.ui.screens.session.sessionRoutes
 import com.clashfit.ui.screens.shellRoutes
+import com.clashfit.ui.screens.about.AboutScreen
+import com.clashfit.ui.screens.about.HelpScreen
 import com.clashfit.ui.screens.social.AccountScreen
 import com.clashfit.ui.screens.social.AchievementsScreen
 import com.clashfit.ui.screens.social.FriendsScreen
@@ -55,14 +57,25 @@ import kotlinx.coroutines.flow.Flow
 fun AppNavHost(
     graph: AppGraph,
     deskExerciseId: Flow<String?> = kotlinx.coroutines.flow.emptyFlow(),
+    shortcutAction: Flow<String?> = kotlinx.coroutines.flow.emptyFlow(),
     nav: NavHostController = rememberNavController(),
 ) {
     val deskExerciseIdValue = deskExerciseId.collectAsState(initial = null).value
+    val shortcutActionValue = shortcutAction.collectAsState(initial = null).value
     val settings by graph.prefs.settings.collectAsState(initial = Prefs.Settings())
 
     LaunchedEffect(deskExerciseIdValue) {
         if (deskExerciseIdValue != null) {
             nav.navigate(Session(mode = GameMode.BOSS_FIGHT.name, exerciseId = deskExerciseIdValue, casual = true, durationSec = 60))
+        }
+    }
+
+    LaunchedEffect(shortcutActionValue) {
+        if (shortcutActionValue != null) {
+            when (shortcutActionValue) {
+                "start_fight" -> nav.navigate(ExercisePicker(GameMode.BOSS_FIGHT.name))
+                "run" -> nav.navigate(RunHome)
+            }
         }
     }
 
@@ -125,6 +138,16 @@ fun AppNavHost(
                     onFight = { nav.navigate(ExercisePicker(GameMode.BOSS_FIGHT.name)) },
                     onLeaderboard = { nav.navigate(Leaderboard) },
                 )
+            }
+            composable<About> {
+                AboutScreen(
+                    graph, nav,
+                    onPrivacy = { nav.navigate(Privacy) },
+                    onHelp = { nav.navigate(Help) },
+                )
+            }
+            composable<Help> {
+                HelpScreen(graph, nav, onStart = { nav.navigate(ExercisePicker(GameMode.BOSS_FIGHT.name)) })
             }
             composable<Account> {
                 AccountScreen(graph, onBack = { nav.navigateUp() }, onSignedOut = { nav.navigate(Onboarding) { popUpTo(0) { inclusive = true } } })

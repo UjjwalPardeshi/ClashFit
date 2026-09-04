@@ -58,3 +58,7 @@ sealed interface Route
 @Serializable data object Settings : Route
 @Serializable data object Privacy : Route
 @Serializable data object Preflight : Route
+
+// ── help ────────────────────────────────────────────────────────────────────
+@Serializable data object About : Route
+@Serializable data object Help : Route

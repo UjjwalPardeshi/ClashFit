@@ -54,7 +54,8 @@ enum class Tab(val label: String, val icon: ImageVector, val root: Route, val ow
         setOf(You::class, Settings::class, Privacy::class, Preflight::class, Challenge::class,
             RunHome::class, RunActive::class, RunSummary::class, Alarms::class, AlarmEdit::class,
             Breathing::class, Posture::class, Desk::class, Clinic::class,
-            Leaderboard::class, Friends::class, Achievements::class, Account::class, Weekly::class),
+            Leaderboard::class, Friends::class, Achievements::class, Account::class, Weekly::class,
+            About::class, Help::class),
     );
 
     companion object {

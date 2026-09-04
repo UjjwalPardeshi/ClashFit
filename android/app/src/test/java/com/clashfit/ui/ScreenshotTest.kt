@@ -13,6 +13,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.test.core.app.ApplicationProvider
 import com.clashfit.AppGraph
 import com.clashfit.ui.nav.*
+import com.clashfit.ui.screens.about.AboutScreen
+import com.clashfit.ui.screens.about.HelpScreen
 import com.clashfit.ui.screens.character.CharacterScreen
 import com.clashfit.ui.screens.challenge.ChallengeScreen
 import com.clashfit.ui.screens.clinic.ClinicScreen
@@ -131,6 +133,8 @@ class ScreenshotTest {
     @Test fun privacy() = shot("16-privacy", Privacy) { PrivacyScreen(graph, it) }
     @Test fun desk() = shot("17-desk", Desk) { DeskScreen(graph, it) }
     @Test fun challenge() = shot("18-challenge", Challenge) { ChallengeScreen(graph, it) }
+    @Test fun about() = shot("24-about", About) { AboutScreen(graph, it, onPrivacy = {}, onHelp = {}) }
+    @Test fun help() = shot("25-help", Help) { HelpScreen(graph, it, onStart = {}) }
 }
 
 /**
