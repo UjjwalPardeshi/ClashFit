@@ -7,6 +7,7 @@ import com.clashfit.core.model.CoachSource
 import com.clashfit.core.model.SetTelemetry
 import com.clashfit.core.util.Clock
 import com.clashfit.engine.coach.OutputValidator
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -87,14 +88,41 @@ class LlmEngine(
                 Log.w(tag, "LLM load exceeded 25s timeout, proceeding with templates")
                 _status.value = LlmStatus.OFFLINE
             }
+        } catch (e: CancellationException) {
+            releaseInference()
+            throw e
         } catch (e: OutOfMemoryError) {
+            // The instance may already hold hundreds of megabytes of native model memory. Dropping
+            // the reference without closing it leaks that memory for the life of the process, and
+            // this path runs exactly when memory is already short.
             Log.e(tag, "OOM loading LLM, switching to templates", e)
-            inference = null
+            releaseInference()
             _status.value = LlmStatus.OFFLINE
         } catch (e: Exception) {
             Log.e(tag, "Error loading LLM", e)
+            releaseInference()
             _status.value = LlmStatus.OFFLINE
         }
+    }
+
+    /**
+     * Close the native handle and forget it. MediaPipe's LlmInference is a Closeable over native
+     * model memory that the garbage collector cannot reclaim on its own, so anything that abandons
+     * the instance has to come through here.
+     */
+    fun releaseInference() {
+        val held = inference
+        inference = null
+        if (held is AutoCloseable) {
+            runCatching { held.close() }
+                .onFailure { Log.w(tag, "Closing the LLM handle failed", it) }
+        }
+    }
+
+    /** Release the model and stop using it. Safe to call more than once. */
+    fun shutDown() {
+        releaseInference()
+        _status.value = LlmStatus.OFFLINE
     }
 
     /**
@@ -109,6 +137,10 @@ class LlmEngine(
                 withTimeoutOrNull(5_000L) {
                     generateLines(telemetry)
                 }
+            } catch (e: CancellationException) {
+                // The caller went away. That is not a model failure, and swallowing it would keep
+                // this coroutine alive past the point its scope was cancelled.
+                throw e
             } catch (e: Exception) {
                 Log.e(tag, "Error generating coach output", e)
                 null
@@ -196,6 +228,8 @@ class LlmEngine(
                 bossLine = bossLine,
                 source = CoachSource.LLM,
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(tag, "Error generating coach lines", e)
             null
@@ -234,6 +268,8 @@ class LlmEngine(
                     try {
                         val generateMethod = sessionClass.getMethod("predict", String::class.java)
                         generateMethod.invoke(session, prompt) as? String
+                    } catch (e2: CancellationException) {
+                        throw e2
                     } catch (e2: Exception) {
                         null
                     }
@@ -246,6 +282,8 @@ class LlmEngine(
             }
 
             response.trim().takeIf { it.isNotEmpty() }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(tag, "Error generating ${if (isCoach) "coach" else "boss"} line", e)
             null

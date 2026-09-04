@@ -23,4 +23,19 @@ class ClashFitApp : Application() {
             override fun onStart(owner: LifecycleOwner) { graph.config.reload() }
         })
     }
+
+    /**
+     * Give the coach model back when the system says it needs the memory.
+     *
+     * The Gemma weights are the largest thing this app holds, they are native so the garbage
+     * collector cannot reclaim them, and the coach is a between-sets nicety. The camera pipeline
+     * mid-set is not. Handing the model back keeps the part that matters alive, and the template
+     * bank speaks in the meantime.
+     */
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        if (level >= TRIM_MEMORY_RUNNING_LOW) {
+            graph.llmEngine.shutDown()
+        }
+    }
 }

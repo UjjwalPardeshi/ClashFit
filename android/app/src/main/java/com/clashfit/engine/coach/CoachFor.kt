@@ -4,6 +4,7 @@ import com.clashfit.core.model.CoachOutput
 import com.clashfit.core.model.CoachSource
 import com.clashfit.core.model.SetTelemetry
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.CancellationException
 
 /** LLM seam with timeout. Always returns usable lines. */
 class CoachFor(
@@ -33,6 +34,10 @@ class CoachFor(
             }
             // Fall through to template on timeout or validation failure
             TemplateBank.templateFor(telemetry)
+        } catch (e: CancellationException) {
+            // The session that asked for this line is gone. Falling back to a template here would
+            // hand a line to nobody and keep a cancelled coroutine working.
+            throw e
         } catch (e: Exception) {
             // Silently fall through to template on any error
             TemplateBank.templateFor(telemetry)

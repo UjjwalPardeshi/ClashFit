@@ -5,6 +5,7 @@ import com.clashfit.core.model.CoachOutput
 import com.clashfit.core.model.CoachSource
 import com.clashfit.core.model.SetTelemetry
 import com.clashfit.engine.coach.CoachFor
+import kotlinx.coroutines.CancellationException
 
 /**
  * Wraps engine.coach.CoachFor with the LLM as a seam.
@@ -30,6 +31,8 @@ class CoachEngine(
     suspend fun speakFor(telemetry: SetTelemetry): CoachOutput {
         return try {
             coachFor.speakFor(telemetry)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(tag, "Unexpected error in CoachEngine", e)
             // Fallback: return a minimal template-like output

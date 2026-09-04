@@ -1,5 +1,6 @@
 package com.clashfit.cloud
 
+import android.util.Log
 import com.clashfit.auth.AuthService
 import com.clashfit.auth.AuthState
 import com.clashfit.core.util.Clock
@@ -10,6 +11,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -114,7 +116,10 @@ class FirestoreLeaderboard(
                     return@addSnapshotListener
                 }
                 val uids = (snapshot?.documents.orEmpty().map { it.id } + me).distinct()
-                scope.launch {
+                // Launched on this flow's own scope, not the application scope. On the application
+                // scope the fetch outlived the screen that wanted it, and two quick friend-list
+                // changes could land out of order and show a stale board.
+                launch {
                     trySend(runCatching { standingsFor(uids, board, me) }.getOrDefault(emptyList()))
                 }
             }
@@ -157,6 +162,16 @@ class FirestoreLeaderboard(
         )
     }
 
+    /**
+     * Write the profile row and this week's score row.
+     *
+     * The two writes are ordered, and a cancellation between them used to be swallowed by the
+     * surrounding runCatching: the profile committed, the week's score never did, and nothing said
+     * so. ScoreSync deliberately cancels an in-flight submit when a newer score arrives, so that
+     * was not a rare race — it was the normal path at the end of a session. Cancellation now
+     * propagates, which lets the newer submit replace this one wholesale, and a genuine failure is
+     * logged instead of discarded.
+     */
     override suspend fun submit(snapshot: ScoreSnapshot) {
         val uid = (auth.state.value as? AuthState.SignedIn)?.user?.uid ?: return
         runCatching {
@@ -185,6 +200,11 @@ class FirestoreLeaderboard(
                     ),
                     SetOptions.merge(),
                 ).await()
+        }.onFailure { e ->
+            if (e is CancellationException) throw e
+            Log.w(TAG, "Score sync failed; the next finished session retries it", e)
         }
     }
 }
+
+private const val TAG = "ClashFit/board"

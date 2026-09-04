@@ -88,15 +88,19 @@ private fun lookFor(combat: CombatState): Look {
  */
 @Composable
 fun BossFigure(combat: CombatState, jolt: Float, shake: Float, modifier: Modifier = Modifier) {
-    val look = lookFor(combat)
+    // Recomputed only when the fight's own state moves, not on every animation frame.
+    val look = remember(combat.staggered, combat.phaseLabel, combat.hpPct) { lookFor(combat) }
 
-    // The breath is the tempo it mirrors: faster the angrier it is.
+    // These three run for the whole fight. Note that the State objects are held, NOT unwrapped with
+    // `by`: unwrapping here would read them during composition, and every frame of a never-ending
+    // animation would then recompose this function and reallocate everything in it. Reading .value
+    // inside the draw lambda keeps the whole fight on the draw phase alone.
     val breathMs = (2600 - 900 * look.rage).toInt()
-    val breath by rememberInfinite(breathMs, 0.96f, 1.04f, "breath")
+    val breath = rememberInfinite(breathMs, 0.96f, 1.04f, "breath")
     // The core beats at double the breath, like a metronome over it.
-    val beat by rememberInfinite(breathMs / 2, 0f, 1f, "beat")
+    val beat = rememberInfinite(breathMs / 2, 0f, 1f, "beat")
     // A slow rotation on the outer ring so the thing never looks frozen.
-    val spin by rememberInfinite(14000, 0f, TAU, "spin", reverse = false)
+    val spin = rememberInfinite(14000, 0f, TAU, "spin", reverse = false)
 
     // Death is a one-shot: plates blow outward, the core collapses, everything fades.
     val death = remember { Animatable(0f) }
@@ -104,22 +108,32 @@ fun BossFigure(combat: CombatState, jolt: Float, shake: Float, modifier: Modifie
     LaunchedEffect(combat.dead) {
         if (dead) death.animateTo(1f, tween(1200, easing = LinearEasing)) else death.snapTo(0f)
     }
-    val d = death.value
+
+    // One Path per plate plus one for the core, reused across frames. Allocating nine Paths every
+    // frame for the length of a session is exactly the sort of steady garbage that shows up as a
+    // stutter in the middle of a set.
+    val platePaths = remember { List(PLATES) { Path() } }
+    val corePath = remember { Path() }
 
     Canvas(modifier) {
+        val b = breath.value
+        val pulse = beat.value
+        val orbit = spin.value
+        val d = death.value
+
         val centre = Offset(size.width / 2f + shake, size.height / 2f)
         val unit = size.minDimension * 0.5f
         // It recoils on a hit and shrinks as it dies.
-        val scale = breath * (1f - 0.07f * jolt) * (1f - 0.35f * d)
+        val scale = b * (1f - 0.07f * jolt) * (1f - 0.35f * d)
         // Phase three is unstable: a small constant tremor, worse the closer to death.
-        val tremor = if (look.damage > 0.75f) sin(beat * TAU * 6f) * unit * 0.012f * look.damage else 0f
+        val tremor = if (look.damage > 0.75f) sin(pulse * TAU * 6f) * unit * 0.012f * look.damage else 0f
 
         translate(centre.x + tremor, centre.y) {
-            drawRing(unit * scale, look, spin, beat, d)
-            drawPlates(unit * scale, look, beat, jolt, d)
-            drawArms(unit * scale, look, breath, d)
-            drawCore(unit * scale, look, combat.hpPct, beat, jolt, d)
-            if (d == 0f) drawEye(unit * scale, look, beat)
+            drawRing(unit * scale, look, orbit, pulse, d)
+            drawPlates(unit * scale, look, pulse, jolt, d, platePaths)
+            drawArms(unit * scale, look, b, d)
+            drawCore(unit * scale, look, combat.hpPct, pulse, jolt, d, corePath)
+            if (d == 0f) drawEye(unit * scale, look, pulse)
             if (jolt > 0.01f && d == 0f) drawHitRim(unit * scale, jolt)
         }
     }
@@ -150,7 +164,7 @@ private fun DrawScope.drawRing(u: Float, look: Look, spin: Float, beat: Float, d
  * The armoured shell: eight plates around the core. They flare with rage, swing wide on a stagger,
  * crack as HP falls, and fly apart on death.
  */
-private fun DrawScope.drawPlates(u: Float, look: Look, beat: Float, jolt: Float, d: Float) {
+private fun DrawScope.drawPlates(u: Float, look: Look, beat: Float, jolt: Float, d: Float, paths: List<Path>) {
     val alpha = (1f - d * 0.9f).coerceAtLeast(0f)
     if (alpha <= 0f) return
     // How far each plate sits from the centre.
@@ -163,7 +177,8 @@ private fun DrawScope.drawPlates(u: Float, look: Look, beat: Float, jolt: Float,
         val a = i * TAU / PLATES - TAU / 4f
         // On death each plate drifts on its own heading and spins away.
         val drift = if (d > 0f) d * u * 0.55f * (0.6f + (i % 3) * 0.2f) else 0f
-        val path = Path().apply {
+        val path = paths[i].apply {
+            reset()
             moveTo(cos(a - half) * inner, sin(a - half) * inner)
             lineTo(cos(a - half * 0.8f) * outer, sin(a - half * 0.8f) * outer)
             lineTo(cos(a + half * 0.8f) * outer, sin(a + half * 0.8f) * outer)
@@ -206,7 +221,7 @@ private fun DrawScope.drawArms(u: Float, look: Look, breath: Float, d: Float) {
 }
 
 /** The core: the pacemaker itself. It beats, and its size is the health that is left. */
-private fun DrawScope.drawCore(u: Float, look: Look, hpPct: Float, beat: Float, jolt: Float, d: Float) {
+private fun DrawScope.drawCore(u: Float, look: Look, hpPct: Float, beat: Float, jolt: Float, d: Float, hex: Path) {
     val alpha = (1f - d).coerceAtLeast(0f)
     if (alpha <= 0f) return
     val hp = hpPct.coerceIn(0.04f, 1f)
@@ -218,7 +233,8 @@ private fun DrawScope.drawCore(u: Float, look: Look, hpPct: Float, beat: Float, 
     drawCircle(look.core.copy(alpha = alpha * 0.18f * (0.5f + 0.5f * thump)), radius = r * 2.1f, center = Offset.Zero)
     drawCircle(look.core.copy(alpha = alpha * 0.30f), radius = r * 1.35f, center = Offset.Zero)
     // A hexagonal core, so it reads as built rather than organic.
-    val hex = Path().apply {
+    hex.apply {
+        reset()
         for (i in 0 until 6) {
             val a = i * TAU / 6f + TAU / 12f
             val p = Offset(cos(a) * r, sin(a) * r)
