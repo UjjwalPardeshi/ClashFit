@@ -142,11 +142,21 @@ fun BadgeTile(achievement: Achievement, unlocked: Boolean, icon: ImageVector, mo
 /** A horizontal stat strip: three or four numbers with labels, no cards. */
 @Composable
 fun StatStrip(stats: List<Pair<String, String>>, modifier: Modifier = Modifier) {
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+    // Weighted columns sit flush against each other, so SpaceBetween adds no gap and a label wide
+    // enough to fill its column touches its neighbour. At 1.5x text "BEST STREAK" and "CLEAN THIS
+    // WEEK" ran together into one unreadable line. A real gap, and centred wrapping, fixes it at
+    // every text size.
+    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         stats.forEach { (value, label) ->
             Column(Modifier.weight(1f).semantics(mergeDescendants = true) { contentDescription = "$value ${label.lowercase()}" }, horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(value, style = MaterialTheme.typography.headlineSmall, color = Ink)
-                Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = InkMuted, modifier = Modifier.padding(top = 2.dp))
+                Text(value, style = MaterialTheme.typography.headlineSmall, color = Ink, maxLines = 1)
+                Text(
+                    label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = InkMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
             }
         }
     }
