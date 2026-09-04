@@ -124,7 +124,7 @@ fun SessionScreen(
                 // Full frame from the first second. Getting your whole body in shot is the thing
                 // calibration is asking for, and it is very hard to do against a corner inset.
                 CameraStage(camera, Modifier.fillMaxSize())
-                ExoRig(landmarks, s.fatigue.band, 0f, null, Modifier.fillMaxSize())
+                ExoRig(landmarks, s.fatigue.band, 0f, null, Modifier.fillMaxSize(), level = meta?.progress?.level ?: 1)
                 CalibrationOverlay(
                     cue = s.cue, progress = s.calibProgress,
                     tooFar = s.calib == com.clashfit.core.model.CalibState.TOO_FAR,
@@ -158,7 +158,7 @@ private fun FightLayout(
         // it: the same landmarks the scorer reads, drawn on your own body as armour that lights up
         // when a rep lands clean and changes colour as you tire.
         CameraStage(camera, Modifier.fillMaxSize())
-        ExoRig(landmarks, s.fatigue.band, jolt, lastHit?.verdict, Modifier.fillMaxSize())
+        ExoRig(landmarks, s.fatigue.band, jolt, lastHit?.verdict, Modifier.fillMaxSize(), level = meta?.progress?.level ?: 1)
 
         // The boss stands in the room with you, in the upper part of the frame so it never covers
         // the body it is reacting to. Its renderer draws with a transparent background.

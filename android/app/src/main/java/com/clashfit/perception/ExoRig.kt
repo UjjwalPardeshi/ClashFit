@@ -30,6 +30,8 @@ import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.Working
 import kotlin.math.atan2
 import kotlin.math.hypot
+import kotlin.math.cos
+import kotlin.math.sin
 
 /** A pose source that can also show the camera image it is reading. */
 interface CameraPreviewSource {
@@ -87,10 +89,16 @@ private val JOINTS = listOf(SH_L, SH_R, EL_L, EL_R, WR_L, WR_R, HIP_L, HIP_R, KN
  * yourself tiring. It flares white on a clean rep and the plate on the limb that did the work
  * lights up, so a good rep is visible on your own body rather than only in a number.
  *
+ * The suit is also where progression shows up. Levelling adds pieces you can see on your own
+ * body — shoulder caps, then gauntlets and boots, then a crest — and warms the trim from steel
+ * through brass to gold. A level that only changes a number on a profile page is a number; a
+ * level that changes what you look like while training is a reason to come back.
+ *
  * @param landmarks image-space landmarks, already mirrored to match the preview
  * @param band current fatigue, which sets the rig's colour
  * @param flash 0..1, spikes on a landed rep
  * @param verdict the grade of the last rep, which tints the flash
+ * @param level the player's level, which decides how much suit they have earned
  */
 @Composable
 fun ExoRig(
@@ -99,6 +107,7 @@ fun ExoRig(
     flash: Float,
     verdict: Verdict?,
     modifier: Modifier = Modifier,
+    level: Int = 1,
 ) {
     // A slow pulse along the energy lines, so the suit looks powered even when you are still.
     val pulse = rememberInfiniteTransition(label = "exo").animateFloat(
@@ -130,6 +139,17 @@ fun ExoRig(
         }
         val rig = lerpColor(base, hot, flash * 0.85f)
         val glow = 0.30f + 0.22f * p + 0.48f * flash
+
+        // What the suit has earned. Each tier adds a piece you can point at.
+        val caps = level >= 5          // shoulder caps
+        val extremities = level >= 10  // gauntlets and boots
+        val crest = level >= 16        // a crest on the helmet
+        // Trim warms with rank: steel, then brass, then gold.
+        val trim = when {
+            level >= 20 -> Color(0xFFE8C25A)
+            level >= 10 -> Color(0xFFBA7A42)
+            else -> Color(0xFF8A93A6)
+        }
 
         fun pt(i: Int) = Offset(lm[i].x * size.width, lm[i].y * size.height)
         fun visible(i: Int) = lm[i].visibility > 0.35f
@@ -195,12 +215,60 @@ fun ExoRig(
             drawCircle(rig.copy(alpha = 0.85f), radius = 5f, center = c)
         }
 
+        // Shoulder caps, from level five.
+        if (caps) {
+            for ((joint, toward) in listOf(SH_L to EL_L, SH_R to EL_R)) {
+                if (!visible(joint) || !visible(toward)) continue
+                val c = pt(joint)
+                val a = pt(toward)
+                val len = hypot(a.x - c.x, a.y - c.y)
+                if (len < 8f) continue
+                drawCircle(trim.copy(alpha = 0.28f + 0.3f * flash), radius = len * 0.30f, center = c)
+                drawCircle(trim.copy(alpha = 0.80f), radius = len * 0.30f, center = c, style = Stroke(3.5f))
+            }
+        }
+
+        // Gauntlets and boots, from level ten.
+        if (extremities) {
+            for ((joint, from) in listOf(WR_L to EL_L, WR_R to EL_R, AN_L to KN_L, AN_R to KN_R)) {
+                if (!visible(joint) || !visible(from)) continue
+                val c = pt(joint)
+                val a = pt(from)
+                val len = hypot(c.x - a.x, c.y - a.y)
+                if (len < 8f) continue
+                val angle = atan2(c.y - a.y, c.x - a.x)
+                translate(c.x, c.y) {
+                    rotateRad(angle, pivot = Offset.Zero) {
+                        val w = len * 0.34f
+                        drawRect(
+                            trim.copy(alpha = 0.34f + 0.3f * flash),
+                            topLeft = Offset(-len * 0.22f, -w / 2f),
+                            size = androidx.compose.ui.geometry.Size(len * 0.30f, w),
+                        )
+                    }
+                }
+            }
+        }
+
         // A helmet ring, so the head is part of the suit rather than left bare.
         if (visible(NOSE) && visible(SH_L) && visible(SH_R)) {
             val head = pt(NOSE)
             val span = hypot(pt(SH_L).x - pt(SH_R).x, pt(SH_L).y - pt(SH_R).y)
-            drawCircle(rig.copy(alpha = 0.42f), radius = span * 0.42f, center = head, style = Stroke(3f))
-            drawCircle(rig.copy(alpha = 0.10f + 0.2f * flash), radius = span * 0.42f, center = head)
+            val r = span * 0.42f
+            drawCircle(rig.copy(alpha = 0.42f), radius = r, center = head, style = Stroke(3f))
+            drawCircle(rig.copy(alpha = 0.10f + 0.2f * flash), radius = r, center = head)
+            // A crest, from level sixteen. Three prongs, which is a crown without saying so.
+            if (crest) {
+                for (k in -1..1) {
+                    val a = -1.5708f + k * 0.42f
+                    drawLine(
+                        trim.copy(alpha = 0.85f),
+                        Offset(head.x + cos(a) * r * 0.92f, head.y + sin(a) * r * 0.92f),
+                        Offset(head.x + cos(a) * r * 1.44f, head.y + sin(a) * r * 1.44f),
+                        strokeWidth = 5f,
+                    )
+                }
+            }
         }
     }
 }
