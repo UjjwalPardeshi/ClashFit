@@ -33,6 +33,16 @@ val EmberLift = Color(0xFFFF7A52)
 val EmberDeep = Color(0xFFC93E14)
 val EmberTint = Color(0xFF2E1810)   // the ember container: a warm surface for selected states
 val Brass = Color(0xFFFFB59B)
+
+/**
+ * The other side.
+ *
+ * Every accent in this palette is warm — ember, brass, gold, two greens — which is part of why a
+ * screen of it reads flat: there is nothing for the orange to be warm *against*. This is the one
+ * cool note, and it is spent on a single idea, so it always means the same thing: the opponent,
+ * the other phone, the head-to-head. 11:1 on Ground.
+ */
+val Rival = Color(0xFF62D2E8)
 val Success = Color(0xFF5ED28A)
 
 // Fatigue bands are data colours, never decoration.

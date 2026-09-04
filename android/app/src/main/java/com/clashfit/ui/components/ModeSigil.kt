@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.dp
 import com.clashfit.core.model.GameMode
 import com.clashfit.core.model.ModeKind
-import com.clashfit.ui.theme.Brass
+import com.clashfit.ui.theme.Rival
 import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Fresh
 import com.clashfit.ui.theme.InkFaint
@@ -28,7 +28,7 @@ private const val TAU = (2 * PI).toFloat()
 /** The colour a kind of mode is drawn in, so a glance sorts them before any word is read. */
 fun ModeKind.tint(): Color = when (this) {
     ModeKind.SOLO -> Ember
-    ModeKind.VERSUS -> Brass
+    ModeKind.VERSUS -> Rival
     ModeKind.GROUP -> Success
     ModeKind.FAMILY -> Fresh
     ModeKind.CLINIC -> Working
@@ -54,60 +54,44 @@ fun ModeSigil(mode: GameMode, modifier: Modifier = Modifier, size: Int = 34, ena
         val r = this.size.minDimension / 2f
         val c = Offset(r, r)
 
-        // The ring, broken into ticks. How many ticks separates modes of the same kind.
+        // The ring, broken into ticks. How many ticks separates modes of the same kind. It is
+        // deliberately quiet — it used to be the loudest thing in the mark, which left six solo
+        // modes reading as six identical orange starbursts on a card.
         val ticks = 5 + ordinal
         for (i in 0 until ticks) {
             val a = i * TAU / ticks - TAU / 4f
-            // Long enough to read as a segmented ring rather than a scatter of dots. Short
-            // ticks at this size disappear into the card.
-            val inner = r * 0.70f
-            val outer = r * 0.98f
+            val inner = r * 0.80f
+            val outer = r * 0.99f
             drawLine(
-                colour.copy(alpha = 0.62f),
+                colour.copy(alpha = 0.40f),
                 Offset(c.x + cos(a) * inner, c.y + sin(a) * inner),
                 Offset(c.x + cos(a) * outer, c.y + sin(a) * outer),
-                strokeWidth = r * 0.14f,
+                strokeWidth = r * 0.10f,
             )
         }
 
-        // The core mark. Its shape says what KIND of mode this is; how it is filled and how far
-        // it is turned says WHICH one, so two modes of the same kind never share a mark. Tick
-        // count alone was too subtle at 34dp — four orange hexagons in a row were four orange
-        // hexagons.
-        val fill = ordinal % 3
-        val turn = (ordinal * 18f) % 60f
-        rotate(turn, c) {
-            when (mode.kind) {
-                ModeKind.SOLO -> hexagon(c, r * 0.52f, colour, fill)
-                ModeKind.VERSUS -> {
-                    triangle(c + Offset(-r * 0.22f, 0f), r * 0.40f, colour, pointingRight = true, fill = fill)
-                    triangle(c + Offset(r * 0.22f, 0f), r * 0.40f, colour, pointingRight = false, fill = fill)
-                }
-                ModeKind.GROUP -> for (i in 0 until 3 + fill) {
-                    val a = i * TAU / (3 + fill) - TAU / 4f
-                    drawCircle(colour, radius = r * 0.15f, center = c + Offset(cos(a) * r * 0.38f, sin(a) * r * 0.38f))
-                }
-                ModeKind.FAMILY -> rotate(45f, c) {
-                    val half = r * 0.36f
-                    val box = androidx.compose.ui.geometry.Size(half * 2, half * 2)
-                    val at = Offset(c.x - half, c.y - half)
-                    when (fill) {
-                        0 -> drawRect(colour, at, box)
-                        1 -> drawRect(colour, at, box, style = Stroke(width = r * 0.14f))
-                        else -> {
-                            drawRect(colour, at, box, style = Stroke(width = r * 0.12f))
-                            drawRect(colour, Offset(c.x - half * 0.34f, c.y - half * 0.34f),
-                                androidx.compose.ui.geometry.Size(half * 0.68f, half * 0.68f))
-                        }
-                    }
-                }
-                ModeKind.CLINIC -> {
-                    val arm = r * 0.46f
-                    val thick = r * 0.20f
-                    drawRect(colour, Offset(c.x - arm, c.y - thick / 2), androidx.compose.ui.geometry.Size(arm * 2, thick))
-                    drawRect(colour, Offset(c.x - thick / 2, c.y - arm), androidx.compose.ui.geometry.Size(thick, arm * 2))
-                }
+        // The core mark. Colour says what KIND of mode this is and gives the page its blocks of
+        // rhythm; the silhouette says WHICH one. Six genuinely different shapes, because a
+        // hexagon turned 54 degrees is a hexagon — the old variants were a rotation and a fill
+        // on one shape, and at the 28dp a card gives them they were indistinguishable.
+        val core = r * 0.62f
+        when (ordinal % 6) {
+            0 -> hexagon(c, core, colour, fill = 0)
+            1 -> triangleUp(c, core, colour)
+            2 -> diamond(c, core, colour, hollow = true)
+            3 -> {
+                drawCircle(colour, radius = core * 0.92f, center = c, style = Stroke(width = r * 0.16f))
+                drawCircle(colour, radius = core * 0.30f, center = c)
             }
+            4 -> {
+                val half = core * 0.78f
+                drawRect(
+                    colour, Offset(c.x - half, c.y - half),
+                    androidx.compose.ui.geometry.Size(half * 2, half * 2),
+                    style = Stroke(width = r * 0.16f),
+                )
+            }
+            else -> star(c, core, colour)
         }
 
         // A timed mode gets a sweep on its ring, which is the one property worth seeing before you
@@ -161,4 +145,37 @@ private fun DrawScope.triangle(
     }
     if (fill == 1) drawPath(path, colour, style = Stroke(width = radius * 0.30f))
     else drawPath(path, colour)
+}
+
+private fun DrawScope.triangleUp(centre: Offset, radius: Float, colour: Color) {
+    val path = Path().apply {
+        moveTo(centre.x, centre.y - radius)
+        lineTo(centre.x + radius * 0.92f, centre.y + radius * 0.72f)
+        lineTo(centre.x - radius * 0.92f, centre.y + radius * 0.72f)
+        close()
+    }
+    drawPath(path, colour)
+}
+
+private fun DrawScope.diamond(centre: Offset, radius: Float, colour: Color, hollow: Boolean) {
+    val path = Path().apply {
+        moveTo(centre.x, centre.y - radius)
+        lineTo(centre.x + radius * 0.82f, centre.y)
+        lineTo(centre.x, centre.y + radius)
+        lineTo(centre.x - radius * 0.82f, centre.y)
+        close()
+    }
+    if (hollow) drawPath(path, colour, style = Stroke(width = radius * 0.34f)) else drawPath(path, colour)
+}
+
+private fun DrawScope.star(centre: Offset, radius: Float, colour: Color) {
+    val path = Path()
+    for (i in 0 until 10) {
+        val a = i * TAU / 10f - TAU / 4f
+        val rad = if (i % 2 == 0) radius else radius * 0.46f
+        val p = Offset(centre.x + cos(a) * rad, centre.y + sin(a) * rad)
+        if (i == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y)
+    }
+    path.close()
+    drawPath(path, colour)
 }

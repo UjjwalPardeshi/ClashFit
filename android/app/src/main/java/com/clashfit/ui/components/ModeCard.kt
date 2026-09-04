@@ -22,6 +22,14 @@ import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Panel
 import com.clashfit.ui.theme.Success
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 
 /** How the four kinds of mode are named to a player. */
 fun ModeKind.label(): String = when (this) {
@@ -32,30 +40,58 @@ fun ModeKind.label(): String = when (this) {
     ModeKind.CLINIC -> "Clinic"
 }
 
-/** One way to play, as a card. Fixed width in a carousel, full width in a grid. */
+/**
+ * One way to play, as a tile.
+ *
+ * Sixteen of these sit in a row on Train and in a grid on Modes. Each used to carry two lines of
+ * the mode's description, which made the page a wall of prose that had to be read before anything
+ * could be chosen — and at card width most of those lines ellipsised mid-word anyway, so the
+ * reading did not even pay off. A tile is a mark, a name, and a hook.
+ *
+ * The mark sits on a plate tinted to its own kind, which gives the row a rhythm of colour: the
+ * six solo modes read as one block, the head-to-heads as another, before a single word is read.
+ */
 @Composable
 fun ModeCard(mode: GameMode, onClick: () -> Unit, modifier: Modifier = Modifier, width: Int? = null) {
     val m = if (width != null) modifier.width(width.dp) else modifier.fillMaxWidth()
+    val tint = if (mode.enabled) mode.kind.tint() else InkFaint
     AppCard(
-        m.heightIn(min = 140.dp),
+        m.heightIn(min = 148.dp),
         onClick = if (mode.enabled) onClick else null,
         container = if (mode.enabled) Panel else Panel.copy(alpha = 0.55f),
     ) {
-        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            // The mark first. It is what gets recognised on the second visit, and it says the
-            // kind and whether the mode is timed before a word has been read.
-            ModeSigil(mode, enabled = mode.enabled)
-            Text(
-                mode.title, style = MaterialTheme.typography.titleMedium,
-                color = if (mode.enabled) Ink else InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            )
-            // Two lines, not three. The full description is on the mode's own screen; a card has
-            // to be scannable in a row of eight.
-            Text(
-                mode.blurb, style = MaterialTheme.typography.bodySmall, color = if (mode.enabled) InkMuted else InkFaint,
-                maxLines = 2, overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(2.dp))
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // The mark on its own lit plate. It is what gets recognised on the second visit, and
+            // it says the kind and whether the mode is timed before a word has been read.
+            Box(
+                Modifier
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(tint.copy(alpha = 0.20f), tint.copy(alpha = 0.07f)),
+                        ),
+                    )
+                    .border(1.dp, tint.copy(alpha = 0.28f), RoundedCornerShape(15.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                ModeSigil(mode, enabled = mode.enabled, size = 28)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    mode.title, style = MaterialTheme.typography.titleMedium,
+                    color = if (mode.enabled) Ink else InkMuted,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+                // One line. The sentence that explains the mode properly is on the mode's own
+                // screen, where there is room for it and a reason to read it.
+                Text(
+                    mode.hook, style = MaterialTheme.typography.labelMedium,
+                    color = if (mode.enabled) InkMuted else InkFaint,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Spacer(Modifier.weight(1f))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 when {
                     !mode.enabled -> Tag("Coming online", color = InkMuted)

@@ -52,6 +52,9 @@ import kotlin.math.sin
 import kotlin.math.cos
 import androidx.compose.ui.graphics.Path
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.width
 
 /* The progression widgets: rings, XP bars and badges. All animate on first composition. */
 
@@ -190,25 +193,39 @@ fun BadgeTile(achievement: Achievement, unlocked: Boolean, icon: ImageVector, mo
 
 /** A horizontal stat strip: three or four numbers with labels, no cards. */
 @Composable
-fun StatStrip(stats: List<Pair<String, String>>, modifier: Modifier = Modifier) {
-    // Weighted columns sit flush against each other, so SpaceBetween adds no gap and a label wide
-    // enough to fill its column touches its neighbour. At 1.5x text "BEST STREAK" and "CLEAN THIS
-    // WEEK" ran together into one unreadable line. A real gap, and centred wrapping, fixes it at
-    // every text size.
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        stats.forEach { (value, label) ->
-            Column(Modifier.weight(1f).semantics(mergeDescendants = true) { contentDescription = "$value ${label.lowercase()}" }, horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(value, style = MaterialTheme.typography.headlineSmall, color = Ink, maxLines = 1)
-                Text(
-                    label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = InkMuted,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
+fun StatStrip(stats: List<Pair<String, String>>, modifier: Modifier = Modifier, framed: Boolean = true) {
+    // Framed, because three bare numbers floating on the background under a full-bleed hero read
+    // as something not yet finished. On a plate, divided, they read as an instrument panel — the
+    // same three numbers, and the page stops looking like a draft.
+    val row: @Composable () -> Unit = {
+        // Weighted columns sit flush against each other, so SpaceBetween adds no gap and a label
+        // wide enough to fill its column touches its neighbour. At 1.5x text "BEST STREAK" and
+        // "CLEAN THIS WEEK" ran together into one unreadable line. A real gap, and centred
+        // wrapping, fixes it at every text size.
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(if (framed) 0.dp else 12.dp)) {
+            stats.forEachIndexed { i, (value, label) ->
+                if (framed && i > 0) {
+                    Box(Modifier.width(1.dp).fillMaxHeight().padding(vertical = 2.dp).background(RuleSoft))
+                }
+                Column(
+                    Modifier.weight(1f)
+                        .padding(horizontal = if (framed) 8.dp else 0.dp)
+                        .semantics(mergeDescendants = true) { contentDescription = "$value ${label.lowercase()}" },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(value, style = MaterialTheme.typography.headlineSmall, color = Ink, maxLines = 1)
+                    Text(
+                        label.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = InkMuted,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
             }
         }
     }
+    if (framed) AppCard(modifier.fillMaxWidth(), padding = 14) { row() } else Box(modifier) { row() }
 }
 
 /** Seven small bars for the week, today on the right. */

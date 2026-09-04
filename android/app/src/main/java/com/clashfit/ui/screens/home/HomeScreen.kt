@@ -68,6 +68,7 @@ import com.clashfit.ui.components.AppCard
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.width
 import com.clashfit.ui.nav.Library
+import com.clashfit.ui.theme.InkFaint
 
 /**
  * The Train tab. One tap into a fight, then every way to play as carousels grouped by how many
@@ -129,11 +130,17 @@ fun HomeScreen(graph: AppGraph, nav: NavHostController) {
                     }
                     Column(Modifier.weight(1f)) {
                         Text("Exercise library", style = MaterialTheme.typography.titleSmall, color = Ink)
+                        // One line. It wrapped to two and still said less than the count does.
                         Text(
-                            "${exercises.size} movements across strength, holds, yoga and cardio",
-                            style = MaterialTheme.typography.bodySmall, color = InkMuted,
+                            "${exercises.size} movements",
+                            style = MaterialTheme.typography.bodySmall, color = InkMuted, maxLines = 1,
                         )
                     }
+                    // A row that opens something should look like it opens something.
+                    Icon(
+                        AppIcons.Chevron, contentDescription = null, tint = InkFaint,
+                        modifier = Modifier.size(18.dp),
+                    )
                 }
             }
 
