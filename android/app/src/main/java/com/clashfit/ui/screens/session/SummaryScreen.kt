@@ -81,6 +81,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import com.clashfit.ui.theme.LocalReduceMotion
 
 /** The session as evidence: the fatigue curve, the form trend, the best and worst rep. */
 data class SummaryData(
@@ -289,21 +290,31 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
     val d = data
     if (d == null) { EmptyState("Summary", "Loading the set…"); return }
 
+    val reduceMotion = LocalReduceMotion.current
+
     Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(20.dp)) {
         // Outcome headline
         Kicker("Session · ${d.session.exerciseId.replace('_', ' ')} · ${d.session.mode.replace('_', ' ')}")
         Headline(if (d.session.outcome == "BOSS_DOWN" || d.session.outcome == "GAME_WON") "Boss down" else "Set saved")
         SectionGap(16)
 
-        // Reward progression section (shown only when reward is available)
+        // Reward progression, revealed in order rather than printed all at once. Every number
+        // here was already computed; showing them arriving one at a time is what turns a receipt
+        // into the thing you did the set for.
         reward?.let { r ->
+            val steps = 2 + r.lines.size + (if (r.leveledUp) 1 else 0) + r.newAchievements.size
+            val shown by rememberReveal(steps, reduceMotion = reduceMotion)
+            val total by rememberCountUp(r.xp, revealed = shown >= 1)
+
             AppCard(Modifier.fillMaxWidth(), padding = 18) {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text("${r.xp} XP earned", style = MaterialTheme.typography.headlineMedium, color = Ink)
+                    Text("$total XP earned", style = MaterialTheme.typography.headlineMedium, color = Ink)
 
                     ListGroup {
                         r.lines.forEachIndexed { i, line ->
-                            RuleRow(line.label, "${line.xp} XP")
+                            RevealStep(visible = shown > i + 1) {
+                                RuleRow(line.label, "${line.xp} XP")
+                            }
                             if (i < r.lines.size - 1) InnerDivider()
                         }
                     }
@@ -317,15 +328,29 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
                     XpBar(r.after)
 
                     if (r.leveledUp) {
-                        Text("Level up · Reached ${r.after.title}", style = MaterialTheme.typography.bodyMedium, color = Success, modifier = Modifier.padding(top = 4.dp))
+                        RevealStep(visible = shown > 1 + r.lines.size) {
+                            Text(
+                                "Level up · Reached ${r.after.title}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Success,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
                     }
 
                     if (r.newAchievements.isNotEmpty()) {
                         SectionGap(8)
                         Text("New badges", style = MaterialTheme.typography.labelLarge, color = Ink)
+                        val badgesFrom = 1 + r.lines.size + (if (r.leveledUp) 1 else 0)
                         Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            r.newAchievements.forEach { achievement ->
-                                BadgeTile(achievement, unlocked = true, icon = iconFor(achievement), modifier = Modifier.weight(1f))
+                            r.newAchievements.forEachIndexed { i, achievement ->
+                                BadgeSlam(
+                                    visible = shown > badgesFrom + i,
+                                    reduceMotion = reduceMotion,
+                                    modifier = Modifier.weight(1f),
+                                ) {
+                                    BadgeTile(achievement, unlocked = true, icon = iconFor(achievement))
+                                }
                             }
                         }
                     }

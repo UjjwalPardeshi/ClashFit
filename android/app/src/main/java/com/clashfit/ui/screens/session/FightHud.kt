@@ -61,6 +61,12 @@ import com.clashfit.ui.theme.Motion
 import com.clashfit.ui.theme.Panel
 import com.clashfit.ui.theme.Rule
 import kotlinx.coroutines.launch
+import androidx.compose.animation.core.LinearEasing
+import com.clashfit.ui.theme.EmberDeep
+import com.clashfit.meta.MetaState
+import com.clashfit.ui.components.Bar
+import com.clashfit.ui.theme.Brass
+import com.clashfit.ui.theme.Success
 
 // The fight HUD: three zones, nothing else. Boss + HP on top, the boss and the hit surface in
 // the centre, reps · fatigue · combo along the bottom. Everything reads at two metres.
@@ -137,15 +143,44 @@ fun RepCounter(reps: Int, modifier: Modifier = Modifier, label: String = "Reps")
     }
 }
 
+/**
+ * The combo rail, which catches fire once the streak is worth protecting.
+ *
+ * Above ×2 the number breathes and the rail glows. That threshold is deliberate: a combo you can
+ * hold without trying is not worth lighting up, and a rail that is always on fire tells you
+ * nothing about the rep you just did.
+ */
 @Composable
 fun ComboRail(multiplier: Float, streak: Int, modifier: Modifier = Modifier) {
-    AppCard(modifier, padding = 12) {
+    val hot = multiplier >= 2f
+    val burn by rememberInfiniteTransition(label = "combo").animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(620, easing = LinearEasing), RepeatMode.Reverse),
+        label = "comboBurn",
+    )
+    val heat = if (hot) burn else 0f
+
+    AppCard(modifier, padding = 12, container = if (hot) EmberDeep.copy(alpha = 0.20f + 0.14f * heat) else Panel) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("×${"%.1f".format(multiplier)}", fontSize = 48.sp, lineHeight = 48.sp, fontWeight = FontWeight.Black, fontFamily = MaterialTheme.typography.displayLarge.fontFamily, color = if (multiplier > 1f) Ember else Ink)
+            Text(
+                "×${"%.1f".format(multiplier)}",
+                fontSize = 48.sp, lineHeight = 48.sp, fontWeight = FontWeight.Black,
+                fontFamily = MaterialTheme.typography.displayLarge.fontFamily,
+                color = if (multiplier > 1f) Ember else Ink,
+                modifier = Modifier.scale(1f + 0.06f * heat),
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(3.dp), modifier = Modifier.padding(vertical = 4.dp)) {
-                repeat(10) { i -> Box(Modifier.width(8.dp).height(4.dp).background(if (i < streak.coerceAtMost(10)) Ember else Rule)) }
+                repeat(10) { i ->
+                    val lit = i < streak.coerceAtMost(10)
+                    Box(
+                        Modifier.width(8.dp)
+                            .height(if (lit && hot) (4 + 3 * heat).dp else 4.dp)
+                            .background(if (lit) Ember else Rule),
+                    )
+                }
             }
-            Text("Combo", style = MaterialTheme.typography.labelMedium, color = InkFaint)
+            Text(if (hot) "On fire" else "Combo", style = MaterialTheme.typography.labelMedium, color = if (hot) Ember else InkFaint)
         }
     }
 }
@@ -267,6 +302,43 @@ fun PauseTarget(paused: Boolean, onToggle: () -> Unit, modifier: Modifier = Modi
                 tint = if (paused) Ground else Ink,
                 modifier = Modifier.size(32.dp)
             )
+        }
+    }
+}
+
+/**
+ * Your rank and this week's target, in the fight.
+ *
+ * Level and badges lived on a profile screen and changed nothing about playing, which made them
+ * decoration. Here they are where the work happens: the rank you fight under, and the weekly
+ * target filling up rep by rep while you watch. Deliberately small and low-contrast — it is
+ * context, not something to read mid-set.
+ */
+@Composable
+fun RankChip(meta: MetaState?, modifier: Modifier = Modifier) {
+    if (meta == null) return
+    val weekly = meta.weekly
+    AppCard(modifier.width(132.dp), padding = 10, container = Panel.copy(alpha = 0.82f)) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                "LVL ${meta.progress.level}",
+                style = MaterialTheme.typography.labelLarge,
+                color = Brass,
+            )
+            Text(
+                meta.progress.title,
+                style = MaterialTheme.typography.labelMedium,
+                color = Ink,
+                maxLines = 1,
+            )
+            Bar(meta.progress.fraction, color = Brass, height = 4)
+            Text(
+                if (weekly.done) "Weekly done" else weekly.challenge.title,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (weekly.done) Success else InkFaint,
+                maxLines = 1,
+            )
+            Bar(weekly.fraction, color = if (weekly.done) Success else Ember, height = 4)
         }
     }
 }

@@ -44,6 +44,12 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import com.clashfit.meta.LevelProgress
+import com.clashfit.meta.Metric
+import com.clashfit.meta.MetaState
+import com.clashfit.meta.WeeklyChallenge
+import com.clashfit.meta.WeeklyProgress
+import com.clashfit.ui.screens.session.RankChip
 
 /**
  * The fight, rendered without a camera.
@@ -62,6 +68,21 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [36], qualifiers = RobolectricDeviceQualifiers.Pixel7)
 class FightHudScreenshotTest {
     @get:Rule val compose = createComposeRule()
+
+    /** A player mid-progression, so the rank chip has something to show. */
+    private val META = MetaState(
+        xp = 4_180,
+        progress = LevelProgress(level = 7, title = "Fighter", xpIntoLevel = 340, xpForLevel = 620),
+        unlocked = emptyList(),
+        weekly = WeeklyProgress(
+            challenge = WeeklyChallenge(
+                weekKey = "2026-W36", title = "Clean Form",
+                description = "150 clean reps", metric = Metric.CLEAN_REPS, target = 150,
+            ),
+            value = 94,
+            completedAtMs = null,
+        ),
+    )
 
     private fun combat(
         hp: Int,
@@ -119,6 +140,7 @@ class FightHudScreenshotTest {
                     Box(Modifier.align(Alignment.TopStart).safeDrawingPadding().padding(12.dp)) {
                         PauseTarget(paused = false, onToggle = {})
                     }
+                    RankChip(META, Modifier.align(Alignment.TopEnd).safeDrawingPadding().padding(top = 96.dp, end = 12.dp))
                 }
             }
         }

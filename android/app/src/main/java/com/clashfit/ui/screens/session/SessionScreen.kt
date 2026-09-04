@@ -58,6 +58,8 @@ import com.clashfit.perception.CameraPreviewSource
 import com.clashfit.perception.CameraStage
 import com.clashfit.perception.ExoRig
 import androidx.compose.foundation.layout.fillMaxHeight
+import kotlinx.coroutines.launch
+import com.clashfit.meta.MetaState
 
 /**
  * One screen for the whole fight. The engine's phase decides what is drawn: calibration guide,
@@ -80,6 +82,8 @@ fun SessionScreen(
     // Not every pose source has a camera: a recorded trace and the synthetic source do not, and
     // the fight has to work with either.
     val camera = deps.pose as? CameraPreviewSource
+    // Your rank and this week's target, live, in the fight rather than on a profile page.
+    val meta by graph.meta.state.collectAsStateWithLifecycle(initialValue = null)
 
     var lastHit by remember { mutableStateOf<HudEvent.Hit?>(null) }
     val jolt = remember { Animatable(0f) }
@@ -87,7 +91,22 @@ fun SessionScreen(
     LaunchedEffect(Unit) {
         vm.events.collect { e ->
             when (e) {
-                is HudEvent.Hit -> { lastHit = e; if (!reduceMotion) { jolt.snapTo(1f); jolt.animateTo(0f, tween(180)) } }
+                is HudEvent.Hit -> {
+                    lastHit = e
+                    if (!reduceMotion) {
+                        jolt.snapTo(1f)
+                        jolt.animateTo(0f, tween(180))
+                        // Weight the kick by the damage. A scraped rep and a critical used to
+                        // shake the screen by exactly the same amount, which taught the player
+                        // nothing and made every rep feel the same in the hand.
+                        val kick = (e.damage / 130f).coerceIn(0.25f, 1f) * Motion.shakePx
+                        launch {
+                            shake.snapTo(kick)
+                            shake.animateTo(-kick * 0.6f, tween(60))
+                            shake.animateTo(0f, tween(90))
+                        }
+                    }
+                }
                 is HudEvent.PhaseShift -> if (!reduceMotion) {
                     repeat(3) { shake.animateTo(Motion.shakePx, tween(Motion.shakeMs / 6)); shake.animateTo(-Motion.shakePx, tween(Motion.shakeMs / 6)) }
                     shake.animateTo(0f, tween(Motion.shakeMs / 6))
@@ -115,12 +134,14 @@ fun SessionScreen(
                 ExitCorner(onExit)
             }
             Phase.FIGHTING, Phase.FRAMING_LOST -> {
-                FightLayout(s, vm, lastHit, jolt.value, shake.value, paused, reduceMotion, camera, landmarks)
+                FightLayout(s, vm, lastHit, jolt.value, shake.value, paused, reduceMotion, camera, landmarks, meta)
             }
             Phase.REST -> RestPanel(s, restLeft, onSkip = vm::skipRest, onStop = vm::stop)
             Phase.DEAD -> EndPanel(s, onSummary = { /* wait for persistence */ }, onExit = onExit)
         }
         if (s.ended && s.phase != Phase.DEAD) EndPanel(s, onSummary = {}, onExit = onExit)
+        // Over the top of whatever is showing: the fight has to end on screen, not on the next one.
+        BossDownStamp(s.combat.dead, reduceMotion)
     }
 }
 
@@ -128,6 +149,7 @@ fun SessionScreen(
 private fun FightLayout(
     s: SessionState, vm: SessionViewModel, lastHit: HudEvent.Hit?, jolt: Float, shake: Float,
     paused: Boolean, reduceMotion: Boolean, camera: CameraPreviewSource?, landmarks: Landmarks?,
+    meta: MetaState?,
 ) {
     val prone = vm.isProne
     val link by vm.link.collectAsStateWithLifecycle()
@@ -148,7 +170,10 @@ private fun FightLayout(
                 .fillMaxHeight(if (prone) 0.34f else 0.44f)
                 .padding(top = 88.dp),
         )
+        // Sparks leave the point of contact, then the numeral, then a stamp if it earned one.
+        ImpactBurst(lastHit, reduceMotion, Modifier.fillMaxSize())
         DamageNumeral(lastHit, Modifier.align(Alignment.Center).padding(bottom = 60.dp))
+        CritStamp(lastHit, reduceMotion, Modifier.align(Alignment.Center).padding(bottom = 190.dp))
 
         Column(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)) {
             // Clear of the pause target, which is a 72dp square pinned to the top-left with 12dp
@@ -171,6 +196,8 @@ private fun FightLayout(
         Box(Modifier.align(Alignment.TopStart).safeDrawingPadding().padding(12.dp)) {
             PauseTarget(paused, onToggle = { if (paused) vm.resume() else vm.pause() })
         }
+        // Top right, where the corner skeleton inset used to sit before the camera took the frame.
+        RankChip(meta, Modifier.align(Alignment.TopEnd).safeDrawingPadding().padding(top = 96.dp, end = 12.dp))
         if (paused) PausedOverlay(onResume = vm::resume, onStop = vm::stop)
     }
 }
