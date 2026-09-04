@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,6 +21,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -58,7 +62,8 @@ fun ProgressRing(
     content: @Composable () -> Unit = {},
 ) {
     val f by animateFloatAsState(fraction.coerceIn(0f, 1f), animationSpec = Motion.fill, label = "ring")
-    Box(modifier.size(size.dp), contentAlignment = Alignment.Center) {
+    val pct = (f * 100).toInt()
+    Box(modifier.size(size.dp).semantics { contentDescription = "$pct percent complete" }, contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(size.dp)) {
             val sw = stroke.dp.toPx()
             val inset = sw / 2
@@ -86,12 +91,12 @@ fun LevelRing(progress: LevelProgress, modifier: Modifier = Modifier, size: Int 
 /** XP into the level, XP needed, and the rank title. */
 @Composable
 fun XpBar(progress: LevelProgress, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = "Level ${progress.level}, ${progress.xpIntoLevel} of ${progress.xpForLevel} XP" }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Level ${progress.level} · ${progress.title}", style = MaterialTheme.typography.labelLarge, color = Ink)
             Text("${progress.xpIntoLevel} / ${progress.xpForLevel} XP", style = MaterialTheme.typography.labelSmall, color = InkMuted)
         }
-        Bar(progress.fraction, height = 8)
+        Bar(progress.fraction, height = 8, modifier = Modifier.clearAndSetSemantics {})
     }
 }
 
@@ -105,8 +110,14 @@ fun Tier.color(): Color = when (this) {
 @Composable
 fun BadgeTile(achievement: Achievement, unlocked: Boolean, icon: ImageVector, modifier: Modifier = Modifier) {
     val tint = if (unlocked) achievement.tier.color() else InkFaint
+    val tierName = if (unlocked) when (achievement.tier) {
+        Tier.BRONZE -> "Bronze"
+        Tier.SILVER -> "Silver"
+        Tier.GOLD -> "Gold"
+    } else ""
+    val contentDesc = if (unlocked) "${achievement.title}, ${achievement.description}, $tierName" else "${achievement.title}, Locked"
     Column(
-        modifier.clip(MaterialTheme.shapes.medium).background(if (unlocked) Panel else Panel.copy(alpha = 0.6f)).padding(12.dp),
+        modifier.clip(MaterialTheme.shapes.medium).background(if (unlocked) Panel else Panel.copy(alpha = 0.6f)).padding(12.dp).semantics { contentDescription = contentDesc },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -133,7 +144,7 @@ fun BadgeTile(achievement: Achievement, unlocked: Boolean, icon: ImageVector, mo
 fun StatStrip(stats: List<Pair<String, String>>, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         stats.forEach { (value, label) ->
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.weight(1f).semantics(mergeDescendants = true) { contentDescription = "$value ${label.lowercase()}" }, horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(value, style = MaterialTheme.typography.headlineSmall, color = Ink)
                 Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = InkMuted, modifier = Modifier.padding(top = 2.dp))
             }
@@ -147,9 +158,12 @@ fun WeekBars(values: List<Float>, modifier: Modifier = Modifier, height: Int = 5
     val max = (values.maxOrNull() ?: 0f).coerceAtLeast(1f)
     Row(modifier.fillMaxWidth().height((height + 18).dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
         values.forEachIndexed { i, v ->
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
+            val dayLabel = if (labels.size == values.size) labels[i] else "Day $i"
+            Column(Modifier.weight(1f).semantics { contentDescription = "$dayLabel, ${v.toInt()} reps" }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
                 val f by animateFloatAsState((v / max).coerceIn(0.04f, 1f), animationSpec = Motion.fill, label = "bar$i")
-                Box(Modifier.fillMaxWidth().height((height * f).dp).clip(CircleShape).background(if (v > 0f) Ember else RuleSoft))
+                // A pill, not a circle. Clipping to CircleShape rounds a Box fully once it is as tall as
+                // it is wide, which turned a good training week into a row of dots.
+                Box(Modifier.fillMaxWidth().height((height * f).dp).clip(RoundedCornerShape(5.dp)).background(if (v > 0f) Ember else RuleSoft).clearAndSetSemantics {})
                 if (labels.size == values.size) {
                     Text(labels[i], style = MaterialTheme.typography.labelSmall, color = InkFaint, modifier = Modifier.padding(top = 4.dp))
                 }

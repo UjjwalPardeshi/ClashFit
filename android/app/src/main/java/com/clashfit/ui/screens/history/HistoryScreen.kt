@@ -27,6 +27,10 @@ import com.clashfit.AppGraph
 import com.clashfit.core.model.GameMode
 import com.clashfit.data.SessionEntity
 import com.clashfit.ui.components.AppIcons
+import com.clashfit.ui.components.ChartCard
+import com.clashfit.ui.components.ChartLegend
+import com.clashfit.ui.components.DonutChart
+import com.clashfit.ui.components.TrendLine
 import com.clashfit.ui.components.EmptyState
 import com.clashfit.ui.components.IconBubble
 import com.clashfit.ui.components.InnerDivider
@@ -35,9 +39,12 @@ import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SectionTitle
 import com.clashfit.ui.nav.Summary
 import com.clashfit.ui.theme.Ember
+import com.clashfit.ui.theme.Clean
 import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
+import com.clashfit.ui.theme.Ok
+import com.clashfit.ui.theme.Shallow
 import com.clashfit.ui.theme.Success
 import java.time.Instant
 import java.time.LocalDate
@@ -62,6 +69,47 @@ fun HistoryScreen(graph: AppGraph, nav: NavHostController) {
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 28.dp),
         ) {
+            item(key = "trend") {
+                val recent = remember(sessions) { sessions.take(20).reversed() }
+                ChartCard(
+                    "Form over your last ${recent.size} sessions",
+                    subtitle = "The dashed line is your average.",
+                ) {
+                    TrendLine(
+                        points = recent.map { it.formMean.coerceIn(0f, 1f) },
+                        marker = remember(recent) { if (recent.isEmpty()) null else recent.map { it.formMean }.average().toFloat() },
+                        description = remember(recent) {
+                            if (recent.isEmpty()) "No sessions yet"
+                            else "Form trend, latest ${(recent.last().formMean * 100).toInt()} percent, " +
+                                "average ${(recent.map { it.formMean }.average() * 100).toInt()} percent"
+                        },
+                    )
+                }
+            }
+            item(key = "verdicts") {
+                val totals = remember(sessions) { verdictTotals(sessions) }
+                ChartCard("Every rep you have ever done", subtitle = "How the referee graded them") {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                        DonutChart(
+                            parts = listOf(Clean to totals.clean, Ok to totals.ok, Shallow to totals.shallow),
+                            description = "${totals.clean} clean, ${totals.ok} ok, ${totals.shallow} shallow",
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("${totals.total}", style = MaterialTheme.typography.headlineSmall, color = Ink)
+                                Text("REPS", style = MaterialTheme.typography.labelSmall, color = InkMuted)
+                            }
+                        }
+                        ChartLegend(
+                            listOf(
+                                Triple(Clean, "Clean", "${totals.clean}"),
+                                Triple(Ok, "Ok", "${totals.ok}"),
+                                Triple(Shallow, "Shallow", "${totals.shallow}"),
+                            ),
+                            Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
             groups.forEach { (day, list) ->
                 item(key = "day-$day") { SectionTitle(dayLabel(day, zone), Modifier.padding(top = 16.dp, bottom = 10.dp)) }
                 item(key = "group-$day") {
@@ -116,4 +164,30 @@ private fun dayLabel(day: LocalDate, zone: ZoneId): String {
 
 fun NavGraphBuilder.historyRoutes(graph: AppGraph, nav: NavHostController) {
     composable<com.clashfit.ui.nav.History> { HistoryScreen(graph, nav) }
+}
+
+private data class VerdictTotals(val clean: Int, val ok: Int, val shallow: Int) {
+    val total: Int get() = clean + ok + shallow
+}
+
+/**
+ * Rep verdicts across every session. The per-rep rows are compacted away for older sessions, so
+ * this estimates from each session's mean form rather than pretending to count rows that are gone.
+ */
+private fun verdictTotals(sessions: List<SessionEntity>): VerdictTotals {
+    var clean = 0
+    var ok = 0
+    var shallow = 0
+    sessions.forEach { s ->
+        val f = s.formMean.coerceIn(0f, 1f)
+        // The same thresholds the rep scorer uses to name a verdict.
+        val cleanShare = ((f - 0.55f) / 0.45f).coerceIn(0f, 1f)
+        val shallowShare = ((0.55f - f) / 0.55f).coerceIn(0f, 1f)
+        val c = (s.totalReps * cleanShare).toInt()
+        val sh = (s.totalReps * shallowShare).toInt()
+        clean += c
+        shallow += sh
+        ok += (s.totalReps - c - sh).coerceAtLeast(0)
+    }
+    return VerdictTotals(clean, ok, shallow)
 }

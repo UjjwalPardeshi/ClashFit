@@ -1,6 +1,7 @@
 package com.clashfit.ui.screens.character
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,20 +13,27 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.clashfit.AppGraph
+import com.clashfit.core.config.ExerciseSpec
+import com.clashfit.core.model.Family
 import com.clashfit.data.SessionEntity
 import com.clashfit.data.StreakEntity
 import com.clashfit.ui.components.AppCard
 import com.clashfit.ui.components.Bar
+import com.clashfit.ui.components.ChartCard
 import com.clashfit.ui.components.InnerDivider
 import com.clashfit.ui.components.ListGroup
+import com.clashfit.ui.components.RadarChart
 import com.clashfit.ui.components.RuleRow
 import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SectionGap
@@ -39,14 +47,19 @@ import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Success
 import com.clashfit.ui.theme.Working
 
-/** Five stat bars built from what you actually did, and the two that wait on sleep and food. */
+/**
+ * The character sheet: seven domains, one shape. Five of them are earned from measured reps. Two
+ * need sleep and food data this build does not collect, and they say so rather than showing a
+ * number nobody earned. docs/22-HEALTH-DOMAINS.md §1
+ */
 @Composable
 fun CharacterScreen(graph: AppGraph, nav: NavHostController) {
-    val sessionsFlow = remember(graph) { graph.db.sessions().recent(limit = 50) }
+    val sessionsFlow = remember(graph) { graph.db.sessions().recent(limit = 200) }
     val streakFlow = remember(graph) { graph.db.streak().observe() }
     val sessions by sessionsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
     val streak by streakFlow.collectAsStateWithLifecycle(initialValue = null)
-    val stats = remember(sessions, streak) { CharacterStats.compute(sessions, streak) }
+    val exercises by graph.config.exercises.collectAsStateWithLifecycle()
+    val sheet = remember(sessions, streak, exercises) { CharacterStats.compute(sessions, streak, exercises) }
 
     ScreenScaffold(title = "Character", onBack = { nav.navigateUp() }) { padding ->
         Column(
@@ -54,35 +67,64 @@ fun CharacterScreen(graph: AppGraph, nav: NavHostController) {
                 .padding(horizontal = 20.dp).padding(top = 4.dp, bottom = 28.dp),
         ) {
             Text(
-                "Every bar is earned from measured reps, never from a plan. Rest days grow resilience.",
-                style = MaterialTheme.typography.bodyMedium, color = InkMuted, modifier = Modifier.padding(bottom = 16.dp),
+                if (sheet.sessions == 0) {
+                    "Nothing to show yet. Finish one fight and this page fills in: every domain below is " +
+                        "earned from movement the camera measured, never from a plan you wrote when you were fresh."
+                } else {
+                    "Every domain is earned from measured movement, never from a plan you wrote when you were fresh."
+                },
+                style = MaterialTheme.typography.bodyMedium, color = InkMuted,
             )
-            AppCard(Modifier.fillMaxWidth()) {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    StatBar("Power", stats.power, Ember, "Damage over your last ten fights")
-                    StatBar("Stamina", stats.stamina, Working, "Reps banked, all time")
-                    StatBar("Focus", stats.focus, Brass, "How clean the average rep is")
-                    StatBar("Mobility", stats.mobility, Fresh, "Depth and range across families")
-                    StatBar("Resilience", stats.resilience, Success, "Days in a row, rest included")
+
+            SectionGap(16)
+            ChartCard("Your shape", subtitle = "Seven domains, out of 100") {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    RadarChart(
+                        stats = Domain.entries.map { it.short to sheet.value(it) / 100f },
+                        size = 300,
+                        color = Ember,
+                    )
                 }
             }
 
-            SectionGap(24)
-            SectionTitle("Coming with sleep and nutrition")
-            Text(
-                "Energy and Nourishment read from tracked sleep and meals. Neither is in this build, so neither is shown as a number you have not earned.",
-                style = MaterialTheme.typography.bodySmall, color = InkFaint, modifier = Modifier.padding(top = 4.dp),
-            )
+            SectionGap(20)
+            SectionTitle("Earned from your reps")
+            SectionGap(10)
+            AppCard(Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Domain.entries.filter { it.measured }.forEach { d ->
+                        DomainBar(d, sheet.value(d))
+                    }
+                }
+            }
 
-            SectionGap(24)
+            SectionGap(20)
+            SectionTitle("Waiting on data this build does not collect")
+            SectionGap(10)
+            AppCard(Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Domain.entries.filterNot { it.measured }.forEach { d ->
+                        DomainBar(d, 0f, dimmed = true)
+                    }
+                    Text(
+                        "Energy reads from sleep and Nourishment from logged meals. Neither is tracked yet, so " +
+                            "neither shows a number you have not earned.",
+                        style = MaterialTheme.typography.bodySmall, color = InkFaint,
+                    )
+                }
+            }
+
+            SectionGap(20)
             SectionTitle("Totals")
             SectionGap(10)
             ListGroup {
-                RuleRow("Sessions", "${stats.sessionCount}")
+                RuleRow("Sessions", "${sheet.sessions}")
                 InnerDivider()
-                RuleRow("Reps", "${stats.totalReps}")
+                RuleRow("Reps", "${sheet.totalReps}")
                 InnerDivider()
-                RuleRow("Average form", "${(stats.formAvg * 100).toInt()}%")
+                RuleRow("Average form", "${(sheet.formAvg * 100).toInt()}%")
+                InnerDivider()
+                RuleRow("Movements tried", "${sheet.distinctExercises} of ${exercises.size}")
                 InnerDivider()
                 RuleRow("Current streak", "${streak?.current ?: 0} days")
             }
@@ -91,44 +133,113 @@ fun CharacterScreen(graph: AppGraph, nav: NavHostController) {
 }
 
 @Composable
-private fun StatBar(label: String, value: Int, color: Color, hint: String) {
-    Column(Modifier.fillMaxWidth()) {
+private fun DomainBar(d: Domain, value: Float, dimmed: Boolean = false) {
+    val shown = if (dimmed) 0f else value
+    Column(
+        Modifier.fillMaxWidth().semantics {
+            contentDescription = if (dimmed) "${d.title}, not measured yet" else "${d.title}, ${shown.toInt()} of 100"
+        },
+    ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = MaterialTheme.typography.titleSmall, color = Ink)
-            Text("$value", style = MaterialTheme.typography.titleSmall, color = color)
+            Text(d.title, style = MaterialTheme.typography.titleSmall, color = if (dimmed) InkMuted else Ink)
+            Text(
+                if (dimmed) "Not measured" else "${shown.toInt()}",
+                style = MaterialTheme.typography.titleSmall,
+                color = if (dimmed) InkFaint else d.color,
+            )
         }
-        Bar(value / 100f, Modifier.padding(top = 8.dp), color = color, height = 10)
-        Text(hint, style = MaterialTheme.typography.bodySmall, color = InkFaint, modifier = Modifier.padding(top = 6.dp))
+        Bar(shown / 100f, Modifier.padding(top = 8.dp), color = if (dimmed) InkFaint else d.color, height = 10)
+        Text(d.source, style = MaterialTheme.typography.bodySmall, color = InkFaint, modifier = Modifier.padding(top = 6.dp))
     }
 }
 
-/** Compute character stats from session records and streaks. All 0–100. */
-object CharacterStats {
-    data class Stats(
-        val power: Int = 0,
-        val stamina: Int = 0,
-        val focus: Int = 0,
-        val mobility: Int = 0,
-        val resilience: Int = 0,
-        val totalReps: Int = 0,
-        val sessionCount: Int = 0,
-        val formAvg: Float = 0f,
-    )
+/** The seven domains, in the order the design doc lists them. */
+enum class Domain(val title: String, val short: String, val source: String, val color: Color, val measured: Boolean) {
+    POWER("Power", "PWR", "Strength rep quality and the damage it does", Ember, true),
+    STAMINA("Stamina", "STA", "Cadence work and reps banked over time", Working, true),
+    FOCUS("Focus", "FOC", "How steady your form holds as fatigue rises", Brass, true),
+    MOBILITY("Mobility", "MOB", "Holds, yoga and the range of movements you train", Fresh, true),
+    ENERGY("Energy", "ENR", "Sleep duration and regularity", InkMuted, false),
+    NOURISHMENT("Nourishment", "NUT", "Meals and hydration logged", InkMuted, false),
+    RESILIENCE("Resilience", "RES", "Days in a row, rest days included", Success, true),
+}
 
-    fun compute(sessions: List<SessionEntity>, streak: StreakEntity?): Stats {
-        if (sessions.isEmpty()) return Stats(resilience = streak?.current?.coerceIn(0, 100) ?: 0)
+/**
+ * Turns a session history into the seven domains. Every number here is derived from something the
+ * app actually measured; nothing is invented to fill a bar.
+ */
+object CharacterStats {
+
+    data class Sheet(
+        val power: Float = 0f,
+        val stamina: Float = 0f,
+        val focus: Float = 0f,
+        val mobility: Float = 0f,
+        val resilience: Float = 0f,
+        val totalReps: Int = 0,
+        val sessions: Int = 0,
+        val formAvg: Float = 0f,
+        val distinctExercises: Int = 0,
+    ) {
+        fun value(d: Domain): Float = when (d) {
+            Domain.POWER -> power
+            Domain.STAMINA -> stamina
+            Domain.FOCUS -> focus
+            Domain.MOBILITY -> mobility
+            Domain.RESILIENCE -> resilience
+            Domain.ENERGY, Domain.NOURISHMENT -> 0f
+        }
+    }
+
+    fun compute(
+        sessions: List<SessionEntity>,
+        streak: StreakEntity?,
+        exercises: Map<String, ExerciseSpec> = emptyMap(),
+    ): Sheet {
+        val resilience = (streak?.current ?: 0).coerceIn(0, 100).toFloat()
+        if (sessions.isEmpty()) return Sheet(resilience = resilience)
+
+        fun familyOf(s: SessionEntity): Family? = exercises[s.exerciseId]?.familyEnum
+        fun inFamilies(vararg f: Family) = sessions.filter { familyOf(it) in f }
+
         val totalReps = sessions.sumOf { it.totalReps }
         val formAvg = sessions.map { it.formMean }.average().toFloat()
-        val recent = sessions.take(10)
-        return Stats(
-            power = (recent.sumOf { it.totalDamage } / 100).coerceIn(0, 100),
-            stamina = (totalReps / 10).coerceIn(0, 100),
-            focus = (formAvg * 100).toInt().coerceIn(0, 100),
-            mobility = (sessions.map { it.exerciseId }.distinct().size * 8).coerceIn(0, 100),
-            resilience = (streak?.current ?: 0).coerceIn(0, 100),
+
+        // Power: damage from strength work, weighted by how clean it was.
+        val strength = inFamilies(Family.REP_CYCLE)
+        val power = if (strength.isEmpty()) 0f else {
+            // Averaged over the last ten strength sessions rather than summed over all of them,
+            // so Power reads as "how hard you hit lately" and does not peg at 100 after a fortnight.
+            val recent = strength.take(10)
+            val perSession = recent.sumOf { (it.totalDamage * it.formMean).toDouble() } / recent.size
+            (perSession / 22.0).toFloat()
+        }
+
+        // Stamina: cadence work, plus the endurance that reps banked over time represent.
+        val cardio = inFamilies(Family.CADENCE, Family.BALLISTIC)
+        val stamina = (cardio.sumOf { it.totalReps } * 1.5f) + (totalReps / 12f)
+
+        // Focus: how steady form stays as fatigue rises. A session that ends GASSED but keeps its
+        // form is worth far more than an easy one, which is exactly what focus should mean.
+        val underLoad = sessions.filter { it.peakBand == "FADING" || it.peakBand == "GASSED" }
+        val focus = if (underLoad.isEmpty()) formAvg * 45f
+        else (underLoad.map { it.formMean }.average().toFloat() * 100f)
+
+        // Mobility: holds and yoga, plus the breadth of movements trained.
+        val range = inFamilies(Family.ISOMETRIC_HOLD, Family.POSE_MATCH)
+        val distinct = sessions.map { it.exerciseId }.distinct().size
+        val mobility = (range.size * 6f) + (distinct * 5f)
+
+        return Sheet(
+            power = power.coerceIn(0f, 100f),
+            stamina = stamina.coerceIn(0f, 100f),
+            focus = focus.coerceIn(0f, 100f),
+            mobility = mobility.coerceIn(0f, 100f),
+            resilience = resilience,
             totalReps = totalReps,
-            sessionCount = sessions.size,
+            sessions = sessions.size,
             formAvg = formAvg,
+            distinctExercises = distinct,
         )
     }
 }

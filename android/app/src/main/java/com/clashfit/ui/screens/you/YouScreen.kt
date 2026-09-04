@@ -37,6 +37,7 @@ import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.SectionTitle
 import com.clashfit.ui.components.StatStrip
 import com.clashfit.ui.components.XpBar
+import com.clashfit.ui.nav.About
 import com.clashfit.ui.nav.Account
 import com.clashfit.ui.nav.Achievements
 import com.clashfit.ui.nav.Alarms
@@ -45,6 +46,7 @@ import com.clashfit.ui.nav.Challenge
 import com.clashfit.ui.nav.Clinic
 import com.clashfit.ui.nav.Desk
 import com.clashfit.ui.nav.Friends
+import com.clashfit.ui.nav.Help
 import com.clashfit.ui.nav.Leaderboard
 import com.clashfit.ui.nav.Posture
 import com.clashfit.ui.nav.Preflight
@@ -159,6 +161,10 @@ fun YouScreen(graph: AppGraph, nav: NavHostController) {
                 NavRow("Settings", { nav.navigate(Settings) }, icon = AppIcons.Gear, tint = InkMuted)
                 InnerDivider()
                 NavRow("Privacy", { nav.navigate(Privacy) }, icon = AppIcons.Shield, tint = InkMuted, supporting = "What stays on the phone, and what does not")
+                InnerDivider()
+                NavRow("How to play", { nav.navigate(Help) }, icon = AppIcons.Bolt, tint = InkMuted, supporting = "Set the phone up, and what the numbers mean")
+                InnerDivider()
+                NavRow("About", { nav.navigate(About) }, icon = AppIcons.Grid, tint = InkMuted, supporting = "Version, what it is built from, and who made it")
             }
         }
     }

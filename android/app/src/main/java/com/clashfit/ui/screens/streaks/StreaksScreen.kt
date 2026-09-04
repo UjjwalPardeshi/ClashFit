@@ -26,6 +26,8 @@ import androidx.navigation.compose.composable
 import com.clashfit.AppGraph
 import com.clashfit.data.SessionEntity
 import com.clashfit.ui.components.Kicker
+import com.clashfit.ui.components.ChartCard
+import com.clashfit.ui.components.Heatmap
 import com.clashfit.ui.components.RuleRow
 import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SectionGap
@@ -63,10 +65,22 @@ fun StreaksScreen(graph: AppGraph, nav: NavHostController) {
                 StatTile("$best", "Best", Modifier.weight(1f), color = Ember)
             }
 
-            SectionGap(28)
-            Kicker(YearMonth.now().month.name.lowercase().replaceFirstChar { it.uppercase() })
-            SectionGap(12)
-            MonthGrid(YearMonth.now(), sessions)
+            SectionGap(20)
+            ChartCard("Last twelve weeks", subtitle = "One square a day. Brighter is more reps.") {
+                Heatmap(
+                    intensity = remember(sessions) { dailyIntensity(sessions, ZoneId.systemDefault(), weeks = 12) },
+                    weeks = 12,
+                    description = "Training heatmap for the last twelve weeks",
+                )
+            }
+
+            SectionGap(20)
+            ChartCard(
+                YearMonth.now().month.name.lowercase().replaceFirstChar { it.uppercase() },
+                subtitle = "The days you trained this month",
+            ) {
+                MonthGrid(YearMonth.now(), sessions)
+            }
 
             val freezes = streak?.freezes ?: 0
             if (freezes > 0) {
@@ -150,4 +164,19 @@ private fun DayCell(day: Int, trained: Boolean, isToday: Boolean, modifier: Modi
 
 fun NavGraphBuilder.streaksRoutes(graph: AppGraph, nav: NavHostController) {
     composable<com.clashfit.ui.nav.Streaks> { StreaksScreen(graph, nav) }
+}
+
+/**
+ * Reps per day for the last N weeks, oldest first, scaled 0..1 against the best day in the window.
+ * A day with a single set still reads, because showing up is the thing being rewarded.
+ */
+private fun dailyIntensity(sessions: List<SessionEntity>, zone: ZoneId, weeks: Int): List<Float> {
+    val days = weeks * 7
+    val today = LocalDate.now(zone)
+    val repsByDay = sessions
+        .groupBy { Instant.ofEpochMilli(it.startedAtMs).atZone(zone).toLocalDate() }
+        .mapValues { (_, v) -> v.sumOf { it.totalReps } }
+    val window = (days - 1 downTo 0).map { back -> repsByDay[today.minusDays(back.toLong())] ?: 0 }
+    val best = (window.maxOrNull() ?: 0).coerceAtLeast(1)
+    return window.map { if (it == 0) 0f else (0.25f + 0.75f * it / best) }
 }
