@@ -5,6 +5,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.clashfit.cloud.CloudConfig
+import com.clashfit.util.CrashLog
 
 class ClashFitApp : Application() {
     lateinit var graph: AppGraph
@@ -12,6 +13,8 @@ class ClashFitApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // First, so a crash during the rest of startup is still recorded.
+        CrashLog.install(this)
         CloudConfig.initialize(this)
         graph = AppGraph(this)
         graph.config.reload()
