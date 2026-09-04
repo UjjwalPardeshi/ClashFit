@@ -33,7 +33,9 @@ and a judge cannot tell the difference.
 | `…/ui` | Theme, the shared component kit, type-safe navigation, screens |
 | `app/src/main/assets/config` | The same JSON the prototype tunes against; a copy under `files/config/` on the phone overrides it on resume |
 
-The manifest requests **no `INTERNET` permission**. Open it and check.
+The APK carries **no `INTERNET` permission**. A transitive Google telemetry library asks for it, so
+`AndroidManifest.xml` strips it in the merge and the `checkNoInternet<Variant>` task fails every assemble
+in which it comes back. To check a built APK: `aapt2 dump badging app-release.apk | grep INTERNET` prints nothing.
 
 Design notes and the phase plan: [`../docs/30-ANDROID-APP.md`](../docs/30-ANDROID-APP.md).
 

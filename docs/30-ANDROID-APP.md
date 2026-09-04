@@ -24,7 +24,9 @@ the specification for the engine.
 | Alarm | `AlarmManager` exact + full-screen ring activity; dismissed by counted reps | |
 | DI / nav | Manual `AppGraph`; type-safe Navigation Compose | no Hilt |
 
-The manifest requests **no `INTERNET` permission**. That is the privacy claim, made checkable.
+The APK carries **no `INTERNET` permission**. That is the privacy claim, made checkable: a transitive Google
+telemetry library declares it, the manifest strips it in the merge (`tools:node="remove"`), and the
+`checkNoInternet<Variant>` Gradle task fails the build if the merged manifest ever carries it again.
 
 ## 2. Package map
 

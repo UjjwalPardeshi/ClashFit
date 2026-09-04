@@ -1,3 +1,4 @@
+import com.android.build.api.artifact.SingleArtifact
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -99,6 +100,42 @@ kotlin {
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
     arg("room.generateKotlin", "true")
+}
+
+/**
+ * The privacy claim, enforced. Transitive Google libraries declare INTERNET in their own manifests;
+ * AndroidManifest.xml strips it with tools:node="remove" and this task fails every assemble in
+ * which it comes back, so the claim on the website cannot silently stop being true.
+ */
+abstract class CheckNoInternetPermission : DefaultTask() {
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val mergedManifest: RegularFileProperty
+
+    @TaskAction
+    fun check() {
+        val text = mergedManifest.get().asFile.readText()
+        if (Regex("""<uses-permission[^>]*android\.permission\.INTERNET""").containsMatchIn(text)) {
+            throw GradleException(
+                "The merged manifest declares android.permission.INTERNET and ClashFit ships without it. " +
+                    "See build/outputs/logs/manifest-merger-*-report.txt for the library that added it, " +
+                    "and keep the tools:node=\"remove\" line in AndroidManifest.xml.",
+            )
+        }
+        logger.lifecycle("No INTERNET permission in the merged manifest: ok")
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        val cap = variant.name.replaceFirstChar { it.uppercase() }
+        val check = tasks.register<CheckNoInternetPermission>("checkNoInternet$cap") {
+            group = "verification"
+            description = "Fails if the merged $cap manifest declares android.permission.INTERNET."
+            mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
+        }
+        tasks.matching { it.name == "assemble$cap" || it.name == "package$cap" }.configureEach { dependsOn(check) }
+    }
 }
 
 dependencies {

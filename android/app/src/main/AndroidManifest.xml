@@ -4,8 +4,12 @@
 
     <!-- ================================================================
          Deliberately absent: android.permission.INTERNET.
-         The privacy claim is made checkable here. Do not add it.
+         MediaPipe Tasks (tasks-core, via tasks-vision) pulls in Google's datatransport
+         telemetry backend, which declares it. The line below makes the merger drop it,
+         and the checkNoInternet<Variant> Gradle task fails the build if it ever
+         comes back. Do not add it.
          ================================================================ -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
 
     <!-- The referee -->
     <uses-permission android:name="android.permission.CAMERA" />
