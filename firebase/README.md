@@ -62,9 +62,8 @@ Fields:
    - Choose the region closest to your users
 
 5. **Deploy Security Rules**
-   - Install the CLI once: `npm install -g firebase-tools`, then `firebase login`
-   - From this directory: `cd firebase && firebase use --add` and pick the project you just created
-   - Then: `firebase deploy --only firestore`
+   - The project is already pinned in `.firebaserc`, so there is nothing to select.
+   - From this directory: `npx -y firebase-tools login`, then `npx -y firebase-tools deploy --only firestore`
    - This deploys both the rules and the indexes. `firebase.json` in this directory points the CLI
      at `firestore.rules` and `firestore.indexes.json`, so no other configuration is needed.
    - Until the rules are deployed, a production-mode database denies every read and write, and the

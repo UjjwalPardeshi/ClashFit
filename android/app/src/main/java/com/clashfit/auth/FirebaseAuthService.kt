@@ -1,5 +1,6 @@
 package com.clashfit.auth
 
+import android.util.Log
 import com.clashfit.cloud.FriendCodes
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuth
@@ -89,9 +90,16 @@ class FirebaseAuthService(private val scope: CoroutineScope) : AuthService {
                 "createdAt" to FieldValue.serverTimestamp(),
                 "updatedAt" to FieldValue.serverTimestamp()
             )
-            firestore.collection("users").document(firebaseUser.uid)
-                .set(userDoc)
-                .await()
+            // The account exists the moment Firebase Auth returns. The profile document is how
+            // the leaderboard learns your name, and it is written again on every score sync, so
+            // losing this one write is recoverable. Failing the whole sign-up over it is not:
+            // before the Firestore rules are deployed this write is denied, and the player would
+            // be told sign-up failed while their account quietly existed.
+            runCatching {
+                firestore.collection("users").document(firebaseUser.uid)
+                    .set(userDoc)
+                    .await()
+            }.onFailure { Log.w(TAG, "profile document not written; the next score sync will create it", it) }
 
             val user = AuthUser(
                 uid = firebaseUser.uid,
@@ -199,3 +207,5 @@ class FirebaseAuthService(private val scope: CoroutineScope) : AuthService {
         else -> AuthError.UNKNOWN
     }
 }
+
+private const val TAG = "ClashFit/auth"
