@@ -98,10 +98,15 @@ fun LevelRing(progress: LevelProgress, modifier: Modifier = Modifier, size: Int 
 
 /** XP into the level, XP needed, and the rank title. */
 @Composable
-fun XpBar(progress: LevelProgress, modifier: Modifier = Modifier) {
+fun XpBar(progress: LevelProgress, modifier: Modifier = Modifier, showTitle: Boolean = true) {
     Column(modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = "Level ${progress.level}, ${progress.xpIntoLevel} of ${progress.xpForLevel} XP" }, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Level ${progress.level} · ${progress.title}", style = MaterialTheme.typography.labelLarge, color = Ink)
+            // The rank name is dropped where it is already printed above the bar in its own
+            // colour, beside the emblem. The profile header said "Recruit" twice in one card.
+            Text(
+                if (showTitle) "Level ${progress.level} · ${progress.title}" else "Level ${progress.level}",
+                style = MaterialTheme.typography.labelLarge, color = Ink,
+            )
             Text("${progress.xpIntoLevel} / ${progress.xpForLevel} XP", style = MaterialTheme.typography.labelSmall, color = InkMuted)
         }
         Bar(progress.fraction, height = 8, modifier = Modifier.clearAndSetSemantics {})

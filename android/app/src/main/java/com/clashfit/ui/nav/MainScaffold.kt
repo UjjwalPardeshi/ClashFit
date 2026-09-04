@@ -30,6 +30,8 @@ import com.clashfit.ui.theme.Ground2
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Panel
 import kotlin.reflect.KClass
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
 
 /**
  * The four top-level destinations. Every other screen belongs to exactly one of them, which is
@@ -141,7 +143,7 @@ fun MainScaffold(nav: NavHostController, content: @Composable (PaddingValues) ->
                             selected = tab == current,
                             onClick = { nav.switchTo(tab) },
                             icon = { Icon(tab.icon, contentDescription = tab.label) },
-                            label = { Text(tab.label, style = MaterialTheme.typography.labelMedium) },
+                            label = { TabLabel(tab.label) },
                             alwaysShowLabel = true,
                             colors = NavigationRailItemDefaults.colors(
                                 selectedIconColor = Ember,
@@ -164,7 +166,7 @@ fun MainScaffold(nav: NavHostController, content: @Composable (PaddingValues) ->
                                 selected = tab == current,
                                 onClick = { nav.switchTo(tab) },
                                 icon = { Icon(tab.icon, contentDescription = tab.label) },
-                                label = { Text(tab.label, style = MaterialTheme.typography.labelMedium) },
+                                label = { TabLabel(tab.label) },
                                 alwaysShowLabel = true,
                                 colors = NavigationBarItemDefaults.colors(
                                     selectedIconColor = Ember,
@@ -180,4 +182,22 @@ fun MainScaffold(nav: NavHostController, content: @Composable (PaddingValues) ->
             }
         }
     }
+}
+
+/**
+ * A tab label that stays on one line.
+ *
+ * Four tabs give each label a quarter of the screen. "Leaderboard" fits at the default text size
+ * and breaks into "Leaderboa / rd" at 1.5x — which is a worse outcome for the person who raised
+ * the text size than a slightly smaller word would have been. The label is capped at 1.15x of
+ * its own size; everything else on every screen still scales the whole way.
+ */
+@Composable
+private fun TabLabel(text: String) {
+    val scale = LocalDensity.current.fontScale
+    val base = MaterialTheme.typography.labelMedium
+    // Expressed in sp, which the renderer multiplies by the scale again — so dividing by the
+    // scale here pins the drawn size, rather than merely reducing it a little.
+    val style = if (scale > 1.15f) base.copy(fontSize = base.fontSize * (1.15f / scale)) else base
+    Text(text, style = style, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
 }

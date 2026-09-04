@@ -102,7 +102,7 @@ fun YouScreen(graph: AppGraph, nav: NavHostController) {
                         meta?.progress?.let { RankInsignia(it.level, size = 60) }
                     }
                     Spacer(Modifier.height(16.dp))
-                    meta?.progress?.let { XpBar(it) }
+                    meta?.progress?.let { XpBar(it, showTitle = false) }
                 }
             }
 
