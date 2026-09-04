@@ -42,9 +42,8 @@ already flag. Audio and the "Back at it" streak rule were false positives.
 
 ## Now
 
-- [ ] Boss preview screen, so the renderer can be checked at the venue without
-      doing squats to reach it
-- [ ] Duel lobby: ready state and a countdown
+- [x] Boss preview screen, reachable from Settings
+- [x] Firestore rules deployed and verified against the live project
 
 ## Waiting on the phone
 
@@ -59,16 +58,17 @@ has never run on a device.
 If the boss looks wrong on the day, turn off **Settings → 3D boss**. The fight
 is identical; only the boss's rendering changes.
 
-## Waiting on Omkar
+## Firebase — done
 
-```bash
-cd /home/omkar-kadam/Desktop/ClashFit/firebase
-npx -y firebase-tools login
-npx -y firebase-tools deploy --only firestore
-```
+Rules and indexes are deployed to `clashfit-1d337`, which is the same project the
+app is built against. The leaderboard is live: sign in and the board loads.
 
-Until that runs, every leaderboard read fails closed and the board honestly says
-it is not reachable. Sign-up and sign-in already work without it.
+All nine rule checks pass against the live project (`python3
+firebase/verify-rules.py`). A profile carrying an email address is refused
+outright, and no player can write another player's row.
+
+One thing to know: the board requires being signed in. Signed out it still says
+"not reachable", and that is correct rather than a fault.
 
 ## Deliberately not doing
 
