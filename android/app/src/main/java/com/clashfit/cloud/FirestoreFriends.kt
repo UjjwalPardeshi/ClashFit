@@ -3,6 +3,8 @@ package com.clashfit.cloud
 import com.clashfit.auth.AuthService
 import com.clashfit.auth.AuthState
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.awaitClose
@@ -19,67 +21,86 @@ class FirestoreFriends(
 
     private val firestore = FirebaseFirestore.getInstance()
 
+    /**
+     * The friends list, live.
+     *
+     * Three things were wrong here, and the first one crashed the app the moment anyone opened
+     * the Friends screen.
+     *
+     * `awaitClose` was called from inside a nested `collect`. It may only be called from the
+     * producer scope itself, and calling it anywhere else throws — a hard crash, on a background
+     * dispatcher, so nothing caught it.
+     *
+     * The listener was launched on the application scope, so it outlived the screen that wanted
+     * it and was never removed when the signed-in user changed.
+     *
+     * And the profile fetch matched on a `uid` field that no profile document has: the leaderboard
+     * writes displayName, level, xp and bestStreak, and the document id IS the uid. The query
+     * found nothing, so the friends list was always empty even when friends existed.
+     */
     override val friends: Flow<List<Friend>> = callbackFlow {
-        val job = scope.launch {
+        var listener: ListenerRegistration? = null
+
+        // Launched on this flow's own scope, so it dies with the flow.
+        val job = launch {
             auth.state.collect { authState ->
-                if (authState !is AuthState.SignedIn) {
-                    send(emptyList())
+                // A new sign-in means a different friends list; drop the old listener first.
+                listener?.remove()
+                listener = null
+
+                val uid = (authState as? AuthState.SignedIn)?.user?.uid
+                if (uid == null) {
+                    trySend(emptyList())
                     return@collect
                 }
 
-                val uid = authState.user.uid
-
-                val friendListener = firestore
-                    .collection("users").document(uid)
+                listener = firestore.collection("users").document(uid)
                     .collection("friends")
                     .addSnapshotListener { snapshot, error ->
                         if (error != null) {
                             trySend(emptyList())
                             return@addSnapshotListener
                         }
-
-                        val friendUids = snapshot?.documents?.map { it.id } ?: emptyList()
+                        val friendUids = snapshot?.documents?.map { it.id }.orEmpty()
                         if (friendUids.isEmpty()) {
                             trySend(emptyList())
                             return@addSnapshotListener
                         }
-
-                        // Fetch friend details in background
-                        scope.launch {
-                            try {
-                                val chunks = friendUids.chunked(30)
-                                val allFriends = mutableListOf<Friend>()
-
-                                for (chunk in chunks) {
-                                    val docs = firestore.collection("users")
-                                        .whereIn("uid", chunk)
-                                        .get()
-                                        .await()
-
-                                    docs.documents.forEach { doc ->
-                                        val friendUid = doc.getString("uid") ?: doc.id
-                                        val displayName = doc.getString("displayName") ?: ""
-                                        val level = (doc.getLong("level") ?: 1L).toInt()
-                                        allFriends.add(Friend(friendUid, displayName, level))
-                                    }
-                                }
-
-                                trySend(allFriends.sortedBy { it.displayName })
-                            } catch (e: Exception) {
-                                trySend(emptyList())
-                            }
-                        }
+                        launch { trySend(profilesOf(friendUids)) }
                     }
-
-                awaitClose {
-                    friendListener.remove()
-                }
             }
         }
 
         awaitClose {
             job.cancel()
+            listener?.remove()
         }
+    }
+
+    /**
+     * The profiles behind a set of uids, looked up by document id.
+     *
+     * `whereIn` takes at most thirty values, hence the chunking. A friend whose profile document
+     * does not exist yet is skipped rather than shown as a blank row.
+     */
+    private suspend fun profilesOf(uids: List<String>): List<Friend> = runCatching {
+        uids.chunked(30).flatMap { chunk ->
+            firestore.collection("users")
+                .whereIn(FieldPath.documentId(), chunk)
+                .get()
+                .await()
+                .documents
+                .map { doc ->
+                    Friend(
+                        uid = doc.id,
+                        displayName = doc.getString("displayName").orEmpty(),
+                        level = (doc.getLong("level") ?: 1L).toInt(),
+                    )
+                }
+        }.sortedBy { it.displayName.lowercase() }
+    }.getOrElse { e ->
+        if (e is kotlinx.coroutines.CancellationException) throw e
+        emptyList()
     }
 
     override val myCode: Flow<String?> = auth.state.map { authState ->

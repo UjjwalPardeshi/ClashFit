@@ -183,6 +183,11 @@ class FirestoreLeaderboard(
                     "level" to snapshot.level,
                     "xp" to snapshot.xp,
                     "bestStreak" to snapshot.bestStreak,
+                    // Derived from the uid, so writing it again costs nothing and repairs any
+                    // profile that never got one — an account created before the rules were
+                    // deployed had its sign-up write refused, and without this its owner could
+                    // never be added as a friend.
+                    "friendCode" to FriendCodes.forUid(uid),
                     "updatedAt" to FieldValue.serverTimestamp(),
                 ),
                 SetOptions.merge(),
