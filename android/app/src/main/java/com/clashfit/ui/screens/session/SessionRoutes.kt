@@ -14,7 +14,6 @@ import androidx.navigation.toRoute
 import com.clashfit.AppGraph
 import com.clashfit.core.model.GameMode
 import com.clashfit.perception.CameraPermissionGate
-import com.clashfit.perception.SkeletonOverlay
 import com.clashfit.ui.nav.Home
 import com.clashfit.ui.nav.Session
 import com.clashfit.ui.nav.Summary
@@ -38,7 +37,6 @@ fun NavGraphBuilder.sessionRoutes(graph: AppGraph, nav: NavHostController) {
         CameraPermissionGate {
             SessionScreen(
                 graph, deps, args,
-                skeleton = { m -> LiveSkeleton(graph, deps, args, m) },
                 onSummary = { id ->
                     // A pass-the-phone turn goes back to the board; everything else gets a summary.
                     if (graph.playHub.roster.value != null) nav.popBackStack()
@@ -60,10 +58,4 @@ fun NavGraphBuilder.sessionRoutes(graph: AppGraph, nav: NavHostController) {
     }
 }
 
-/** Binds the view model's image-space landmarks to the perception package's overlay. */
-@Composable
-private fun LiveSkeleton(graph: AppGraph, deps: SessionDeps, args: SessionArgs, modifier: Modifier) {
-    val vm: SessionViewModel = viewModel(key = "session-${args.hashCode()}", factory = SessionViewModel.factory(graph, deps, args))
-    val landmarks by vm.skeleton.collectAsStateWithLifecycle()
-    SkeletonOverlay(landmarks, modifier)
-}
+

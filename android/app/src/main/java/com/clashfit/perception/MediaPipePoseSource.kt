@@ -6,7 +6,9 @@ import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -48,7 +50,7 @@ class MediaPipePoseSource(
     private val clock: Clock,
     private val lifecycleOwner: LifecycleOwner,
     private val scope: CoroutineScope,
-) : PoseSource {
+) : PoseSource, CameraPreviewSource {
 
     private val TAG = "ClashFit/perception"
     private val frameChannel = Channel<PoseFrame>(capacity = 1)
@@ -56,6 +58,17 @@ class MediaPipePoseSource(
 
     private val _fps = MutableStateFlow(0f)
     override val fps: StateFlow<Float> = _fps.asStateFlow()
+
+    /**
+     * The live camera image. Created lazily: a run driven by a recorded trace or by the synthetic
+     * source never needs one, and allocating a SurfaceView-backed view it will not use is waste.
+     */
+    override val previewView: PreviewView by lazy {
+        PreviewView(context).apply {
+            implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+            scaleType = PreviewView.ScaleType.FILL_CENTER
+        }
+    }
 
     private val _facing = MutableStateFlow(CameraFacing.FRONT)
     override val facing: StateFlow<CameraFacing> = _facing.asStateFlow()
@@ -160,11 +173,22 @@ class MediaPipePoseSource(
                     processImageProxy(imageProxy)
                 }
 
+                // The preview use case. Only ImageAnalysis was bound before, which meant the app
+                // read the player's body and never showed it to them: during a fight you could
+                // not see yourself at all. The landmarks are already mirrored for the front
+                // camera (see processImageProxy), which is the same thing PreviewView does to a
+                // front-camera image, so an overlay drawn from them lands on the right limb.
+                val preview = Preview.Builder()
+                    .setTargetResolution(android.util.Size(720, 1280))
+                    .build()
+                    .also { it.surfaceProvider = previewView.surfaceProvider }
+
                 provider.unbindAll()
                 provider.bindToLifecycle(
                     lifecycleOwner,
                     cameraSelector,
-                    imageAnalysis
+                    imageAnalysis,
+                    preview,
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start camera", e)

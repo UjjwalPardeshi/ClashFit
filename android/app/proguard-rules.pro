@@ -18,3 +18,7 @@
 -keep,includedescriptorclasses class com.clashfit.**$$serializer { *; }
 -keepclassmembers class com.clashfit.** { *** Companion; }
 -keepclasseswithmembers class com.clashfit.** { kotlinx.serialization.KSerializer serializer(...); }
+
+# Filament: the renderer is native, and its Java classes are reached from JNI by name.
+-keep class com.google.android.filament.** { *; }
+-dontwarn com.google.android.filament.**

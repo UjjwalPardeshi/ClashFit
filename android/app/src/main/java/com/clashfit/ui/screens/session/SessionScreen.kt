@@ -53,6 +53,11 @@ import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.LocalReduceMotion
 import com.clashfit.ui.theme.Motion
 import com.clashfit.ui.theme.Panel
+import com.clashfit.core.model.Landmarks
+import com.clashfit.perception.CameraPreviewSource
+import com.clashfit.perception.CameraStage
+import com.clashfit.perception.ExoRig
+import androidx.compose.foundation.layout.fillMaxHeight
 
 /**
  * One screen for the whole fight. The engine's phase decides what is drawn: calibration guide,
@@ -63,7 +68,6 @@ fun SessionScreen(
     graph: AppGraph,
     deps: SessionDeps,
     args: SessionArgs,
-    skeleton: @Composable (Modifier) -> Unit,
     onSummary: (Long) -> Unit,
     onExit: () -> Unit,
 ) {
@@ -71,7 +75,11 @@ fun SessionScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val restLeft by vm.restRemainingSec.collectAsStateWithLifecycle()
     val paused by vm.paused.collectAsStateWithLifecycle()
+    val landmarks by vm.skeleton.collectAsStateWithLifecycle()
     val reduceMotion = LocalReduceMotion.current
+    // Not every pose source has a camera: a recorded trace and the synthetic source do not, and
+    // the fight has to work with either.
+    val camera = deps.pose as? CameraPreviewSource
 
     var lastHit by remember { mutableStateOf<HudEvent.Hit?>(null) }
     val jolt = remember { Animatable(0f) }
@@ -94,7 +102,10 @@ fun SessionScreen(
     Box(Modifier.fillMaxSize().background(Ground)) {
         when (s.phase) {
             Phase.CALIBRATING -> {
-                skeleton(Modifier.fillMaxSize())
+                // Full frame from the first second. Getting your whole body in shot is the thing
+                // calibration is asking for, and it is very hard to do against a corner inset.
+                CameraStage(camera, Modifier.fillMaxSize())
+                ExoRig(landmarks, s.fatigue.band, 0f, null, Modifier.fillMaxSize())
                 CalibrationOverlay(
                     cue = s.cue, progress = s.calibProgress,
                     tooFar = s.calib == com.clashfit.core.model.CalibState.TOO_FAR,
@@ -104,7 +115,7 @@ fun SessionScreen(
                 ExitCorner(onExit)
             }
             Phase.FIGHTING, Phase.FRAMING_LOST -> {
-                FightLayout(s, vm, lastHit, jolt.value, shake.value, paused, reduceMotion, skeleton)
+                FightLayout(s, vm, lastHit, jolt.value, shake.value, paused, reduceMotion, camera, landmarks)
             }
             Phase.REST -> RestPanel(s, restLeft, onSkip = vm::skipRest, onStop = vm::stop)
             Phase.DEAD -> EndPanel(s, onSummary = { /* wait for persistence */ }, onExit = onExit)
@@ -116,16 +127,27 @@ fun SessionScreen(
 @Composable
 private fun FightLayout(
     s: SessionState, vm: SessionViewModel, lastHit: HudEvent.Hit?, jolt: Float, shake: Float,
-    paused: Boolean, reduceMotion: Boolean, skeleton: @Composable (Modifier) -> Unit,
+    paused: Boolean, reduceMotion: Boolean, camera: CameraPreviewSource?, landmarks: Landmarks?,
 ) {
     val prone = vm.isProne
     val link by vm.link.collectAsStateWithLifecycle()
     Box(Modifier.fillMaxSize()) {
-        // The boss and the hit surface fill the screen; the skeleton sits in a dim corner inset.
-        BossFigure(s.combat, jolt, shake, Modifier.fillMaxSize().padding(bottom = if (prone) 220.dp else 160.dp, top = 90.dp))
-        Box(Modifier.align(if (prone) Alignment.TopEnd else Alignment.TopEnd).padding(top = 96.dp, end = 12.dp).size(width = 110.dp, height = 150.dp)) {
-            skeleton(Modifier.fillMaxSize())
-        }
+        // You, full frame, with the suit on. The camera is the referee and this is the proof of
+        // it: the same landmarks the scorer reads, drawn on your own body as armour that lights up
+        // when a rep lands clean and changes colour as you tire.
+        CameraStage(camera, Modifier.fillMaxSize())
+        ExoRig(landmarks, s.fatigue.band, jolt, lastHit?.verdict, Modifier.fillMaxSize())
+
+        // The boss stands in the room with you, in the upper part of the frame so it never covers
+        // the body it is reacting to. Its renderer draws with a transparent background.
+        BossStage(
+            s.combat, jolt, shake,
+            Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth(if (prone) 0.52f else 0.66f)
+                .fillMaxHeight(if (prone) 0.34f else 0.44f)
+                .padding(top = 88.dp),
+        )
         DamageNumeral(lastHit, Modifier.align(Alignment.Center).padding(bottom = 60.dp))
 
         Column(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)) {

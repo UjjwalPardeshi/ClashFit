@@ -155,6 +155,16 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.datastore.preferences)
 
+    // The boss is a real 3D model, rendered by Filament. Chosen over SceneView because SceneView
+    // 4.x is a multiplatform rewrite with no Compose entry point in its core artifact, while
+    // Filament's Android API is stable and its ModelViewer takes a TextureView, which is what
+    // lets the boss composite over the live camera with a transparent background.
+    // Every entry point is guarded: if the engine will not start on a device, the app falls back
+    // to the Compose-drawn boss and the fight still happens.
+    implementation(libs.filament.android)
+    implementation(libs.filament.gltfio)
+    implementation(libs.filament.utils)
+
     implementation(libs.mediapipe.tasks.vision)
     implementation(libs.mediapipe.tasks.genai)
     implementation(libs.play.services.nearby)
