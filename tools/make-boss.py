@@ -178,13 +178,13 @@ def pbr(name, colour, metallic=1.0, rough=0.35, emissive=(0, 0, 0), strength=0.0
 
 # The palette is the app's: Ember on Panel, with Brass trim.
 MATERIALS = [
-    pbr("shell", (0.318, 0.337, 0.388), metallic=0.25, rough=0.52),         # 0 dark plate
-    pbr("shell_lit", (0.475, 0.502, 0.565), metallic=0.20, rough=0.44),     # 1 lit plate
-    pbr("brass", (0.827, 0.620, 0.322), metallic=0.60, rough=0.32),         # 2 trim
+    pbr("shell", (0.267, 0.286, 0.337), metallic=0.30, rough=0.52),         # 0 dark plate
+    pbr("shell_lit", (0.404, 0.427, 0.486), metallic=0.25, rough=0.44),     # 1 lit plate
+    pbr("brass", (0.788, 0.588, 0.275), metallic=0.65, rough=0.28),         # 2 trim
     pbr("core", (1.0, 0.35, 0.16), metallic=0.0, rough=0.5,
-        emissive=(1.0, 0.33, 0.13), strength=4.0),                          # 3 glowing core
+        emissive=(1.0, 0.33, 0.13), strength=1.1),                          # 3 glowing core
     pbr("eye", (1.0, 0.62, 0.25), metallic=0.0, rough=0.4,
-        emissive=(1.0, 0.62, 0.25), strength=6.0),                          # 4 eye
+        emissive=(1.0, 0.62, 0.25), strength=1.6),                          # 4 eye
 ]
 
 SHELL, SHELL_LIT, BRASS, CORE, EYE = 0, 1, 2, 3, 4

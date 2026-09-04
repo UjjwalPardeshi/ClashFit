@@ -19,6 +19,7 @@ import com.google.android.filament.EntityManager
 import com.google.android.filament.IndirectLight
 import com.google.android.filament.LightManager
 import com.google.android.filament.Renderer
+import com.google.android.filament.android.UiHelper
 import com.google.android.filament.View
 import com.google.android.filament.utils.Manipulator
 import com.google.android.filament.utils.ModelViewer
@@ -63,6 +64,15 @@ fun Boss3D(
         return
     }
 
+    // The renderer and its frame loop, held in composition rather than on the view.
+    //
+    // These used to live in view tags, which crashed on a real device: View.setTag(key, value)
+    // rejects any key that is not an application-specific resource id, and a framework id like
+    // android.R.id.icon1 is not one. Closing over a remembered holder is simpler anyway — both
+    // lambdas are in the same composable scope, so there was never a reason to route them through
+    // the view at all.
+    val holder = remember { BossHolder() }
+
     AndroidView(
         modifier = modifier,
         factory = { ctx ->
@@ -75,7 +85,7 @@ fun Boss3D(
                         unavailable()
                     }
                     .getOrNull()
-                view.setTag(R_RIG, rig)
+                holder.rig = rig
 
                 if (rig != null) {
                     val choreographer = Choreographer.getInstance()
@@ -90,25 +100,25 @@ fun Boss3D(
                                 }
                         }
                     }
-                    view.setTag(R_LOOP, frame)
+                    holder.loop = frame
                     choreographer.postFrameCallback(frame)
                 }
             }
         },
-        onRelease = { view ->
-            (view.getTag(R_LOOP) as? Choreographer.FrameCallback)?.let {
-                Choreographer.getInstance().removeFrameCallback(it)
-            }
-            (view.getTag(R_RIG) as? BossRig)?.destroy()
-            view.setTag(R_LOOP, null)
-            view.setTag(R_RIG, null)
+        onRelease = {
+            holder.loop?.let { Choreographer.getInstance().removeFrameCallback(it) }
+            holder.rig?.destroy()
+            holder.loop = null
+            holder.rig = null
         },
     )
 }
 
-// Tag keys have to be unique ids, and any layout id will do for a private one.
-private val R_RIG = android.R.id.icon1
-private val R_LOOP = android.R.id.icon2
+/** What one Boss3D owns and has to give back. */
+private class BossHolder {
+    var rig: BossRig? = null
+    var loop: Choreographer.FrameCallback? = null
+}
 
 /**
  * The renderer and the rule for which clip plays.
@@ -121,11 +131,15 @@ private class BossRig(view: TextureView, glb: ByteArray) {
 
     private val viewer = ModelViewer(
         textureView = view,
+        // The swap chain has to be created transparent, and only the UiHelper can ask for that.
+        // A transparent clear colour alone is not enough: without this the TextureView presents an
+        // opaque black rectangle, which over a camera preview blacks out the room behind the boss.
+        uiHelper = UiHelper(UiHelper.ContextErrorPolicy.DONT_CHECK).apply { isOpaque = false },
         manipulator = Manipulator.Builder()
             .targetPosition(0f, 0f, 0f)
             // Slightly above and in front, looking down a little, so it reads as standing in
             // front of you rather than floating at eye level.
-            .orbitHomePosition(0f, 0.28f, 2.55f)
+            .orbitHomePosition(0f, 0.22f, 2.05f)
             .build(Manipulator.Mode.ORBIT),
     )
 
@@ -168,14 +182,17 @@ private class BossRig(view: TextureView, glb: ByteArray) {
                     0.03f, 0.02f, 0.01f,
                 ),
             )
-            .intensity(34_000f)
+            // Measured against ModelViewer's default exposure, which is set for bright
+            // daylight. The first pass on device was roughly three times too bright and
+            // washed every surface to the same pale grey.
+            .intensity(19_000f)
             .build(viewer.engine)
 
         // A key light from the front left, warm, so the brass reads.
         sun = EntityManager.get().create()
         LightManager.Builder(LightManager.Type.DIRECTIONAL)
             .color(Colors.cct(5_600f)[0], Colors.cct(5_600f)[1], Colors.cct(5_600f)[2])
-            .intensity(78_000f)
+            .intensity(66_000f)
             .direction(-0.42f, -0.62f, -0.66f)
             .castShadows(false)
             .build(viewer.engine, sun)
@@ -234,17 +251,25 @@ private class BossRig(view: TextureView, glb: ByteArray) {
         viewer.render(nowNanos)
     }
 
+    /**
+     * Give everything back.
+     *
+     * Each step is guarded on its own, because ModelViewer registers its own detach listener and
+     * may already have destroyed the engine by the time Compose releases the view. Finding the
+     * scene already gone is the normal case on a back press, not a fault, so it is not logged as
+     * one — but a step that fails for some other reason must not stop the steps after it.
+     */
     fun destroy() {
-        runCatching {
-            if (sun != 0) {
-                viewer.scene.removeEntity(sun)
-                viewer.engine.destroyEntity(sun)
-                EntityManager.get().destroy(sun)
-                sun = 0
-            }
-            viewer.destroyModel()
-            viewer.destroy()
-        }.onFailure { Log.w(TAG, "Tearing down the 3D boss failed", it) }
+        if (sun != 0) {
+            val entity = sun
+            sun = 0
+            runCatching { viewer.scene.removeEntity(entity) }
+            runCatching { viewer.engine.destroyEntity(entity) }
+            runCatching { EntityManager.get().destroy(entity) }
+        }
+        runCatching { viewer.destroyModel() }
+        runCatching { viewer.destroy() }
+            .onFailure { Log.d(TAG, "The 3D boss was already torn down", it) }
     }
 }
 
