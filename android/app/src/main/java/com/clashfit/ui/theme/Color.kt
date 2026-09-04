@@ -13,6 +13,15 @@ val Panel = Color(0xFF1B1C21)       // cards
 val PanelLift = Color(0xFF24262C)   // a card on a card, inputs
 val PanelTop = Color(0xFF2D3037)    // highest container, pressed
 
+// Depth. A flat rectangle of one colour reads as a placeholder; a surface lit from above reads as
+// an object. These are the two ends of a card's gradient and the highlight along its top edge —
+// the whole difference between "functional" and "made".
+val PanelHi = Color(0xFF23252B)     // top of a card, where the light falls
+val PanelLo = Color(0xFF181A1E)     // bottom of a card, in its own shade
+val Sheen = Color(0x1FFFFFFF)       // 12 %: the lit edge along the top
+val SheenSoft = Color(0x0FFFFFFF)   //  6 %: the same edge on a nested surface
+val Shade = Color(0x40000000)       // 25 %: what a card casts on the one behind it
+
 val Ink = Color(0xFFF5F2EC)
 val InkMuted = Color(0xB8F5F2EC)    // 72 %: secondary text, 9:1 on Ground
 val InkFaint = Color(0x80F5F2EC)    // 50 %: hints and disabled, 4.6:1 on Ground

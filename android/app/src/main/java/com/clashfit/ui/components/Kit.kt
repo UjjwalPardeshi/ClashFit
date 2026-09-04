@@ -61,6 +61,16 @@ import com.clashfit.ui.theme.Shallow
 import com.clashfit.ui.theme.Working
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import com.clashfit.ui.theme.Shade
+import com.clashfit.ui.theme.Sheen
+import com.clashfit.ui.theme.PanelLo
+import com.clashfit.ui.theme.PanelHi
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 
 /*
  * The shared kit. Material 3 underneath, one accent on top. Every screen builds from these so
@@ -199,16 +209,45 @@ fun AppCard(
     padding: Int = 16,
     content: @Composable () -> Unit,
 ) {
-    val colors = CardDefaults.cardColors(containerColor = container, contentColor = Ink)
     val shape = MaterialTheme.shapes.medium
-    if (onClick != null) {
-        Card(onClick = onClick, modifier = modifier, shape = shape, colors = colors) {
-            Box(Modifier.padding(padding.dp)) { content() }
-        }
-    } else {
-        Card(modifier = modifier, shape = shape, colors = colors) {
-            Box(Modifier.padding(padding.dp)) { content() }
-        }
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+
+    // A surface lit from above, not a rectangle of one colour.
+    //
+    // Every card in the app comes through here, so this is the single highest-leverage place to
+    // decide whether the thing looks made or looks like a placeholder. Three cheap ingredients: a
+    // vertical gradient so the top catches light, a one-pixel highlight along the top edge that
+    // fades out before the middle, and a hairline outline so the card has an edge against the
+    // background instead of dissolving into it. No shadow: on a near-black ground a drop shadow is
+    // invisible and costs a render node per card.
+    val top = if (container == Panel) PanelHi else container
+    val bottom = if (container == Panel) PanelLo else container
+    val body = Brush.verticalGradient(listOf(top, bottom))
+    val edge = Brush.verticalGradient(
+        0f to Sheen,
+        0.35f to Color.Transparent,
+        1f to Color.Transparent,
+    )
+
+    Box(
+        modifier
+            .clip(shape)
+            .background(body)
+            .border(1.dp, edge, shape)
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(interactionSource = interaction, indication = null, onClick = onClick)
+                } else {
+                    Modifier
+                },
+            )
+            // Pressed reads as the card sinking toward the background rather than as a ripple,
+            // which suits a surface that is meant to feel solid.
+            .background(if (pressed) Shade else Color.Transparent)
+            .padding(padding.dp),
+    ) {
+        CompositionLocalProvider(LocalContentColor provides Ink) { content() }
     }
 }
 

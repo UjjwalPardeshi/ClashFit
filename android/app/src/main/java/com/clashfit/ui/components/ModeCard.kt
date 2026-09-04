@@ -41,16 +41,21 @@ fun ModeCard(mode: GameMode, onClick: () -> Unit, modifier: Modifier = Modifier,
         onClick = if (mode.enabled) onClick else null,
         container = if (mode.enabled) Panel else Panel.copy(alpha = 0.55f),
     ) {
-        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            // The mark first. It is what gets recognised on the second visit, and it says the
+            // kind and whether the mode is timed before a word has been read.
+            ModeSigil(mode, enabled = mode.enabled)
             Text(
                 mode.title, style = MaterialTheme.typography.titleMedium,
                 color = if (mode.enabled) Ink else InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis,
             )
+            // Two lines, not three. The full description is on the mode's own screen; a card has
+            // to be scannable in a row of eight.
             Text(
                 mode.blurb, style = MaterialTheme.typography.bodySmall, color = if (mode.enabled) InkMuted else InkFaint,
-                maxLines = 3, overflow = TextOverflow.Ellipsis,
+                maxLines = 2, overflow = TextOverflow.Ellipsis,
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(2.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 when {
                     !mode.enabled -> Tag("Coming online", color = InkMuted)
