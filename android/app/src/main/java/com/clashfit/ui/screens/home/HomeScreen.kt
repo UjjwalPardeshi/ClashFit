@@ -54,6 +54,19 @@ import com.clashfit.ui.theme.InkMuted
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
+import com.clashfit.data.SessionEntity
+import com.clashfit.ui.theme.Success
+import com.clashfit.ui.nav.RunHome
+import com.clashfit.ui.nav.Route
+import com.clashfit.ui.nav.Posture
+import com.clashfit.ui.nav.Desk
+import com.clashfit.ui.nav.Clinic
+import com.clashfit.ui.nav.Breathing
+import com.clashfit.ui.nav.Alarms
+import com.clashfit.ui.components.AppCard
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.layout.width
 
 /**
  * The Train tab. One tap into a fight, then every way to play as carousels grouped by how many
@@ -80,9 +93,11 @@ fun HomeScreen(graph: AppGraph, nav: NavHostController) {
         Column(
             Modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState()).padding(bottom = 28.dp),
         ) {
+            val reason = remember(sessions, preferredId, zone) { todayLine(sessions, preferredId, zone) }
             HeroCard(
                 exerciseName = preferredName,
                 streak = streak?.current ?: 0,
+                reason = reason,
                 onFight = { nav.navigate(Session(mode = GameMode.BOSS_FIGHT.name, exerciseId = preferredId)) },
                 onChange = { nav.navigate(ExercisePicker(GameMode.BOSS_FIGHT.name)) },
                 modifier = Modifier.padding(horizontal = 20.dp),
@@ -117,13 +132,64 @@ fun HomeScreen(graph: AppGraph, nav: NavHostController) {
                     }
                 }
             }
+
+            // The health tools, on the tab where training lives rather than three levels down a
+            // profile page. Four of these never involve a boss at all, and that is the whole
+            // argument that this is more than a game.
+            Text(
+                "Health", style = MaterialTheme.typography.titleSmall, color = InkMuted,
+                modifier = Modifier.padding(start = 20.dp, top = 18.dp, bottom = 10.dp),
+            )
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                items(HEALTH_TOOLS, key = { it.title }) { tool ->
+                    ToolCard(tool) { nav.navigate(tool.route) }
+                }
+            }
+        }
+    }
+}
+
+/** One health tool on the Train tab. */
+private data class Tool(val title: String, val blurb: String, val icon: ImageVector, val route: Route)
+
+private val HEALTH_TOOLS = listOf(
+    Tool("Run tracker", "Distance, pace and splits. The route never leaves the phone.", AppIcons.Run, RunHome),
+    Tool("Breathing", "Six breaths a minute, verified from your chest rather than assumed.", AppIcons.Heart, Breathing),
+    Tool("Clinic", "The sit-to-stand test a physiotherapist uses.", AppIcons.Heart, Clinic),
+    Tool("Desk timer", "Sixty seconds of movement, every fifty minutes.", AppIcons.Bolt, Desk),
+    Tool("Posture", "One frame every few minutes, scored and discarded.", AppIcons.Person, Posture),
+    Tool("Wake-up alarm", "It rings until the reps stop it.", AppIcons.Bell, Alarms),
+)
+
+@Composable
+private fun ToolCard(tool: Tool, onClick: () -> Unit) {
+    AppCard(Modifier.width(210.dp), padding = 16, onClick = onClick) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(
+                Modifier.size(34.dp).clip(CircleShape).background(Success.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(tool.icon, contentDescription = null, tint = Success, modifier = Modifier.size(18.dp))
+            }
+            Text(tool.title, style = MaterialTheme.typography.titleSmall, color = Ink)
+            Text(tool.blurb, style = MaterialTheme.typography.bodySmall, color = InkMuted, maxLines = 3)
         }
     }
 }
 
 /** The one thing on the tab that asks for a tap. */
 @Composable
-private fun HeroCard(exerciseName: String, streak: Int, onFight: () -> Unit, onChange: () -> Unit, modifier: Modifier = Modifier) {
+private fun HeroCard(
+    exerciseName: String,
+    streak: Int,
+    reason: String,
+    onFight: () -> Unit,
+    onChange: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier.fillMaxWidth().clip(MaterialTheme.shapes.large)
             .background(Brush.linearGradient(listOf(Ember, EmberDeep)))
@@ -141,9 +207,16 @@ private fun HeroCard(exerciseName: String, streak: Int, onFight: () -> Unit, onC
         Spacer(Modifier.height(14.dp))
         Text("READY\nTO FIGHT?", style = MaterialTheme.typography.headlineLarge, color = Ground)
         Text(
-            "$exerciseName · Boss Fight · your camera is the referee.",
+            "$exerciseName · Boss Fight",
             style = MaterialTheme.typography.bodyMedium, color = Ground.copy(alpha = 0.85f),
             modifier = Modifier.padding(top = 6.dp),
+        )
+        // Why this session, in the app's own measurements. "Ready to fight?" is a slogan; a
+        // number you set last Tuesday is a reason.
+        Text(
+            reason,
+            style = MaterialTheme.typography.bodyMedium, color = Ground.copy(alpha = 0.95f),
+            modifier = Modifier.padding(top = 10.dp),
         )
         Spacer(Modifier.height(18.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -157,4 +230,38 @@ private fun HeroCard(exerciseName: String, streak: Int, onFight: () -> Unit, onC
             LinkButton("Change", color = Ground, onClick = onChange)
         }
     }
+}
+
+/**
+ * One line on the Today card explaining why this session, drawn from what the app measured.
+ *
+ * Deliberately never encouragement for its own sake. Every branch cites something the camera
+ * recorded, because an app that invents enthusiasm is indistinguishable from one that is not
+ * measuring anything.
+ */
+private fun todayLine(sessions: List<SessionEntity>, exerciseId: String, zone: ZoneId): String {
+    if (sessions.isEmpty()) {
+        return "Your first set writes the line everything after it is measured against."
+    }
+    val today = LocalDate.now(zone)
+    fun dayOf(s: SessionEntity) = Instant.ofEpochMilli(s.startedAtMs).atZone(zone).toLocalDate()
+
+    val todays = sessions.filter { dayOf(it) == today }
+    if (todays.isNotEmpty()) {
+        return "${todays.sumOf { it.totalReps }} reps banked today. Another set is a bonus, not a debt."
+    }
+
+    val mine = sessions.filter { it.exerciseId == exerciseId }
+    if (mine.isNotEmpty()) {
+        val last = mine.first()
+        val days = ChronoUnit.DAYS.between(dayOf(last), today)
+        val form = (last.formMean * 100).toInt()
+        val best = mine.maxOf { it.totalReps }
+        return when {
+            days <= 1L -> "Last time: ${last.totalReps} reps at $form% clean. Match it."
+            days <= 7L -> "$days days since the last one. Your best here is $best reps."
+            else -> "It has been $days days. Start easy; the referee does not mind."
+        }
+    }
+    return "You have not tried this movement yet. The first set sets its baseline."
 }

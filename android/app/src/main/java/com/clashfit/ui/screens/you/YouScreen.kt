@@ -59,6 +59,7 @@ import com.clashfit.ui.theme.Brass
 import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Success
+import com.clashfit.ui.nav.Compete
 
 /** The You tab: who you are, how far you have come, who you play with, and the tools. */
 @Composable
@@ -120,17 +121,18 @@ fun YouScreen(graph: AppGraph, nav: NavHostController) {
                 }
             }
 
+            // Competing moved to its own tab. One row points at it so anyone who learned where
+            // it used to be is not left hunting.
             SectionGap(26)
-            SectionTitle("Compete")
-            SectionGap(10)
             ListGroup {
-                NavRow("Leaderboard", { nav.navigate(Leaderboard) }, icon = AppIcons.Trophy, supporting = "This week and all time, everyone and friends")
-                InnerDivider()
-                NavRow("Friends", { nav.navigate(Friends) }, icon = AppIcons.People, supporting = "Add by code, race on the friends board")
-                InnerDivider()
-                NavRow("Badges", { nav.navigate(Achievements) }, icon = AppIcons.Star, value = "$badges of ${AchievementCatalog.all.size}")
-                InnerDivider()
-                NavRow("Challenge codes", { nav.navigate(Challenge) }, icon = AppIcons.Bolt, supporting = "A dare, sent as text")
+                NavRow(
+                    "Compete",
+                    { nav.navigate(Compete) },
+                    icon = AppIcons.Trophy,
+                    tint = Brass,
+                    value = "$badges of ${AchievementCatalog.all.size}",
+                    supporting = "Boards, friends, badges and challenges are their own tab now",
+                )
             }
 
             SectionGap(26)

@@ -50,6 +50,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import com.clashfit.ui.insight.SessionInsights
 
 /** Every session, newest first, grouped by day. Tap one for its summary. */
 @Composable
@@ -87,7 +88,7 @@ fun HistoryScreen(graph: AppGraph, nav: NavHostController) {
                 }
             }
             item(key = "verdicts") {
-                val totals = remember(sessions) { verdictTotals(sessions) }
+                val totals = remember(sessions) { SessionInsights.verdicts(sessions) }
                 ChartCard("Every rep you have ever done", subtitle = "How the referee graded them") {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                         DonutChart(
@@ -166,28 +167,5 @@ fun NavGraphBuilder.historyRoutes(graph: AppGraph, nav: NavHostController) {
     composable<com.clashfit.ui.nav.History> { HistoryScreen(graph, nav) }
 }
 
-private data class VerdictTotals(val clean: Int, val ok: Int, val shallow: Int) {
-    val total: Int get() = clean + ok + shallow
-}
 
-/**
- * Rep verdicts across every session. The per-rep rows are compacted away for older sessions, so
- * this estimates from each session's mean form rather than pretending to count rows that are gone.
- */
-private fun verdictTotals(sessions: List<SessionEntity>): VerdictTotals {
-    var clean = 0
-    var ok = 0
-    var shallow = 0
-    sessions.forEach { s ->
-        val f = s.formMean.coerceIn(0f, 1f)
-        // The same thresholds the rep scorer uses to name a verdict.
-        val cleanShare = ((f - 0.55f) / 0.45f).coerceIn(0f, 1f)
-        val shallowShare = ((0.55f - f) / 0.55f).coerceIn(0f, 1f)
-        val c = (s.totalReps * cleanShare).toInt()
-        val sh = (s.totalReps * shallowShare).toInt()
-        clean += c
-        shallow += sh
-        ok += (s.totalReps - c - sh).coerceAtLeast(0)
-    }
-    return VerdictTotals(clean, ok, shallow)
-}
+

@@ -43,6 +43,8 @@ import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.math.sin
 import kotlin.random.Random
+import com.clashfit.ui.nav.Compete
+import com.clashfit.ui.screens.social.CompeteScreen
 
 /**
  * The data screens, with a database that has something in it.
@@ -147,4 +149,5 @@ class SeededScreenshotTest {
     @Test fun historyWithData() = shot("32-seeded-history", History) { HistoryScreen(graph, it) }
     @Test fun characterWithData() = shot("33-seeded-character", Character) { CharacterScreen(graph, it) }
     @Test fun youWithData() = shot("34-seeded-you", You) { YouScreen(graph, it) }
+    @Test fun competeWithData() = shot("35-seeded-compete", Compete) { CompeteScreen(graph, it) }
 }

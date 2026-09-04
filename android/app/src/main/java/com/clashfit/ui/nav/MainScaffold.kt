@@ -32,8 +32,12 @@ import com.clashfit.ui.theme.Panel
 import kotlin.reflect.KClass
 
 /**
- * The four top-level destinations. Every other screen belongs to exactly one of them, which is
+ * The five top-level destinations. Every other screen belongs to exactly one of them, which is
  * how the bar knows which tab to light when you are three screens deep.
+ *
+ * Compete was promoted out of the profile page. Leaderboards, friends, badges and challenges sat
+ * halfway down a scroll between your stats and the privacy policy, which put "race your friends"
+ * in the same list as "what version is this". It is half the game and it gets its own door.
  */
 enum class Tab(val label: String, val icon: ImageVector, val root: Route, val owns: Set<KClass<out Route>>) {
     TRAIN(
@@ -49,13 +53,17 @@ enum class Tab(val label: String, val icon: ImageVector, val root: Route, val ow
         "Progress", AppIcons.Chart, Progress,
         setOf(Progress::class, Streaks::class, History::class, Character::class, Ghosts::class),
     ),
+    COMPETE(
+        "Compete", AppIcons.Trophy, Compete,
+        setOf(Compete::class, Leaderboard::class, Friends::class, Achievements::class,
+            Weekly::class, Challenge::class),
+    ),
     YOU(
         "You", AppIcons.Person, You,
-        setOf(You::class, Settings::class, Privacy::class, Preflight::class, Challenge::class,
+        setOf(You::class, Settings::class, Privacy::class, Preflight::class,
             RunHome::class, RunActive::class, RunSummary::class, Alarms::class, AlarmEdit::class,
             Breathing::class, Posture::class, Desk::class, Clinic::class,
-            Leaderboard::class, Friends::class, Achievements::class, Account::class, Weekly::class,
-            About::class, Help::class),
+            Account::class, About::class, Help::class, BossPreview::class),
     );
 
     companion object {

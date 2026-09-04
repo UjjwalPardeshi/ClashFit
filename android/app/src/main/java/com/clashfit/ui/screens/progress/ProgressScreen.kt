@@ -43,6 +43,20 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
+import com.clashfit.ui.theme.Shallow
+import com.clashfit.ui.theme.Ok
+import com.clashfit.ui.theme.Ember
+import com.clashfit.ui.theme.Clean
+import com.clashfit.ui.screens.character.Domain
+import com.clashfit.ui.screens.character.CharacterStats
+import com.clashfit.ui.insight.SessionInsights
+import com.clashfit.ui.components.TrendLine
+import com.clashfit.ui.components.RadarChart
+import com.clashfit.ui.components.DonutChart
+import com.clashfit.ui.components.ChartLegend
+import com.clashfit.ui.components.ChartCard
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
 
 /** The Progress tab: the week at a glance, the streak, and the way into every record. */
 @Composable
@@ -53,6 +67,7 @@ fun ProgressScreen(graph: AppGraph, nav: NavHostController) {
     val streak by streakFlow.collectAsStateWithLifecycle(initialValue = null)
     val sessionCount by countFlow.collectAsStateWithLifecycle(initialValue = 0)
     val sessions by sessionsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
+    val exercises by graph.config.exercises.collectAsStateWithLifecycle()
 
     val zone = remember { ZoneId.systemDefault() }
     val week = remember(sessions) { lastSevenDays(sessions, zone) }
@@ -113,13 +128,88 @@ fun ProgressScreen(graph: AppGraph, nav: NavHostController) {
                 )
             }
 
+            // The charts, on the page rather than behind a list. They are the most convincing
+            // thing the app has — proof that every rep was actually measured — and they used to
+            // take two taps to reach, which meant most people never saw them at all. Each card
+            // opens the full screen.
+            if (sessionCount > 0) {
+                val trend = remember(sessions) { SessionInsights.formTrend(sessions) }
+                val verdicts = remember(sessions) { SessionInsights.verdicts(sessions) }
+                val sheet = remember(sessions, streak, exercises) {
+                    CharacterStats.compute(sessions, streak, exercises)
+                }
+
+                SectionGap(22)
+                ChartCard(
+                    "Form, last ${trend.size} sessions",
+                    subtitle = "The dashed line is your average. Tap for every session.",
+                    modifier = Modifier.clickable { nav.navigate(History) },
+                ) {
+                    TrendLine(
+                        points = trend,
+                        marker = remember(trend) { SessionInsights.average(trend) },
+                        height = 120,
+                        description = remember(trend) {
+                            val avg = SessionInsights.average(trend)
+                            if (avg == null) "No sessions yet"
+                            else "Form trend, average ${(avg * 100).toInt()} percent"
+                        },
+                    )
+                }
+
+                SectionGap(16)
+                ChartCard(
+                    "Every rep, graded",
+                    subtitle = "Clean, ok or shallow. Tap for the full history.",
+                    modifier = Modifier.clickable { nav.navigate(History) },
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    ) {
+                        DonutChart(
+                            parts = listOf(Clean to verdicts.clean, Ok to verdicts.ok, Shallow to verdicts.shallow),
+                            size = 120,
+                            description = "${verdicts.clean} clean, ${verdicts.ok} ok, ${verdicts.shallow} shallow",
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("${verdicts.total}", style = MaterialTheme.typography.titleLarge, color = Ink)
+                                Text("REPS", style = MaterialTheme.typography.labelSmall, color = InkMuted)
+                            }
+                        }
+                        ChartLegend(
+                            listOf(
+                                Triple(Clean, "Clean", "${verdicts.clean}"),
+                                Triple(Ok, "Ok", "${verdicts.ok}"),
+                                Triple(Shallow, "Shallow", "${verdicts.shallow}"),
+                            ),
+                        )
+                    }
+                }
+
+                SectionGap(16)
+                ChartCard(
+                    "Your shape",
+                    subtitle = "Seven domains, earned from measured movement. Tap for the detail.",
+                    modifier = Modifier.clickable { nav.navigate(Character) },
+                ) {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        RadarChart(
+                            stats = Domain.entries.map { it.short to sheet.value(it) / 100f },
+                            size = 240,
+                            color = Ember,
+                        )
+                    }
+                }
+            }
+
             SectionGap(24)
             SectionTitle("Records")
             SectionGap(10)
             ListGroup {
                 NavRow("Streak", { nav.navigate(Streaks) }, icon = AppIcons.Chart, supporting = "The calendar, freezes and rest days")
                 InnerDivider()
-                NavRow("History", { nav.navigate(History) }, icon = AppIcons.Grid, value = "$sessionCount")
+                NavRow("History", { nav.navigate(History) }, icon = AppIcons.Grid, value = "$sessionCount", supporting = "Every session, newest first")
                 InnerDivider()
                 NavRow("Character", { nav.navigate(Character) }, icon = AppIcons.Person, supporting = "What the sets have built")
                 InnerDivider()

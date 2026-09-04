@@ -20,6 +20,7 @@ sealed interface Route
 @Serializable data object Library : Route
 @Serializable data object Progress : Route
 @Serializable data object You : Route
+@Serializable data object Compete : Route
 
 // ── social and progression ───────────────────────────────────────────────────
 @Serializable data object Leaderboard : Route
