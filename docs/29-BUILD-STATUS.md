@@ -2,7 +2,7 @@
 
 What is built and verified, what is deliberately event-only, and what is genuinely still open.
 
-**Last updated:** 4 Sep 2026 · Android app shipping · 519 tests passing · 51 exercises · 16 modes · 40 screenshot baselines · 152 commits
+**Last updated:** 4 Sep 2026 · Android app shipping · 537 tests passing · 51 exercises · 16 modes · 52 screenshot baselines · 160 commits
 
 ---
 
@@ -43,7 +43,10 @@ What is built and verified, what is deliberately event-only, and what is genuine
 | **XP, levels and ranks** — earned from measured reps, never from opening the app | ✅ | [23](23-META-PROGRESSION.md) |
 | **Badges** — 18 achievements across bronze, silver and gold | ✅ | [23](23-META-PROGRESSION.md) |
 | **Weekly challenge** — one target a week, same for everyone, resets on Monday | ✅ | [23](23-META-PROGRESSION.md) |
-| **The Pacemaker** — six animated states, drawn in Compose, no bitmap to ship | ✅ | [15](15-ASSET-BRIEF.md) §1 |
+| **The Pacemaker** — a rigged glTF model, five clips, rendered by Filament over the camera | ✅ | [15](15-ASSET-BRIEF.md) §1 |
+| **Boss fallback** — the Compose-drawn boss, same six states, if the renderer will not start | ✅ | [15](15-ASSET-BRIEF.md) §1 |
+| **Exo-suit overlay** — the player on full-screen camera with armour drawn from the landmarks | ✅ | [03](03-UI-UX-SPEC.md) |
+| **Game feel** — damage-weighted shake, impact sparks, crit stamp, combo fire, staged rewards | ✅ | [04](04-GAME-DESIGN.md) |
 | **Character sheet** — seven health domains on a radar, two honestly marked unmeasured | ✅ | [22](22-HEALTH-DOMAINS.md) §1 |
 | **Charts** — trend, bar, stacked, heatmap, radar and donut, all drawn on a Canvas | ✅ | [03](03-UI-UX-SPEC.md) |
 | **About and How to play** — the vocabulary of a fight, explained for a stranger | ✅ | [03](03-UI-UX-SPEC.md) |

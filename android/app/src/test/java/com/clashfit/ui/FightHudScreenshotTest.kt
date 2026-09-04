@@ -50,6 +50,7 @@ import com.clashfit.meta.MetaState
 import com.clashfit.meta.WeeklyChallenge
 import com.clashfit.meta.WeeklyProgress
 import com.clashfit.ui.screens.session.RankChip
+import com.clashfit.ui.screens.session.LinkStripPreview
 
 /**
  * The fight, rendered without a camera.
@@ -172,6 +173,25 @@ class FightHudScreenshotTest {
         "53-fight-staggered", combat(hp = 180, phase = "desperation", combo = 2.4f, streak = 9, staggered = true, damage = 1020),
         FatigueBand.FADING, reps = 31, cue = "Staggered. Hit it now.",
     )
+
+    /** A duel: the rope, with you ahead. */
+    @Test fun duelAhead() {
+        compose.setContent {
+            ClashFitTheme {
+                Box(Modifier.fillMaxSize().background(Ground), contentAlignment = Alignment.Center) {
+                    Column(Modifier.padding(16.dp)) {
+                        LinkStripPreview(myDamage = 640, theirDamage = 415)
+                        Spacer(Modifier.height(24.dp))
+                        LinkStripPreview(myDamage = 380, theirDamage = 902)
+                        Spacer(Modifier.height(24.dp))
+                        LinkStripPreview(myDamage = 0, theirDamage = 0)
+                    }
+                }
+            }
+        }
+        repeat(3) { Thread.sleep(200); compose.waitForIdle() }
+        compose.onRoot().captureRoboImage("screenshots/55-duel-rope.png")
+    }
 
     /** A timed mode, so the clock is in frame beside the health bar. */
     @Test fun timed() = shot(
