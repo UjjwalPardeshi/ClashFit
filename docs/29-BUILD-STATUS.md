@@ -2,7 +2,7 @@
 
 What is built and verified, what is deliberately event-only, and what is genuinely still open.
 
-**Last updated:** 5 Sep 2026 · Android app shipping · 556 tests passing · 51 exercises · 16 modes · 60 screenshot baselines · 180 commits
+**Last updated:** 5 Sep 2026 · Android app shipping · 580 tests passing · 51 exercises · 16 modes · 72 screenshot baselines · 190 commits
 
 ---
 
@@ -52,7 +52,8 @@ What is built and verified, what is deliberately event-only, and what is genuine
 | **Character sheet** — seven health domains on a radar, two honestly marked unmeasured | ✅ | [22](22-HEALTH-DOMAINS.md) §1 |
 | **Charts** — trend, bar, stacked, heatmap, radar and donut, all drawn on a Canvas | ✅ | [03](03-UI-UX-SPEC.md) |
 | **About and How to play** — the vocabulary of a fight, explained for a stranger | ✅ | [03](03-UI-UX-SPEC.md) |
-| **Screenshot suite** — 40 baselines rendered on the JVM, no phone needed to review the UI | ✅ | [14](14-TEST-PLAN.md) |
+| **Screenshot suite** — 72 baselines rendered on the JVM, no phone needed to review the UI | ✅ | [14](14-TEST-PLAN.md) |
+| **Baseline profile** — the startup path, the component kit and the fight loop compiled ahead of time | ✅ | `app/src/main/baseline-prof.txt` |
 
 ---
 
@@ -91,6 +92,8 @@ None of these can exist outside the venue. All are specified and their seams are
 
 Every one of these would have surfaced at hour 20 instead. This is the argument for the suite.
 
+Numbers 16 to 35 came from adversarial audit passes run against the code after it was written, each finding verified against the source before it was believed. Several of them — the alignment sample, the occluded joints, the blind pause score — were quietly wrong in the measurement layer, which is the part of this that has to be right for any of the rest to mean anything.
+
 | # | Bug | Consequence if shipped |
 |---|---|---|
 | 1 | `bottomEnter` too close to `targetAngle` | Depth scored ~0.9 for every counted rep — the sub-score discriminated nothing |
@@ -108,6 +111,26 @@ Every one of these would have surfaced at hour 20 instead. This is the argument 
 | 13 | A deck CSS class used but never defined | The shallow-rep number would have rendered plain beside its coloured counterpart |
 | 14 | **Calibration required stillness, not visibility** | Took 27s on a real trace and ate 6 of 13 reps — and the fatigue baseline was then computed from an already-degraded part of the set, silently corrupting the one thing we uniquely measure |
 | 15 | Tuning harness generated inverted hysteresis | Proposed `topExit` above `topEnter`, and would have "recommended" nonsense |
+| 16 | Alignment sampled with the legs straight | Measured at the top of the rep, where every body is aligned, so the sub-score was near-perfect for everyone and graded nothing |
+| 17 | Occluded joints scored as visible | `presence()` reads whether a landmark exists, not whether it can be seen; a knee behind a thigh was scored as confidently as one in clear view |
+| 18 | The pause sub-score was blind to a bounce | Scored 1.0 for any rep that reached the bottom, so bouncing out of the hole graded the same as holding it |
+| 19 | `awaitClose` inside a nested `collect` | Friends screen crashed on open — the handle must be registered in the producer scope |
+| 20 | Friends queried `whereIn("uid", …)` | The uid *is* the document id, so the query matched nobody and the list was always empty |
+| 21 | Duel sequence maps not cleared on timeout | A player who reconnected had every message rejected as stale |
+| 22 | `RouteTrace` never called after the run ended | The map drawn for the whole run vanished at the finish line, under a caption promising the route was on the phone |
+| 23 | `splitsJson` parsed as a bare list | Bracketed JSON would silently drop the first and last split and renumber the rest — five kilometres reported as three |
+| 24 | Text-to-speech caught its own cancellation and restarted | Leaving a fight did not stop the coach, it made the phone finish reading the queue to an empty room |
+| 25 | Twenty more catch-alls swallowing `CancellationException` | Cancelled work in auth, the cloud friends list and both pose sources carried on running for nobody |
+| 26 | Breathing had no way back out | Reached from Train with no top bar, no bottom bar and no arrow, on a phone with gestures off it was a dead end |
+| 27 | The one-phone roster had the same dead end | The only exit was to start a game you had changed your mind about |
+| 28 | Seven days of a week in a three-by-three grid | New alarm stranded Sunday alone across a full-width row |
+| 29 | The rep-cycle family mark was the letter C | The break in the ring sat on the right, so the library showed a column of nine identical Cs |
+| 30 | Raw enum ids printed at people | "BOSS_FIGHT" and "TIME_ATTACK" on the screen that introduces a movement |
+| 31 | Radar axes reduced to three-letter codes | The web left twelve pixels of clearance, so seven health domains read as PWR, STA, NUT — a chart that needs a decoder |
+| 32 | The profile said the rank twice | "Recruit" beside the emblem and "Level 1 · Recruit" on the bar directly beneath it |
+| 33 | `AppCard` lost its button semantics | The hand-rolled rewrite dropped `Role.Button` from every card in the app — invisible to sight, total to a screen reader |
+| 34 | The crash log raced itself | Two threads crashing at once, and the second write erased the first |
+| 35 | "Leaderboard" broke across two lines at 1.5x text | The tab a judge is told to open, mid-word, on every screen |
 
 ---
 
@@ -118,8 +141,8 @@ The Android app:
 ```bash
 cd android
 ./gradlew :app:installDebug          # onto a connected phone
-./gradlew :app:testDebugUnitTest     # 556 tests, no phone needed
-./gradlew :app:recordRoborazziDebug  # re-render the 60 screenshot baselines
+./gradlew :app:testDebugUnitTest     # 580 tests, no phone needed
+./gradlew :app:recordRoborazziDebug  # re-render the 72 screenshot baselines
 ```
 
 Firebase keys live in `android/local.properties`, which is git-ignored. `android/README.md`
