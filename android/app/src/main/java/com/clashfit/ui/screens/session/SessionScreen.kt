@@ -64,6 +64,8 @@ import com.clashfit.data.Prefs
 import kotlinx.coroutines.flow.MutableStateFlow
 import com.clashfit.ui.theme.Heavy
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.layout.BoxScope
 
 /**
  * One screen for the whole fight. The engine's phase decides what is drawn: calibration guide,
@@ -132,6 +134,7 @@ fun SessionScreen(
                 // Full frame from the first second. Getting your whole body in shot is the thing
                 // calibration is asking for, and it is very hard to do against a corner inset.
                 CameraStage(camera, Modifier.fillMaxSize())
+                CameraScrims(top = 0f, bottom = 0.28f)
                 ExoRig(
                     landmarks, s.fatigue.band, 0f, null, Modifier.fillMaxSize(),
                     level = meta?.progress?.level ?: 1, sourceAspect = sourceAspect,
@@ -185,6 +188,7 @@ private fun FightLayout(
         // it: the same landmarks the scorer reads, drawn on your own body as armour that lights up
         // when a rep lands clean and changes colour as you tire.
         CameraStage(camera, Modifier.fillMaxSize())
+        CameraScrims()
         ExoRig(
             landmarks, s.fatigue.band, jolt, lastHit?.verdict, Modifier.fillMaxSize(),
             level = meta?.progress?.level ?: 1, sourceAspect = sourceAspect,
@@ -317,5 +321,29 @@ private fun ExitCorner(onExit: () -> Unit) {
         IconButton(onExit, Modifier.align(Alignment.TopStart).size(48.dp)) {
             Icon(AppIcons.Close, contentDescription = "Back", tint = Ink)
         }
+    }
+}
+
+/**
+ * A dark wash at the top and bottom of the camera, behind the text.
+ *
+ * Every number on this HUD was designed to sit on a near-black background. It now sits on a live
+ * picture of whatever room you are in, and a white health bar over a sunlit wall is unreadable at
+ * the two metres this screen is meant to be read from. These darken only the bands the text
+ * occupies and leave the middle — where your body is — untouched.
+ */
+@Composable
+private fun BoxScope.CameraScrims(top: Float = 0.30f, bottom: Float = 0.34f) {
+    if (top > 0f) {
+        Box(
+            Modifier.align(Alignment.TopCenter).fillMaxWidth().fillMaxHeight(top)
+                .background(Brush.verticalGradient(listOf(Ground.copy(alpha = 0.82f), Ground.copy(alpha = 0f)))),
+        )
+    }
+    if (bottom > 0f) {
+        Box(
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth().fillMaxHeight(bottom)
+                .background(Brush.verticalGradient(listOf(Ground.copy(alpha = 0f), Ground.copy(alpha = 0.88f)))),
+        )
     }
 }
