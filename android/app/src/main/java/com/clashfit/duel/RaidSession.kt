@@ -47,6 +47,9 @@ class RaidSession(
 
     // Player tracking
     private val playerStates = mutableMapOf<String, PlayerRaidState>()
+    /** The highest sequence seen per player, so a late packet cannot rewind their snapshot. */
+    private val newestSeq = mutableMapOf<String, Int>()
+
     private val appliedDamage = mutableMapOf<String, MutableSet<Int>>()  // playerId -> set of applied seqs
     private val playerLastSeenMs = mutableMapOf<String, Long>()  // Track last message from each player
     private var lastBeatMs = 0L  // Track last heartbeat send
@@ -177,7 +180,8 @@ class RaidSession(
                     PlayerRaidState(msg.playerId, msg.name)
                 }
 
-                // Apply damage if not already applied
+                // Damage accumulates, so it is deduplicated by sequence: applying the same
+                // packet twice would invent damage nobody did.
                 val seqs = appliedDamage.getOrPut(msg.playerId) { mutableSetOf() }
                 if (msg.seq !in seqs) {
                     seqs.add(msg.seq)
@@ -185,9 +189,16 @@ class RaidSession(
                     onRemote(msg.playerId, msg.seq, msg.damage)
                 }
 
-                // Update player info
-                playerState.reps = msg.reps
-                playerState.fatigueBand = msg.fatigueBand
+                // Reps and fatigue are a snapshot, not an increment, so only a NEWER packet may
+                // replace them. These used to be written by every message that arrived, including
+                // one delayed behind a later one — which made the board count backwards and the
+                // fatigue band flick to a state the player had already left.
+                val newest = newestSeq[msg.playerId] ?: Int.MIN_VALUE
+                if (msg.seq > newest) {
+                    newestSeq[msg.playerId] = msg.seq
+                    playerState.reps = msg.reps
+                    playerState.fatigueBand = msg.fatigueBand
+                }
                 updateLeaderboard()
             }
 

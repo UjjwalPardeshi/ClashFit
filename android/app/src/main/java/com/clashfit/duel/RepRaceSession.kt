@@ -47,6 +47,9 @@ class RepRaceSession(
 
     // Player tracking
     private val playerReps = mutableMapOf<String, Int>()  // playerId -> reps count
+    /** The highest sequence applied per player; an older packet is dropped, not applied. */
+    private val playerNewestSeq = mutableMapOf<String, Int>()
+
     private val playerSeqs = mutableMapOf<String, MutableSet<Int>>()  // dedupe by seq
     private val playerLastSeenMs = mutableMapOf<String, Long>()  // Track last message from each player
     private var lastBeatMs = 0L  // Track last heartbeat send
@@ -178,9 +181,15 @@ class RepRaceSession(
             DuelMessage.REP -> {
                 if (msg.playerId == playerId) return  // Ignore self-rep messages
 
+                // A rep count is a snapshot, so the newest packet wins rather than the first
+                // unseen one. Tracking "have I seen this sequence" let a packet delayed behind a
+                // later one overwrite the newer count with an older number, and the opponent's
+                // reps visibly counted down.
                 val seqs = playerSeqs.getOrPut(msg.playerId) { mutableSetOf() }
-                if (msg.seq !in seqs) {
+                val newest = playerNewestSeq[msg.playerId] ?: Int.MIN_VALUE
+                if (msg.seq !in seqs && msg.seq > newest) {
                     seqs.add(msg.seq)
+                    playerNewestSeq[msg.playerId] = msg.seq
                     playerReps[msg.playerId] = msg.reps
                     updateStandings()
                 }

@@ -30,7 +30,11 @@ object FormScorer {
     /** Tempo: reward controlled eccentric and real pause, punish bouncing. */
     fun tempo(event: RepEvent, eccentricTargetSec: Float = 0.35f, pauseTargetSec: Float = 0.12f): Float {
         val tEcc = if (event.tEccSec >= eccentricTargetSec) 1f else event.tEccSec / eccentricTargetSec
-        val tPause = if (event.tBottomSec >= pauseTargetSec) 1f else 0.6f
+        // Scaled, not a flat 0.6. A pause below target used to score the same whether it was a
+        // tenth of a second or none at all, which made this sub-score blind precisely where
+        // bouncing lives. The eccentric term next to it always scaled; this one now matches.
+        val tPause = if (event.tBottomSec >= pauseTargetSec) 1f
+        else (event.tBottomSec / pauseTargetSec).coerceIn(0f, 1f)
         return clamp01(0.7f * tEcc + 0.3f * tPause)
     }
 

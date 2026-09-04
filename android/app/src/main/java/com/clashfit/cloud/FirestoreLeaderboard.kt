@@ -9,6 +9,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.CancellationException
@@ -100,30 +101,50 @@ class FirestoreLeaderboard(
         awaitClose { listener.remove() }
     }
 
+    /**
+     * The friends board, live, for whoever is signed in *now*.
+     *
+     * This used to read `auth.state.value` once, at collection time, and hold that uid in a
+     * closure for the life of the flow. Sign out, sign in as somebody else, and the listener went
+     * on watching the previous account's friends collection while presenting the result as the new
+     * player's board. Following the auth state instead means a sign-out empties the board and a
+     * sign-in rebuilds it against the right account.
+     */
     override fun friends(board: Board): Flow<List<LeaderboardEntry>> = callbackFlow {
-        val me = (auth.state.value as? AuthState.SignedIn)?.user?.uid
-        if (me == null) {
-            trySend(emptyList())
-            awaitClose { }
-            return@callbackFlow
+        var listener: ListenerRegistration? = null
+
+        val job = launch {
+            auth.state.collect { state ->
+                listener?.remove()
+                listener = null
+
+                val me = (state as? AuthState.SignedIn)?.user?.uid
+                if (me == null) {
+                    trySend(emptyList())
+                    return@collect
+                }
+
+                listener = firestore.collection("users").document(me).collection("friends")
+                    .addSnapshotListener { snapshot, error ->
+                        if (error != null) {
+                            trySend(emptyList())
+                            return@addSnapshotListener
+                        }
+                        val uids = (snapshot?.documents.orEmpty().map { it.id } + me).distinct()
+                        // On this flow's own scope, not the application scope: on the application
+                        // scope the fetch outlived the screen that wanted it, and two quick
+                        // friend-list changes could land out of order and show a stale board.
+                        launch {
+                            trySend(runCatching { standingsFor(uids, board, me) }.getOrDefault(emptyList()))
+                        }
+                    }
+            }
         }
 
-        // Watch the friend list; refetch their standings whenever it changes.
-        val listener = firestore.collection("users").document(me).collection("friends")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(emptyList())
-                    return@addSnapshotListener
-                }
-                val uids = (snapshot?.documents.orEmpty().map { it.id } + me).distinct()
-                // Launched on this flow's own scope, not the application scope. On the application
-                // scope the fetch outlived the screen that wanted it, and two quick friend-list
-                // changes could land out of order and show a stale board.
-                launch {
-                    trySend(runCatching { standingsFor(uids, board, me) }.getOrDefault(emptyList()))
-                }
-            }
-        awaitClose { listener.remove() }
+        awaitClose {
+            job.cancel()
+            listener?.remove()
+        }
     }
 
     /**

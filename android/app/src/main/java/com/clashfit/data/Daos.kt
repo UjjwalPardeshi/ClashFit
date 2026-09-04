@@ -52,7 +52,10 @@ interface SessionDao {
     @Query("SELECT * FROM sessions WHERE endedAtMs IS NOT NULL ORDER BY startedAtMs DESC LIMIT 1") suspend fun last(): SessionEntity?
 
     /** Older sessions keep their aggregates but drop per-rep telemetry, so a phone never fills up. */
-    @Query("DELETE FROM reps WHERE sessionId NOT IN (SELECT id FROM sessions ORDER BY startedAtMs DESC LIMIT :keepFull)")
+    // id DESC breaks ties on startedAtMs. Two sessions can share a millisecond, and without a
+    // second key SQLite is free to pick either — so which one kept its per-rep telemetry was
+    // decided by nothing in particular.
+    @Query("DELETE FROM reps WHERE sessionId NOT IN (SELECT id FROM sessions ORDER BY startedAtMs DESC, id DESC LIMIT :keepFull)")
     suspend fun compact(keepFull: Int = 20)
 
     @Transaction

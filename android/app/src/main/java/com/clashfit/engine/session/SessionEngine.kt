@@ -450,6 +450,10 @@ class SessionEngine(
         topRef?.let { fsm?.setTopRef(it) }
         detector?.reset()
         asymmetryTracker.reset()
+        // The filter too. Everything else that carries state across a rep was reset above, and
+        // leaving this one holding the previous set's last sample and timestamp means the first
+        // frame after a rest is blended with wherever you were standing when the last set ended.
+        filter.reset()
         phase = Phase.FIGHTING
     }
 

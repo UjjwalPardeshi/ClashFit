@@ -328,9 +328,7 @@
       "name": "Breathing",
       "family": "CADENCE",
       "difficulty": 1,
-      "games": [
-        "RECOVERY"
-      ],
+      "games": [],
       "tags": [
         "mindfulness",
         "recovery",

@@ -79,11 +79,12 @@ class RoomMetaRepository(private val db: ClashDb, private val clock: Clock) : Me
 
             // The weekly target. Damage, clean reps and sessions accumulate across the week;
             // a streak length is a high-water mark, so it is a max and never a sum.
+            // Through XpRules, which is the one place that knows casual damage does not count.
+            // This used to add facts.damage directly, so the weekly bar moved on a casual session
+            // while the XP for it did not — the same session, two answers.
             val weeklyValue = when (challenge.metric) {
-                Metric.DAMAGE -> weeklyBefore.value + facts.damage
-                Metric.CLEAN_REPS -> weeklyBefore.value + facts.cleanReps
-                Metric.SESSIONS -> weeklyBefore.value + 1
                 Metric.STREAK_DAYS -> maxOf(weeklyBefore.value, facts.streakAfter)
+                else -> weeklyBefore.value + XpRules.factsValue(challenge.metric, facts)
             }
             val completedNow = if (!weeklyBefore.done && weeklyValue >= challenge.target) now else null
             val weeklyAfter = WeeklyProgress(challenge, weeklyValue, completedNow ?: weeklyBefore.completedAtMs)

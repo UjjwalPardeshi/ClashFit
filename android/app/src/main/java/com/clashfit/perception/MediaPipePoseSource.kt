@@ -310,7 +310,13 @@ class MediaPipePoseSource(
                         x = lm.x(),
                         y = lm.y(),
                         z = lm.z(),
-                        visibility = lm.presence().orElse(1f)
+                        // visibility(), not presence(). MediaPipe's presence says the joint is in
+                        // frame; visibility says it is also not hidden behind something. These
+                        // world landmarks are what the scorer measures angles from, and the pose
+                        // spec gates a frame on visibility for exactly this reason: a wrist behind
+                        // your back is present and invisible, and using it computes an elbow angle
+                        // from a guess.
+                        visibility = lm.visibility().orElse(1f),
                     )
                 }
                 if (lms.size == 33) lms else null

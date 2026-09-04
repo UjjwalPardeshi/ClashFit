@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.room.withTransaction
 
 data class SessionArgs(
     val mode: GameMode,
@@ -305,7 +306,14 @@ class SessionViewModel(
         val formMean = if (all.isEmpty()) 0f else all.map { it.formScore }.average().toFloat()
         val last = all.lastOrNull()
         val dao = graph.db.sessions()
+        // One transaction for the whole session.
+        //
+        // The insert, every set with its reps, and the compaction used to be separate writes. A
+        // crash or a kill between them left a session row with some of its sets and none of its
+        // reps — a session that says 31 reps and can show you none of them, which is worse than no
+        // session at all because it looks like data.
         val id = withContext(Dispatchers.IO) {
+            graph.db.withTransaction {
             val sessionId = dao.insertSession(SessionEntity(
                 startedAtMs = startedAtMs, endedAtMs = now, mode = args.mode.name, exerciseId = args.exerciseId,
                 bossId = s.combat.bossId, outcome = reason.name, totalDamage = s.playerDamage, totalReps = all.size,
@@ -328,6 +336,7 @@ class SessionViewModel(
             }
             dao.compact()
             sessionId
+            }
         }
         Log.i(TAG, "session $id saved: ${all.size} reps, ${s.playerDamage} damage, $reason")
         bank(id, all, formMean, now, s.playerDamage, reason, startedAtMs)

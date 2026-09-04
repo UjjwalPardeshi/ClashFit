@@ -52,6 +52,7 @@ class NearbyTransport(
 
     // Track connected endpoints and their IDs
     private val connectedEndpoints = mutableSetOf<String>()
+    /** Catch-up for a guest who joins after the host has already announced something. */
     private val outgoingQueue = mutableListOf<DuelMessage>()
     private var roomName = ""
     private var isClosed = false
@@ -90,11 +91,17 @@ class NearbyTransport(
                     Log.d(TAG, "Connected to $endpointId")
                     connectedEndpoints.add(endpointId)
                     updateState()
-                    // Flush queued messages
+                    // Flush the backlog to whoever just arrived, and keep it.
+                    //
+                    // This used to clear the queue after the first endpoint connected. In a star
+                    // topology the host can have several guests, and every guest after the first
+                    // joined an empty backlog — they missed the mode, the exercise and the clock
+                    // the host had already announced, and started a different match from everybody
+                    // else. The queue is a joining player's catch-up, so it belongs to the session
+                    // rather than to the first connection.
                     for (msg in outgoingQueue) {
                         sendRaw(endpointId, msg)
                     }
-                    outgoingQueue.clear()
                 }
 
                 else -> {
@@ -161,7 +168,11 @@ class NearbyTransport(
 
     override fun send(msg: DuelMessage) {
         if (connectedEndpoints.isEmpty()) {
+            // Bounded, oldest dropped first. The queue exists so a guest who joins late catches
+            // up, and a catch-up only needs the recent past; without a cap a lobby left open with
+            // nobody in it would grow it forever.
             outgoingQueue.add(msg)
+            while (outgoingQueue.size > MAX_QUEUED) outgoingQueue.removeAt(0)
             return
         }
 
@@ -172,6 +183,7 @@ class NearbyTransport(
 
     override fun close() {
         if (isClosed) return
+        outgoingQueue.clear()
         isClosed = true
 
         client.stopAdvertising()
@@ -205,3 +217,6 @@ class NearbyTransport(
         }
     }
 }
+
+/** How much backlog a late guest is worth. Beyond this the oldest is dropped. */
+private const val MAX_QUEUED = 64

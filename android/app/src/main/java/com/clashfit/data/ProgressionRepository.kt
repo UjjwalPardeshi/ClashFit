@@ -6,6 +6,7 @@ import com.clashfit.engine.summary.PersonalBests
 import com.clashfit.engine.summary.Progression
 import com.clashfit.engine.summary.StreakState
 import kotlinx.coroutines.flow.first
+import androidx.room.withTransaction
 
 /**
  * Streaks, personal bests and ladders live in Room; the rules live in the pure [Progression]
@@ -62,12 +63,21 @@ class ProgressionRepository(private val db: ClashDb) {
         return Outcome(p.getStreak(), newBests, ladder)
     }
 
+    /**
+     * Streak, bests and ladder, written together or not at all.
+     *
+     * These were three sequential upserts. A crash between the first and the second left a streak
+     * that had advanced past a personal best that had not been recorded — two rows describing
+     * different sessions, and no way afterwards to tell which one was right.
+     */
     private suspend fun save(p: Progression, exerciseId: String, ladderId: String?) {
-        val s = p.getStreak()
-        db.streak().upsert(StreakEntity(1, s.current, s.best, s.lastDayKey, s.freezes, s.restDaysUsedThisWeek, s.weekKey))
-        val b = p.getBests(exerciseId)
-        db.bests().upsert(PersonalBestEntity(exerciseId, b.reps ?: 0, b.formScore ?: 0f, b.depthCm, b.heightCm, b.holdSec))
-        if (ladderId != null) p.getLadder(ladderId)?.let { db.ladders().upsert(LadderEntity(ladderId, it)) }
+        db.withTransaction {
+            val s = p.getStreak()
+            db.streak().upsert(StreakEntity(1, s.current, s.best, s.lastDayKey, s.freezes, s.restDaysUsedThisWeek, s.weekKey))
+            val b = p.getBests(exerciseId)
+            db.bests().upsert(PersonalBestEntity(exerciseId, b.reps ?: 0, b.formScore ?: 0f, b.depthCm, b.heightCm, b.holdSec))
+            if (ladderId != null) p.getLadder(ladderId)?.let { db.ladders().upsert(LadderEntity(ladderId, it)) }
+        }
     }
 
     private companion object {

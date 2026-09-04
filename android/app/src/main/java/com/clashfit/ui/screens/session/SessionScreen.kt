@@ -89,8 +89,11 @@ fun SessionScreen(
     // the fight has to work with either.
     val camera = deps.pose as? CameraPreviewSource
     // Null until the first camera frame; the rig falls back to stretching until then.
-    val sourceAspect by (camera?.sourceAspect ?: MutableStateFlow(null))
-        .collectAsStateWithLifecycle(initialValue = null)
+    // remember-ed on the camera. Without it, a source-less run built a new MutableStateFlow every
+    // recomposition and re-subscribed to it, which is a fresh collector per frame for the whole
+    // session.
+    val aspectFlow = remember(camera) { camera?.sourceAspect ?: MutableStateFlow(null) }
+    val sourceAspect by aspectFlow.collectAsStateWithLifecycle(initialValue = null)
     // Your rank and this week's target, live, in the fight rather than on a profile page.
     val meta by graph.meta.state.collectAsStateWithLifecycle(initialValue = null)
     val settings by graph.prefs.settings.collectAsStateWithLifecycle(initialValue = Prefs.Settings())
