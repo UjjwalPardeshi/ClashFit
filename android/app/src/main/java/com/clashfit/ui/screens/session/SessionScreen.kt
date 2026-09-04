@@ -129,7 +129,9 @@ private fun FightLayout(
         DamageNumeral(lastHit, Modifier.align(Alignment.Center).padding(bottom = 60.dp))
 
         Column(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)) {
-            if (!prone) BossHeader(s.combat, timeLeftMs = s.timeLeftMs)
+            // Clear of the pause target, which is a 72dp square pinned to the top-left with 12dp
+            // of padding and drawn after this. Without the inset it sat on top of the boss's name.
+            if (!prone) BossHeader(s.combat, Modifier.padding(start = PAUSE_TARGET_INSET), timeLeftMs = s.timeLeftMs)
             link?.let { l -> Spacer(Modifier.height(8.dp)); LinkStrip(l, myReps = s.reps, myDamage = s.playerDamage) }
             Spacer(Modifier.weight(1f))
             if (s.phase == Phase.FRAMING_LOST) { FramingLostBanner(s.cue); Spacer(Modifier.height(12.dp)) }

@@ -250,6 +250,13 @@ fun FramingLostBanner(cue: String?, modifier: Modifier = Modifier) {
 }
 
 /** The one mid-set tap target. Deliberately large; the player is at two metres. */
+/**
+ * How far the fight's top row must start from the left to clear the pause target: the target is a
+ * 72dp square with 12dp of padding, the surrounding column already contributes 16dp, and the rest
+ * is breathing room.
+ */
+val PAUSE_TARGET_INSET = 76.dp
+
 @Composable
 fun PauseTarget(paused: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
     AppCard(modifier.size(72.dp), padding = 0, container = if (paused) Ember else Panel, onClick = onToggle) {
