@@ -56,12 +56,22 @@ class ReferenceFormTest {
         val traces = TRACES.map { (id, file) -> id to traceFile(file)!! }
 
         val counted = traces.map { (id, file) -> id to replay(id, file) }
-        val silent = counted.filter { it.second == 0 }
+        val silent = counted.filter { it.second == 0 && it.first !in SHALLOWER_THAN_A_REP }
         assertTrue(
             "these count nothing on a correct rep, so the thresholds are out of reach: " +
                 silent.joinToString { it.first } + " (counts: $counted)",
             silent.isEmpty(),
         )
+        // The other half of the same guard. If one of these starts counting, somebody has re-drawn
+        // the animation deeper, and it belongs back in the set above rather than in the exception.
+        for (id in SHALLOWER_THAN_A_REP) {
+            val n = counted.first { it.first == id }.second
+            assertTrue(
+                "$id now counts $n on an animation that was too shallow to be a rep. " +
+                    "Re-check the animation against the config and move $id out of SHALLOWER_THAN_A_REP.",
+                n == 0,
+            )
+        }
     }
 
     /** Replays one trace through the real engine and the real shipped configuration. */
@@ -131,6 +141,16 @@ class ReferenceFormTest {
     }
 
     private companion object {
+        /**
+         * Animations that are not a full rep, so refusing them is the correct answer.
+         *
+         * The picker's curl closes only to 85 degrees. A player's real curl, measured on the phone
+         * on 5 and 6 Sep 2026, closes to 55-78, and this mode's own rule is that half reps do not
+         * count — so counting at 93 to satisfy the drawing would have counted half curls for
+         * everybody. The drawing is the thing that is wrong here, not the threshold.
+         */
+        val SHALLOWER_THAN_A_REP = setOf("bicep_curl")
+
         val TRACES = mapOf(
             "lateral_raise" to "reference-lateral-raise.jsonl",
             "bicep_curl" to "reference-bicep-curl.jsonl",

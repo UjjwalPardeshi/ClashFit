@@ -146,7 +146,7 @@ Widen that list to put them back; nothing else has to change.
 | Exercise | Keypoints | Rest | Counts at | Sides |
 |---|---|---|---|---|
 | Lateral raise | 23-11-13 / 24-12-14 | both wrists 25 cm below the shoulders | both wrists no more than 8 cm below them | both together |
-| Bicep curl | 11-13-15 / 12-14-16 | elbow > 125° | elbow < 93° | either arm, one rep |
+| Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80° | either arm, one rep |
 | Shoulder press | 11-13-15 / 12-14-16 | elbow < 95° | elbow > 134°, wrist above the shoulder | better-seen side |
 | Squat | 23-25-27 / 24-26-28 | both knees < 110° | both knees > 160° | both together |
 

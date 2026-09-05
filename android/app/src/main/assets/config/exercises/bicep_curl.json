@@ -46,14 +46,14 @@
       "sides": "EITHER",
       "rest": [
         ">",
-        125
+        135
       ],
       "count": [
         "<",
-        93
+        80
       ],
       "debounceMs": 800,
-      "_note": "angle(11,13,15) and angle(12,14,16), per arm, 800 ms apart. Measured on the phone, 5 Sep 2026: an extended arm reads 150-159 on the 3D world landmarks, never 170, because the forearm is nearly edge-on to the camera and the depth axis is the noisiest one. Re-measured against the reference clip 6 Sep 2026, where a full curl closes to 84.8-85.3 and extends to 138.8-146.6: <80 was unreachable and >135 was marginal, so the pair moved out to <93 and >125."
+      "_note": "angle(11,13,15) and angle(12,14,16), 800 ms apart, either arm. Measured on the phone 5 Sep 2026 and confirmed by the player on 6 Sep: an extended arm reads 150-159 on the 3D world landmarks, never the 170 a diagram promises, because the forearm is edge-on and depth is the noisiest axis; a real curl closes to 55-78. So >135 arms and <80 counts. The picker's reference animation closes only to 85, which this deliberately does not count: the mode says half reps do not count, and 93 would have counted them."
     }
   },
   "form": {
