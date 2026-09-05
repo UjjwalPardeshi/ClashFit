@@ -65,10 +65,12 @@ import com.clashfit.engine.games.SigilGame
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.float
+import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
+import kotlinx.serialization.json.longOrNull
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.max
@@ -104,6 +106,7 @@ class SessionEngine(
         fun onBand(band: FatigueBand) {}
         fun onSetEnd(telemetry: SetTelemetry, restSec: Int) {}
         fun onEnd(reason: EndReason, state: SessionState) {}
+        fun onPlayerHit(damage: Int, playerHp: Int) {}
         companion object { val NONE = object : Listener {} }
     }
 
@@ -114,9 +117,14 @@ class SessionEngine(
     var family: Family = Family.REP_CYCLE
         private set
 
+    private var nextAttackAtMs: Long? = null
+    private var attacksEnabled = false
+
     private var detector: ExerciseDetector? = null
     private var jointNames: List<String> = emptyList()
     private var fsm: RepStateMachine? = null
+    private var fsmLeft: RepStateMachine? = null
+    private var fsmRight: RepStateMachine? = null
     private var primaryAngle: Triple<String, String, String>? = null
     private lateinit var filter: LandmarkFilter
     private lateinit var fatigue: FatigueEstimator
@@ -131,11 +139,35 @@ class SessionEngine(
 
     private var romBaselineU: Float? = null
 
-    /** The landmarks at the deepest point of the rep in progress, and how deep that was. */
+    /** The landmarks at the deepest point of the rep in progress, and how deep that was (in u-space). */
     private var deepestLms: Landmarks? = null
-    private var deepestAngle: Float = Float.MAX_VALUE
+    private var deepestU: Float? = null
+    private var deepestSide: Side = Side.LEFT
+
+    // Per-arm deepest tracking for sidesEach=true (when arms move independently)
+    private var deepestLmsLeft: Landmarks? = null
+    private var deepestULeft: Float? = null
+    private var deepestGateLeft = Float.NaN
+    private var deepestLmsRight: Landmarks? = null
+    private var deepestURight: Float? = null
+    private var deepestGateRight = Float.NaN
+
     private val topRefSamples = ArrayList<Float>(128)
     private var topRef: Float? = null
+
+    // Rep detection options from the exercise's detector block. docs/19-EXERCISE-LIBRARY.md
+    private var sidesEach = false                              // one machine per arm, merged when they move together
+    private var dirSign = 1f                                   // +1 the movement lowers the angle (squat); -1 it raises it (raises, calf raise)
+    private var gateAngleName: Triple<String, String, String>? = null
+    private var gateMinDeg = Float.NEGATIVE_INFINITY
+    private var gateMaxDeg = Float.POSITIVE_INFINITY
+    private var gateAtEnd = false                              // END: judged at the deepest point; otherwise every frame
+    private var mergeWindowMs = 500L
+    private var lastLeftRepEndMs: Long? = null
+    private var lastRightRepEndMs: Long? = null
+    private var nextRepIndex = 1
+    private var deepestGate = Float.NaN                        // the gate angle at the deepest point
+    private var gateFailedAtMs: Long? = null                   // a rep refused by an END gate, for the cue
 
     private var phase = Phase.CALIBRATING
     private var invalidFrames = 0
@@ -185,11 +217,16 @@ class SessionEngine(
             }
         }.toMap()
         val combo = ComboTracker(ComboConfig(c.combo.step, c.combo.cap, c.combo.threshold, c.combo.graceAtStreak))
-        return CombatEngine(
+        val playerMaxHpDefault = c.bossAttack?.playerMaxHp ?: Int.MAX_VALUE / 2
+        val engine = CombatEngine(
             baseDamage = c.baseDamage, formFloor = c.formFloor, formExponent = c.formExponent,
             boss = bossConfig, responses = responses, combo = combo, casual = casual,
             casualConfig = CasualConfig(c.casual.damageMultiplier, c.casual.formFloor, c.casual.bossHpMultiplier),
+            playerMaxHpDefault = playerMaxHpDefault,
         )
+        engine.playerMaxHp = playerMaxHpDefault
+        engine.playerHp = playerMaxHpDefault
+        return engine
     }
 
     private fun buildFatigue(): FatigueEstimator {
@@ -226,7 +263,25 @@ class SessionEngine(
         primaryAngle = det["primaryAngle"]?.jsonObject?.let {
             Triple(it.getValue("a").jsonPrimitive.content, it.getValue("b").jsonPrimitive.content, it.getValue("c").jsonPrimitive.content)
         }
-        fsm = if (family == Family.REP_CYCLE) RepStateMachine(repConfig(det)) else null
+
+        if (family == Family.REP_CYCLE) {
+            val cfg = repConfig(det)
+            dirSign = if (cfg.topEnter > cfg.bottomEnter) 1f else -1f
+            sidesEach = det["sides"]?.jsonPrimitive?.content == "EACH"
+            fsm = if (sidesEach) null else RepStateMachine(cfg)
+            fsmLeft = if (sidesEach) RepStateMachine(cfg) else null
+            fsmRight = if (sidesEach) RepStateMachine(cfg) else null
+            val gate = det["gate"]?.jsonObject
+            val names = gate?.get("angle")?.jsonArray?.map { it.jsonPrimitive.content }
+            gateAngleName = if (names != null && names.size >= 3) Triple(names[0], names[1], names[2]) else null
+            gateMinDeg = gate?.get("min")?.jsonPrimitive?.floatOrNull ?: Float.NEGATIVE_INFINITY
+            gateMaxDeg = gate?.get("max")?.jsonPrimitive?.floatOrNull ?: Float.POSITIVE_INFINITY
+            gateAtEnd = gate?.get("at")?.jsonPrimitive?.content == "END"
+            mergeWindowMs = det["mergeWindowMs"]?.jsonPrimitive?.longOrNull ?: 500L
+        } else {
+            fsm = null; fsmLeft = null; fsmRight = null
+            sidesEach = false; gateAngleName = null
+        }
         filter = LandmarkFilter(poseCfg.filter.minCutoff, poseCfg.filter.beta, poseCfg.filter.dCutoff)
         fatigue = buildFatigue()
         romBaselineU = null
@@ -266,9 +321,16 @@ class SessionEngine(
         lastRep = null
         allReps.clear()
         fsm?.reset()
+        fsmLeft?.reset()
+        fsmRight?.reset()
         detector?.reset()
         fatigue.reset()
         combat.reset(bossConfig)
+        combat.resetPlayer()
+        lastLeftRepEndMs = null; lastRightRepEndMs = null; nextRepIndex = 1
+        deepestU = null; deepestLms = null; deepestGate = Float.NaN; gateFailedAtMs = null
+        deepestULeft = null; deepestLmsLeft = null; deepestGateLeft = Float.NaN
+        deepestURight = null; deepestLmsRight = null; deepestGateRight = Float.NaN
         romBaselineU = null
         topRefSamples.clear()
         filter.reset()
@@ -278,6 +340,7 @@ class SessionEngine(
         calibSince = null
         missing = emptyList()
         fightStartMs = null
+        nextAttackAtMs = null
         ended = false
         endReason = null
         playerDamage = 0
@@ -294,6 +357,10 @@ class SessionEngine(
         restSec = null
         combatBand = FatigueBand.FRESH
         ghost?.reset()
+
+        // Attacks enabled for certain modes when not timed and no family game is active.
+        val spec = combatCfg.bossAttack
+        attacksEnabled = spec != null && mode.name in spec.modes && !timed && game == null
 
         // Modes scored on a clock must not have the boss die out from under them.
         if (timed) { combat.maxHp = 10_000_000; combat.hp = 10_000_000 }
@@ -331,6 +398,11 @@ class SessionEngine(
      * @param image normalised image landmarks, framing only
      */
     fun frame(world: Landmarks?, image: Landmarks?, tMs: Long): SessionState {
+        // A long gap in frames (the app paused, the camera restarted) is time the boss's clock must
+        // not charge for: the grace period starts again from the first frame back.
+        if (attacksEnabled && phase == Phase.FIGHTING && lastTMs > 0L && tMs - lastTMs > FRAME_GAP_MS) {
+            combatCfg.bossAttack?.let { nextAttackAtMs = tMs + (it.graceSec * 1000f).toLong() }
+        }
         lastTMs = tMs
         if (world.isNullOrEmpty()) return lost()
 
@@ -338,9 +410,15 @@ class SessionEngine(
         val thr = poseCfg.visibilityThreshold
         val pa = primaryAngle
         val valid: Boolean
+        var leftAngle = Float.NaN
+        var rightAngle = Float.NaN
+        var bothSides = false
         if (pa != null) {
             val result = Geometry.primaryAngle(lms, pa.first, pa.second, pa.third, jointNames, thr)
             angle = result.angle; side = result.side; valid = result.valid
+            leftAngle = result.left
+            rightAngle = result.right
+            bothSides = result.both
             if (phase == Phase.FIGHTING || phase == Phase.REST) {
                 asymmetryTracker.onFrame(result.left, result.right, tMs)
             }
@@ -352,7 +430,14 @@ class SessionEngine(
 
         if (!valid) return lost()
 
-        if (phase == Phase.FRAMING_LOST) { phase = Phase.FIGHTING; fatigue.unfreeze() }
+        if (phase == Phase.FRAMING_LOST) {
+            phase = Phase.FIGHTING
+            fatigue.unfreeze()
+            // Re-arm attacks 1500ms after FRAMING_LOST clears
+            if (attacksEnabled && combatCfg.bossAttack != null) {
+                nextAttackAtMs = tMs + 1500L
+            }
+        }
         invalidFrames = 0
 
         if (phase == Phase.CALIBRATING) return calibrate(lms, tMs)
@@ -391,20 +476,40 @@ class SessionEngine(
         }
         if (ended) return state()
 
-        val machine = fsm
-        if (machine != null) {
-            // Remember the frame at the bottom of the rep, for alignment.
-            //
-            // A rep completes when you come back UP, so the landmarks at that moment are of
-            // someone standing. Knee tracking measured there is knee-over-ankle offset with the
-            // legs straight, which is nearly zero for everybody — the sub-score returned close to
-            // full marks whatever the rep looked like, and discriminated nothing. The deepest
-            // point is where alignment either holds or fails, so that is where it is sampled.
-            if (phase == Phase.FIGHTING && !angle.isNaN() && angle < deepestAngle) {
-                deepestAngle = angle
-                deepestLms = lms
+        tickBossAttack(tMs)
+        if (ended) return state()
+
+        if (family == Family.REP_CYCLE) {
+            if (phase == Phase.FIGHTING) {
+                // The gate follows the primary angle's side selection. An ALWAYS gate out of range
+                // hides the frame from the machine; an END gate is judged at the deepest point, in
+                // completeRep.
+                val gate = gateAngleName?.let { gateAngle(lms, it, side, bothSides) } ?: Float.NaN
+                val gateOk = gate.isNaN() || (gate >= gateMinDeg && gate <= gateMaxDeg)
+                val blocked = gateAngleName != null && !gateAtEnd && !gateOk
+
+                // A blocked frame is skipped, not fed as invalid: the machine never sees a curl at
+                // the sides as a triceps extension, and a gate that flickers for a few frames of a
+                // real overhead extension cannot sink that rep's valid-frame ratio. Per-arm machines
+                // each keep their own deepest frame, so one arm finishing never loses the other's.
+                if (sidesEach) {
+                    val gateLeft = gateAngleName?.let { gateAngle(lms, it, Side.LEFT, bothSides) } ?: Float.NaN
+                    val gateRight = gateAngleName?.let { gateAngle(lms, it, Side.RIGHT, bothSides) } ?: Float.NaN
+                    val leftOk = gateLeft.isNaN() || (gateLeft >= gateMinDeg && gateLeft <= gateMaxDeg)
+                    val rightOk = gateRight.isNaN() || (gateRight >= gateMinDeg && gateRight <= gateMaxDeg)
+                    if (gateAtEnd || leftOk) {
+                        trackDeepest(leftAngle, lms, Side.LEFT, gateLeft, Side.LEFT)
+                        fsmLeft?.onFrame(leftAngle, tMs)?.let { creditSide(it, Side.LEFT, tMs, lms) }
+                    }
+                    if (gateAtEnd || rightOk) {
+                        trackDeepest(rightAngle, lms, Side.RIGHT, gateRight, Side.RIGHT)
+                        fsmRight?.onFrame(rightAngle, tMs)?.let { creditSide(it, Side.RIGHT, tMs, lms) }
+                    }
+                } else if (!blocked) {
+                    trackDeepest(angle, lms, side, gate)
+                    fsm?.onFrame(angle, tMs)?.let { completeRep(it, lms) }
+                }
             }
-            if (phase == Phase.FIGHTING) machine.onFrame(angle, tMs)?.let { completeRep(it, lms) }
         } else {
             val det = detector
             if (det != null && phase == Phase.FIGHTING) {
@@ -415,6 +520,77 @@ class SessionEngine(
             }
         }
         return state()
+    }
+
+    /**
+     * The boss hits back on a clock, only while a set is live. Fatigue mercy holds the attacks: a
+     * GASSED player, or one the combat engine is already going easy on, is not hit. The clock is
+     * armed with a grace period when the fight starts and when a set resumes. docs/04-GAME-DESIGN.md
+     */
+    private fun tickBossAttack(tMs: Long) {
+        val spec = combatCfg.bossAttack ?: return
+        if (!attacksEnabled || phase != Phase.FIGHTING || ended) return
+        val at = nextAttackAtMs ?: return
+        if (tMs < at) return
+        nextAttackAtMs = tMs + (spec.everySec * 1000f).toLong()
+        if (fatigue.state().band == FatigueBand.GASSED || combat.mercyActive) return
+        val damage = combat.bossAttack(spec.damage)
+        listener.onPlayerHit(damage, combat.playerHp)
+        if (combat.playerDead) { phase = Phase.DEAD; end(EndReason.DEFEATED) }
+    }
+
+    /** The gate angle in the primary angle's side selection: the mean when both sides are visible. */
+    private fun gateAngle(lms: Landmarks, names: Triple<String, String, String>, s: Side, bothVisible: Boolean): Float {
+        fun one(sd: Side): Float {
+            val ai = Geometry.idx(names.first, sd); val bi = Geometry.idx(names.second, sd); val ci = Geometry.idx(names.third, sd)
+            if (ai < 0 || bi < 0 || ci < 0 || ai >= lms.size || bi >= lms.size || ci >= lms.size) return Float.NaN
+            return Geometry.angle3(lms[ai], lms[bi], lms[ci])
+        }
+        if (!bothVisible) return one(s)
+        val l = one(Side.LEFT); val r = one(Side.RIGHT)
+        return if (l.isNaN() || r.isNaN()) Float.NaN else (l + r) / 2f
+    }
+
+    /**
+     * Remember the frame at the deepest point of the rep in progress. A rep completes when you come
+     * back up, so the landmarks at that moment are of someone standing; the deepest point is where
+     * alignment holds or fails and where an END gate is judged. Deepest is the minimum of
+     * u = dirSign * angle, so it is right both for exercises that lower the angle (squat) and for
+     * those that raise it (calf raise, lateral raise).
+     *
+     * When sidesEach=true (per-arm machines), tracks the deepest point separately for each arm,
+     * so completeRep can use the correct arm's deepest frame.
+     */
+    private fun trackDeepest(a: Float, lms: Landmarks, s: Side, gate: Float, side: Side = s) {
+        if (a.isNaN()) return
+        val u = dirSign * a
+
+        // Per-arm tracking when sidesEach=true
+        if (sidesEach) {
+            if (side == Side.LEFT) {
+                val d = deepestULeft
+                if (d == null || u < d) { deepestULeft = u; deepestLmsLeft = lms; deepestGateLeft = gate }
+            } else {
+                val d = deepestURight
+                if (d == null || u < d) { deepestURight = u; deepestLmsRight = lms; deepestGateRight = gate }
+            }
+        } else {
+            // Shared tracking for non-per-arm machines
+            val d = deepestU
+            if (d == null || u < d) { deepestU = u; deepestLms = lms; deepestSide = s; deepestGate = gate }
+        }
+    }
+
+    /**
+     * Per-arm counting. A rep is credited the moment its arm completes it. If the other arm completed
+     * one inside the merge window the arms moved together and this is the same rep; alternating
+     * curls are always further apart than the window, so each arm's curl counts.
+     */
+    private fun creditSide(raw: RepEvent, s: Side, tMs: Long, lms: Landmarks) {
+        val otherEnd = if (s == Side.LEFT) lastRightRepEndMs else lastLeftRepEndMs
+        if (s == Side.LEFT) lastLeftRepEndMs = tMs else lastRightRepEndMs = tMs
+        if (otherEnd != null && tMs - otherEnd <= mergeWindowMs) return
+        completeRep(raw.copy(repIndex = nextRepIndex++), lms, s)
     }
 
     /** Depth travel for one rep, in centimetres, from the metric span samples. */
@@ -471,16 +647,29 @@ class SessionEngine(
         restSec = null
         fatigue.reset()
         fsm?.reset()
-        topRef?.let { fsm?.setTopRef(it) }
+        fsmLeft?.reset()
+        fsmRight?.reset()
+        topRef?.let { ref ->
+            fsm?.setTopRef(ref)
+            fsmLeft?.setTopRef(ref)
+            fsmRight?.setTopRef(ref)
+        }
         detector?.reset()
         asymmetryTracker.reset()
-        deepestLms = null
-        deepestAngle = Float.MAX_VALUE
+        deepestLms = null; deepestU = null; deepestGate = Float.NaN; gateFailedAtMs = null
+        deepestULeft = null; deepestLmsLeft = null; deepestGateLeft = Float.NaN
+        deepestURight = null; deepestLmsRight = null; deepestGateRight = Float.NaN
+        lastLeftRepEndMs = null; lastRightRepEndMs = null
+        nextRepIndex = 1
         // The filter too. Everything else that carries state across a rep was reset above, and
         // leaving this one holding the previous set's last sample and timestamp means the first
         // frame after a rest is blended with wherever you were standing when the last set ended.
         filter.reset()
         phase = Phase.FIGHTING
+        // Re-arm attacks at the same grace period after set resume (use lastTMs as the resume time)
+        if (attacksEnabled && combatCfg.bossAttack != null) {
+            nextAttackAtMs = lastTMs + (combatCfg.bossAttack.graceSec * 1000).toLong()
+        }
     }
 
     /** Recover fatigue from a completed breathing session. Bounded; never rewrites baselines. */
@@ -541,14 +730,37 @@ class SessionEngine(
         return FormScore(d, r, t, a, total, reason)
     }
 
-    private fun completeRep(raw: RepEvent, lms: Landmarks) {
+    private fun completeRep(raw: RepEvent, lms: Landmarks, repSide: Side = side) {
+        // The bottom of this rep, falling back to the current frame if nothing was recorded.
+        // When sidesEach=true, use the completing side's deepest data to ensure alignment
+        // is scored at that arm's deepest point, not at a shared deepest point.
+        val (alignAt, alignSide, gateAtDeepest) = if (sidesEach && repSide == Side.LEFT) {
+            Triple(deepestLmsLeft ?: lms, Side.LEFT, deepestGateLeft)
+        } else if (sidesEach && repSide == Side.RIGHT) {
+            Triple(deepestLmsRight ?: lms, Side.RIGHT, deepestGateRight)
+        } else {
+            Triple(deepestLms ?: lms, if (deepestLms != null) deepestSide else repSide, deepestGate)
+        }
+
+        // Clear the deepest state for this side
+        if (sidesEach && repSide == Side.LEFT) {
+            deepestLmsLeft = null; deepestULeft = null; deepestGateLeft = Float.NaN
+        } else if (sidesEach && repSide == Side.RIGHT) {
+            deepestLmsRight = null; deepestURight = null; deepestGateRight = Float.NaN
+        } else {
+            deepestLms = null; deepestU = null; deepestGate = Float.NaN
+        }
+        // An END gate refuses a rep whose deepest point was in the wrong place: a shoulder press
+        // pushed out in front instead of overhead. The cue says so for a moment.
+        if (gateAtEnd && gateAngleName != null && !gateAtDeepest.isNaN() &&
+            (gateAtDeepest < gateMinDeg || gateAtDeepest > gateMaxDeg)) {
+            gateFailedAtMs = raw.tEndMs
+            return
+        }
         // First completed rep sets the ROM baseline — every score is relative to this player.
         if (romBaselineU == null) romBaselineU = raw.uMax - raw.uMin
-        // The bottom of this rep, falling back to the current frame if nothing was recorded.
-        val alignAt = deepestLms ?: lms
-        deepestLms = null
-        deepestAngle = Float.MAX_VALUE
-        val align = alignmentSample(alignAt, side, exercise.form?.alignment?.type)
+        val align = alignmentSample(alignAt, alignSide, exercise.form?.alignment?.type, exercise.form?.alignment)
+
         var score = scoreRep(raw, align)
         if (mode == GameMode.TEMPO_TRIAL) {
             val c = combatCfg.modes.tempoTrial
@@ -637,6 +849,10 @@ class SessionEngine(
         lastRepEndMs = rec.tEndMs
         lastRep = rec
         playerDamage += rec.damage
+        // Heal player on each counted rep if attacks are enabled
+        if (attacksEnabled && combatCfg.bossAttack != null) {
+            combat.healPlayer(combatCfg.bossAttack.healPerRep)
+        }
         if (!gameOwned && combat.dead) onBossDown()
         listener.onRep(rec, combat.state())
     }
@@ -705,14 +921,20 @@ class SessionEngine(
         }
 
         if (calibHoldMs >= f.holdToStartMs) {
-            if (fsm != null && topRefSamples.size >= 15) {
+            if ((fsm != null || (fsmLeft != null && fsmRight != null)) && topRefSamples.size >= 15) {
                 val ref = topPercentile()
                 topRef = ref
                 fsm?.setTopRef(ref)
+                fsmLeft?.setTopRef(ref)
+                fsmRight?.setTopRef(ref)
             }
             calib = CalibState.READY
             phase = Phase.FIGHTING
             fightStartMs = tMs
+            // Schedule first attack after grace period if attacks are enabled
+            if (attacksEnabled && combatCfg.bossAttack != null) {
+                nextAttackAtMs = tMs + (combatCfg.bossAttack.graceSec * 1000).toLong()
+            }
             ghost?.start(tMs)
         }
         return state()
@@ -746,7 +968,12 @@ class SessionEngine(
 
     // ------------------------------------------------------------------ snapshot
 
-    fun state(): SessionState = SessionState(
+    fun state(): SessionState {
+        val spec = combatCfg.bossAttack
+        val countdown = if (attacksEnabled && phase == Phase.FIGHTING) nextAttackAtMs?.let { max(0L, it - lastTMs) } else null
+        val interval = if (attacksEnabled && spec != null) (spec.everySec * 1000f).toLong() else null
+        val combatState = combat.state().copy(nextAttackInMs = countdown, attackIntervalMs = interval)
+        return SessionState(
         mode = mode,
         exerciseId = exercise.id,
         family = family,
@@ -763,7 +990,7 @@ class SessionEngine(
         reps = allReps.size,
         lastRep = lastRep,
         fatigue = fatigue.state(),
-        combat = combat.state(),
+        combat = combatState,
         game = game?.state(),
         wave = wave,
         rushIndex = rushIndex,
@@ -778,6 +1005,7 @@ class SessionEngine(
         ended = ended,
         endReason = endReason,
     )
+    }
 
     private fun cue(): String? {
         val c = exercise.cues
@@ -796,6 +1024,7 @@ class SessionEngine(
             }
         }
         detector?.last?.cue?.let { return it }               // pose-match names the joint
+        gateFailedAtMs?.let { if (lastTMs - it < 2500) return c["gate"] ?: c["tooHigh"] ?: "Finish the movement." }
         if (framing == Framing.TOO_FAR) return "Come closer."
         if (framing == Framing.TOO_CLOSE) return "Step back."
         val r = lastRep
@@ -820,3 +1049,6 @@ internal fun topPercentile(samples: List<Float>, dec: Boolean): Float {
     val sorted = if (dec) samples.sorted() else samples.sortedDescending()
     return sorted[min(sorted.size - 1, floor(sorted.size * 0.9).toInt())]
 }
+
+/** Frames further apart than this were not delivered: the session was paused or the camera restarted. */
+private const val FRAME_GAP_MS = 1_500L

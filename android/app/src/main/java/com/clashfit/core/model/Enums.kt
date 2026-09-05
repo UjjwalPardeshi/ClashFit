@@ -18,7 +18,7 @@ enum class Phase { CALIBRATING, FIGHTING, FRAMING_LOST, REST, DEAD }
 
 enum class Side { LEFT, RIGHT }
 
-enum class EndReason { BOSS_DOWN, TIME, GAME_WON, GAME_LOST, STOPPED, WALKED_AWAY }
+enum class EndReason { BOSS_DOWN, TIME, GAME_WON, GAME_LOST, DEFEATED, STOPPED, WALKED_AWAY }
 
 enum class CoachSource { LLM, TEMPLATE }
 

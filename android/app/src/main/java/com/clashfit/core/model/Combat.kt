@@ -16,8 +16,15 @@ data class CombatState(
     val lastDamage: Int?,
     val staggered: Boolean,
     val mercyActive: Boolean,
+    val playerHp: Int = Int.MAX_VALUE / 2,
+    val playerMaxHp: Int = Int.MAX_VALUE / 2,
+    val playerDead: Boolean = false,
+    val lastPlayerHit: Int? = null,
+    val nextAttackInMs: Long? = null,
+    val attackIntervalMs: Long? = null,        // null when this mode has no boss attacks
 ) {
     val hpPct: Float get() = if (maxHp > 0) hp.toFloat() / maxHp else 0f
+    val playerHpPct: Float get() = if (playerMaxHp > 0) playerHp.toFloat() / playerMaxHp else 0f
 }
 
 /** Family game state. Sigil deliberately exposes no combat fields at all. */
