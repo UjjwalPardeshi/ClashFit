@@ -24,9 +24,9 @@
     },
     "topEnter": 155,
     "topExit": 148,
-    "bottomEnter": 125,
-    "bottomExit": 135,
-    "targetAngle": 95,
+    "bottomEnter": 105,
+    "bottomExit": 122,
+    "targetAngle": 80,
     "minDescendMs": 200,
     "minBottomMs": 120,
     "minRepMs": 800,
@@ -35,7 +35,8 @@
       "SHOULDER",
       "ELBOW",
       "WRIST"
-    ]
+    ],
+    "_note": "Section 9.1: top >=150, bottom 75-105."
   },
   "form": {
     "weights": {

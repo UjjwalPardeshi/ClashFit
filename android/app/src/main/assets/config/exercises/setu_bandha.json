@@ -21,8 +21,8 @@
           "HIP",
           "KNEE"
         ],
-        "value": 170,
-        "tolerance": 12,
+        "value": 165.0,
+        "tolerance": 15.0,
         "weight": 1.0
       },
       {
@@ -31,8 +31,8 @@
           "KNEE",
           "ANKLE"
         ],
-        "value": 80,
-        "tolerance": 16,
+        "value": 95.0,
+        "tolerance": 25.0,
         "weight": 1.0
       }
     ],

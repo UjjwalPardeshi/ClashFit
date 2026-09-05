@@ -36,18 +36,32 @@
       "SHOULDER",
       "ELBOW",
       "WRIST"
-    ]
+    ],
+    "counter": "STAGE",
+    "stage": {
+      "sides": "BEST",
+      "rest": [
+        "<",
+        100
+      ],
+      "count": [
+        ">",
+        150
+      ],
+      "debounceMs": 1000,
+      "_note": "fitmon bench_press (Python backend): elbow bent is down, extended counts, 1000 ms."
+    }
   },
   "form": {
     "weights": {
       "depth": 0.45,
       "rom": 0.25,
-      "tempo": 0.30,
+      "tempo": 0.3,
       "alignment": 0.0
     },
     "tempo": {
       "eccentricTargetSec": 0.35,
-      "bottomPauseSec": 0.10,
+      "bottomPauseSec": 0.1,
       "_note": "measured window: topExit crossing -> bottomEnter crossing, not the full descent"
     },
     "depthExponent": 1.5

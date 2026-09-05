@@ -32,7 +32,7 @@
           "ANKLE"
         ],
         "value": 170,
-        "tolerance": 12,
+        "tolerance": 10,
         "weight": 0.6
       }
     ],

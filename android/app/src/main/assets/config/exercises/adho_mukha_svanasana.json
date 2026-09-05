@@ -19,10 +19,10 @@
         "angle": [
           "SHOULDER",
           "HIP",
-          "KNEE"
+          "ANKLE"
         ],
-        "value": 90,
-        "tolerance": 14,
+        "value": 85.0,
+        "tolerance": 25.0,
         "weight": 1.0
       },
       {
@@ -31,8 +31,8 @@
           "KNEE",
           "ANKLE"
         ],
-        "value": 172,
-        "tolerance": 12,
+        "value": 165.0,
+        "tolerance": 15.0,
         "weight": 1.0
       },
       {
@@ -41,9 +41,9 @@
           "ELBOW",
           "WRIST"
         ],
-        "value": 172,
-        "tolerance": 14,
-        "weight": 0.8
+        "value": 165.0,
+        "tolerance": 15.0,
+        "weight": 1.0
       }
     ],
     "enterAccuracy": 0.7,

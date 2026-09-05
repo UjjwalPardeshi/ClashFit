@@ -40,7 +40,21 @@
     ],
     "sides": "EACH",
     "mergeWindowMs": 500,
-    "_note": "Keypoints 11-13-15 / 12-14-16 (shoulder-elbow-wrist), 3D world angle. A rep opens to 170-180 and closes to 20-30: TOP at >=170, BOTTOM at <=30, 25 is full depth."
+    "_note": "Keypoints 11-13-15 / 12-14-16 (shoulder-elbow-wrist), 3D world angle. A rep opens to 170-180 and closes to 20-30: TOP at >=170, BOTTOM at <=30, 25 is full depth.",
+    "counter": "STAGE",
+    "stage": {
+      "sides": "EACH",
+      "rest": [
+        ">",
+        150
+      ],
+      "count": [
+        "<",
+        40
+      ],
+      "debounceMs": 800,
+      "_note": "fitmon countBicepCurls: angle(11,13,15) and angle(12,14,16), >150 is down, <40 counts, 800 ms per arm."
+    }
   },
   "form": {
     "weights": {

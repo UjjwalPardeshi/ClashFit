@@ -21,8 +21,8 @@
           "HIP",
           "ANKLE"
         ],
-        "value": 176,
-        "tolerance": 8,
+        "value": 172.5,
+        "tolerance": 7.5,
         "weight": 1.0
       },
       {
@@ -31,8 +31,8 @@
           "ELBOW",
           "WRIST"
         ],
-        "value": 90,
-        "tolerance": 18,
+        "value": 95.0,
+        "tolerance": 15.0,
         "weight": 0.5
       }
     ],
@@ -45,6 +45,6 @@
   },
   "cues": {
     "enter": "Elbows under shoulders, straight line head to heel.",
-    "break": "Hips are sagging — squeeze and lift."
+    "break": "Hips are sagging \u2014 squeeze and lift."
   }
 }
