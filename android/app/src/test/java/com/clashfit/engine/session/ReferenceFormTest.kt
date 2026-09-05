@@ -152,13 +152,20 @@ class ReferenceFormTest {
          *  - `lateral_raise` turns at 93.7 degrees on the weaker arm and never brings the arms below
          *    20.4, where the player's rule counts in a 95-105 band from a 15-20 rest. It misses at
          *    both ends, so it is refused twice over.
+         *  - `shoulder_press` racks at 53.6-55.1, under the 70 the player set as the bottom of the
+         *    rack on 6 Sep 2026. The animation lowers the arms towards the sides; the rule says a
+         *    press is racked at the shoulders. Chosen knowing the cost: on 2226 logged frames the
+         *    player racked at a median of 48 themselves, and only 2 of 13 reps cleared 70, so this
+         *    is a rule about how the press should be done rather than a description of the set it
+         *    was measured from. If it turns out a real press cannot be racked that high under load,
+         *    the threshold is what should move -- not this set.
          *
          * Both are the drawing disagreeing with a number measured on a person, and the person wins.
          * **Neither is settled.** The raise's band is only ten degrees wide, and if it turns out on
          * a real shoulder that a correct raise cannot reach 95, the threshold is what should move
          * — not this set. Do not add to this list to make a red test green.
          */
-        val SHALLOWER_THAN_A_REP = setOf("bicep_curl", "lateral_raise")
+        val SHALLOWER_THAN_A_REP = setOf("bicep_curl", "lateral_raise", "shoulder_press")
 
         val TRACES = mapOf(
             "lateral_raise" to "reference-lateral-raise.jsonl",
