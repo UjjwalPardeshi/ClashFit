@@ -162,6 +162,30 @@ t('F2 · the shallowest countable squat lands visibly less damage than a full on
   ok(dClean - dShallow >= 25, `damage gap only ${dClean - dShallow} (${dShallow} vs ${dClean})`);
 });
 
+t('CLINIC · a chair stand that stops short of the gate is not counted either', () => {
+  // The same edge as the squat above, in the one place it has a clinical consequence.
+  //
+  // chair_squat.bottomEnter is 115° against a targetAngle of 110° — five degrees apart, where the
+  // squat's own pair are fifteen. A stand that only reaches 120-130° produces no rep at all, so
+  // `cues.tooHigh` ("Sit back a little further") cannot fire for it: that cue is emitted only for
+  // a COMPLETED rep whose verdict is SHALLOW, and a rep that was never counted has no verdict.
+  //
+  // For the game that is the intended strictness. For the 30-second sit-to-stand it means an
+  // under-count arrives as a wrong number with nothing on screen explaining it. A real person on
+  // a standard chair reaches about 90°, so they clear the gate with margin; the risk is a high
+  // seat, an armchair, or somebody who perches — which is the population `accessible` names.
+  //
+  // Kept deliberately. This test is what stops it being a surprise, and it is the first thing
+  // that fails if the gate moves.
+  const chairCfg = cfg('exercises/chair_squat.json');
+  for (const bottom of [130, 125, 120]) {
+    const reps = runFsm(synthSet({ reps: 6, top: 160, bottom }), chairCfg, 160);
+    eq(reps.length, 0, `a ${bottom}° chair stand was counted despite bottomEnter ${chairCfg.detector.bottomEnter}`);
+  }
+  eq(runFsm(synthSet({ reps: 6, top: 160, bottom: 110 }), chairCfg, 160).length, 6,
+     'a stand to the target angle should count');
+});
+
 t('weights normalise when alignment is zeroed', () => {
   const noAlign = JSON.parse(JSON.stringify(squat));
   noAlign.form.weights = { depth: 0.47, rom: 0.29, tempo: 0.24, alignment: 0 };
