@@ -23,7 +23,7 @@ frames and landmarks never leave it. Built for the iQOO Hackathon 2026, Pune Cit
 | `docs/` | Thirty-plus pre-event design documents. `docs/README.md` is the index. |
 | `ClashFit_Exercise_Detection_Source_of_Truth.md` | The authoritative spec for landmarks, angles and per-exercise detection. Newer than most of `docs/`. |
 | `tools/angles.html` | The angle-measuring page. Same model and filter as the phone, in a browser. |
-| `traces/` | Recorded landmark traces, replayed by `TraceReplayTest`. `tools/make-trace.js` writes new ones. |
+| `traces/` | Recorded landmark traces. `reference-*.jsonl` are the four picker animations as the shipped model reads them, replayed by `ReferenceFormTest`; `synthetic-f3-to-failure.jsonl` is replayed by `TraceReplayTest` and is duplicated into the app's assets. `tools/make-trace.js` writes new ones. |
 | `firebase/` | Firestore rules, indexes and the data model. Deployed with the Firebase CLI, not by the app. |
 | `deck/`, `deck-phase1/` | The event-day and Phase-1 pitch decks. Not code; they record what was promised. |
 | `README.md`, `android/README.md`, `firebase/README.md` | The per-area detail this file compresses: full command lists, key names, deployment steps. |
@@ -45,7 +45,7 @@ frames and landmarks never leave it. Built for the iQOO Hackathon 2026, Pune Cit
    scoped token.
 5. **One Gradle build at a time.** The machine is CPU and memory bound. Run builds detached and read
    the log rather than holding a foreground process.
-6. **Screenshot tests need JDK 21.** Fifteen Robolectric classes are pinned to SDK 36, which
+6. **Screenshot tests need JDK 21.** Fourteen Robolectric classes are pinned to SDK 36, which
    refuses Java 17. Point `JAVA_HOME` at `~/.jdks/jdk-21.0.12.1+1` for `testDebugUnitTest`. The app
    itself still compiles to JVM 17.
 7. **Debug and release APKs are signed differently.** Switching between them needs an uninstall
@@ -73,8 +73,8 @@ frames and landmarks never leave it. Built for the iQOO Hackathon 2026, Pune Cit
 ```bash
 source ~/.clashfit-android-env.sh
 cd android
-./gradlew :app:assembleDebug            # ~2 min warm, 150 MB APK
-./gradlew :app:assembleRelease          # ~17 min cold, 70 MB APK
+./gradlew :app:assembleDebug            # ~2 min warm, 168 MB APK
+./gradlew :app:assembleRelease          # ~17 min cold, 71 MB APK
 JAVA_HOME=~/.jdks/jdk-21.0.12.1+1 ./gradlew :app:testDebugUnitTest   # 836 tests
 ./gradlew :app:lintDebug                # fails the build on errors
 ./gradlew :app:recordRoborazziDebug     # re-render the 82 screenshot baselines
@@ -116,8 +116,14 @@ camera 30 fps → MediaPipe pose landmarker (33 landmarks, world + image)
 
 **A set never ends by itself.** There is no rest phase and no idle timeout: standing still keeps
 you in the fight. A set closes only when the player asks for it — a thumb up to the camera — and the
-next one begins in the same breath, inside `endSet()`. The coach is fetched after that and spoken
-over the top of a fight that never left the screen, so the coaching is heard rather than read.
+next one begins in the same breath, inside `endSet()`, which calls `onSetEnd` *before* `nextSet()`
+so the listener can still read `currentSetReps` — swap those two lines and every set summarises as
+empty. The coach is fetched after that and spoken over the top of a fight that never left the
+screen, so the coaching is heard rather than read.
+
+`session_set.rest_sec` outlived the feature. It is still a column in schema v6 and is still written,
+always as 0, because dropping it would cost a migration and the rows written before the change are
+worth keeping. Nothing reads it.
 
 **The One Euro filter lags about 160 ms.** Anything on the filtered path needs each end of a rep
 held for roughly 0.4 s. The stage counter deliberately bypasses it. Tests on the filtered path use
@@ -134,12 +140,12 @@ confidence the two sides are averaged; otherwise the better-seen side is used.
 Measured by hand against the BlazePose keypoints, and listed for all six rep modes: Boss Fight,
 Time Attack, Ghost Race, Survival, Boss Rush and Duel. `FEATURED_EXERCISES` in
 `ui/screens/picker/ExercisePickerScreen.kt` is the whole selectable set — the picker and the library
-both filter to it, so the other fifty-four records on disk are loaded and scored but never offered.
+both filter to it, so the other fifty-three records on disk are loaded and scored but never offered.
 Widen that list to put them back; nothing else has to change.
 
 | Exercise | Keypoints | Rest | Counts at | Sides |
 |---|---|---|---|---|
-| Lateral raise | 23-11-13 / 24-12-14 | both wrists 25 cm below the shoulders | both wrists within 8 cm of them | both together |
+| Lateral raise | 23-11-13 / 24-12-14 | both wrists 25 cm below the shoulders | both wrists no more than 8 cm below them | both together |
 | Bicep curl | 11-13-15 / 12-14-16 | elbow > 125° | elbow < 93° | either arm, one rep |
 | Shoulder press | 11-13-15 / 12-14-16 | elbow < 95° | elbow > 134°, wrist above the shoulder | better-seen side |
 | Squat | 23-25-27 / 24-26-28 | both knees < 110° | both knees > 160° | both together |
@@ -161,6 +167,13 @@ raise ends level with it. Measure before choosing a threshold; do not take the n
 `ReferenceFormTest` replays them through the real engine and the real config. It asserts only that
 a correct rep counts at all — nothing about how many or how well scored — so a threshold that
 drifts out of human reach fails the build instead of failing the player.
+
+Each of the four rows in the picker opens into a looping clip of the movement, which is where those
+reference traces come from. `ui/components/ExerciseDemo.kt` plays them, and they are **animated
+WebP** in `res/drawable-nodpi/`, not video: a `LazyColumn` of rows each owning a media player is a
+lifecycle problem, while `AnimatedImageDrawable` needs no dependency and no surface. It wants API 28
+and the app's floor is 29. `drawable-nodpi` because the frames are pre-rendered at a fixed 440 px
+and must not be resampled per density. Reduce-motion holds the first frame instead of looping.
 
 Two further rules were added on top of fitmon, because fitmon miscounts without them: a triceps
 extension needs the wrist above the shoulder to be at rest, and dropping the arm clears the stage,
@@ -247,8 +260,15 @@ node serve.js          # then open http://localhost:8080/tools/angles.html
 The page runs the same model and the same filter as the phone. Pick an exercise, do reps in front of
 the laptop camera, and everything is drawn on the video: the skeleton, the angle at each measured
 joint, the thresholds, the machine state and a rep log. It suggests thresholds from what your reps
-actually reached. Feed those numbers back into both config copies, update the tests that pin them,
-and update the table in `docs/19-EXERCISE-LIBRARY.md`.
+actually reached.
+
+A number is never the only thing that moves. Changing a threshold means all of: both config copies,
+the tests that pin it, the table in `docs/19-EXERCISE-LIBRARY.md`, and the table in §5 above. Run
+`diff -rq config android/app/src/main/assets/config` afterwards — it must print nothing.
+
+The other way to measure is to replay: `ReferenceFormTest` puts `traces/reference-*.jsonl` back
+through the real engine and the real config, so a proposed number can be tried against a known-good
+rep without a camera or a phone.
 
 ---
 
@@ -277,8 +297,10 @@ and update the table in `docs/19-EXERCISE-LIBRARY.md`.
 | `core/util`, `util` | A `Clock` seam so time can be faked in tests, and the crash log. |
 | `auth`, `duel`, `meta`, `alarm`, `audio` | Accounts, live play, progression, alarms, sound. |
 
-Tests are under `android/app/src/test/java/com/clashfit/`. `TraceReplayTest` replays a real recorded
-set through the shipped configuration and is the closest thing to an integration test.
+Tests are under `android/app/src/test/java/com/clashfit/`. Two in `engine/session/` replay real
+landmarks through the shipped configuration rather than synthetic frames: `TraceReplayTest`, a full
+recorded set and the closest thing to an integration test, and `ReferenceFormTest`, which asserts
+that a textbook rep still counts for each of the four measured exercises.
 
 ---
 
@@ -299,3 +321,12 @@ set through the shipped configuration and is the closest thing to an integration
   it so it reads as a choice rather than a surprise. Read the test before you widen a gate.
 - **The permission set is a lock file.** `checkPermissions<Variant>` fails the build if the merged
   manifest gains a permission nobody approved. INTERNET is deliberately present for Firebase.
+- **A skipped test looks exactly like a passing one.** `ReferenceFormTest` was written with
+  `assumeTrue` around a missing-trace check, pointed at the wrong directory, and reported green
+  while measuring nothing at all; only the JUnit XML (`skipped="1"`) gave it away. It now fails
+  instead. `TraceReplayTest` still uses `assumeTrue`, deliberately, because its trace is optional.
+  If a test guards something that must never regress, do not let it skip — and read
+  `app/build/test-results/` rather than trusting an exit code.
+- **Nothing records where the four demo clips came from.** They were supplied to the team rather
+  than sourced, and no licence or attribution is written down for them — `img/CREDITS.md` covers the
+  site photography only. Settle that before any of them is published outside the hackathon.
