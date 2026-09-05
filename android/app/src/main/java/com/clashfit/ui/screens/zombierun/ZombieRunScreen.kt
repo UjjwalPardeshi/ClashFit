@@ -70,6 +70,7 @@ import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Success
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.hypot
 import kotlin.math.cos
