@@ -47,6 +47,7 @@ fun Boss3D(
     jolt: Float,
     modifier: Modifier = Modifier,
     onUnavailable: () -> Unit,
+    playerHit: HudEvent.PlayerHit? = null,
 ) {
     val state by rememberUpdatedState(combat)
     val hit by rememberUpdatedState(jolt)
@@ -293,6 +294,7 @@ fun BossStage(
     modifier: Modifier = Modifier,
     allow3d: Boolean = true,
     onRenderer: (Boolean) -> Unit = {},
+    playerHit: HudEvent.PlayerHit? = null,
 ) {
     var use3d by remember { mutableStateOf(true) }
     val live = allow3d && use3d
@@ -300,8 +302,8 @@ fun BossStage(
     // 3D model" while the fallback quietly took over is worse than saying nothing.
     LaunchedEffect(live) { onRenderer(live) }
     if (live) {
-        Boss3D(combat, jolt, modifier, onUnavailable = { use3d = false })
+        Boss3D(combat, jolt, modifier, onUnavailable = { use3d = false }, playerHit = playerHit)
     } else {
-        BossFigure(combat, jolt, shake, modifier)
+        BossFigure(combat, jolt, shake, modifier, playerHit = playerHit)
     }
 }

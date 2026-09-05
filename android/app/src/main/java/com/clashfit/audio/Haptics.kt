@@ -137,6 +137,22 @@ class Haptics(
         }
     }
 
+    /**
+     * Player hit by boss — a heavy double buzz pattern conveying impact.
+     */
+    fun playerHit() {
+        if (!hapticsEnabled) return
+        try {
+            // Heavy double buzz: strong pulse, brief pause, stronger pulse
+            val timings = longArrayOf(0, 120, 80, 140)
+            val amplitudes = intArrayOf(0, 255, 0, 255)
+            val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
+            vibrator.vibrate(effect)
+        } catch (e: Exception) {
+            Log.w(tag, "Error vibrating player hit", e)
+        }
+    }
+
     fun setEnabled(enabled: Boolean) {
         hapticsEnabled = enabled
     }

@@ -50,6 +50,7 @@ object SessionWiring {
             override fun milestone() = graph.sfx.milestone()
             override fun phase() = graph.sfx.phase()
             override fun bossDown() = graph.sfx.bossDown()
+            override fun playerHit() = graph.sfx.playerHit()
             override fun framingLost() = graph.sfx.framingLost()
             override fun tick() = graph.sfx.tick()
             override fun band(band: FatigueBand) {}
@@ -59,6 +60,7 @@ object SessionWiring {
             override fun rep(verdict: Verdict) = graph.haptics.repTick()
             override fun milestone() = graph.haptics.milestone()
             override fun phase() = graph.haptics.phase()
+            override fun playerHit() = graph.haptics.playerHit()
         }
 
         override val speech: SpeechPort = object : SpeechPort {

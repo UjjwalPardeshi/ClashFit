@@ -57,6 +57,7 @@ sealed interface HudEvent {
     data class Hit(val id: Long, val damage: Int, val verdict: Verdict, val combo: Float) : HudEvent
     data class Band(val band: FatigueBand) : HudEvent
     data class PhaseShift(val label: String) : HudEvent
+    data class PlayerHit(val damage: Int, val hpPct: Float) : HudEvent
     data object BossDown : HudEvent
     data object FramingLost : HudEvent
     data object Milestone : HudEvent
@@ -216,6 +217,13 @@ class SessionViewModel(
         override fun onBand(band: FatigueBand) {
             deps.sfx.band(band)
             _events.tryEmit(HudEvent.Band(band))
+        }
+
+        override fun onPlayerHit(damage: Int, playerHp: Int) {
+            deps.sfx.playerHit()
+            deps.haptics.playerHit()
+            val s = engine.state()
+            _events.tryEmit(HudEvent.PlayerHit(damage, s.combat.playerHpPct))
         }
 
         override fun onSetEnd(telemetry: SetTelemetry, restSec: Int) {

@@ -295,7 +295,11 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
     Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(20.dp)) {
         // Outcome headline
         Kicker("Session · ${d.session.exerciseId.replace('_', ' ')} · ${d.session.mode.replace('_', ' ')}")
-        Headline(if (d.session.outcome == "BOSS_DOWN" || d.session.outcome == "GAME_WON") "Boss down" else "Set saved")
+        Headline(when (d.session.outcome) {
+            "BOSS_DOWN", "GAME_WON" -> "Boss down"
+            "DEFEATED" -> "Defeated"
+            else -> "Set saved"
+        })
         SectionGap(16)
 
         // Reward progression, revealed in order rather than printed all at once. Every number

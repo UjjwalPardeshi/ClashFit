@@ -5,6 +5,8 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -134,6 +136,23 @@ fun CritStamp(hit: HudEvent.Hit?, reduceMotion: Boolean, modifier: Modifier = Mo
                 modifier = Modifier.alpha(alpha),
             )
         }
+    }
+}
+
+/**
+ * Player hit by boss — a red vignette at screen edges with a brief shake.
+ *
+ * The vignette fades over 250ms to show the attack landed. The shake communicates impact.
+ */
+@Composable
+fun PlayerHitFlash(hit: HudEvent.PlayerHit?, reduceMotion: Boolean, modifier: Modifier = Modifier) {
+    if (hit == null) return
+    val a = remember(hit) { Animatable(if (reduceMotion) 0.45f else 0.25f) }
+    LaunchedEffect(hit) { a.animateTo(0f, if (reduceMotion) tween(250) else tween(250, easing = LinearOutSlowInEasing)) }
+    if (reduceMotion) {
+        Box(modifier.fillMaxSize().border(12.dp, Ember.copy(alpha = a.value)))
+    } else {
+        Box(modifier.fillMaxSize().background(Ember.copy(alpha = a.value)))
     }
 }
 

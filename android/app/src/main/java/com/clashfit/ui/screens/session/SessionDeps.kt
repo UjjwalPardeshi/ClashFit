@@ -28,6 +28,7 @@ interface SfxPort {
     fun milestone()
     fun phase()
     fun bossDown()
+    fun playerHit()
     fun framingLost()
     fun tick()
     fun band(band: FatigueBand)
@@ -37,6 +38,7 @@ interface HapticsPort {
     fun rep(verdict: Verdict)
     fun milestone()
     fun phase()
+    fun playerHit()
 }
 
 interface SpeechPort {
@@ -50,6 +52,7 @@ object NoSfx : SfxPort {
     override fun milestone() {}
     override fun phase() {}
     override fun bossDown() {}
+    override fun playerHit() {}
     override fun framingLost() {}
     override fun tick() {}
     override fun band(band: FatigueBand) {}
@@ -59,6 +62,7 @@ object NoHaptics : HapticsPort {
     override fun rep(verdict: Verdict) {}
     override fun milestone() {}
     override fun phase() {}
+    override fun playerHit() {}
 }
 
 object NoSpeech : SpeechPort {
