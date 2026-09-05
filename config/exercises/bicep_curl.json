@@ -26,9 +26,9 @@
     },
     "topEnter": 170,
     "topExit": 160,
-    "bottomEnter": 30,
-    "bottomExit": 45,
-    "targetAngle": 25,
+    "bottomEnter": 85,
+    "bottomExit": 100,
+    "targetAngle": 80,
     "minDescendMs": 150,
     "minBottomMs": 60,
     "minRepMs": 800,
@@ -38,22 +38,22 @@
       "ELBOW",
       "WRIST"
     ],
-    "sides": "EACH",
+    "sides": "EITHER",
     "mergeWindowMs": 500,
-    "_note": "Keypoints 11-13-15 / 12-14-16 (shoulder-elbow-wrist), 3D world angle. A rep opens to 170-180 and closes to 20-30: TOP at >=170, BOTTOM at <=30, 25 is full depth.",
+    "_note": "Keypoints 11-13-15 / 12-14-16 (shoulder-elbow-wrist), 3D world angle. A rep closes to 80: BOTTOM at <=85, 80 is full depth. topEnter stays 170 as the depth reference, which is deliberately more generous than the arm actually reaches.",
     "counter": "STAGE",
     "stage": {
-      "sides": "EACH",
+      "sides": "EITHER",
       "rest": [
         ">",
-        150
+        135
       ],
       "count": [
         "<",
-        40
+        80
       ],
       "debounceMs": 800,
-      "_note": "fitmon countBicepCurls: angle(11,13,15) and angle(12,14,16), >150 is down, <40 counts, 800 ms per arm."
+      "_note": "angle(11,13,15) and angle(12,14,16), per arm, 800 ms apart. Measured on the phone, 5 Sep 2026: an extended arm reads 150-159 on the 3D world landmarks, never 170, because the forearm is nearly edge-on to the camera and the depth axis is the noisiest one. Arming at >170 counted nothing at all. >135 clears the worst extended reading by fifteen degrees; <80 is the depth the user asked for and reaches on both arms."
     }
   },
   "form": {
@@ -75,8 +75,8 @@
     "baselineReps": 3
   },
   "cues": {
-    "enter": "Face the camera, arms straight down (170°+), elbows tucked to your sides.",
-    "tooHigh": "Curl all the way up — elbow closed to 30° or less.",
+    "enter": "Face the camera, arms hanging straight down, elbows tucked to your sides.",
+    "tooHigh": "Curl all the way up — elbow closed to 80° or less.",
     "tooFast": "Slow the curl and squeeze at the top.",
     "framing": "I can't see your elbows — step back."
   }

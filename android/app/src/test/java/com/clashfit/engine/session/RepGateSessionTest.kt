@@ -82,7 +82,7 @@ class RepGateSessionTest {
     private fun overhead(elbow: Float) = SyntheticBody.world(170f, elbowDeg = elbow, shoulderAbductionDeg = 175f)
     private fun press(elbow: Float, abduction: Float) = SyntheticBody.world(170f, elbowDeg = elbow, shoulderAbductionDeg = abduction)
 
-    /** One curl on one arm, the other left hanging open. fitmon: open past 150, closed under 40. */
+    /** One curl on one arm, the other left hanging open. Open past 135, closed under 80. */
     private fun oneArmCurl(d: Driver, arm: String) {
         fun pose(e: Float) = if (arm == "left") curl(e, 175f) else curl(175f, e)
         d.ramp(700, 175f, 20f, ::pose); d.hold(200, pose(20f))
@@ -90,23 +90,23 @@ class RepGateSessionTest {
     }
 
     @Test
-    fun `each arm counts its own curl`() {
+    fun `either arm counts a curl, four in a row`() {
         val rec = Recorder(); val d = Driver(engine("bicep_curl", rec = rec))
         calibrate(d, curl(175f, 175f))
         oneArmCurl(d, "left"); oneArmCurl(d, "right"); oneArmCurl(d, "left"); oneArmCurl(d, "right")
-        assertEquals(4, rec.reps.size, "four arm-curls are four reps")
+        assertEquals(4, rec.reps.size, "four separate arm-curls are four reps, whichever arm did each one")
         assertEquals(listOf(1, 2, 3, 4), rec.reps.map { it.repIndex })
     }
 
     @Test
-    fun `both arms curling together count twice, as fitmon counts them`() {
+    fun `both arms curling together are one rep, not two`() {
         val rec = Recorder(); val d = Driver(engine("bicep_curl", rec = rec))
         calibrate(d, curl(175f, 175f))
         repeat(3) {
             d.ramp(700, 175f, 20f) { e -> curl(e, e) }; d.hold(200, curl(20f, 20f))
             d.ramp(600, 20f, 175f) { e -> curl(e, e) }; d.hold(400, curl(175f, 175f))
         }
-        assertEquals(6, rec.reps.size, "each arm is counted, so three cycles of both arms are six reps")
+        assertEquals(3, rec.reps.size, "one hand or both, a curl is a curl: three cycles are three reps")
     }
 
     @Test
@@ -114,10 +114,10 @@ class RepGateSessionTest {
         val rec = Recorder(); val d = Driver(engine("bicep_curl", rec = rec))
         calibrate(d, curl(175f, 175f))
         repeat(2) {
-            d.ramp(700, 175f, 90f) { e -> curl(e, e) }; d.hold(200, curl(90f, 90f))
-            d.ramp(600, 90f, 175f) { e -> curl(e, e) }; d.hold(400, curl(175f, 175f))
+            d.ramp(700, 175f, 110f) { e -> curl(e, e) }; d.hold(200, curl(110f, 110f))
+            d.ramp(600, 110f, 175f) { e -> curl(e, e) }; d.hold(400, curl(175f, 175f))
         }
-        assertEquals(0, rec.reps.size, "ninety degrees never reaches fitmon's forty")
+        assertEquals(0, rec.reps.size, "a hundred and ten degrees never closes past eighty")
     }
 
     @Test
@@ -127,7 +127,7 @@ class RepGateSessionTest {
         d.ramp(700, 175f, 20f) { e -> curl(e, e) }
         repeat(3) { d.ramp(200, 20f, 60f) { e -> curl(e, e) }; d.ramp(200, 60f, 20f) { e -> curl(e, e) } }
         d.ramp(600, 20f, 175f) { e -> curl(e, e) }; d.hold(400, curl(175f, 175f))
-        assertEquals(2, rec.reps.size, "one rep per arm, however much the bottom is bounced")
+        assertEquals(1, rec.reps.size, "one rep, however much the bottom is bounced")
     }
 
     /** One raise. fitmon watches the wrists cross the shoulders, not the angle. */

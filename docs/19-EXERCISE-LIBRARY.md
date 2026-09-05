@@ -242,7 +242,7 @@ Burpee · Squat thrust · Jump squat · Tuck jump · Star jump · Lateral bound 
 > | Exercise | Keypoints | Rest | Counts at | Sides | Debounce |
 > |---|---|---|---|---|---|
 > | Lateral raise | 23-11-13 / 24-12-14 | wrists below the shoulders | wrists above them | both | 1000 ms |
-> | Bicep curl | 11-13-15 / 12-14-16 | elbow > 150° | elbow < 40° | each arm | 800 ms |
+> | Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80° | either arm | 800 ms |
 > | Shoulder press | 11-13-15 / 12-14-16 | elbow < 100° | elbow > 160° overhead | better side | 1000 ms |
 > | Squat | 23-25-27 / 24-26-28 | both knees < 110° | both knees > 160° | both | 1000 ms |
 >

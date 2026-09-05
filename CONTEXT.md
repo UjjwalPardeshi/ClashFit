@@ -110,11 +110,16 @@ Measured by hand against the BlazePose keypoints, pinned to the top of every exe
 | Exercise | Keypoints | Rest | Counts at | Sides |
 |---|---|---|---|---|
 | Lateral raise | 23-11-13 / 24-12-14 | both wrists below the shoulders | both wrists above them | both together |
-| Bicep curl | 11-13-15 / 12-14-16 | elbow > 150° | elbow < 40° | each arm counts |
+| Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80° | either arm, one rep |
 | Shoulder press | 11-13-15 / 12-14-16 | elbow < 100° | elbow > 160°, wrist above the shoulder | better-seen side |
 | Squat | 23-25-27 / 24-26-28 | both knees < 110° | both knees > 160° | both together |
 
-Debounce is 800 ms for the curl and 1000 ms for the rest. Two rules were added on top of fitmon,
+Debounce is 800 ms for the curl and 1000 ms for the rest. The curl's two numbers are the only ones that are not
+fitmon's, and the reason is worth knowing before you tune anything else. Angles come from the 3D
+world landmarks, whose depth axis is the noisiest, and a forearm hanging at your side is nearly
+edge-on to the camera. So an arm the player believes is straight reads 150 to 159 on the phone, not
+the 170 to 180 the geometry says. Arming the counter at 170 counted nothing at all. Measure on the
+device before choosing a threshold; do not take the number off a diagram. Two further rules were added on top of fitmon,
 because fitmon miscounts without them: a triceps extension needs the wrist above the shoulder to be
 at rest, and dropping the arm clears the stage, so curling at your sides after an overhead set
 cannot count.
