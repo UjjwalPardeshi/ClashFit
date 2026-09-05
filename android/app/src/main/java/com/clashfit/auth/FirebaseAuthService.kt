@@ -15,40 +15,49 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.CancellationException
+import com.google.firebase.auth.FirebaseUser
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class FirebaseAuthService(private val scope: CoroutineScope) : AuthService {
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
 
+    /**
+     * Fed by Firebase's AuthStateListener — and, separately, by [publish].
+     *
+     * The listener fires the instant createUser returns, which is before updateProfile has run,
+     * so the user it hands over has no display name yet. Profile updates never fire the listener
+     * again. For the whole of the sign-up session the app therefore held a user whose name was
+     * the empty string: the You screen showed a blank beside "Recruit", the avatar showed "?",
+     * and the score sync published a nameless row. It healed itself on the next launch, because
+     * Firebase caches the profile — which is exactly why nobody had seen it, and exactly when it
+     * would have been seen: the moment somebody makes an account in front of a judge.
+     */
+    private val _state = MutableStateFlow<AuthState>(AuthState.Loading)
+    // Declared before `state` on purpose. Property initialisers run in declaration order, and
+    // createAuthStateFlow() registers a listener that Firebase fires synchronously — which
+    // writes to _state. Below `state`, _state was still null at that moment and every
+    // collector in the app hit a NullPointerException on a delegate that did not exist yet.
     override val state: StateFlow<AuthState> = createAuthStateFlow()
 
     override val isCloud: Boolean = true
 
     private fun createAuthStateFlow(): StateFlow<AuthState> {
-        return callbackFlow<AuthState> {
-            send(AuthState.Loading)
+        auth.addAuthStateListener { firebase -> publish(firebase.currentUser) }
+        return _state.asStateFlow()
+    }
 
-            val listener = FirebaseAuth.AuthStateListener { auth ->
-                val currentUser = auth.currentUser
-                if (currentUser != null) {
-                    val user = AuthUser(
-                        uid = currentUser.uid,
-                        email = currentUser.email ?: "",
-                        displayName = currentUser.displayName ?: "",
-                        emailVerified = currentUser.isEmailVerified
-                    )
-                    trySend(AuthState.SignedIn(user))
-                } else {
-                    trySend(AuthState.SignedOut)
-                }
-            }
-
-            auth.addAuthStateListener(listener)
-
-            awaitClose {
-                auth.removeAuthStateListener(listener)
-            }
-        }.stateIn(scope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(), AuthState.Loading)
+    /** The current Firebase user, as the app sees it. Called by the listener and after any profile write. */
+    private fun publish(user: FirebaseUser?) {
+        _state.value = if (user == null) AuthState.SignedOut else AuthState.SignedIn(
+            AuthUser(
+                uid = user.uid,
+                email = user.email ?: "",
+                displayName = user.displayName ?: "",
+                emailVerified = user.isEmailVerified,
+            ),
+        )
     }
 
     override suspend fun signUp(
@@ -75,6 +84,8 @@ class FirebaseAuthService(private val scope: CoroutineScope) : AuthService {
                 this.displayName = displayName
             }
             firebaseUser.updateProfile(profileUpdates).await()
+            // The listener has already emitted a nameless user. Emit the named one.
+            publish(auth.currentUser)
 
             // Generate friend code from uid
             val friendCode = FriendCodes.forUid(firebaseUser.uid)
@@ -175,6 +186,7 @@ class FirebaseAuthService(private val scope: CoroutineScope) : AuthService {
                 this.displayName = name
             }
             user.updateProfile(profileUpdates).await()
+            publish(auth.currentUser)
 
             // Also update in Firestore
             firestore.collection("users").document(user.uid)

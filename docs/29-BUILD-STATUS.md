@@ -2,7 +2,7 @@
 
 What is built and verified, what is deliberately event-only, and what is genuinely still open.
 
-**Last updated:** 5 Sep 2026 · Android app shipping · 587 tests passing · 51 exercises · 16 modes · 72 screenshot baselines · 195 commits
+**Last updated:** 5 Sep 2026 · Android app shipping · 597 tests passing · 51 exercises · 16 modes · 72 screenshot baselines · 195 commits
 
 ---
 
@@ -135,6 +135,7 @@ Numbers 16 to 35 came from adversarial audit passes run against the code after i
 | 35 | "Leaderboard" broke across two lines at 1.5x text | The tab a judge is told to open, mid-word, on every screen |
 | 36 | **A fresh install with no signal could not be opened** | Both doors on the welcome screen talked to Firebase. On a venue's wifi, a plane, or a phone with data off, the first screen was the last screen — for an app whose whole claim is that the referee runs on the phone |
 | 37 | Two permissions in the APK nobody had asked for | Play services added `READ_GSERVICES` and androidx a receiver permission; found the moment the permission set was written down as a lock file |
+| 38 | **A new account had no name until the app was relaunched** | Firebase's auth listener fires before the display name is written and never fires again for a profile update; an empty string is not null, so the fallback never ran. The profile card showed nothing beside "Recruit" and the avatar drew "?" — only in the sign-up session, which is the one a judge watches. Found by making an account on the demo phone at the venue |
 
 ---
 
@@ -145,7 +146,7 @@ The Android app:
 ```bash
 cd android
 ./gradlew :app:installDebug          # onto a connected phone
-./gradlew :app:testDebugUnitTest     # 587 tests, no phone needed
+./gradlew :app:testDebugUnitTest     # 597 tests, no phone needed
 ./gradlew :app:recordRoborazziDebug  # re-render the 72 screenshot baselines
 ```
 

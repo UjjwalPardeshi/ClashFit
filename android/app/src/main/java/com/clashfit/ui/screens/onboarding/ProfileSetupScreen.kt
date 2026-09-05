@@ -63,7 +63,7 @@ fun ProfileSetupScreen(graph: AppGraph, onDone: () -> Unit) {
     val settings by graph.prefs.settings.collectAsStateWithLifecycle(initialValue = Prefs.Settings())
     val scope = rememberCoroutineScope()
 
-    val name = (auth as? AuthState.SignedIn)?.user?.displayName ?: "You"
+    val name = (auth as? AuthState.SignedIn)?.user?.shownName("You") ?: "You"
     var color by rememberSaveable { mutableStateOf(settings.avatarColor) }
     var goal by rememberSaveable { mutableStateOf(Prefs.Goal.GET_STRONGER) }
     var exercise by rememberSaveable { mutableStateOf(settings.preferredExercise) }

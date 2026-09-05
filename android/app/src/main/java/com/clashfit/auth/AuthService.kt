@@ -8,7 +8,17 @@ data class AuthUser(
     val email: String,
     val displayName: String,
     val emailVerified: Boolean = false,
-)
+) {
+    /**
+     * The name to print, given that [displayName] can be blank.
+     *
+     * It is blank for the whole of the sign-up session unless the auth state is re-published after
+     * the profile write, and an empty string is not null — so `displayName ?: "Athlete"` printed
+     * nothing at all beside the rank, and the avatar drew a question mark. Every screen that shows
+     * a name goes through this, so the fallback is one decision rather than three.
+     */
+    fun shownName(fallback: String = "Athlete"): String = displayName.trim().ifBlank { fallback }
+}
 
 sealed interface AuthState {
     /** Not yet known: the splash waits on this before choosing a first screen. */
