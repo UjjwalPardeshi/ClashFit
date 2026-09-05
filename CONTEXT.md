@@ -146,26 +146,31 @@ Widen that list to put them back; nothing else has to change.
 | Exercise | Keypoints | Rest | Counts at | Sides |
 |---|---|---|---|---|
 | Lateral raise | 23-11-13 / 24-12-14 | both arms < 25° | both arms > 90°, out to the side, never past 110° | both, counted on the way down |
-| Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80°, elbow within 30° of the torso, lift ≥ 500 ms | either arm, one rep |
+| Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80°, elbow within 35° of the torso, lift ≥ 120 ms | either arm, one rep |
 | Shoulder press | 13-11-23 / 14-12-24 | arm-to-torso < 75° | arm-to-torso > 135°, wrist above the shoulder | better-seen side |
 | Squat | 23-25-27 / 24-26-28 | both knees < 72° | both knees > 150° | both together |
 
 Debounce is 800 ms for the curl and 1000 ms for the rest.
 
 **The curl has two guards the angle cannot supply**, added 6 Sep 2026 because the player asked for
-reps that only count when they are clean. `armLine` requires the upper arm to stay within 30° of the
-torso, measured on the shoulder and elbow the rep already uses against the hip-to-shoulder axis: an
-elbow driven forward and up closes through exactly the same angles as one pinned to the ribs, so
-without it a swung rep counted identically to a curled one. `minConcentricMs` requires the lift —
-the 135°-to-80° segment, about a third of the sweep — to take 500 ms, so a full curl runs about
-1.4 s; `debounceMs` never did this, it only spaces reps apart, so a flung rep counted as long as the
-previous one was far enough back.
+reps that only count when they are clean. `armLine` requires the upper arm to be within 35° of the
+torso **at the counting frame**, measured on the shoulder and elbow the rep already uses against the
+hip-to-shoulder axis: an elbow driven forward and up closes through exactly the same angles as one
+pinned to the ribs, so without it a swung rep counted identically to a curled one. `minConcentricMs`
+requires the lift — rest to the counting line — to take 120 ms; `debounceMs` never did this, it only
+spaces reps apart, so a flung rep counted as long as the previous one was far enough back.
 
-Both numbers are **provisional**, and they are the only thresholds here that were not measured on
-the player. There is no recorded trace of a real counting curl to measure against:
-`reference-bicep-curl.jsonl` is the picker animation and closes only to 84.8°, so it counts nothing
-by design. They are set generous on purpose — enough to refuse an obvious swing or fling without
-starving a real set — and should be tightened once measured with `tools/angles.html`.
+Both numbers are **measured**, from a 65 s logcat capture of the player's own curls on 6 Sep 2026.
+At the counting frame a correct curl reads 3.9-22.1° off the torso, and the lift takes 159-262 ms.
+The guesses they replaced — 30° and 500 ms — refused all fourteen reps he performed: ten died on
+tempo, four on the arm line. The tempo gate is deliberately modest at his pace: it refuses a throw,
+not a brisk rep.
+
+**The arm line is judged at the counting frame, not accumulated over the rep.** That was the four:
+somewhere earlier in a good rep the reading spikes as far as 48°, so an any-frame rule threw away
+good reps on a single noisy frame. The `plane` guard is checked at that same moment for the same
+reason. The lesson generalises — a form guard on a noisy landmark belongs at the one instant the
+movement is defined, not across every frame of it.
 
 There is deliberately **no guard against hammer curls**, which the player also asked for. Telling a
 supinated curl from a neutral grip needs landmarks 17-22; the model reports those at 0.3-0.7
