@@ -98,12 +98,12 @@ class ModesScreenTest {
     }
 
     @Test
-    fun `outbreak is present in all modes`() {
+    fun `zombie run is present in all modes`() {
         assertTrue(GameMode.entries.contains(GameMode.OUTBREAK))
     }
 
     @Test
-    fun `outbreak ships`() {
+    fun `zombie run ships`() {
         // It was `enabled = false` while the mode was a specification. It is a screen now, so this
         // asserts the opposite: a disabled mode draws a "Coming online" tag and refuses the tap,
         // which would hide a mode that works.
@@ -111,16 +111,16 @@ class ModesScreenTest {
     }
 
     @Test
-    fun `outbreak is absent from game mode grid`() {
+    fun `zombie run is absent from game mode grid`() {
         // Shipping the mode does not put it on the site's fixed sixteen-tile grid. That grid is a
-        // promise the landing page makes, and Outbreak is reached from All modes and from the
+        // promise the landing page makes, and Zombie Run is reached from All modes and from the
         // Outdoors screen instead.
         assertFalse(GameMode.grid.contains(GameMode.OUTBREAK))
     }
 
     @Test
-    fun `outbreak has correct properties`() {
-        assertEquals("Outbreak", GameMode.OUTBREAK.title)
+    fun `zombie run has correct properties`() {
+        assertEquals("Zombie Run", GameMode.OUTBREAK.title)
         assertEquals(ModeKind.SOLO, GameMode.OUTBREAK.kind)
         assertEquals(Family.CADENCE, GameMode.OUTBREAK.family)
         assertFalse(GameMode.OUTBREAK.timed)

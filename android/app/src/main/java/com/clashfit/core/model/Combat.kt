@@ -65,17 +65,17 @@ data class SigilState(
     override val outcome: GameOutcome,
 ) : FamilyGameState
 
-// ── Outbreak ────────────────────────────────────────────────────────────────
+// ── Zombie Run ────────────────────────────────────────────────────────────────
 // The outdoor chase. Positions are metres east and north of wherever the chase started, never
 // latitude and longitude: the rules are a flat-frame problem and keeping coordinates out of the
 // engine is what stops a coordinate ever reaching the coach, the record, or the network.
-// docs/33-FEATURE-OUTBREAK.md
+// docs/33-FEATURE-ZOMBIE-RUN.md
 
 /** Where a chase is in its own arc. */
-enum class OutbreakPhase { HEAD_START, CHASE, ESCAPED, CAUGHT }
+enum class ZombieRunPhase { HEAD_START, CHASE, ESCAPED, CAUGHT }
 
 /** One pursuer, in the local metric frame. Dead ones are kept so the map can show the kill. */
-data class OutbreakPursuer(
+data class Zombie(
     val id: Int,
     val eastM: Float,
     val northM: Float,
@@ -83,30 +83,30 @@ data class OutbreakPursuer(
 )
 
 /** One ammo cache. Taken caches stay in the list so the map can grey them out. */
-data class OutbreakCache(
+data class AmmoCache(
     val id: Int,
     val eastM: Float,
     val northM: Float,
     val taken: Boolean,
 )
 
-data class OutbreakState(
-    val phase: OutbreakPhase,
+data class ZombieRunState(
+    val phase: ZombieRunPhase,
     val outcome: GameOutcome,
     val elapsedSec: Float,
     val headStartLeftSec: Float,
     val secondsLeft: Float,
     val playerEastM: Float,
     val playerNorthM: Float,
-    val pursuers: List<OutbreakPursuer>,
-    val caches: List<OutbreakCache>,
+    val pursuers: List<Zombie>,
+    val caches: List<AmmoCache>,
     val ammo: Int,
     val neutralised: Int,
     val cachesCollected: Int,
     val distanceM: Float,
     /** Metres to the closest living pursuer, or null when the map is clear. */
-    val nearestPursuerM: Float?,
+    val nearestZombieM: Float?,
     val progress: Float,
 ) {
-    val pursuersLeft: Int get() = pursuers.count { it.alive }
+    val zombiesLeft: Int get() = pursuers.count { it.alive }
 }

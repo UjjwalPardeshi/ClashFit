@@ -1,10 +1,10 @@
 package com.clashfit.engine.games
 
 import com.clashfit.core.model.GameOutcome
-import com.clashfit.core.model.OutbreakCache
-import com.clashfit.core.model.OutbreakPhase
-import com.clashfit.core.model.OutbreakPursuer
-import com.clashfit.core.model.OutbreakState
+import com.clashfit.core.model.AmmoCache
+import com.clashfit.core.model.ZombieRunPhase
+import com.clashfit.core.model.Zombie
+import com.clashfit.core.model.ZombieRunState
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -13,7 +13,7 @@ import kotlin.math.min
 import kotlin.math.sin
 
 /**
- * OUTBREAK — the outdoor chase, on a real map. `docs/33-FEATURE-OUTBREAK.md`.
+ * ZOMBIE RUN — the outdoor chase, on a real map. `docs/33-FEATURE-ZOMBIE-RUN.md`.
  *
  * This class is the whole rule set and it is deliberately Android-free: it knows nothing about
  * GPS, nothing about map tiles and nothing about Compose. It works in a flat local frame of
@@ -22,7 +22,7 @@ import kotlin.math.sin
  *
  * That seam is what makes the mode testable at all. A chase cannot be verified by walking around
  * outside twice and hoping, so every rule here is exercised on the JVM by feeding it a scripted
- * path — see `OutbreakGameTest`.
+ * path — see `ZombieRunGameTest`.
  *
  * ### The rules, in the order they matter
  *
@@ -31,12 +31,12 @@ import kotlin.math.sin
  * 2. **Pursuers spawn on a ring**, not uniformly in a disc. Uniform-in-a-disc spawning clusters
  *    near the player (area grows with r²), which means a mode whose whole promise is a head start
  *    would routinely open with something already breathing down your neck. A ring between
- *    [OutbreakConfig.spawnMinRadiusM] and the configured spawn radius keeps the opening honest.
+ *    [ZombieRunConfig.spawnMinRadiusM] and the configured spawn radius keeps the opening honest.
  * 3. **Effort, not just position, decides the gap.** This is the point of the mode and the reason
  *    it belongs in this app rather than in a map toy: a pursuer speeds up when the player's
  *    *cadence* falls, so standing still on a street corner is punished the moment the phone stops
  *    seeing footfalls — not thirty seconds later when the GPS finally agrees you have not moved.
- * 4. **Caches arm you.** Reaching one inside [OutbreakConfig.pickupRadiusM] banks one round. A
+ * 4. **Caches arm you.** Reaching one inside [ZombieRunConfig.pickupRadiusM] banks one round. A
  *    pursuer that closes to the capture radius is neutralised if you have a round to spend, and
  *    catches you if you do not.
  * 5. **Survive the clock and you are out.**
@@ -47,7 +47,7 @@ import kotlin.math.sin
  * same seed lays out the same chase on both phones and in every test run. That is what lets a
  * chase be replayed from a challenge code later, and it is why nothing here calls `Math.random`.
  */
-class OutbreakGame(private val cfg: OutbreakConfig = OutbreakConfig()) {
+class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
 
     /**
      * Every number the chase runs on.
@@ -56,7 +56,7 @@ class OutbreakGame(private val cfg: OutbreakConfig = OutbreakConfig()) {
      * file's own and are stated here rather than buried in the code so a bad chase can be retuned
      * without reading it.
      */
-    data class OutbreakConfig(
+    data class ZombieRunConfig(
         /** Seconds before pursuers begin to move. */
         val headStartSec: Int = 60,
         /** Outer radius of the spawn ring, in metres. */
@@ -73,7 +73,7 @@ class OutbreakGame(private val cfg: OutbreakConfig = OutbreakConfig()) {
         /** Survive this long and the chase is won. */
         val survivalSec: Int = 600,
         /** A pursuer's ground speed at the player's target cadence, metres per second. */
-        val pursuerBaseMps: Float = 2.35f,
+        val zombieBaseMps: Float = 2.35f,
         /**
          * The cadence a chase is priced against, in steps per minute. Roughly a steady jog: below
          * it the pursuers gain, above it they lose ground.
@@ -95,8 +95,8 @@ class OutbreakGame(private val cfg: OutbreakConfig = OutbreakConfig()) {
     private var playerNorthM: Float = 0f
     private var cadenceSpm: Int = 0
 
-    private var pursuers: MutableList<OutbreakPursuer> = mutableListOf()
-    private var caches: MutableList<OutbreakCache> = mutableListOf()
+    private var pursuers: MutableList<Zombie> = mutableListOf()
+    private var caches: MutableList<AmmoCache> = mutableListOf()
     private var ammo: Int = 0
     private var neutralised: Int = 0
     private var collected: Int = 0
@@ -125,13 +125,13 @@ class OutbreakGame(private val cfg: OutbreakConfig = OutbreakConfig()) {
         val rng = Lcg(this.seed)
         pursuers = MutableList(cfg.pursuers) { i ->
             val (e, n) = rng.onRing(cfg.spawnMinRadiusM.toFloat(), cfg.spawnRadiusM.toFloat())
-            OutbreakPursuer(id = i, eastM = e, northM = n, alive = true)
+            Zombie(id = i, eastM = e, northM = n, alive = true)
         }
         // Caches sit inside the pursuer ring so that going to get one is a real decision: it is
         // ground you cover away from your escape, not a freebie on the way out.
         caches = MutableList(cfg.ammoPickups) { i ->
             val (e, n) = rng.onRing(cfg.pickupRadiusM * 3f, cfg.spawnMinRadiusM.toFloat())
-            OutbreakCache(id = i, eastM = e, northM = n, taken = false)
+            AmmoCache(id = i, eastM = e, northM = n, taken = false)
         }
     }
 
@@ -142,7 +142,7 @@ class OutbreakGame(private val cfg: OutbreakConfig = OutbreakConfig()) {
      * pursuer to look alive on screen, so the UI ticks this on the frame clock and only updates
      * the position when a fix actually lands.
      */
-    fun onTick(tMs: Long, eastM: Float, northM: Float, cadenceSpm: Int): OutbreakState {
+    fun onTick(tMs: Long, eastM: Float, northM: Float, cadenceSpm: Int): ZombieRunState {
         if (outcome != GameOutcome.RUNNING) return state(tMs)
         val startedAt = startedAtMs ?: return state(tMs)
 
@@ -192,7 +192,7 @@ class OutbreakGame(private val cfg: OutbreakConfig = OutbreakConfig()) {
      */
     private fun advancePursuers(deltaMs: Long) {
         if (deltaMs <= 0L) return
-        val speed = cfg.pursuerBaseMps * effortMultiplier()
+        val speed = cfg.zombieBaseMps * effortMultiplier()
         val step = speed * (deltaMs / 1000f)
         for (i in pursuers.indices) {
             val p = pursuers[i]
@@ -213,8 +213,8 @@ class OutbreakGame(private val cfg: OutbreakConfig = OutbreakConfig()) {
     /**
      * How much faster than base the pack is moving, from the player's cadence.
      *
-     * Linear between [OutbreakConfig.slackestMultiplier] at a standstill and
-     * [OutbreakConfig.keenestMultiplier] at the target cadence, then flat. There is no reward for
+     * Linear between [ZombieRunConfig.slackestMultiplier] at a standstill and
+     * [ZombieRunConfig.keenestMultiplier] at the target cadence, then flat. There is no reward for
      * sprinting past the target, because a mode that scales indefinitely with effort punishes the
      * shorter legs in the room rather than the lazier ones.
      */
@@ -245,20 +245,20 @@ class OutbreakGame(private val cfg: OutbreakConfig = OutbreakConfig()) {
     }
 
     /** Metres to the closest living pursuer, or null when none is left. */
-    fun nearestPursuerM(): Float? = pursuers.filter { it.alive }
+    fun nearestZombieM(): Float? = pursuers.filter { it.alive }
         .minOfOrNull { hypot(it.eastM - playerEastM, it.northM - playerNorthM) }
 
-    fun state(tMs: Long): OutbreakState {
+    fun state(tMs: Long): ZombieRunState {
         val startedAt = startedAtMs
         val elapsedSec = if (startedAt == null) 0f else (tMs - startedAt) / 1000f
         val headStartLeft = max(0f, cfg.headStartSec - elapsedSec)
         val phase = when {
-            outcome == GameOutcome.WON -> OutbreakPhase.ESCAPED
-            outcome == GameOutcome.LOST -> OutbreakPhase.CAUGHT
-            headStartLeft > 0f -> OutbreakPhase.HEAD_START
-            else -> OutbreakPhase.CHASE
+            outcome == GameOutcome.WON -> ZombieRunPhase.ESCAPED
+            outcome == GameOutcome.LOST -> ZombieRunPhase.CAUGHT
+            headStartLeft > 0f -> ZombieRunPhase.HEAD_START
+            else -> ZombieRunPhase.CHASE
         }
-        return OutbreakState(
+        return ZombieRunState(
             phase = phase,
             outcome = outcome,
             elapsedSec = elapsedSec,
@@ -272,7 +272,7 @@ class OutbreakGame(private val cfg: OutbreakConfig = OutbreakConfig()) {
             neutralised = neutralised,
             cachesCollected = collected,
             distanceM = distanceM,
-            nearestPursuerM = nearestPursuerM(),
+            nearestZombieM = nearestZombieM(),
             progress = (elapsedSec / cfg.survivalSec).coerceIn(0f, 1f),
         )
     }

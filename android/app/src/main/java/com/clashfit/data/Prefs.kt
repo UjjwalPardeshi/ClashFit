@@ -64,7 +64,7 @@ class Prefs(private val context: Context) {
          * Off until the player says yes, and they are asked in words rather than by a permission
          * dialog. A map centred on you is a request that carries roughly where you are to a tile
          * server, and this app's whole argument is that it says so when something leaves the
-         * phone. `docs/33-FEATURE-OUTBREAK.md` § Rules this mode must follow, rule 4.
+         * phone. `docs/33-FEATURE-ZOMBIE-RUN.md` § Rules this mode must follow, rule 4.
          *
          * With this off the route still draws — on the app's own grid, with no network at all.
          */

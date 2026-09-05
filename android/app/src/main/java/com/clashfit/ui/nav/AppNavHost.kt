@@ -48,7 +48,7 @@ import com.clashfit.ui.screens.session.bossPreviewRoutes
 import com.clashfit.ui.screens.social.competeRoutes
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
-import com.clashfit.ui.screens.outbreak.OutbreakScreen
+import com.clashfit.ui.screens.zombierun.ZombieRunScreen
 
 /**
  * The whole navigation graph, inside the app shell. The shell draws the bottom bar and hides it
@@ -175,7 +175,7 @@ fun AppNavHost(
             bossPreviewRoutes(graph, nav) // the boss on its own, to check the renderer at a venue
             competeRoutes(graph, nav)    // the social hub: boards, friends, badges, challenges
             runRoutes(graph, nav)        // the run tracker
-            composable<Outbreak> { OutbreakScreen(graph, nav) }
+            composable<ZombieRun> { ZombieRunScreen(graph, nav) }
             alarmRoutes(graph, nav)      // the rep-gated wake-up alarm
 
             duelRoutes(graph, nav)       // 1v1 lobby and the raid room, phone-to-phone over Nearby

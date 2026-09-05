@@ -1,7 +1,7 @@
 package com.clashfit.engine.games
 
 import com.clashfit.core.model.GameOutcome
-import com.clashfit.core.model.OutbreakPhase
+import com.clashfit.core.model.ZombieRunPhase
 import kotlin.math.hypot
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,10 +12,10 @@ import kotlin.test.assertFalse
 /**
  * The chase, exercised without going outside.
  *
- * Every test drives [OutbreakGame] with a scripted path in the local metric frame, which is the
+ * Every test drives [ZombieRunGame] with a scripted path in the local metric frame, which is the
  * whole reason the game takes metres rather than a `Location`.
  */
-class OutbreakGameTest {
+class ZombieRunGameTest {
 
     private fun game(
         headStartSec: Int = 60,
@@ -23,8 +23,8 @@ class OutbreakGameTest {
         pursuers: Int = 4,
         ammoPickups: Int = 6,
         captureRadiusM: Int = 12,
-    ) = OutbreakGame(
-        OutbreakGame.OutbreakConfig(
+    ) = ZombieRunGame(
+        ZombieRunGame.ZombieRunConfig(
             headStartSec = headStartSec,
             survivalSec = survivalSec,
             pursuers = pursuers,
@@ -46,8 +46,8 @@ class OutbreakGameTest {
 
     @Test
     fun `pursuers spawn on the ring, never inside the minimum radius`() {
-        val cfg = OutbreakGame.OutbreakConfig(pursuers = 24)
-        val g = OutbreakGame(cfg)
+        val cfg = ZombieRunGame.ZombieRunConfig(pursuers = 24)
+        val g = ZombieRunGame(cfg)
         g.start(seed = 7L, tMs = 0L)
         g.state(0L).pursuers.forEach {
             val r = hypot(it.eastM, it.northM)
@@ -78,7 +78,7 @@ class OutbreakGameTest {
         val before = g.state(0L).pursuers
         // Half a minute of standing perfectly still, which after the head start would be fatal.
         val s = g.onTick(30_000L, 0f, 0f, cadenceSpm = 0)
-        assertEquals(OutbreakPhase.HEAD_START, s.phase)
+        assertEquals(ZombieRunPhase.HEAD_START, s.phase)
         assertEquals(before, s.pursuers)
         assertEquals(GameOutcome.RUNNING, s.outcome)
     }
@@ -90,7 +90,7 @@ class OutbreakGameTest {
         assertEquals(10f, g.onTick(0L, 0f, 0f, 150).headStartLeftSec)
         val s = g.onTick(11_000L, 0f, 0f, 150)
         assertEquals(0f, s.headStartLeftSec)
-        assertEquals(OutbreakPhase.CHASE, s.phase)
+        assertEquals(ZombieRunPhase.CHASE, s.phase)
     }
 
     @Test
@@ -104,7 +104,7 @@ class OutbreakGameTest {
             val s = g.onTick(t, 0f, 0f, cadenceSpm = 0)
             if (s.outcome == GameOutcome.LOST) {
                 caught = true
-                assertEquals(OutbreakPhase.CAUGHT, s.phase)
+                assertEquals(ZombieRunPhase.CAUGHT, s.phase)
                 break
             }
             t += 1_000L
@@ -119,7 +119,7 @@ class OutbreakGameTest {
             g.start(3L, 0L)
             g.onTick(0L, 0f, 0f, cadence)
             g.onTick(60_000L, 0f, 0f, cadence)
-            return g.nearestPursuerM() ?: 0f
+            return g.nearestZombieM() ?: 0f
         }
         // Same standing-still path, different measured effort: the pack is nearer when the legs
         // stopped, which is the mode's entire argument for existing.
@@ -128,8 +128,8 @@ class OutbreakGameTest {
 
     @Test
     fun `effort multiplier is bounded by the configured extremes`() {
-        val cfg = OutbreakGame.OutbreakConfig(targetCadenceSpm = 150)
-        val g = OutbreakGame(cfg)
+        val cfg = ZombieRunGame.ZombieRunConfig(targetCadenceSpm = 150)
+        val g = ZombieRunGame(cfg)
         g.start(1L, 0L)
         g.onTick(0L, 0f, 0f, cadenceSpm = 0)
         assertEquals(cfg.slackestMultiplier, g.effortMultiplier(), 0.001f)
@@ -173,7 +173,7 @@ class OutbreakGameTest {
         val g2 = g.onTick(700_000L, p.eastM, p.northM, 150)
         assertEquals(0, g2.ammo)
         assertEquals(1, g2.neutralised)
-        assertEquals(0, g2.pursuersLeft)
+        assertEquals(0, g2.zombiesLeft)
         // Clearing the map is an escape.
         assertEquals(GameOutcome.WON, g2.outcome)
     }
@@ -184,7 +184,7 @@ class OutbreakGameTest {
         g.start(4L, 0L)
         val s = g.onTick(11_000L, 0f, 0f, 150)
         assertEquals(GameOutcome.WON, s.outcome)
-        assertEquals(OutbreakPhase.ESCAPED, s.phase)
+        assertEquals(ZombieRunPhase.ESCAPED, s.phase)
     }
 
     @Test
@@ -211,7 +211,7 @@ class OutbreakGameTest {
     @Test
     fun `a pursuer never overshoots the player`() {
         // One pursuer, an absurd tick gap: without the clamp it would sail past and read as a miss.
-        val g = OutbreakGame(OutbreakGame.OutbreakConfig(headStartSec = 0, pursuers = 1, ammoPickups = 0))
+        val g = ZombieRunGame(ZombieRunGame.ZombieRunConfig(headStartSec = 0, pursuers = 1, ammoPickups = 0))
         g.start(5L, 0L)
         g.onTick(0L, 0f, 0f, 150)
         val s = g.onTick(600_000L, 0f, 0f, 150)
@@ -235,7 +235,7 @@ class OutbreakGameTest {
         val s = g.state(0L)
         assertEquals(GameOutcome.RUNNING, s.outcome)
         assertTrue(s.pursuers.isEmpty())
-        assertFalse(s.nearestPursuerM != null)
+        assertFalse(s.nearestZombieM != null)
         val ticked = g.onTick(1_000L, 5f, 5f, 100)
         assertNotNull(ticked)
     }

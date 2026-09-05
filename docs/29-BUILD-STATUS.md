@@ -56,9 +56,10 @@ What is built and verified, what is deliberately event-only, and what is genuine
 | **Baseline profile** — the startup path, the component kit and the fight loop compiled ahead of time | ✅ | `app/src/main/baseline-prof.txt` |
 | **Permission lock file** — every permission the APK may hold, with its reason; the build fails on any drift in either direction | ✅ | `PERMISSION_ALLOW_LIST`, `checkPermissions<Variant>` |
 | **Opens with no network** — a third door on the welcome screen; an account buys the leaderboard and nothing else | ✅ | [34](34-ACCOUNTS-SOCIAL.md) |
-| **Maps** — OpenStreetMap tiles under a route, off until asked for in words, cached app-private | ✅ | [33](33-FEATURE-OUTBREAK.md) |
+| **Maps** — OpenStreetMap tiles under a route, off until asked for in words, cached app-private | ✅ | [33](33-FEATURE-ZOMBIE-RUN.md) |
 | **Walking** — a walk is a first-class activity with its own XP rate, steps and badges | ✅ | [23](23-META-PROGRESSION.md) |
-| **Outbreak** — the outdoor chase, on a real map; pursuers close when your cadence drops | ✅ | [33](33-FEATURE-OUTBREAK.md) |
+| **Zombie Run** — the outdoor chase, on a real map; the horde closes when your cadence drops | ✅ | [33](33-FEATURE-ZOMBIE-RUN.md) |
+| **Indoor tracking** — steps and heading carry the route where GPS cannot, stride learned from GPS | ✅ | [33](33-FEATURE-ZOMBIE-RUN.md) |
 | **Shareable card** — a run as a 1080×1920 picture in three looks, straight to a story or a chat | ✅ | [15](15-ASSET-BRIEF.md) |
 | **Personal records** — fastest kilometre by sliding window, longest activity, biggest climb | ✅ | [23](23-META-PROGRESSION.md) |
 

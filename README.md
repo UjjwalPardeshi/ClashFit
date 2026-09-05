@@ -199,6 +199,13 @@ athlete, and a test asserts it.
 
 ## Accounts, levels and leaderboards
 
+**Outdoors**: Runs and walks are tracked by GPS, and by the phone's own step counter and compass
+where GPS cannot reach — indoors a fix is wider than the building, so satellites alone record
+nothing at all. The stride the indoor track uses is learned from GPS whenever both can be trusted
+over the same stretch. **Zombie Run** puts a chase on that map: sixty seconds of head start, then
+the horde closes, and it closes faster when your cadence drops rather than only when your
+coordinate stops.
+
 **Progression**: XP earned from rep quality (4 base + 8 × formMean per rep), bonuses for a boss
 defeated (25 XP), a new personal best (30 XP), streak days (5–35 XP per day, up to 7 days),
 and weekly challenge completion (100 XP). Casual sessions earn half XP. Cumulative XP determines
@@ -225,7 +232,8 @@ See [`firebase/README.md`](firebase/README.md) for Firestore schema and setup in
 | | |
 | --- | --- |
 | Running today | rep detection across 5 families · 4-part form scoring · fatigue estimator · adaptive boss · bilateral asymmetry · two-phone duel · on-device coach · sit-to-stand |
-| Needs the native app | wake-up alarm · app-unlock budget · background posture sampling · run tracker |
+| In the Android app | wake-up alarm · desk timer · background posture sampling · run and walk tracking · **Zombie Run** on a real map · shareable activity cards |
+| Needs the native app | app-unlock budget |
 | Further out | group raid rooms · vision-grounded critique · physio-prescribed protocols · the full clinic battery |
 
 **The prototype is a throwaway.** It exists to prove the loop works, to tune thresholds against a

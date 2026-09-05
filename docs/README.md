@@ -66,7 +66,7 @@ check-in we open a fresh repository and implement against these specs.
 | 30 | [Android App](30-ANDROID-APP.md) | The Kotlin build plan — stack, package map, phases, and the rules that hold across every package. |
 | 31 | [Feature · Alarm](31-FEATURE-ALARM.md) | Wake up and earn the snooze. Roadmap. |
 | 32 | [Feature · Beyond the Game](32-FEATURE-BEYOND-THE-GAME.md) | Where the movement data goes once the fight is over. Roadmap. |
-| 33 | [Feature · Outbreak](33-FEATURE-OUTBREAK.md) | The outdoor chase mode, on a real map. Shipped 5 Sep. |
+| 33 | [Feature · Zombie Run](33-FEATURE-ZOMBIE-RUN.md) | The outdoor chase mode, on a real map. Shipped 5 Sep. |
 | 34 | [Accounts and Social](34-ACCOUNTS-SOCIAL.md) | Sign-in, friend codes, four leaderboards, levels, 22 badges, the weekly challenge — and the line none of it crosses. |
 
 ### Reference pack — copy-ready data

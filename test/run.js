@@ -1619,7 +1619,7 @@ t('page · names no hardware we could not verify', () => {
 });
 
 t('page · every mode count it prints agrees with every other one', () => {
-  // Adding Outbreak on 30 Aug left FIVE stale "fifteen"s on the page — the
+  // Adding Zombie Run on 30 Aug left FIVE stale "fifteen"s on the page — the
   // screens kicker, its heading, the reel copy, the metrics strip and the
   // mode-select mockup — while the hero already said sixteen. Count them all.
   const WORDS = { thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17 };

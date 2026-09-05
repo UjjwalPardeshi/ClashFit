@@ -65,8 +65,17 @@ enum class GameMode(
     CLINIC_STS("30s Sit-to-Stand", ModeKind.CLINIC, Family.REP_CYCLE, true,
         "A published protocol. A count, and your own trend over time.", "A published protocol"),
 
-    OUTBREAK("Outbreak", ModeKind.SOLO, Family.CADENCE, false,
-        "The outdoor chase, on a real map. The one mode that goes online.", "On a real map");
+    /**
+     * ZOMBIE RUN — the outdoor chase.
+     *
+     * The constant keeps its old spelling on purpose. It is written into `sessions.mode` in the
+     * database and into the `modes.OUTBREAK` key in `config/combat.json`, so renaming it would
+     * orphan every session already recorded and every config file in the wild. Everything a
+     * person reads says Zombie Run; only the stored token still says OUTBREAK.
+     */
+    OUTBREAK("Zombie Run", ModeKind.SOLO, Family.CADENCE, false,
+        "They spawn around you and close when you slow down. The one mode that goes online.",
+        "Outrun the horde");
 
     /** Which family game a family's movements are naturally shaped for. */
     val isFamilyGame: Boolean get() = kind == ModeKind.FAMILY

@@ -873,7 +873,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   .ans__c{padding:22px 0 28px}.ans__c+.ans__c{border-top-width:1px;border-top-color:var(--rule-soft)}
   .ans__l{padding-top:14px}}
 
-/* ---------- outbreak ---------- */
+/* ---------- zombie run ---------- */
 .out{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);gap:clamp(28px,5vw,72px);align-items:center}
 .out__rules{list-style:none;margin:30px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 26px}
 .out__rules li{display:grid;grid-template-columns:66px 1fr;gap:14px;align-items:start}
@@ -907,7 +907,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
       <a href="#alarm">Alarm</a>
       <a href="#tools">Tools</a>
       <a href="#run">Run</a>
-      <a href="#outbreak">Outbreak</a>
+      <a href="#zombie-run">Zombie Run</a>
       <a href="#library">Library</a>
       <a href="#device">Device</a>
       <a href="#privacy">Privacy</a>
@@ -985,8 +985,8 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 <div class="tape" aria-hidden="true">
   <div class="tape__in">
-    <div class="tape__seq"><span>Boss Fight</span><i></i><span>Time Attack</span><i></i><span>Ghost Race</span><i></i><span>Duel</span><i></i><span>Survival</span><i></i><span>Boss Rush</span><i></i><span>Tempo Trial</span><i></i><span>Pass the Phone</span><i></i><span>Last Standing</span><i></i><span>Circuit</span><i></i><span>Siege</span><i></i><span>Pursuit</span><i></i><span>Breaker</span><i></i><span>Sigil</span><i></i><span>Clinic</span><i></i><span>Outbreak</span><i></i></div>
-    <div class="tape__seq"><span>Boss Fight</span><i></i><span>Time Attack</span><i></i><span>Ghost Race</span><i></i><span>Duel</span><i></i><span>Survival</span><i></i><span>Boss Rush</span><i></i><span>Tempo Trial</span><i></i><span>Pass the Phone</span><i></i><span>Last Standing</span><i></i><span>Circuit</span><i></i><span>Siege</span><i></i><span>Pursuit</span><i></i><span>Breaker</span><i></i><span>Sigil</span><i></i><span>Clinic</span><i></i><span>Outbreak</span><i></i></div>
+    <div class="tape__seq"><span>Boss Fight</span><i></i><span>Time Attack</span><i></i><span>Ghost Race</span><i></i><span>Duel</span><i></i><span>Survival</span><i></i><span>Boss Rush</span><i></i><span>Tempo Trial</span><i></i><span>Pass the Phone</span><i></i><span>Last Standing</span><i></i><span>Circuit</span><i></i><span>Siege</span><i></i><span>Pursuit</span><i></i><span>Breaker</span><i></i><span>Sigil</span><i></i><span>Clinic</span><i></i><span>Zombie Run</span><i></i></div>
+    <div class="tape__seq"><span>Boss Fight</span><i></i><span>Time Attack</span><i></i><span>Ghost Race</span><i></i><span>Duel</span><i></i><span>Survival</span><i></i><span>Boss Rush</span><i></i><span>Tempo Trial</span><i></i><span>Pass the Phone</span><i></i><span>Last Standing</span><i></i><span>Circuit</span><i></i><span>Siege</span><i></i><span>Pursuit</span><i></i><span>Breaker</span><i></i><span>Sigil</span><i></i><span>Clinic</span><i></i><span>Zombie Run</span><i></i></div>
   </div>
 </div>
 
@@ -1135,7 +1135,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
     <div class="rise">
       <p class="kicker">Privacy</p>
       <h2>Your body never<em>leaves the phone.</em></h2>
-      <p class="lede">Pose, form scoring, the fatigue model and the language model all run on the phone. No frame of video, no landmark and no form score has ever left a device, and none can &mdash; in any mode, including the one below that goes outside. <strong style="color:var(--ink);font-weight:600">Three things use the network and nothing else does</strong>: signing in, the leaderboard, and Outbreak, because a map is tiles fetched from a server. Outbreak asks for location when you start it, not when you install, and it never opens the camera. Train without an account and the radio can stay off entirely &mdash; the referee, the coach, the bosses and all sixteen modes run on the phone.</p>
+      <p class="lede">Pose, form scoring, the fatigue model and the language model all run on the phone. No frame of video, no landmark and no form score has ever left a device, and none can &mdash; in any mode, including the one below that goes outside. <strong style="color:var(--ink);font-weight:600">Three things use the network and nothing else does</strong>: signing in, the leaderboard, and Zombie Run, because a map is tiles fetched from a server. Zombie Run asks for location when you start it, not when you install, and it never opens the camera. Train without an account and the radio can stay off entirely &mdash; the referee, the coach, the bosses and all sixteen modes run on the phone.</p>
       <div class="tags"><span class="tag">Email sign-in</span><span class="tag">0 camera frames uploaded</span><span class="tag">Scores sync only</span><span class="tag">Train in airplane mode</span></div>
     </div>
     <div class="rise">
@@ -1259,7 +1259,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
             
             
             <li>Ghost Race <span>Async</span></li>
-            <li>Outbreak <span>Outdoors</span></li>
+            <li>Zombie Run <span>Outdoors</span></li>
           </ul>
           <button class="btn btn--ember" data-waitlist type="button">Join the waitlist</button>
         </div>
@@ -1436,7 +1436,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
                   <div class="mtile">Breaker</div><div class="mtile">Sigil</div>
                   <div class="mtile">Last Standing</div><div class="mtile">Pass the Phone</div>
                   <div class="mtile">Circuit</div><div class="mtile">Clinic</div>
-                    <div class="mtile">Outbreak</div>
+                    <div class="mtile">Zombie Run</div>
                 </div>
                 <div class="scr__foot">Nothing is locked behind a menu</div>
               </div>
@@ -1802,15 +1802,15 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   </div>
 </section>
 
-<!-- ══════════════ OUTBREAK ══════════════ -->
-<section class="band band--line" id="outbreak">
+<!-- ══════════════ ZOMBIE RUN ══════════════ -->
+<section class="band band--line" id="zombie-run">
   <div class="shell out">
     <div class="rise">
       <p class="kicker">Outdoors &middot; uses your location</p>
       <h2>Sixty seconds.<br><em>Then they start moving.</em></h2>
-      <p class="lede">Outbreak puts the chase on a real map. You get a sixty-second head start, then
-        pursuers spawn around you and begin closing. Ammo caches sit at real coordinates; reaching one
-        arms you. Get within twelve metres of a pursuer and it has you.</p>
+      <p class="lede">Zombie Run puts the chase on a real map. You get a sixty-second head start, then
+        the horde spawns around you and begins closing. Ammo caches sit at real coordinates; reaching one
+        arms you. Let one get within twelve metres and it has you.</p>
       <ul class="out__rules">
         <li><b>60s</b><span>Head start. The map centres where you are and nothing moves until it ends.</span></li>
         <li><b>400m</b><span>Spawn radius. Close enough to matter, far enough that the first minute is yours.</span></li>
@@ -1818,12 +1818,12 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
         <li><b>&times;6</b><span>Ammo caches, scattered. Running toward one is a decision, not a pickup.</span></li>
       </ul>
       <p class="lede" style="margin-top:26px"><strong style="color:var(--ink);font-weight:600">A
-        pursuer closes when your cadence drops</strong>, not only when your coordinate stops. The same
+        zombie closes when your cadence drops</strong>, not only when your coordinate stops. The same
         cadence detector that runs Pursuit indoors decides whether you are actually still running &mdash;
         which is why walking it does not work.</p>
       <div class="out__note">
         <b>This is the one mode that goes online.</b>
-        A map is tiles fetched from a server, and a map centred on you carries where you are. Outbreak
+        A map is tiles fetched from a server, and a map centred on you carries where you are. Zombie Run
         asks for location when you start it, never at install, and declining costs you exactly this
         mode. The camera stays shut the whole time, so no frame leaves the device here either &mdash;
         and the route is stored on the phone, like every other session.
@@ -1831,7 +1831,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
     </div>
 
     <div class="rise out__vis">
-      <svg viewBox="0 0 520 560" role="img" aria-label="A city map with pursuers converging on a runner, ammo caches marked nearby">
+      <svg viewBox="0 0 520 560" role="img" aria-label="A city map with zombies converging on a runner, ammo caches marked nearby">
         <rect width="520" height="560" rx="3" fill="#0e0f12"/>
         <g stroke="#f3efe8" stroke-opacity=".07" stroke-width="12" fill="none">
           <path d="M-10 120 H530"/><path d="M-10 300 H530"/><path d="M-10 460 H530"/>
@@ -1875,7 +1875,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
           <text x="260" y="544" fill="#f2c14e">AMMO</text>
         </g>
       </svg>
-      <p class="out__cap">Outbreak &middot; the only ClashFit mode that asks for the network</p>
+      <p class="out__cap">Zombie Run &middot; the only ClashFit mode that asks for the network</p>
     </div>
   </div>
 </section>
@@ -2057,7 +2057,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
         <a class="brand" href="#top"><i></i>ClashFit</a>
         <p>AI fitness combat. Your body is the controller, your camera is the referee, only your scores sync to the cloud.</p>
       </div>
-      <div><h4>Play</h4><ul><li><a href="#modes">Modes</a></li><li><a href="#race">1v1 Duel</a></li><li><a href="#raid">Raid room</a></li><li><a href="#run">Run tracker</a></li><li><a href="#outbreak">Outbreak</a></li><li><a href="#alarm">Wake-up alarm</a></li><li><a href="#tools">Health tools</a></li></ul></div>
+      <div><h4>Play</h4><ul><li><a href="#modes">Modes</a></li><li><a href="#race">1v1 Duel</a></li><li><a href="#raid">Raid room</a></li><li><a href="#run">Run tracker</a></li><li><a href="#zombie-run">Zombie Run</a></li><li><a href="#alarm">Wake-up alarm</a></li><li><a href="#tools">Health tools</a></li></ul></div>
       <div><h4>How it works</h4><ul><li><a href="#loop">The loop</a></li><li><a href="#fatigue">Fatigue model</a></li><li><a href="#coach">The coach</a></li><li><a href="#device">The device</a></li><li><a href="#privacy">Privacy</a></li></ul></div>
       <div><h4>More</h4><ul><li><a href="#library">Exercise library</a></li><li><a href="#screens">Every screen</a></li><li><a href="#clinic">Clinic mode</a></li><li><a href="/credits">Credits</a></li></ul></div>
     </div>

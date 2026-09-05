@@ -1,4 +1,4 @@
-package com.clashfit.ui.screens.outbreak
+package com.clashfit.ui.screens.zombierun
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -32,9 +32,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.clashfit.AppGraph
 import com.clashfit.core.model.GameOutcome
-import com.clashfit.core.model.OutbreakPhase
+import com.clashfit.core.model.ZombieRunPhase
 import com.clashfit.data.ActivityKind
-import com.clashfit.engine.games.OutbreakGame
+import com.clashfit.engine.games.ZombieRunGame
 import com.clashfit.map.MapMarker
 import com.clashfit.map.RouteMap
 import com.clashfit.run.RunTracker
@@ -60,11 +60,11 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 
 /**
- * OUTBREAK — the outdoor chase, on a real map. `docs/33-FEATURE-OUTBREAK.md`.
+ * ZOMBIE RUN — the outdoor chase, on a real map. `docs/33-FEATURE-ZOMBIE-RUN.md`.
  *
  * The mode is a layer over the ordinary run tracker rather than a second location pipeline: the
  * service is already the one thing allowed to hold a GPS subscription, it already filters bad
- * fixes, and running the chase on top of it means an Outbreak also *is* a recorded activity — it
+ * fixes, and running the chase on top of it means a Zombie Run also *is* a recorded activity — it
  * shows up in the feed, it earns its distance, and its route is stored exactly like any other.
  *
  * Two rules from the design document are enforced here rather than promised:
@@ -76,16 +76,16 @@ import kotlin.math.roundToInt
  *   the player is told each time they choose it.
  */
 @Composable
-fun OutbreakScreen(graph: AppGraph, nav: NavHostController) {
+fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
     val context = LocalContext.current
     val tracker = RunTracker.getInstance()
     val runState by tracker.state.collectAsStateWithLifecycle()
     val settings by graph.prefs.settings.collectAsStateWithLifecycle(initialValue = com.clashfit.data.Prefs.Settings())
 
-    val cfg = graph.config.combat.value.modes.outbreak
+    val cfg = graph.config.combat.value.modes.zombieRun
     val game = remember {
-        OutbreakGame(
-            OutbreakGame.OutbreakConfig(
+        ZombieRunGame(
+            ZombieRunGame.ZombieRunConfig(
                 headStartSec = cfg.headStartSec,
                 spawnRadiusM = cfg.spawnRadiusM,
                 captureRadiusM = cfg.captureRadiusM,
@@ -130,7 +130,7 @@ fun OutbreakScreen(graph: AppGraph, nav: NavHostController) {
         }
     }
 
-    ScreenScaffold(title = "Outbreak", onBack = { nav.navigateUp() }) { padding ->
+    ScreenScaffold(title = "Zombie Run", onBack = { nav.navigateUp() }) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).background(Ground)
                 .padding(horizontal = 20.dp).padding(bottom = 20.dp),
@@ -216,7 +216,7 @@ private fun marker(
 
 @Composable
 private fun Briefing(
-    cfg: com.clashfit.core.config.CombatConfig.ModesSpec.OutbreakSpec,
+    cfg: com.clashfit.core.config.CombatConfig.ModesSpec.ZombieRunSpec,
     locationOk: Boolean,
     onStart: () -> Unit,
 ) {
@@ -250,7 +250,7 @@ private fun Briefing(
             PrimaryButton("Start the head start", Modifier.fillMaxWidth(), onClick = onStart)
         } else {
             Text(
-                "Outbreak needs location. Grant it from the run tracker, then come back.",
+                "Zombie Run needs location. Grant it from the run tracker, then come back.",
                 style = MaterialTheme.typography.bodySmall, color = InkFaint,
             )
         }
@@ -258,9 +258,9 @@ private fun Briefing(
 }
 
 @Composable
-private fun ChaseHud(state: com.clashfit.core.model.OutbreakState) {
+private fun ChaseHud(state: com.clashfit.core.model.ZombieRunState) {
     when (state.phase) {
-        OutbreakPhase.HEAD_START -> {
+        ZombieRunPhase.HEAD_START -> {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("HEAD START", style = MaterialTheme.typography.labelLarge, color = Ember)
                 Text(
@@ -270,8 +270,8 @@ private fun ChaseHud(state: com.clashfit.core.model.OutbreakState) {
                 Text("Move. They are already here.", style = MaterialTheme.typography.bodySmall, color = InkMuted)
             }
         }
-        OutbreakPhase.CHASE -> {
-            val nearest = state.nearestPursuerM
+        ZombieRunPhase.CHASE -> {
+            val nearest = state.nearestZombieM
             val danger = nearest != null && nearest < 60f
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
@@ -289,17 +289,17 @@ private fun ChaseHud(state: com.clashfit.core.model.OutbreakState) {
             StatStrip(
                 listOf(
                     "${state.ammo}" to "Ammo",
-                    "${state.pursuersLeft}" to "Chasing",
+                    "${state.zombiesLeft}" to "Chasing",
                     "${(state.secondsLeft / 60).roundToInt()}m" to "Left",
                 ),
             )
         }
-        OutbreakPhase.ESCAPED, OutbreakPhase.CAUGHT -> {
+        ZombieRunPhase.ESCAPED, ZombieRunPhase.CAUGHT -> {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    if (state.phase == OutbreakPhase.ESCAPED) "ESCAPED" else "CAUGHT",
+                    if (state.phase == ZombieRunPhase.ESCAPED) "ESCAPED" else "CAUGHT",
                     style = MaterialTheme.typography.displaySmall,
-                    color = if (state.phase == OutbreakPhase.ESCAPED) Success else Gassed,
+                    color = if (state.phase == ZombieRunPhase.ESCAPED) Success else Gassed,
                 )
                 Text(
                     "%.2f km · %d caches · %d down".format(
@@ -314,7 +314,7 @@ private fun ChaseHud(state: com.clashfit.core.model.OutbreakState) {
 }
 
 @Composable
-private fun Outcome(state: com.clashfit.core.model.OutbreakState, onFinish: () -> Unit) {
+private fun Outcome(state: com.clashfit.core.model.ZombieRunState, onFinish: () -> Unit) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         if (state.outcome == GameOutcome.RUNNING) {
             SecondaryButton("Give up", Modifier.fillMaxWidth(), onClick = onFinish)

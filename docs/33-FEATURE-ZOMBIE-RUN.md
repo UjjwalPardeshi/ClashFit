@@ -1,14 +1,16 @@
-# 33 · Outbreak — the outdoor chase
+# 33 · Zombie Run — the outdoor chase
 
 Decided 30 Aug 2026. **Built 5 Sep 2026** and declared in `config/combat.json` as
-`modes.OUTBREAK`, `enabled: true`. The rules live in `engine/games/OutbreakGame.kt` — pure
+`modes.OUTBREAK`, `enabled: true` — the key keeps its original spelling because it is
+persisted in saved sessions and in every `combat.json` already in the wild; only what a person
+reads was renamed. The rules live in `engine/games/ZombieRunGame.kt` — pure
 Kotlin in a local metric frame, so the chase is tested on the JVM without going outside — and
-the screen is `ui/screens/outbreak/OutbreakScreen.kt`, layered over the ordinary run tracker so
-an Outbreak is also a recorded activity.
+the screen is `ui/screens/zombierun/ZombieRunScreen.kt`, layered over the ordinary run tracker so
+a Zombie Run is also a recorded activity.
 
 > **Update (3 Sep 2026):** The app now declares `INTERNET` and `ACCESS_NETWORK_STATE` permissions
 > for Firebase Auth, Firestore profiles, and cloud leaderboards. The tradeoff this document weighs —
-> adding a network permission — has already been taken. Outbreak remains the only mode that requests
+> adding a network permission — has already been taken. Zombie Run remains the only mode that requests
 > location or downloads map tiles; the analysis below is still valid as a record of that decision.
 
 Every other mode in ClashFit runs with the radio off. **This one does not, and that has to be said
@@ -32,7 +34,7 @@ thing following you is drawn at a real coordinate.
 
 ## How it connects to the rest of the engine
 
-Outbreak is not a second product bolted on. It reuses what already exists:
+Zombie Run is not a second product bolted on. It reuses what already exists:
 
 | Piece | Reused from |
 | --- | --- |
@@ -68,9 +70,9 @@ The core privacy guarantee is clear: **the camera pipeline never touches the net
 landmarks, and rep timelines stay on the device. That is still true and still the competitive
 point.
 
-**Outbreak adds a new network use**: a map is tiles fetched from a server and a map centred on you
+**Zombie Run adds a new network use**: a map is tiles fetched from a server and a map centred on you
 is a request that carries where you are. Within the larger product, which now declares `INTERNET`
-for accounts and leaderboards, Outbreak is the one feature that also requests location.
+for accounts and leaderboards, Zombie Run is the one feature that also requests location.
 
 So the claim changes shape. It does not get quietly dropped, and it does not get weasel-worded.
 
@@ -78,15 +80,15 @@ So the claim changes shape. It does not get quietly dropped, and it does not get
 
 | Before | After |
 | --- | --- |
-| "The camera pipeline never touches the network." | Still true, and unchanged. Outbreak is the one mode that goes online, but the camera stays offline. |
+| "The camera pipeline never touches the network." | Still true, and unchanged. Zombie Run is the one mode that goes online, but the camera stays offline. |
 | "0 frames uploaded" | Unchanged: still literally true in every mode. **No video, no landmarks, no biometrics ever leave the device, in any mode, including this one.** |
-| "Works in airplane mode" | Every mode still does, except Outbreak. This is now load-bearing: you can turn off location and network at the mode screen. |
+| "Works in airplane mode" | Every mode still does, except Zombie Run. This is now load-bearing: you can turn off location and network at the mode screen. |
 
 ### Rules this mode must follow
 
-1. **Location is requested at the mode, not at install.** The permission prompt belongs to Outbreak,
+1. **Location is requested at the mode, not at install.** The permission prompt belongs to Zombie Run,
    and declining it costs you exactly one mode.
-2. **The camera never opens during Outbreak.** There is no frame to leak, so the video promise holds
+2. **The camera never opens during Zombie Run.** There is no frame to leak, so the video promise holds
    without qualification even here.
 3. **The route is stored on the device**, like `#run`. It is not uploaded, not shared, not synced.
 4. **The mode announces itself.** A one-line notice before the head start: this mode uses your
@@ -102,12 +104,12 @@ choosing a slogan over the users. The privacy promise that actually matters to s
 camera at themselves in a bedroom is *the camera*, and that promise is untouched.
 
 But we should be honest that it is a trade. The camera pipeline remains completely offline, and that is
-the core promise. Where we go online, we do so deliberately: sign-in, leaderboards, and now Outbreak.
+the core promise. Where we go online, we do so deliberately: sign-in, leaderboards, and now Zombie Run.
 
 ## Open questions
 
 - Which tile source? Anything self-hostable keeps the request under our control; a commercial SDK
   does not, and would need its own line in this document.
-- Does an Outbreak session feed the same streak as a verified indoor set, given the effort is
+- Does a Zombie Run session feed the same streak as a verified indoor set, given the effort is
   measured differently?
 - Offline map caching would let a pre-downloaded area run with the radio off again. Worth costing.

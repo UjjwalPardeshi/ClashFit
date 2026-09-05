@@ -114,7 +114,7 @@ fun ExercisePickerScreen(modeStr: String, graph: AppGraph, nav: NavHostControlle
         },
     ) { padding ->
         if (!mode.enabled) {
-            EmptyState("Goes online", "Outbreak runs on a real map and needs a server. It is not in this build.", Modifier.padding(padding), icon = AppIcons.Run)
+            EmptyState("Goes online", "Zombie Run happens on a real map and picks no exercise. Start it from Outdoors.", Modifier.padding(padding), icon = AppIcons.Run)
             return@ScreenScaffold
         }
         LazyColumn(

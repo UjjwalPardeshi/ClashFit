@@ -107,7 +107,7 @@
       "spawnRadiusM": 400,
       "captureRadiusM": 12,
       "ammoPickups": 6,
-      "note": "The one mode that leaves the device: GPS and map tiles. The camera never opens. See docs/33-FEATURE-OUTBREAK.md."
+      "note": "Zombie Run. The one mode that leaves the device: GPS and map tiles. The camera never opens. The key stays OUTBREAK because it is persisted in saved sessions. See docs/33-FEATURE-ZOMBIE-RUN.md."
     }
   },
   "bossAttack": {

@@ -22,11 +22,11 @@ import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SectionTitle
 import com.clashfit.ui.components.label
 import com.clashfit.ui.nav.ExercisePicker
-import com.clashfit.ui.nav.Outbreak
+import com.clashfit.ui.nav.ZombieRun
 
 /**
  * The full catalogue: every mode of every kind, including the ones the home carousel does not
- * show (Tug of War, Mirror Match, Raid, Team vs Team, and the online-only Outbreak, disabled).
+ * show (Tug of War, Mirror Match, Raid, Team vs Team, and the online-only Zombie Run, disabled).
  * One lazy grid with full-span headers; a lazy grid inside a scrolling column is not allowed.
  */
 @Composable
@@ -49,9 +49,9 @@ fun ModesScreen(nav: NavHostController) {
                     ModeCard(
                         mode,
                         onClick = {
-                            // Outbreak picks no exercise: it is a chase, and the picker
+                            // Zombie Run picks no exercise: it is a chase, and the picker
                             // would ask a question the mode has no answer to.
-                            if (mode == GameMode.OUTBREAK) nav.navigate(Outbreak)
+                            if (mode == GameMode.OUTBREAK) nav.navigate(ZombieRun)
                             else nav.navigate(ExercisePicker(mode.name))
                         },
                     )

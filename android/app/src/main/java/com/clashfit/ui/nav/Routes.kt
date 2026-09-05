@@ -54,7 +54,7 @@ sealed interface Route
 @Serializable data class Roster(val mode: String, val exerciseId: String) : Route
 
 /** The outdoor chase. Its own route: it takes no exercise, so the picker makes no sense for it. */
-@Serializable data object Outbreak : Route
+@Serializable data object ZombieRun : Route
 
 @Serializable data object RunHome : Route
 @Serializable data object RunActive : Route

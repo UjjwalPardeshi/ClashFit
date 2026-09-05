@@ -122,7 +122,8 @@ data class CombatConfig(
         @SerialName("DUEL") val duel: DuelSpec = DuelSpec(),
         @SerialName("TEMPO_TRIAL") val tempoTrial: TempoTrialSpec = TempoTrialSpec(),
         @SerialName("REP_RACE") val repRace: RepRaceSpec = RepRaceSpec(),
-        @SerialName("OUTBREAK") val outbreak: OutbreakSpec = OutbreakSpec(),
+        // The key is OUTBREAK because it is persisted; the property is what the code reads.
+        @SerialName("OUTBREAK") val zombieRun: ZombieRunSpec = ZombieRunSpec(),
     ) {
         @Serializable data class TimeAttackSpec(val enabled: Boolean = true, val durationSec: Int = 60, val bossHpUncapped: Boolean = true)
         @Serializable data class GhostRaceSpec(val enabled: Boolean = true, val defaultGhost: String = "pacer_silver")
@@ -131,7 +132,7 @@ data class CombatConfig(
         @Serializable data class DuelSpec(val enabled: Boolean = true, val rules: String = "TIME_ATTACK")
         @Serializable data class TempoTrialSpec(val enabled: Boolean = true, val targetEccSec: Float = 0.55f, val tolerance: Float = 0.35f, val floor: Float = 0.3f)
         @Serializable data class RepRaceSpec(val enabled: Boolean = true, val durationsSec: List<Int> = listOf(30, 60, 180))
-        @Serializable data class OutbreakSpec(
+        @Serializable data class ZombieRunSpec(
             val enabled: Boolean = false,
             val requiresNetwork: Boolean = true,
             val requiresLocation: Boolean = true,
@@ -139,7 +140,7 @@ data class CombatConfig(
             val spawnRadiusM: Int = 400,
             val captureRadiusM: Int = 12,
             val ammoPickups: Int = 6,
-            val note: String = "The one mode that leaves the device. See docs/33-FEATURE-OUTBREAK.md."
+            val note: String = "Zombie Run. The one mode that leaves the device. See docs/33-FEATURE-ZOMBIE-RUN.md."
         )
     }
 
