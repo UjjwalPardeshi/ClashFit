@@ -182,6 +182,23 @@ object AppIcons {
     val Close: ImageVector by lazy { stroked("close", 2.2f) { moveTo(5f, 5f); lineTo(19f, 19f); moveTo(19f, 5f); lineTo(5f, 19f) } }
 
     /** A right-pointing chevron for list rows. */
+    /** A minus, the partner to [Plus] on the map's zoom control. */
+    val Minus: ImageVector by lazy { stroked("minus", 2.2f) { moveTo(5f, 12f); lineTo(19f, 12f) } }
+
+    /** Crosshairs: put the map back on me. */
+    val Recentre: ImageVector by lazy {
+        stroked("recentre", 1.9f) {
+            moveTo(12f, 3f); lineTo(12f, 6.5f)
+            moveTo(12f, 17.5f); lineTo(12f, 21f)
+            moveTo(3f, 12f); lineTo(6.5f, 12f)
+            moveTo(17.5f, 12f); lineTo(21f, 12f)
+            moveTo(17f, 12f)
+            arcTo(5f, 5f, 0f, true, true, 7f, 12f)
+            arcTo(5f, 5f, 0f, true, true, 17f, 12f)
+            close()
+        }
+    }
+
     val Chevron: ImageVector by lazy { stroked("chevron") { moveTo(9f, 5f); lineTo(16f, 12f); lineTo(9f, 19f) } }
 
     /** A magnifier. */

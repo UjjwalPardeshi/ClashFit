@@ -2,10 +2,17 @@ package com.clashfit.map
 
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -26,10 +33,62 @@ import com.clashfit.ui.theme.Success
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.util.TileSystem
 import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Polygon
 import org.osmdroid.views.overlay.Polyline
+
+/**
+ * A handle on a live map, so a screen can put its own controls over one.
+ *
+ * osmdroid's own zoom buttons are switched off because they are a 2012 Android widget sitting in
+ * the middle of a 2026 app. The screen draws its own, and drives them through this.
+ */
+class RouteMapState {
+    internal var view: MapView? = null
+
+    /**
+     * True once the player has touched the map.
+     *
+     * This is the whole reason pinch-to-zoom used to feel broken: the framing code ran on every
+     * state update, so a zoom survived exactly as long as it took the next GPS fix to land and
+     * then snapped back. Once a hand has moved the map, the map stays where the hand left it
+     * until [recentre] is pressed.
+     */
+    internal var userMoved by mutableStateOf(false)
+        private set
+
+    /** Bumped to ask the map to frame itself again, since framing is driven by recomposition. */
+    internal var frameRequest by mutableIntStateOf(0)
+        private set
+
+    internal fun noteUserTouch() {
+        if (!userMoved) userMoved = true
+    }
+
+    fun zoomIn() {
+        userMoved = true
+        view?.controller?.zoomIn()
+    }
+
+    fun zoomOut() {
+        userMoved = true
+        view?.controller?.zoomOut()
+    }
+
+    /** Gives control back to the map: it frames the route, or follows the runner, once more. */
+    fun recentre() {
+        userMoved = false
+        frameRequest++
+    }
+
+    /** Whether a recentre button is worth showing at all. */
+    val canRecentre: Boolean get() = userMoved
+}
+
+@Composable
+fun rememberRouteMapState(): RouteMapState = remember { RouteMapState() }
 
 /**
  * An OpenStreetMap view with a route drawn on it.
@@ -42,9 +101,13 @@ import org.osmdroid.views.overlay.Polyline
  * The route is projected and simplified by the same code the tile-free renderer uses, so the two
  * views cannot disagree about the shape of a run.
  *
- * @param follow keeps the map centred on the newest point, for a run in progress.
+ * @param follow keeps the map centred on the newest point, for a run in progress. A player who has
+ *   panned away is not dragged back; following resumes when they ask for it.
  * @param interactive allows pan and zoom. Off for a thumbnail, and off inside a scrolling column
  *   where a map that swallows drags makes the page feel broken.
+ * @param state the handle a screen uses to drive zoom and recentring from its own controls.
+ * @param onMarkerLayout reports where each marker landed on screen, in pixels, so a screen can
+ *   draw something better than a circle on top of the map without this file knowing what.
  */
 @Composable
 fun RouteMap(
@@ -54,6 +117,8 @@ fun RouteMap(
     follow: Boolean = false,
     interactive: Boolean = true,
     extraOverlays: List<MapMarker> = emptyList(),
+    state: RouteMapState? = null,
+    onMarkerLayout: ((List<PlacedMarker>) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -75,6 +140,11 @@ fun RouteMap(
         }
     }
 
+    DisposableEffect(state) {
+        state?.view = mapView
+        onDispose { if (state?.view === mapView) state.view = null }
+    }
+
     // osmdroid is a View with its own lifecycle: without this it keeps its tile threads and its
     // download queue running behind a screen the player has left.
     DisposableEffect(lifecycleOwner) {
@@ -93,21 +163,88 @@ fun RouteMap(
         }
     }
 
-    AndroidView(
-        modifier = modifier,
-        factory = { mapView },
-        update = { map ->
-            map.setMultiTouchControls(interactive)
-            map.overlays.clear()
-            drawRoute(map, points, paceColoured)
-            extraOverlays.forEach { drawMarker(map, it) }
-            frame(map, points, extraOverlays, follow)
-            map.invalidate()
-        },
-    )
+    // Watching the gesture stream on the initial pass and consuming nothing: the map still gets
+    // every event, and this learns that a hand arrived. Asking osmdroid instead does not work,
+    // because its listeners fire for programmatic moves too and cannot tell the two apart.
+    val watcher = if (state != null && interactive) {
+        Modifier.pointerInput(state) {
+            awaitPointerEventScope {
+                while (true) {
+                    awaitPointerEvent(PointerEventPass.Initial)
+                    state.noteUserTouch()
+                }
+            }
+        }
+    } else {
+        Modifier
+    }
+
+    Box(modifier.then(watcher)) {
+        AndroidView(
+            modifier = Modifier.matchParentSize(),
+            factory = { mapView },
+            update = { map ->
+                map.setMultiTouchControls(interactive)
+                map.overlays.clear()
+                drawRoute(map, points, paceColoured)
+                // Where you are standing, right now. Every map app has this dot, and without it a
+                // route that has not started yet is an empty street map with no you on it.
+                if (follow) points.lastOrNull()?.let { map.overlays.add(PositionOverlay(it.lat, it.lon)) }
+                // Markers are drawn as plain circles only when nobody has offered to draw them
+                // better. The chase hands its own painter in and gets a figure instead of a dot.
+                if (onMarkerLayout == null) extraOverlays.forEach { drawMarker(map, it) }
+                state?.frameRequest // read, so a recentre request recomposes this block
+                if (state?.userMoved != true) frame(map, points, extraOverlays, follow)
+                map.invalidate()
+                onMarkerLayout?.invoke(placeMarkers(map, extraOverlays))
+            },
+        )
+    }
 }
 
-/** A circle drawn at a coordinate: a pursuer, a cache, or the player. */
+/**
+ * The runner's own position, drawn at a fixed size in pixels.
+ *
+ * A [Polygon] circle would be stated in metres and so would shrink to nothing when the player
+ * zooms out to see where they have been. This is a screen-space thing — it says "you are here",
+ * not "you occupy nine metres" — so it is drawn at the same size at every zoom.
+ */
+private class PositionOverlay(private val lat: Double, private val lon: Double) :
+    org.osmdroid.views.overlay.Overlay() {
+
+    override fun draw(canvas: android.graphics.Canvas, map: MapView, shadow: Boolean) {
+        if (shadow) return
+        val p = map.projection?.toPixels(GeoPoint(lat, lon), null) ?: return
+        com.clashfit.ui.components.ChaseGlyphs.runner(canvas, p.x.toFloat(), p.y.toFloat(), 11f, Ember)
+    }
+}
+
+/** Where a marker ended up on screen, in view pixels, once the map had had its say. */
+data class PlacedMarker(val marker: MapMarker, val xPx: Float, val yPx: Float, val radiusPx: Float)
+
+/**
+ * Projects markers into screen pixels.
+ *
+ * The radius is converted through the ground resolution at the current zoom, so a zombie stated as
+ * eighteen metres across stays eighteen metres across however far the player zooms in — it grows
+ * on screen the way a real thing standing on the road would.
+ */
+private fun placeMarkers(map: MapView, markers: List<MapMarker>): List<PlacedMarker> {
+    if (markers.isEmpty()) return emptyList()
+    val projection = map.projection ?: return emptyList()
+    val mPerPx = TileSystem.GroundResolution(map.mapCenter.latitude, map.zoomLevelDouble)
+    return markers.map { m ->
+        val p = projection.toPixels(GeoPoint(m.lat, m.lon), null)
+        PlacedMarker(
+            marker = m,
+            xPx = p.x.toFloat(),
+            yPx = p.y.toFloat(),
+            radiusPx = if (mPerPx > 0) (m.radiusM / mPerPx).toFloat() else 24f,
+        )
+    }
+}
+
+/** Something standing at a coordinate: a pursuer, a cache, or the player. */
 data class MapMarker(
     val lat: Double,
     val lon: Double,
@@ -115,7 +252,19 @@ data class MapMarker(
     val fill: Color,
     val outline: Color = fill,
     val filled: Boolean = true,
-)
+    /**
+     * What to draw here.
+     *
+     * Carried on the marker rather than decided by the renderer so that the street map and the
+     * tile-free trace cannot disagree about what a thing is. A circle is still the default,
+     * because most markers are just a place.
+     */
+    val glyph: Glyph = Glyph.CIRCLE,
+    /** 0 far, 1 on top of you. Only a pursuer uses it, to say how frightened to look. */
+    val closeness: Float = 0f,
+) {
+    enum class Glyph { CIRCLE, ZOMBIE, CACHE }
+}
 
 private fun drawRoute(map: MapView, points: List<RunPointEntity>, paceColoured: Boolean) {
     if (points.size < 2) return
@@ -196,7 +345,9 @@ private fun drawMarker(map: MapView, m: MapMarker) {
 private fun frame(map: MapView, points: List<RunPointEntity>, markers: List<MapMarker>, follow: Boolean) {
     if (follow && points.isNotEmpty()) {
         val last = points.last()
-        map.controller.setZoom(17.0)
+        // Set the zoom once and then only pan. Re-applying it on every fix cancelled any zoom the
+        // player had reached, and made the map feel like it was resisting them.
+        if (map.zoomLevelDouble < 3.0) map.controller.setZoom(17.0)
         map.controller.setCenter(GeoPoint(last.lat, last.lon))
         return
     }

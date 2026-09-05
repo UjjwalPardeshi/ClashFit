@@ -9,7 +9,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import com.clashfit.data.RunPointEntity
+import com.clashfit.map.MapMarker
 import com.clashfit.run.LocalPoint
 import com.clashfit.run.medianSpeedMps
 import com.clashfit.run.metresEastNorth
@@ -51,6 +54,17 @@ fun RouteTrace(
     showGrid: Boolean = true,
     strokeWidth: Float = 6f,
     background: Color = PanelLift,
+    /**
+     * Things standing on the route: pursuers and caches.
+     *
+     * They are drawn here, by the same painter the street map uses, because a chase whose zombies
+     * are only visible when map tiles are switched on is a chase most players never see. They also
+     * widen the frame: a pursuer outside the route's own box still has to be on screen, or the
+     * player is being chased by something they cannot look at.
+     */
+    markers: List<MapMarker> = emptyList(),
+    /** A 0..1 phase, advanced by the caller, that makes the whole pack breathe together. */
+    markerPulse: Float = 0f,
 ) {
     Canvas(modifier) {
         drawRect(background)
@@ -59,7 +73,7 @@ fun RouteTrace(
 
         // Simplify to the size actually being drawn: the tolerance is a fraction of the span, so a
         // 120 dp thumbnail sheds far more points than a full-screen summary and both stay honest.
-        val projected = project(points, size, strokeWidth)
+        val projected = project(points, size, strokeWidth, markers)
         if (projected == null) return@Canvas
 
         val median = if (paceColoured) medianSpeedMps(projected.simplified) else 0f
@@ -88,6 +102,28 @@ fun RouteTrace(
         drawCircle(Ink, radius = strokeWidth * 1.4f, center = finish)
 
         if (showScale) drawScaleBar(projected.metresPerPixel)
+
+        if (markers.isNotEmpty()) {
+            val mPerPx = projected.metresPerPixel
+            drawIntoCanvas { canvas ->
+                markers.forEach { m ->
+                    val at = projected.toScreen(m.lat, m.lon)
+                    val radiusPx = if (mPerPx > 0f) (m.radiusM / mPerPx).toFloat() else 20f
+                    when (m.glyph) {
+                        MapMarker.Glyph.ZOMBIE ->
+                            ChaseGlyphs.zombie(canvas.nativeCanvas, at.x, at.y, radiusPx, m.closeness, markerPulse)
+                        MapMarker.Glyph.CACHE ->
+                            ChaseGlyphs.cache(canvas.nativeCanvas, at.x, at.y, radiusPx, markerPulse)
+                        MapMarker.Glyph.CIRCLE -> drawCircle(
+                            color = m.outline,
+                            radius = radiusPx.coerceAtLeast(6f),
+                            center = at,
+                            style = Stroke(width = strokeWidth * 0.7f),
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -154,6 +190,8 @@ private class Projected(
     val screen: List<Offset>,
     val simplified: List<RunPointEntity>,
     val metresPerPixel: Float,
+    /** Puts any coordinate into the same frame the route was drawn in. */
+    val toScreen: (Double, Double) -> Offset,
 )
 
 /**
@@ -163,9 +201,15 @@ private class Projected(
  * like a rectangle and would quietly lie about the shape of the route, which is the only thing
  * this picture is for.
  */
-private fun project(points: List<RunPointEntity>, size: Size, strokeWidth: Float): Projected? {
+private fun project(
+    points: List<RunPointEntity>,
+    size: Size,
+    strokeWidth: Float,
+    markers: List<MapMarker> = emptyList(),
+): Projected? {
     val origin = points.first()
-    val localAll = points.map { metresEastNorth(origin.lat, origin.lon, it.lat, it.lon) }
+    val localAll = points.map { metresEastNorth(origin.lat, origin.lon, it.lat, it.lon) } +
+        markers.map { metresEastNorth(origin.lat, origin.lon, it.lat, it.lon) }
     val spanM = max(
         localAll.maxOf { it.eastM } - localAll.minOf { it.eastM },
         localAll.maxOf { it.northM } - localAll.minOf { it.northM },
@@ -178,10 +222,13 @@ private fun project(points: List<RunPointEntity>, size: Size, strokeWidth: Float
     if (simplified.size < 2) return null
 
     val local = simplified.map { metresEastNorth(origin.lat, origin.lon, it.lat, it.lon) }
-    val minE = local.minOf { it.eastM }
-    val maxE = local.maxOf { it.eastM }
-    val minN = local.minOf { it.northM }
-    val maxN = local.maxOf { it.northM }
+    // The frame has to hold the markers too, or a zombie thirty metres off the route is chasing
+    // the player from outside the picture.
+    val framed = local + markers.map { metresEastNorth(origin.lat, origin.lon, it.lat, it.lon) }
+    val minE = framed.minOf { it.eastM }
+    val maxE = framed.maxOf { it.eastM }
+    val minN = framed.minOf { it.northM }
+    val maxN = framed.maxOf { it.northM }
 
     val pad = strokeWidth * 2.5f + 8f
     val usableW = max(1f, size.width - pad * 2)
@@ -206,6 +253,7 @@ private fun project(points: List<RunPointEntity>, size: Size, strokeWidth: Float
         screen = local.map(::toScreen),
         simplified = simplified,
         metresPerPixel = if (scale > 0f) 1f / scale else 0f,
+        toScreen = { lat, lon -> toScreen(metresEastNorth(origin.lat, origin.lon, lat, lon)) },
     )
 }
 

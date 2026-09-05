@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.toArgb
 import com.clashfit.R
 import com.clashfit.data.RunPointEntity
 import com.clashfit.run.LocalPoint
+import com.clashfit.run.distanceParts
+import com.clashfit.run.formatDistance
 import com.clashfit.run.formatPaceSecPerKm
 import com.clashfit.run.medianSpeedMps
 import com.clashfit.run.metresEastNorth
@@ -148,7 +150,17 @@ object ShareCard {
         canvas.drawText(caption.uppercase(), x, y + 40f, paint(InkFaint.toArgb(), 28f, fonts.medium).apply { letterSpacing = 0.16f })
     }
 
-    private fun km(distanceM: Float) = "%.2f".format(distanceM / 1000f)
+    /**
+     * The big number on the card, and the unit under it.
+     *
+     * A card that says "0.00" over "KILOMETRES" is the worst thing this app could put on somebody's
+     * story, so a short activity says its metres instead. Shared with the rest of the app through
+     * [distanceParts], so the picture and the screen behind it can never disagree.
+     */
+    private fun heroDistance(distanceM: Float): Pair<String, String> {
+        val (value, unit) = distanceParts(distanceM)
+        return value to if (unit == "km") "KILOMETRES" else "METRES"
+    }
 
     private fun duration(ms: Long): String {
         val s = ms / 1000
@@ -164,9 +176,10 @@ object ShareCard {
 
         drawRoute(canvas, s.points, RectF(60f, 260f, WIDTH - 60f, 1080f), strokeWidth = 16f, paceColoured = true)
 
-        canvas.drawText(km(s.distanceM), 80f, 1330f, paint(Ink.toArgb(), 250f, fonts.display))
+        val (heroValue, heroUnit) = heroDistance(s.distanceM)
+        canvas.drawText(heroValue, 80f, 1330f, paint(Ink.toArgb(), 250f, fonts.display))
         canvas.drawText(
-            "KILOMETRES", 80f, 1390f,
+            heroUnit, 80f, 1390f,
             paint(Ember.toArgb(), 40f, fonts.medium).apply { letterSpacing = 0.24f },
         )
 
@@ -193,7 +206,7 @@ object ShareCard {
         canvas.drawText(s.dateLabel, 80f, 1320f, paint(InkFaint.toArgb(), 34f, fonts.medium))
 
         val rows = buildList {
-            add("Distance" to "${km(s.distanceM)} km")
+            add("Distance" to formatDistance(s.distanceM))
             add("Moving" to duration(s.movingMs))
             add("Avg pace" to "${formatPaceSecPerKm(s.paceSecPerKm)} /km")
             if (s.climbM > 0f) add("Climb" to "%.0f m".format(s.climbM))
@@ -240,7 +253,7 @@ object ShareCard {
         )
 
         val y = 820f
-        stat(canvas, fonts, 80f, y, "${km(s.distanceM)} km", "Distance")
+        stat(canvas, fonts, 80f, y, formatDistance(s.distanceM), "Distance")
         stat(canvas, fonts, 500f, y, duration(s.movingMs), "Moving")
         val y2 = 990f
         stat(canvas, fonts, 80f, y2, formatPaceSecPerKm(s.paceSecPerKm), "Pace /km")

@@ -11,10 +11,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,6 +30,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -36,10 +45,14 @@ import com.clashfit.core.model.ZombieRunPhase
 import com.clashfit.data.ActivityKind
 import com.clashfit.engine.games.ZombieRunGame
 import com.clashfit.map.MapMarker
+import com.clashfit.map.PlacedMarker
+import com.clashfit.map.rememberRouteMapState
 import com.clashfit.map.RouteMap
 import com.clashfit.run.RunTracker
 import com.clashfit.run.RunTrackingService
 import com.clashfit.run.metresEastNorth
+import com.clashfit.ui.components.ChaseGlyphs
+import com.clashfit.ui.components.MapControls
 import com.clashfit.ui.components.AppCard
 import com.clashfit.ui.components.PrimaryButton
 import com.clashfit.ui.components.RouteTrace
@@ -56,6 +69,7 @@ import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Success
 import kotlinx.coroutines.delay
 import kotlin.math.PI
+import kotlin.math.hypot
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import android.content.Context
@@ -172,31 +186,84 @@ fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
             val o = origin
             val markers = if (o == null) emptyList() else buildList {
                 state.caches.filter { !it.taken }.forEach {
-                    add(marker(o, it.eastM, it.northM, radiusM = 14.0, colour = Success, filled = false))
+                    add(marker(o, it.eastM, it.northM, radiusM = 14.0, colour = Success, glyph = MapMarker.Glyph.CACHE))
                 }
-                state.zombies.filter { it.alive }.forEach {
-                    add(marker(o, it.eastM, it.northM, radiusM = 18.0, colour = Gassed, filled = true))
+                state.zombies.filter { it.alive }.forEach { z ->
+                    // How near this one is, on the scale the chase was configured with, so the
+                    // figure looks more dangerous the closer it gets rather than being one flat
+                    // shape until the moment it catches you.
+                    val d = hypot((z.eastM - state.playerEastM).toDouble(), (z.northM - state.playerNorthM).toDouble()).toFloat()
+                    val near = (1f - d / cfg.spawnRadiusM.toFloat()).coerceIn(0f, 1f)
+                    add(
+                        marker(
+                            o, z.eastM, z.northM, radiusM = 16.0, colour = Gassed,
+                            glyph = MapMarker.Glyph.ZOMBIE, closeness = near,
+                        ),
+                    )
                 }
             }
 
-            AppCard(Modifier.fillMaxWidth(), padding = 0) {
-                if (settings.mapTiles && runState.points.isNotEmpty()) {
-                    RouteMap(
-                        points = runState.points,
-                        modifier = Modifier.fillMaxWidth().height(340.dp),
-                        paceColoured = false,
-                        follow = true,
-                        interactive = false,
-                        extraOverlays = markers,
-                    )
-                } else {
-                    // No tiles: the route still draws, and the chase is still legible from the
-                    // numbers above it. A map is an aid here, not a requirement.
-                    RouteTrace(
-                        points = runState.points,
-                        modifier = Modifier.fillMaxWidth().height(340.dp),
-                        paceColoured = false,
-                    )
+            // One phase for the whole pack, so the zombies breathe together and quicken as the
+            // nearest one closes. Tied to the same distance the heartbeat is tied to.
+            val pulse by rememberInfiniteTransition(label = "pack").animateFloat(
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(
+                        durationMillis = beatIntervalMs(state.nearestZombieM ?: Float.MAX_VALUE)
+                        .toInt().coerceIn(320, 1500),
+                        easing = LinearEasing,
+                    ),
+                    repeatMode = RepeatMode.Restart,
+                ),
+                label = "packPhase",
+            )
+
+            val mapState = rememberRouteMapState()
+            AppCard(Modifier.fillMaxWidth().weight(1f), padding = 0) {
+                Box(Modifier.fillMaxSize()) {
+                    if (settings.mapTiles && settings.mapTilesAsked && runState.points.isNotEmpty()) {
+                        var placed by remember { mutableStateOf<List<PlacedMarker>>(emptyList()) }
+                        RouteMap(
+                            points = runState.points,
+                            modifier = Modifier.fillMaxSize(),
+                            paceColoured = false,
+                            follow = true,
+                            interactive = true,
+                            extraOverlays = markers,
+                            state = mapState,
+                            onMarkerLayout = { placed = it },
+                        )
+                        // The pack is painted over the street map rather than into it, by the same
+                        // painter the tile-free trace uses, so the chase looks the same either way.
+                        Canvas(Modifier.fillMaxSize()) {
+                            drawIntoCanvas { canvas ->
+                                placed.forEach { pm ->
+                                    when (pm.marker.glyph) {
+                                        MapMarker.Glyph.ZOMBIE -> ChaseGlyphs.zombie(
+                                            canvas.nativeCanvas, pm.xPx, pm.yPx, pm.radiusPx,
+                                            pm.marker.closeness, pulse,
+                                        )
+                                        MapMarker.Glyph.CACHE -> ChaseGlyphs.cache(
+                                            canvas.nativeCanvas, pm.xPx, pm.yPx, pm.radiusPx, pulse,
+                                        )
+                                        MapMarker.Glyph.CIRCLE -> Unit
+                                    }
+                                }
+                            }
+                        }
+                        MapControls(mapState, Modifier.align(Alignment.BottomEnd).padding(12.dp))
+                    } else {
+                        // No tiles: the same chase, drawn on our own grid. The pursuers are drawn
+                        // here too, because a chase you cannot see is not a chase.
+                        RouteTrace(
+                            points = runState.points,
+                            modifier = Modifier.fillMaxSize(),
+                            paceColoured = false,
+                            markers = markers,
+                            markerPulse = pulse,
+                        )
+                    }
                 }
             }
 
@@ -216,7 +283,8 @@ private fun marker(
     northM: Float,
     radiusM: Double,
     colour: androidx.compose.ui.graphics.Color,
-    filled: Boolean,
+    glyph: MapMarker.Glyph,
+    closeness: Float = 0f,
 ): MapMarker {
     val mPerDegLat = 111_320.0
     val mPerDegLon = mPerDegLat * cos(origin.first * PI / 180.0)
@@ -224,9 +292,11 @@ private fun marker(
         lat = origin.first + northM / mPerDegLat,
         lon = origin.second + eastM / mPerDegLon,
         radiusM = radiusM,
-        fill = colour.copy(alpha = if (filled) 0.55f else 0f),
+        fill = colour.copy(alpha = 0.55f),
         outline = colour,
-        filled = filled,
+        filled = true,
+        glyph = glyph,
+        closeness = closeness,
     )
 }
 

@@ -7,6 +7,12 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +47,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -55,6 +63,8 @@ import androidx.navigation.toRoute
 import com.clashfit.AppGraph
 import com.clashfit.data.ActivityKind
 import com.clashfit.data.RunPointEntity
+import com.clashfit.map.RouteMapState
+import com.clashfit.map.rememberRouteMapState
 import com.clashfit.map.RouteMap
 import com.clashfit.meta.ActivityReward
 import com.clashfit.meta.OutdoorRules
@@ -67,6 +77,7 @@ import com.clashfit.ui.components.EmptyState
 import com.clashfit.ui.components.FilterPill
 import com.clashfit.ui.components.IconBubble
 import com.clashfit.ui.components.InnerDivider
+import com.clashfit.ui.components.MapControls
 import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.PrimaryButton
 import com.clashfit.ui.components.ProgressRing
@@ -88,8 +99,10 @@ import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Panel
+import com.clashfit.ui.theme.PanelLift
 import com.clashfit.ui.theme.Rival
 import com.clashfit.ui.theme.Success
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -206,33 +219,6 @@ fun RunHomeScreen(graph: AppGraph, nav: NavHostController) {
                 }
             }
 
-            // Asked once, in words, and never again. Settings still holds the switch.
-            if (!settings.mapTilesAsked && runs.isNotEmpty()) {
-                SectionGap(16)
-                AppCard(Modifier.fillMaxWidth(), padding = 18) {
-                    Column {
-                        Text("Draw streets under your route?", style = MaterialTheme.typography.titleMedium, color = Ink)
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            "A street map is downloaded from OpenStreetMap as you look at it, and asking for " +
-                                "the right tiles tells their servers roughly where you were. Your route itself " +
-                                "still never leaves this phone. Without this the route draws on our own grid, " +
-                                "with the radio off.",
-                            style = MaterialTheme.typography.bodySmall, color = InkMuted,
-                        )
-                        Spacer(Modifier.height(14.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            PrimaryButton("Show streets", Modifier.weight(1f)) {
-                                scope.launch { graph.prefs.setMapTiles(true) }
-                            }
-                            SecondaryButton("Keep it offline", Modifier.weight(1f)) {
-                                scope.launch { graph.prefs.setMapTiles(false) }
-                            }
-                        }
-                    }
-                }
-            }
-
             SectionGap(24)
             SectionTitle("Recent activity")
             SectionGap(10)
@@ -250,6 +236,41 @@ fun RunHomeScreen(graph: AppGraph, nav: NavHostController) {
     }
 
     if (askingTiles) askingTiles = false
+
+    // Said before a single tile is fetched, not after.
+    //
+    // Streets are on out of the box, which makes *when* this is said the whole of the promise.
+    // Every route on this tab draws on the app's own grid, so nothing has touched the network by
+    // the time this appears, and `mapTilesAsked` is what the maps themselves wait on. The card
+    // this replaced sat below the fold and only appeared once an activity already existed, which
+    // meant a new player met the street map before they met the sentence explaining it.
+    if (!settings.mapTilesAsked) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("Your route is drawn on real streets", color = Ink) },
+            text = {
+                Text(
+                    "The map comes from OpenStreetMap and is downloaded as you look at it, so asking " +
+                        "for the right tiles tells their servers roughly where you were. Your route " +
+                        "itself never leaves this phone. Turn streets off and it draws on our own grid " +
+                        "instead, with the radio off. Settings can change this at any time.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = InkMuted,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { scope.launch { graph.prefs.setMapTiles(true) } }) {
+                    Text("Show streets", color = Ember)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { scope.launch { graph.prefs.setMapTiles(false) } }) {
+                    Text("Keep it offline", color = InkMuted)
+                }
+            },
+            containerColor = Panel,
+        )
+    }
 }
 
 /**
@@ -265,26 +286,38 @@ private fun WeeklyGoalCard(totals: ActivityTotals, goalM: Int) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
             ProgressRing(fraction = fraction, size = 92, stroke = 9, color = if (fraction >= 1f) Success else Ember) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("%.1f".format(totals.weekDistanceM / 1000f), style = MaterialTheme.typography.titleLarge, color = Ink)
-                    Text("km", style = MaterialTheme.typography.labelSmall, color = InkFaint)
+                    val (value, unit) = distanceParts(totals.weekDistanceM)
+                    Text(value, style = MaterialTheme.typography.titleLarge, color = Ink)
+                    Text(unit, style = MaterialTheme.typography.labelSmall, color = InkFaint)
                 }
             }
             Column(Modifier.weight(1f)) {
                 Text("This week", style = MaterialTheme.typography.titleMedium, color = Ink)
                 Text(
                     if (fraction >= 1f) "Goal met — ${"%.1f".format(goalM / 1000f)} km"
-                    else "${"%.1f".format((goalM - totals.weekDistanceM).coerceAtLeast(0f) / 1000f)} km to your goal",
+                    else "${formatDistance((goalM - totals.weekDistanceM).coerceAtLeast(0f))} to your goal",
                     style = MaterialTheme.typography.bodySmall,
                     color = if (fraction >= 1f) Success else InkMuted,
                 )
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "${totals.weekActivities} activities · ${formatDuration(totals.weekMovingMs)} moving" +
-                        if (totals.weekSteps > 0) " · ${totals.weekSteps} steps" else "",
+                    buildString {
+                        append(totals.weekActivities)
+                        append(if (totals.weekActivities == 1) " activity" else " activities")
+                        append(" · ")
+                        append(formatDuration(totals.weekMovingMs))
+                        append(" moving")
+                        if (totals.weekSteps > 0) append(" · ${totals.weekSteps} steps")
+                    },
                     style = MaterialTheme.typography.bodySmall, color = InkFaint,
                 )
                 Text(
-                    "This month: %.1f km over %d".format(totals.monthDistanceM / 1000f, totals.monthActivities),
+                    // "0 m over 0" is arithmetic, not a sentence. A month with nothing in it says so.
+                    if (totals.monthActivities == 0) {
+                        "This month: nothing yet"
+                    } else {
+                        "This month: ${formatDistance(totals.monthDistanceM)} over ${totals.monthActivities}"
+                    },
                     style = MaterialTheme.typography.bodySmall, color = InkFaint,
                 )
             }
@@ -316,7 +349,7 @@ private fun ActivityRow(run: RunSummary, points: List<RunPointEntity>, onClick: 
         }
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("%.2f km".format(run.distanceM / 1000f), style = MaterialTheme.typography.bodyLarge, color = Ink)
+                Text(formatDistance(run.distanceM), style = MaterialTheme.typography.bodyLarge, color = Ink)
                 if (run.kind != com.clashfit.data.ActivityKind.RUN) {
                     Tag(run.title, color = if (run.isWalk) Rival else Gassed)
                 }
@@ -337,70 +370,139 @@ private fun RunActiveScreen(graph: AppGraph, nav: NavHostController) {
     val tracker = RunTracker.getInstance()
     val state by tracker.state.collectAsStateWithLifecycle()
     val settings by graph.prefs.settings.collectAsStateWithLifecycle(initialValue = com.clashfit.data.Prefs.Settings())
+    val mapState = rememberRouteMapState()
 
     LaunchedEffect(Unit) { if (!state.isRunning) RunTrackingService.start(context, ActivityKind.RUN) }
 
-    Column(Modifier.fillMaxSize().background(Ground).safeDrawingPadding().padding(20.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(Modifier.size(10.dp).clip(CircleShape).background(if (state.isPaused) InkFaint else Success))
-            Text(
-                buildString {
-                    append(if (state.isPaused) "Paused" else "Recording")
-                    if (state.isWalk) append(" · walk")
-                    // Said out loud rather than hidden. A route built from footsteps is an
-                    // estimate, and the person looking at it is entitled to know which it is.
-                    append(if (state.indoors) " · steps, no GPS" else "")
-                },
-                style = MaterialTheme.typography.labelLarge,
-                color = if (state.indoors) Rival else InkMuted,
-            )
-        }
-        Spacer(Modifier.height(24.dp))
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("%.2f".format(state.distanceM / 1000f), style = MaterialTheme.typography.displayMedium.copy(fontSize = 88.sp), color = Ink)
-            Text("KILOMETRES", style = MaterialTheme.typography.labelMedium, color = InkMuted)
-        }
-        Spacer(Modifier.height(20.dp))
-        StatStrip(
-            listOf(
-                formatDuration(state.movingMs) to "Moving",
-                RunSummary.formatPace(state.avgPaceSecPerKm) to "Pace",
-                if (state.isWalk && state.steps > 0) "${state.steps}" to "Steps" else "${state.cadenceSpm}" to "Cadence",
-            ),
-        )
-        Spacer(Modifier.height(18.dp))
-        AppCard(Modifier.fillMaxWidth(), padding = 0) {
-            ActivityMap(
-                points = state.points,
-                tilesAllowed = settings.mapTiles,
-                follow = true,
-                interactive = false,
-                modifier = Modifier.fillMaxWidth().height(220.dp),
-            )
-        }
-        if (state.elevationGainM > 0) {
-            Spacer(Modifier.height(12.dp))
-            StatTile("%.0f m".format(state.elevationGainM), "Elevation gain", Modifier.fillMaxWidth())
-        }
-        Spacer(Modifier.weight(1f))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (state.isPaused) {
-                PrimaryButton("Resume", Modifier.weight(1f)) { RunTrackingService.resume(context) }
-            } else {
-                SecondaryButton("Pause", Modifier.weight(1f)) { RunTrackingService.pause(context) }
-            }
-            SecondaryButton("Finish", Modifier.weight(1f)) {
-                val finished = state.runId
-                RunTrackingService.stop(context)
-                if (finished != null) {
-                    nav.navigate(RunSummaryRoute(finished))
-                    nav.popBackStack(RunActive, inclusive = true)
-                } else {
-                    nav.popBackStack()
-                }
-            }
+    // Elapsed time, ticking from the moment the button was pressed.
+    //
+    // Moving time is the honest number for a pace, but it stays at zero until the phone is sure
+    // you are moving, and a screen that shows nothing at all for the first half minute reads as an
+    // app that has not started. This is the clock a stopwatch would show.
+    var elapsedMs by remember { mutableStateOf(0L) }
+    val startedAt = state.startedAtMs
+    LaunchedEffect(startedAt, state.isPaused) {
+        while (startedAt != null && !state.isPaused) {
+            elapsedMs = graph.clock.nowMs() - startedAt
+            delay(250)
         }
     }
+
+    Box(Modifier.fillMaxSize().background(Ground)) {
+        // The map is the screen. Everything else floats on it.
+        ActivityMap(
+            points = state.points,
+            tilesAllowed = settings.mapTiles && settings.mapTilesAsked,
+            follow = true,
+            interactive = true,
+            mapState = mapState,
+            modifier = Modifier.fillMaxSize(),
+        )
+
+        // A wash at the top and bottom so white text stays legible over whatever the map drew.
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(
+                    0f to Ground.copy(alpha = 0.92f),
+                    0.22f to Ground.copy(alpha = 0.10f),
+                    0.58f to Color.Transparent,
+                    1f to Ground.copy(alpha = 0.94f),
+                ),
+            ),
+        )
+
+        Column(Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 20.dp)) {
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                RecordingDot(paused = state.isPaused)
+                Text(
+                    buildString {
+                        append(if (state.isPaused) "Paused" else "Recording")
+                        if (state.isWalk) append(" · walk")
+                        // Said out loud rather than hidden. A route built from footsteps is an
+                        // estimate, and the person looking at it is entitled to know which it is.
+                        append(if (state.indoors) " · steps, no GPS" else "")
+                    },
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (state.indoors) Rival else InkMuted,
+                )
+                Spacer(Modifier.weight(1f))
+                Text(formatDuration(elapsedMs), style = MaterialTheme.typography.titleMedium, color = Ink)
+            }
+
+            Spacer(Modifier.weight(1f))
+            MapControls(mapState, Modifier.align(Alignment.End))
+            Spacer(Modifier.height(10.dp))
+
+            AppCard(Modifier.fillMaxWidth(), padding = 16) {
+                Column {
+                    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        val (value, unit) = distanceParts(state.distanceM)
+                        Text(
+                            value,
+                            style = MaterialTheme.typography.displayMedium.copy(fontSize = 64.sp),
+                            color = Ink,
+                        )
+                        Text(
+                            unit.uppercase(),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = InkMuted,
+                            modifier = Modifier.padding(bottom = 12.dp),
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    StatStrip(
+                        listOf(
+                            formatDuration(state.movingMs) to "Moving",
+                            RunSummary.formatPace(state.avgPaceSecPerKm) to "Pace",
+                            if (state.isWalk && state.steps > 0) "${state.steps}" to "Steps" else "${state.cadenceSpm}" to "Cadence",
+                        ),
+                    )
+                    if (state.elevationGainM > 0) {
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            "%.0f m of climb".format(state.elevationGainM),
+                            style = MaterialTheme.typography.bodySmall, color = InkFaint,
+                        )
+                    }
+                    Spacer(Modifier.height(14.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (state.isPaused) {
+                            PrimaryButton("Resume", Modifier.weight(1f)) { RunTrackingService.resume(context) }
+                        } else {
+                            SecondaryButton("Pause", Modifier.weight(1f)) { RunTrackingService.pause(context) }
+                        }
+                        SecondaryButton("Finish", Modifier.weight(1f)) {
+                            val finished = state.runId
+                            RunTrackingService.stop(context)
+                            if (finished != null) {
+                                nav.navigate(RunSummaryRoute(finished))
+                                nav.popBackStack(RunActive, inclusive = true)
+                            } else {
+                                nav.popBackStack()
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+}
+
+/** The recording light: steady while paused, breathing while the activity is being recorded. */
+@Composable
+private fun RecordingDot(paused: Boolean) {
+    val alpha by rememberInfiniteTransition(label = "rec").animateFloat(
+        initialValue = 1f,
+        targetValue = if (paused) 1f else 0.25f,
+        animationSpec = infiniteRepeatable(tween(900, easing = LinearEasing), RepeatMode.Reverse),
+        label = "recAlpha",
+    )
+    Box(
+        Modifier.size(10.dp).clip(CircleShape)
+            .background((if (paused) InkFaint else Success).copy(alpha = alpha)),
+    )
 }
 
 /**
@@ -417,11 +519,30 @@ private fun ActivityMap(
     follow: Boolean = false,
     interactive: Boolean = true,
     paceColoured: Boolean = true,
+    mapState: RouteMapState? = null,
 ) {
-    if (tilesAllowed && points.size >= 2) {
-        RouteMap(points = points, modifier = modifier, paceColoured = paceColoured, follow = follow, interactive = interactive)
-    } else {
+    // One point is enough for a street map: it can show where you are standing while the route is
+    // still a single dot. The tile-free trace needs two, because it has nothing else to draw.
+    if (tilesAllowed && points.isNotEmpty()) {
+        RouteMap(
+            points = points,
+            modifier = modifier,
+            paceColoured = paceColoured,
+            follow = follow,
+            interactive = interactive,
+            state = mapState,
+        )
+    } else if (points.size >= 2) {
         RouteTrace(points = points, modifier = modifier, paceColoured = paceColoured)
+    } else {
+        // Nothing to draw yet. Saying so beats an empty grey box that looks like a failure.
+        Box(modifier.background(PanelLift), contentAlignment = Alignment.Center) {
+            Text(
+                if (tilesAllowed) "Finding you…" else "Waiting for the first fix…",
+                style = MaterialTheme.typography.bodySmall,
+                color = InkFaint,
+            )
+        }
     }
 }
 
@@ -442,6 +563,7 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
     var reward by remember { mutableStateOf<ActivityReward?>(null) }
     var sharing by remember { mutableStateOf(false) }
     var showShareNotice by remember { mutableStateOf(false) }
+    var loaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(runId) {
         run = repo.getRun(runId)
@@ -470,12 +592,25 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
                 ),
             )
         }
+        loaded = true
     }
 
     ScreenScaffold(title = "Activity", onBack = { nav.popBackStack() }) { padding ->
         val r = run
         if (r == null) {
-            EmptyState("Loading", "Reading the activity…", Modifier.padding(padding))
+            // Not every id still has an activity behind it. One that recorded nothing is deleted
+            // at the finish line, and this screen is opened by the same tap that finished it, so
+            // saying so here is the difference between an explanation and a spinner that never
+            // resolves.
+            if (loaded) {
+                EmptyState(
+                    "Nothing to save",
+                    "That activity did not move far enough to record, so it was discarded.",
+                    Modifier.padding(padding),
+                )
+            } else {
+                EmptyState("Loading", "Reading the activity…", Modifier.padding(padding))
+            }
             return@ScreenScaffold
         }
         Column(
@@ -491,12 +626,22 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
             SectionGap(12)
 
             if (points.size >= 2) {
+                val summaryMap = rememberRouteMapState()
                 AppCard(Modifier.fillMaxWidth(), padding = 0) {
-                    ActivityMap(
-                        points = points,
-                        tilesAllowed = settings.mapTiles,
-                        modifier = Modifier.fillMaxWidth().height(260.dp),
-                    )
+                    Box {
+                        ActivityMap(
+                            points = points,
+                            tilesAllowed = settings.mapTiles && settings.mapTilesAsked,
+                            // Tall enough to be a map rather than a stamp. Two thirds of a phone
+                            // screen is roughly what every other running app gives a finished route.
+                            modifier = Modifier.fillMaxWidth().height(380.dp),
+                            interactive = settings.mapTiles && settings.mapTilesAsked,
+                            mapState = summaryMap,
+                        )
+                        if (settings.mapTiles && settings.mapTilesAsked) {
+                            MapControls(summaryMap, Modifier.align(Alignment.BottomEnd).padding(10.dp))
+                        }
+                    }
                 }
                 SectionGap(14)
             }
@@ -551,7 +696,8 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
             }
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                StatTile("%.2f".format(r.distanceM / 1000f), "km", Modifier.weight(1f))
+                val (distance, distanceUnit) = distanceParts(r.distanceM)
+                StatTile(distance, distanceUnit, Modifier.weight(1f))
                 StatTile(formatDuration(r.movingMs), "Moving", Modifier.weight(1f))
             }
             Spacer(Modifier.height(10.dp))
@@ -562,7 +708,14 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
             Spacer(Modifier.height(10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 StatTile(r.fastestKmSec?.let { formatPaceSecPerKm(it) } ?: "—", "Fastest km", Modifier.weight(1f))
-                StatTile(if (r.steps > 0) "${r.steps}" else "${r.cadenceSpm} spm", if (r.steps > 0) "Steps" else "Cadence", Modifier.weight(1f))
+                // An activity recorded before the step counter existed has neither number to show,
+                // and "0 spm" reads as a broken sensor rather than as an absent one.
+                val effort = when {
+                    r.steps > 0 -> "${r.steps}" to "Steps"
+                    r.cadenceSpm > 0 -> "${r.cadenceSpm} spm" to "Cadence"
+                    else -> "—" to "Cadence"
+                }
+                StatTile(effort.first, effort.second, Modifier.weight(1f))
             }
 
             SectionGap(20)
@@ -570,7 +723,7 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
                 if (settings.shareNoticeSeen) sharing = true else showShareNotice = true
             }
 
-            val profile = remember(points) { elevationProfile(points, buckets = 48) }
+            val profile = remember(points) { normaliseProfile(elevationProfile(points, buckets = 48)) }
             if (profile.size >= 8 && r.elevationGainM > 0f) {
                 SectionGap(20)
                 ChartCard("Elevation", subtitle = "%.0f m of climb".format(r.elevationGainM)) {
@@ -603,7 +756,7 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
 
             SectionGap(20)
             Text(
-                if (settings.mapTiles) {
+                if (settings.mapTiles && settings.mapTilesAsked) {
                     "The route is stored on this phone. Map tiles were fetched from OpenStreetMap to draw the streets."
                 } else {
                     "The route never left this phone."
@@ -692,8 +845,8 @@ private fun ShareDialog(stats: ShareCard.Stats, onDismiss: () -> Unit) {
         }
     }
 
-    val text = "%.2f km with ClashFit — every rep graded by the camera. clash-fit.vercel.app"
-        .format(stats.distanceM / 1000f)
+    val text = "${formatDistance(stats.distanceM)} with ClashFit — every rep graded by the camera. " +
+        "clash-fit.vercel.app"
 
     fun send(action: (android.net.Uri) -> Unit) {
         val bmp = bitmap ?: return
