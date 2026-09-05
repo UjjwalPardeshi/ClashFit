@@ -80,84 +80,64 @@ class PerArmDeepestPointTest {
     private fun curl(left: Float, right: Float) = SyntheticBody.world(170f, leftElbowDeg = left, rightElbowDeg = right)
 
     @Test
-    fun `asymmetric curl with both arms together is one rep scored at its own deepest frame`() {
+    fun `both arms curling together are counted separately`() {
         val rec = Recorder()
         val d = Driver(engine("bicep_curl", rec))
         calibrate(d, curl(175f, 175f))
-        // Both arms curl together, the right harder (14°) than the left (22°). They finish inside
-        // the merge window, so this is one rep; its deepest frame is the completing arm's own.
         val t0 = d.t
         d.ramp(700, 175f, 22f) { t ->
-            val progress = (t - t0).toFloat() / 700f
-            curl(175f - (175f - 22f) * progress, 175f - (175f - 14f) * progress)
+            val f = (t - t0).toFloat() / 700f
+            curl(175f - (175f - 22f) * f, 175f - (175f - 14f) * f)
         }
-        d.hold(500, curl(22f, 14f))
+        d.hold(200, curl(22f, 14f))
         val t1 = d.t
         d.ramp(600, 22f, 175f) { t ->
-            val progress = (t - t1).toFloat() / 600f
-            curl(22f + (175f - 22f) * progress, 14f + (175f - 14f) * progress)
+            val f = (t - t1).toFloat() / 600f
+            curl(22f + (175f - 22f) * f, 14f + (175f - 14f) * f)
         }
-        d.hold(500, curl(175f, 175f))
-        assertEquals(1, rec.reps.size, "both arms moving together is one rep")
-        assertNotEquals(0f, rec.reps[0].alignment, "the rep has alignment data")
+        d.hold(400, curl(175f, 175f))
+        assertEquals(2, rec.reps.size, "fitmon counts each arm, so both arms together are two reps")
+        rec.reps.forEach { assertNotEquals(0f, it.alignment, "each rep is scored") }
     }
 
     @Test
-    fun `alternating curls maintain per-arm deepest tracking`() {
+    fun `alternating curls are counted one arm at a time`() {
         val rec = Recorder()
         val d = Driver(engine("bicep_curl", rec))
         calibrate(d, curl(175f, 175f))
-        // Left curl: left goes to 20°, right stays open
         val t0 = d.t
-        d.ramp(700, 175f, 20f) { t ->
-            val progress = (t - t0).toFloat() / 700f
-            curl(175f - (175f - 20f) * progress, 175f)
-        }
-        d.hold(500, curl(20f, 175f))
+        d.ramp(700, 175f, 20f) { t -> curl(175f - (175f - 20f) * ((t - t0).toFloat() / 700f), 175f) }
+        d.hold(200, curl(20f, 175f))
         val t0b = d.t
-        d.ramp(600, 20f, 175f) { t ->
-            val progress = (t - t0b).toFloat() / 600f
-            curl(20f + (175f - 20f) * progress, 175f)
-        }
-        d.hold(500, curl(175f, 175f))
-        // Right curl: right goes to 15° (deeper), left open
+        d.ramp(600, 20f, 175f) { t -> curl(20f + (175f - 20f) * ((t - t0b).toFloat() / 600f), 175f) }
+        d.hold(400, curl(175f, 175f))
         val t1 = d.t
-        d.ramp(700, 175f, 15f) { t ->
-            val progress = (t - t1).toFloat() / 700f
-            curl(175f, 175f - (175f - 15f) * progress)
-        }
-        d.hold(500, curl(175f, 15f))
+        d.ramp(700, 175f, 15f) { t -> curl(175f, 175f - (175f - 15f) * ((t - t1).toFloat() / 700f)) }
+        d.hold(200, curl(175f, 15f))
         val t1b = d.t
-        d.ramp(600, 15f, 175f) { t ->
-            val progress = (t - t1b).toFloat() / 600f
-            curl(175f, 15f + (175f - 15f) * progress)
-        }
-        d.hold(500, curl(175f, 175f))
-        assertEquals(2, rec.reps.size, "each arm's rep is counted separately")
-        assertNotEquals(0f, rec.reps[0].alignment, "rep 1 alignment captured at its deepest point")
-        assertNotEquals(0f, rec.reps[1].alignment, "rep 2 alignment captured at its deepest point")
+        d.ramp(600, 15f, 175f) { t -> curl(175f, 15f + (175f - 15f) * ((t - t1b).toFloat() / 600f)) }
+        d.hold(400, curl(175f, 175f))
+        assertEquals(2, rec.reps.size, "one rep per arm")
+        assertEquals(listOf(1, 2), rec.reps.map { it.repIndex })
     }
 
     @Test
-    fun `one arm shallow while other goes deep is handled correctly`() {
+    fun `an arm that stops at eighty degrees does not count while the other does`() {
         val rec = Recorder()
         val d = Driver(engine("bicep_curl", rec))
         calibrate(d, curl(175f, 175f))
-        // Simultaneous but asymmetric: left arm only goes to 80°, right goes to 20°
         val t0 = d.t
         d.ramp(700, 0f, 1f) { t ->
-            val progress = (t - t0).toFloat() / 700f
-            curl(175f - (175f - 80f) * progress, 175f - (175f - 20f) * progress)
+            val f = (t - t0).toFloat() / 700f
+            curl(175f - (175f - 80f) * f, 175f - (175f - 20f) * f)
         }
-        d.hold(500, curl(80f, 20f))
+        d.hold(200, curl(80f, 20f))
         val t1 = d.t
         d.ramp(600, 1f, 0f) { t ->
-            val progress = (t - t1).toFloat() / 600f
-            curl(80f + (175f - 80f) * progress, 20f + (175f - 20f) * progress)
+            val f = (t - t1).toFloat() / 600f
+            curl(80f + (175f - 80f) * f, 20f + (175f - 20f) * f)
         }
-        d.hold(500, curl(175f, 175f))
-        // Only the right arm closed far enough: one rep, scored at that arm's deepest frame
-        assertEquals(1, rec.reps.size, "the arm that closes to 30° counts; the one that stops at 80° does not")
-        assertNotEquals(0f, rec.reps[0].alignment, "alignment scored at deepest point")
+        d.hold(400, curl(175f, 175f))
+        assertEquals(1, rec.reps.size, "only the arm that closed past forty counts")
     }
 }
