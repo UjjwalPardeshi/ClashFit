@@ -48,7 +48,7 @@
         160
       ],
       "debounceMs": 1000,
-      "_note": "fitmon countLunges: either knee <90 is down, either >160 counts, 1000 ms. Ceiling 185: The same guard as the squat, on the same joint. A ceiling makes the rep a whole cycle: it lands when the movement returns to rest, not when it first crosses the line, so a half rep cannot count.",
+      "_note": "fitmon countLunges: either knee <90 is down, either >160 counts, 1000 ms. Ceiling 185: The same guard as the squat, on the same joint. The rep still lands the moment it crosses the counting line; the ceiling only refuses a reading the joint cannot actually produce, which is the only sense a ceiling can have when the rep is over at the crossing.",
       "ceiling": 185
     }
   },
@@ -79,6 +79,6 @@
     "enter": "Stand side-on, one step of clear space in front.",
     "tooHigh": "Drop the back knee further.",
     "tooFast": "Slow the descent.",
-    "framing": "I can't see your front knee — step back."
+    "framing": "I can't see your front knee \u2014 step back."
   }
 }

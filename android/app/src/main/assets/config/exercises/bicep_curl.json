@@ -52,8 +52,13 @@
         "<",
         80
       ],
+      "armLine": [
+        "<",
+        30
+      ],
+      "minConcentricMs": 500,
       "debounceMs": 800,
-      "_note": "angle(11,13,15) and angle(12,14,16), 800 ms apart, either arm. Measured on the phone 5 Sep 2026 and confirmed by the player on 6 Sep: an extended arm reads 150-159 on the 3D world landmarks, never the 170 a diagram promises, because the forearm is edge-on and depth is the noisiest axis; a real curl closes to 55-78. So >135 arms and <80 counts. The picker's reference animation closes only to 85, which this deliberately does not count: the mode says half reps do not count, and 93 would have counted them. Ceiling 25: An elbow reading under 25 is past the range the forearm has against the biceps; below that it is tracking error, not a deeper curl. A ceiling makes the rep a whole cycle: it lands when the movement returns to rest, not when it first crosses the line, so a half rep cannot count.",
+      "_note": "angle(11,13,15) and angle(12,14,16), 800 ms apart, either arm. Measured on the phone 5 Sep 2026 and confirmed by the player on 6 Sep: an extended arm reads 150-159 on the 3D world landmarks, never the 170 a diagram promises, because the forearm is edge-on and depth is the noisiest axis; a real curl closes to 55-78. So >135 arms and <80 counts. The picker's reference animation closes only to 85, which this deliberately does not count: the mode says half reps do not count, and 93 would have counted them. Ceiling 25: An elbow reading under 25 is past the range the forearm has against the biceps; below that it is tracking error, not a deeper curl. The rep still lands the moment it crosses the counting line; the ceiling only refuses a reading the joint cannot actually produce, which is the only sense a ceiling can have when the rep is over at the crossing. armLine 30: the upper arm must stay within 30 degrees of hanging down the torso, measured on 11-13 / 12-14 against the hip-to-shoulder axis. The elbow angle cannot see a swung rep - an elbow driven forward and up closes through the same angles as one pinned to the ribs - so without this a cheated curl counted identically. PROVISIONAL: unlike every other number here it has not been measured on the player, because no trace of a real counting curl exists (reference-bicep-curl.jsonl is the picker animation and closes only to 84.8, so it counts nothing). 30 is set generous on purpose to refuse obvious swinging without starving a real set; measure it with tools/angles.html and tighten. minConcentricMs 500: the lift itself - rest to the top, which is the 135-to-80 segment and about a third of the sweep - must take half a second, so a full curl takes about 1.4 s. PROVISIONAL like armLine. debounceMs only spaces reps apart, so before this a flung rep counted as long as the previous one was long enough ago. Safe to reason about rather than measure, unlike the angles: a millisecond is not read off the noisy depth axis. There is deliberately NO grip guard - telling a supinated curl from a hammer curl needs landmarks 17-22, which the model reports at 0.3-0.7 confidence and drops exactly when the forearm occludes them, and Condition.holds() passes NaN, so such a guard would silently never fire.",
       "ceiling": 25
     }
   },
@@ -77,8 +82,9 @@
   },
   "cues": {
     "enter": "Face the camera, arms hanging straight down, elbows tucked to your sides.",
-    "tooHigh": "Curl all the way up — elbow closed to 80° or less.",
+    "tooHigh": "Curl all the way up \u2014 elbow closed to 80\u00b0 or less.",
     "tooFast": "Slow the curl and squeeze at the top.",
-    "framing": "I can't see your elbows — step back."
+    "gate": "Pin your elbow to your side and take a full second lifting \u2014 swinging it up doesn't count.",
+    "framing": "I can't see your elbows \u2014 step back."
   }
 }

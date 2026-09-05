@@ -19,15 +19,15 @@
   ],
   "detector": {
     "primaryAngle": {
-      "a": "SHOULDER",
-      "b": "ELBOW",
-      "c": "WRIST"
+      "a": "ELBOW",
+      "b": "SHOULDER",
+      "c": "HIP"
     },
-    "topEnter": 90,
-    "topExit": 100,
-    "bottomEnter": 170,
-    "bottomExit": 160,
-    "targetAngle": 175,
+    "topEnter": 75,
+    "topExit": 85,
+    "bottomEnter": 145,
+    "bottomExit": 135,
+    "targetAngle": 155,
     "minDescendMs": 200,
     "minBottomMs": 80,
     "minRepMs": 900,
@@ -38,21 +38,21 @@
       "ELBOW",
       "WRIST"
     ],
-    "_note": "Keypoints 11-13-15 / 12-14-16 (shoulder-elbow-wrist), 3D world angle. Start with the elbow at 90 or less (TOP at <=90), press to 170-180 (BOTTOM at >=170). The END gate (hip-shoulder-wrist >= 130 at lockout) refuses a press pushed out in front instead of overhead.",
+    "_note": "Keypoints 13-11-23 / 14-12-24 (elbow-shoulder-hip), vertex at the shoulder, 3D world angle. This is the angle the arm makes with the torso, not the bend of the elbow. Measured on traces/reference-shoulder-press.jsonl 6 Sep 2026: racked 53.6-55.1, locked out overhead 149.7-159.6, so a rep sweeps ~95 degrees of clear air. The elbow angle it replaced (11-13-15 / 12-14-16) only separated rack from lockout by 64 degrees and did it on the worst-observed segment: at lockout the forearm points down the camera axis, where the depth estimate is noisiest, so the same instant read 179 on one arm and 146 on the other. Under 2 cm of landmark noise the elbow config counted the clip's 3 reps correctly 25% of the time and over-counted to 4-7 the rest; this one counts 3 every time, and 92% of the time at 3 cm. The elbow-shoulder-hip angle lies in the frontal plane, which a front-framed camera sees square on, so depth barely enters it. TOP is racked at <=75, BOTTOM is locked out at >=145.",
     "counter": "STAGE",
     "stage": {
       "sides": "BEST",
       "rest": [
         "<",
-        95
+        75
       ],
       "count": [
         ">",
-        134
+        135
       ],
       "wristAboveShoulderAt": "COUNT",
       "debounceMs": 1000,
-      "_note": "Keypoints 11-13-15 / 12-14-16 (shoulder-elbow-wrist), 3D world angle, better-seen side. Measured against the reference clip 6 Sep 2026: a locked-out press reads 142.3-146.1, never 160, for the same reason the curl never reads 170 — the forearm is edge-on and the depth axis is the noisiest. Arming at >160 counted nothing at all. >134 keeps 8 degrees of margin under the weakest lockout; <95 rests 17 degrees above the racked position. Ceiling 180: An elbow does not lock past straight. Counting happens overhead, so this refuses an impossible reading rather than a bad press. A ceiling makes the rep a whole cycle: it lands when the movement returns to rest, not when it first crosses the line, so a half rep cannot count.",
+      "_note": "Keypoints 13-11-23 / 14-12-24 (elbow-shoulder-hip), 3D world angle, better-seen side. Measured on the reference clip 6 Sep 2026: the rack sits at 53.6-55.1 and the weakest lockout at 149.7. Rest at <75 clears the highest rack by 20 degrees; count at >135 sits 14.7 degrees under the weakest lockout, so a press that falls short of a real lockout still counts, and 30 degrees above the lateral raise's 105 ceiling, so a raise on the same joint triple can never register as a press. The wrist-above-shoulder check is what separates a press overhead from an arm swung out behind: the angle alone cannot tell them apart, and at the counting frames the wrist measures 0.29-0.47 m above the shoulder along the torso. Ceiling 180: the arm does not go past straight in line with the torso, so a reading beyond it is a bad frame, not a bad press.",
       "ceiling": 180
     }
   },
@@ -75,10 +75,10 @@
     "baselineReps": 3
   },
   "cues": {
-    "enter": "Face the camera, hands at shoulder height, elbows bent to 90°.",
-    "tooHigh": "Press all the way up — elbows locked to 170° or more overhead.",
+    "enter": "Face the camera, hands at shoulder height, upper arms down by your sides.",
+    "tooHigh": "Press all the way up \u2014 arms overhead, in line with your torso.",
     "tooFast": "Lower the hands back to the shoulders under control.",
     "gate": "Press straight up overhead, not out in front.",
-    "framing": "I can't see your hands — step back."
+    "framing": "I can't see your hands \u2014 step back."
   }
 }

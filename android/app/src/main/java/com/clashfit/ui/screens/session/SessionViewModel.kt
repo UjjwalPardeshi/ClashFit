@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.clashfit.AppGraph
+import com.clashfit.BuildConfig
 import com.clashfit.core.config.GhostData
 import com.clashfit.core.model.CombatState
 import com.clashfit.core.model.ModeKind
@@ -162,6 +163,9 @@ class SessionViewModel(
             durationOverrideSec = args.durationSec,
             listener = EngineListener(),
         )
+        // Debug builds narrate the rep counter to logcat: `adb logcat -s ClashFit/reps` while the
+        // player moves is the only honest way to find out whether a threshold is reachable on them.
+        if (BuildConfig.DEBUG) engine.diagnostics = { Log.i(REP_TAG, it) }
         args.ghostId?.let { id ->
             val shipped = cfg.ghosts.value[id]
             if (shipped != null) engine.loadGhost(shipped) else viewModelScope.launch { loadSavedGhost(id) }
@@ -515,6 +519,7 @@ class SessionViewModel(
 
     companion object {
         private const val TAG = "ClashFit/session"
+        private const val REP_TAG = "ClashFit/reps"
         private const val MIN_GHOST_REPS = 3
         private val PRONE_HINTS = listOf("push_up", "pushup", "plank", "sit_up", "situp", "bridge", "superman", "hollow", "bird_dog", "dead_bug")
 

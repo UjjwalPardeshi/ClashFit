@@ -24,10 +24,10 @@
       "b": "SHOULDER",
       "c": "ELBOW"
     },
-    "topEnter": 20,
+    "topEnter": 25,
     "topExit": 30,
-    "bottomEnter": 100,
-    "bottomExit": 90,
+    "bottomEnter": 90,
+    "bottomExit": 85,
     "targetAngle": 100,
     "minDescendMs": 200,
     "minBottomMs": 80,
@@ -39,23 +39,27 @@
       "ELBOW",
       "WRIST"
     ],
-    "_note": "Keypoints 23-11-13 / 24-12-14 (hip-shoulder-elbow), 3D world angle. Arms hang at 20-25 and a correct raise turns at about 100. Past 110 the shoulder stops abducting and starts pressing, which is a different movement and is not counted.",
+    "_note": "Keypoints 23-11-13 / 24-12-14 (hip-shoulder-elbow), 3D world angle. Arms hang in the 16-25 band and a correct raise turns in the 90-110 band. Past 110 the shoulder stops abducting and starts pressing, which is a different movement and is not counted.",
     "counter": "STAGE",
     "stage": {
       "signal": "ANGLE",
       "sides": "BOTH",
       "rest": [
         "<",
-        30
+        25
       ],
       "count": [
         ">",
-        100
+        90
       ],
       "ceiling": 110,
       "debounceMs": 1000,
-      "_note": "Specified by the player, 6 Sep 2026: arms down at 20-25, the raise turns at 100, more than 110 is not a lateral raise and does not count, and the arms must come back into 20-30 for the rep to land. countAt RETURN makes this a whole-cycle rule, so the rep counts on the way down rather than on the way up. Replaces a wrist-height pair in metres that was measured off a drawing, not a body. Ceiling 110: Past 110 the shoulder stops abducting and starts pressing. The player's own number, 6 Sep 2026. A ceiling makes the rep a whole cycle: it lands when the movement returns to rest, not when it first crosses the line, so a half rep cannot count.",
-      "countAt": "RETURN"
+      "_note": "Specified by the player, 6 Sep 2026: arms down in a 16-25 band, the raise counts above 90, and it is refused past 110. countAt RETURN makes this a whole-cycle rule, so the rep lands on the way down rather than on the way up, which is also the only way the ceiling can mean anything: how far you went is not known until you turn around. rest was < 20 for one build and that alone broke the exercise. Captured from the player's own phone the same night (2710 frames with the arms down): only 26 percent of them read under 20 on both arms at once, and after a raise it took up to 20 SECONDS for a qualifying frame to appear. Under 25 it is 58 percent and at most 1.8 seconds. In RETURN mode the rep can only land on a resting frame, so an unreachable rest threshold does not make counting strict, it makes it silent. plane > 0.5 is the fix for front raises counting as lateral ones. The hip-shoulder-elbow angle is the same whether the arm goes out to the side or straight out in front, so the angle alone cannot tell the two apart; this asks the upper arm to be within 60 degrees of straight out to the side. Measured on traces/reference-lateral-raise.jsonl: a correct raise reads 0.62 to 1.00 sideways at the top (median 0.84) and a front raise reads about 0. On the player's own phone it read 0.95 at the quartile.",
+      "countAt": "RETURN",
+      "plane": [
+        ">",
+        0.5
+      ]
     }
   },
   "form": {
@@ -82,9 +86,9 @@
     "baselineReps": 3
   },
   "cues": {
-    "enter": "Face the camera, arms hanging at your sides (10–20°).",
-    "tooHigh": "Raise the arms out to the sides to shoulder height — 90° at the shoulder.",
+    "enter": "Face the camera, arms hanging at your sides (16-25 degrees).",
+    "tooHigh": "Raise the arms out to the sides, not out in front, to about 100 degrees.",
     "tooFast": "Lower under control.",
-    "framing": "I can't see your hips — step back."
+    "framing": "I can't see your hips \u2014 step back."
   }
 }

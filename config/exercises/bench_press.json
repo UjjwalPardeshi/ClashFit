@@ -49,7 +49,7 @@
         150
       ],
       "debounceMs": 1000,
-      "_note": "fitmon bench_press (Python backend): elbow bent is down, extended counts, 1000 ms. Ceiling 185: The same guard as the press. A ceiling makes the rep a whole cycle: it lands when the movement returns to rest, not when it first crosses the line, so a half rep cannot count.",
+      "_note": "fitmon bench_press (Python backend): elbow bent is down, extended counts, 1000 ms. Ceiling 185: The same guard as the press. The rep still lands the moment it crosses the counting line; the ceiling only refuses a reading the joint cannot actually produce, which is the only sense a ceiling can have when the rep is over at the crossing.",
       "ceiling": 185
     }
   },
@@ -75,6 +75,6 @@
     "enter": "Lie on your back, side-on to the camera, arms pressed straight up.",
     "tooHigh": "Lower until the elbows pass ninety degrees.",
     "tooFast": "Control the way down.",
-    "framing": "I can't see your arms — move the phone back."
+    "framing": "I can't see your arms \u2014 move the phone back."
   }
 }

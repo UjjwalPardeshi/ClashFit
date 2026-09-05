@@ -201,7 +201,7 @@ Every entry is a config record, not code. `framing` = where the phone must be.
 | Bicep curl | shoulder–elbow–wrist | front | strength, upper, arms |
 | Lateral raise | hip–shoulder–elbow | front | strength, upper, shoulders |
 | Front raise | hip–shoulder–elbow | front | strength, upper, shoulders |
-| Shoulder press | shoulder–elbow–wrist | front | strength, upper, shoulders |
+| Shoulder press | elbow–shoulder–hip | front | strength, upper, shoulders |
 | Overhead triceps extension | shoulder–elbow–wrist | front | strength, upper, arms |
 | Floor press | shoulder–elbow–wrist | side | strength, upper |
 
@@ -241,12 +241,17 @@ Burpee · Squat thrust · Jump squat · Tuck jump · Star jump · Lateral bound 
 >
 > | Exercise | Keypoints | Rest | Counts at | Sides | Debounce |
 > |---|---|---|---|---|---|
-> | Lateral raise | 23-11-13 / 24-12-14 | both arms < 30° | both arms > 100°, never past 110° | both | 1000 ms |
+> | Lateral raise | 23-11-13 / 24-12-14 | both arms < 20° | both arms 95-105°, out to the side | both | 1000 ms |
 > | Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80° | either arm | 800 ms |
-> | Shoulder press | 11-13-15 / 12-14-16 | elbow < 95° | elbow > 134° overhead | better side | 1000 ms |
+> | Shoulder press | 13-11-23 / 14-12-24 | arm-to-torso < 75° | arm-to-torso > 135° overhead | better side | 1000 ms |
 > | Squat | 23-25-27 / 24-26-28 | both knees < 72° | both knees > 150° | both | 1000 ms |
 >
 > Lunge, front raise, overhead triceps extension and floor press are stage-counted too.
+>
+> The lateral raise and the front raise also carry a `plane` condition, because the
+> hip-shoulder-elbow angle is the same whether the arm goes out to the side or straight out in
+> front and without it each was counting the other. It asks the upper arm to lie within (or
+> beyond) sixty degrees of straight out to the side. See CONTEXT.md section 5.
 >
 > Six of those eight numbers — every one but the squat's — were retuned on 6 Sep 2026 against
 > `traces/reference-*.jsonl`, the model's own reading of the four picker animations. As shipped,

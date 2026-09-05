@@ -149,12 +149,13 @@ class ReferenceFormTest {
          *  - `bicep_curl` closes only to 85 degrees. A player's real curl closes to 55-78, and this
          *    mode's own rule is that half reps do not count, so counting at 93 to satisfy the
          *    drawing would have counted half curls for everybody.
-         *  - `lateral_raise` turns at 93.7 degrees on the weaker arm, and the player's rule is to
-         *    count at 100 and refuse anything past 110.
+         *  - `lateral_raise` turns at 93.7 degrees on the weaker arm and never brings the arms below
+         *    20.4, where the player's rule counts in a 95-105 band from a 15-20 rest. It misses at
+         *    both ends, so it is refused twice over.
          *
          * Both are the drawing disagreeing with a number measured on a person, and the person wins.
          * **Neither is settled.** The raise's band is only ten degrees wide, and if it turns out on
-         * a real shoulder that a correct raise cannot reach 100, the threshold is what should move
+         * a real shoulder that a correct raise cannot reach 95, the threshold is what should move
          * — not this set. Do not add to this list to make a red test green.
          */
         val SHALLOWER_THAN_A_REP = setOf("bicep_curl", "lateral_raise")
