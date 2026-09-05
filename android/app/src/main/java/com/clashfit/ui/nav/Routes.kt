@@ -78,3 +78,9 @@ sealed interface Route
 // ── help ────────────────────────────────────────────────────────────────────
 @Serializable data object About : Route
 @Serializable data object Help : Route
+
+/**
+ * Talk to the coach. With a session id it opens on that fight's numbers; without one, on the
+ * player's recent history.
+ */
+@Serializable data class CoachChat(val sessionId: Long = -1L) : Route

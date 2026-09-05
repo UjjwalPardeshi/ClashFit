@@ -55,9 +55,17 @@ class CancellationGuardTest {
                 checked++
                 val here = "$rel:${i + 1}"
                 if (line.contains(waiver)) return@forEachIndexed
-                // The guard is the arm directly above: "} catch (x: CancellationException) {"
-                // followed by its throw, so look back a few lines rather than only one.
-                val above = lines.subList((i - 8).coerceAtLeast(0), i).joinToString("\n")
+                // Look back over this catch chain, from the catch-all to its own `try {`.
+                //
+                // Kotlin matches catch clauses in order, so a cancellation arm anywhere earlier in
+                // the same chain wins — it does not have to be the line directly above. A fixed
+                // window got that wrong the first time a catch-all sat below both a cancellation
+                // arm and a multi-line OutOfMemoryError arm, and reported a function that handles
+                // cancellation correctly.
+                val chainStart = (i - 1 downTo (i - 60).coerceAtLeast(0))
+                    .firstOrNull { lines[it].contains("try {") || lines[it].trimEnd().endsWith("= try {") }
+                    ?: (i - 8).coerceAtLeast(0)
+                val above = lines.subList(chainStart, i).joinToString("\n")
                 val guarded = cancelArm.containsMatchIn(above) &&
                     above.substringAfterLast("CancellationException").contains("throw")
                 if (!guarded) offenders += here

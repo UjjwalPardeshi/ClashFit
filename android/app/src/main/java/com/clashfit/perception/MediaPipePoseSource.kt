@@ -42,6 +42,8 @@ import kotlinx.coroutines.CancellationException
 import com.clashfit.perception.gesture.GestureReading
 import com.clashfit.perception.gesture.GestureSource
 import com.clashfit.perception.gesture.HandGesture
+import com.clashfit.perception.vision.FrameRing
+import com.clashfit.perception.vision.FrameSource
 import com.google.mediapipe.tasks.vision.gesturerecognizer.GestureRecognizer
 import com.google.mediapipe.tasks.vision.gesturerecognizer.GestureRecognizerResult
 import kotlinx.coroutines.channels.BufferOverflow
@@ -57,7 +59,7 @@ class MediaPipePoseSource(
     private val clock: Clock,
     private val lifecycleOwner: LifecycleOwner,
     private val scope: CoroutineScope,
-) : PoseSource, CameraPreviewSource, GestureSource {
+) : PoseSource, CameraPreviewSource, GestureSource, FrameSource {
 
     private val TAG = "ClashFit/perception"
     private val frameChannel = Channel<PoseFrame>(capacity = 1)
@@ -104,6 +106,9 @@ class MediaPipePoseSource(
     private var bitmapPoolIndex = 0
     private val BITMAP_POOL_SIZE = 3
 
+    /** Four seconds of camera at the analysis rate, at a quarter scale. */
+    private val RECENT_FRAMES = 20
+
     // The hand, read off the same frames as the body. Created with the pose model, fed every third
     // frame (about ten a second, which is plenty for a shape held for six hundred milliseconds),
     // and only while the fight wants it — a raised palm during calibration or rest means nothing.
@@ -111,6 +116,17 @@ class MediaPipePoseSource(
     @Volatile private var gesturesEnabled = false
     private val gestureChannel = Channel<GestureReading>(capacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     override val gestures: Flow<GestureReading> = gestureChannel.receiveAsFlow()
+
+    /**
+     * The last few seconds of the camera, small.
+     *
+     * A rep completes a second or two after its deepest moment, and the frame worth showing a model
+     * is the deep one — by then it has gone past. Twenty frames at a quarter scale is about four
+     * seconds at the analysis rate and roughly 3 MB, which buys the referee its eyes for the cost
+     * of one screenshot. Written and read on the camera thread only.
+     */
+    private val recentFrames = FrameRing<Bitmap>(RECENT_FRAMES)
+    @Volatile private var keepFrames = false
 
     private val lifecycleObserver = LifecycleEventObserver { _, event ->
         when (event) {
@@ -132,6 +148,8 @@ class MediaPipePoseSource(
         poseLandmarker?.close()
         gestureRecognizer?.close()
         gestureRecognizer = null
+        keepFrames = false
+        recentFrames.drain().forEach { it.recycle() }
         // Release bitmap pool
         bitmapPool.forEach { it.recycle() }
         bitmapPool.clear()
@@ -283,6 +301,13 @@ class MediaPipePoseSource(
                 // The hand, on every third frame. recognizeAsync copies its pixels the same way
                 // detectAsync does, so both tasks can read the one pooled bitmap.
                 if (gesturesEnabled && frameCount % 3 == 0L) gestureRecognizer?.recognizeAsync(mpImage, now)
+                // A quarter-scale copy, kept for a few seconds so the referee can look back at the
+                // bottom of a rep. A copy, not the pooled bitmap: that one is overwritten by the
+                // next frame, so keeping a reference to it would keep a picture of the future.
+                if (keepFrames && frameCount % 2 == 0L) {
+                    val small = Bitmap.createScaledBitmap(bitmap, bitmap.width / 4, bitmap.height / 4, true)
+                    recentFrames.push(now, small)?.recycle()
+                }
             }
             frameCount++
             lastFrameTimeMs = now
@@ -429,5 +454,28 @@ class MediaPipePoseSource(
 
     override fun setGesturesEnabled(enabled: Boolean) {
         gesturesEnabled = enabled
+    }
+
+    // ── the referee's eyes ────────────────────────────────────────────────────────────────────
+
+    /**
+     * Start or stop keeping recent frames. Off by default, and off the moment the on-device model
+     * is unavailable: there is no point paying for the copies if nothing can look at them.
+     */
+    fun setKeepFrames(enabled: Boolean) {
+        if (keepFrames == enabled) return
+        keepFrames = enabled
+        if (!enabled) recentFrames.drain().forEach { it.recycle() }
+    }
+
+    /**
+     * A copy of the frame nearest [tMs], within two seconds. The caller owns it and recycles it.
+     *
+     * A copy because the ring keeps its own frames alive for the next request, and because the
+     * model's session outlives this call. The whole ring is thrown away when the session ends.
+     */
+    override fun frameNear(tMs: Long): Bitmap? {
+        val found = recentFrames.nearest(tMs, toleranceMs = 2_000L) ?: return null
+        return runCatching { found.copy(Bitmap.Config.ARGB_8888, false) }.getOrNull()
     }
 }

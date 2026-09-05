@@ -141,4 +141,12 @@ data class RepRecord(
     val holdSec: Float = Float.NaN,
     val accuracy: Float = Float.NaN,
     val asymmetry: com.clashfit.engine.core.RepAsymmetry? = null,
+    /**
+     * When this rep was at its deepest, in frame time. -1 when unknown (holds, replays).
+     *
+     * The referee's eyes need it: the camera frame worth showing a model is the one at the bottom
+     * of the worst rep, not the one at the top when the rep completes. Landmarks were already being
+     * sampled there for alignment; this is the timestamp of that same moment.
+     */
+    val tDeepestMs: Long = -1L,
 )

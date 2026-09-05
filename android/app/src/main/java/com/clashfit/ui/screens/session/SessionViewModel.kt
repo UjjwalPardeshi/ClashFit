@@ -44,6 +44,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.room.withTransaction
+import com.clashfit.perception.vision.FrameSource
+import com.clashfit.perception.MediaPipePoseSource
 
 data class SessionArgs(
     val mode: GameMode,
@@ -118,6 +120,17 @@ class SessionViewModel(
     /** The gesture being held and how far along the hold is, for the ring the HUD fills. Null when no hand. */
     private val _gestureHold = MutableStateFlow<Pair<HandGesture, Float>?>(null)
     val gestureHold: StateFlow<Pair<HandGesture, Float>?> = _gestureHold.asStateFlow()
+
+    /**
+     * What the referee saw in the worst rep of the set just finished.
+     *
+     * Null while it is thinking, and null forever if there is no on-device model, no frame kept, or
+     * the model would not commit to an answer. The rest panel shows it when it arrives and shows
+     * the numbers regardless.
+     */
+    private val _refereeNote = MutableStateFlow<String?>(null)
+    val refereeNote: StateFlow<String?> = _refereeNote.asStateFlow()
+    private var refereeJob: Job? = null
     private val completedSets = ArrayList<SetSnapshot>()
     private var setStartedAtMs = startedAtMs
     private var saved = false
@@ -196,6 +209,7 @@ class SessionViewModel(
             }
         }
         startGestures()
+        startFrameKeeping()
     }
 
     /**
@@ -208,6 +222,12 @@ class SessionViewModel(
      * purpose: three shapes, each with one meaning per phase, and nothing that ends the whole
      * session — that stays a deliberate tap on the screen.
      */
+    /** Keep recent frames only while there is a model that could look at one. */
+    private fun startFrameKeeping() {
+        val frames = deps.pose as? MediaPipePoseSource ?: return
+        if (graph.refereeEyes.available) frames.setKeepFrames(true)
+    }
+
     private fun startGestures() {
         val source = deps.pose as? GestureSource ?: return
         gestureJob = viewModelScope.launch {
@@ -224,6 +244,35 @@ class SessionViewModel(
                 val fired = gestureIntent.offer(reading)
                 _gestureHold.value = gestureIntent.holding?.let { it to gestureIntent.progress }
                 if (fired != null) onGesture(fired)
+            }
+        }
+    }
+
+    /**
+     * The referee looks at the worst rep of the set that just ended.
+     *
+     * Everything needed is already on the phone: the rep the scorer liked least, the moment it was
+     * deepest, and a few seconds of small camera frames the source kept for exactly this. The
+     * frame goes to the on-device model and is recycled the moment the answer comes back — it is
+     * never stored, and there is no path from here to the network.
+     *
+     * Silent about every failure. No model, no kept frame, a rep with no deepest moment, a refusal:
+     * the rest panel shows the numbers it always showed and nobody is told the AI declined.
+     */
+    private fun lookAtWorstRep(setReps: List<RepRecord>) {
+        _refereeNote.value = null
+        refereeJob?.cancel()
+        val eyes = graph.refereeEyes
+        if (!eyes.available) return
+        val frames = deps.pose as? FrameSource ?: return
+        val worst = setReps.filter { it.tDeepestMs > 0 }.minByOrNull { it.formScore } ?: return
+
+        refereeJob = viewModelScope.launch {
+            val frame = withContext(Dispatchers.Main) { frames.frameNear(worst.tDeepestMs) } ?: return@launch
+            try {
+                _refereeNote.value = eyes.critique(frame, worst, engine.exercise.name)
+            } finally {
+                frame.recycle()
             }
         }
     }
@@ -288,6 +337,7 @@ class SessionViewModel(
         override fun onSetEnd(telemetry: SetTelemetry, restSec: Int) {
             val setReps = engine.currentSetReps.toList()
             val now = graph.clock.nowMs()
+            lookAtWorstRep(setReps)
             viewModelScope.launch {
                 val coach = deps.coach.speakFor(telemetry)
                 withContext(engineThread) { engine.setCoach(coach) }

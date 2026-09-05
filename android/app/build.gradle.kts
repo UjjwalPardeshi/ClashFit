@@ -38,6 +38,9 @@ android {
         buildConfigField("String", "FIREBASE_API_KEY", secret("FIREBASE_API_KEY"))
         buildConfigField("String", "FIREBASE_APP_ID", secret("FIREBASE_APP_ID"))
         buildConfigField("String", "FIREBASE_PROJECT_ID", secret("FIREBASE_PROJECT_ID"))
+        // The cloud coach's key. Optional: without it the Cloud coach switch does nothing and the
+        // ladder is Gemma then templates. Read from local.properties, never committed.
+        buildConfigField("String", "OPENROUTER_API_KEY", secret("OPENROUTER_API_KEY"))
     }
 
     signingConfigs {

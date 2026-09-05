@@ -67,6 +67,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.BoxScope
 import com.clashfit.perception.gesture.HandGesture
+import com.clashfit.ui.theme.PanelLift
+import com.clashfit.ui.theme.Fresh
 
 /**
  * One screen for the whole fight. The engine's phase decides what is drawn: calibration guide,
@@ -88,6 +90,8 @@ fun SessionScreen(
     // The hand being held up to the camera, and the last command it gave.
     val gestureHold by vm.gestureHold.collectAsStateWithLifecycle()
     var lastGesture by remember { mutableStateOf<HudEvent.Gesture?>(null) }
+    // What the on-device model saw in the worst rep. Arrives a few seconds into the rest, or never.
+    val refereeNote by vm.refereeNote.collectAsStateWithLifecycle()
     val reduceMotion = LocalReduceMotion.current
     // Not every pose source has a camera: a recorded trace and the synthetic source do not, and
     // the fight has to work with either.
@@ -165,7 +169,10 @@ fun SessionScreen(
             Phase.FIGHTING, Phase.FRAMING_LOST -> {
                 FightLayout(s, vm, lastHit, jolt.value, shake.value, paused, reduceMotion, camera, landmarks, meta, settings, sourceAspect, gestureHold, lastGesture)
             }
-            Phase.REST -> RestPanel(s, restLeft, onSkip = vm::skipRest, onStop = vm::stop, gestureHold = gestureHold, lastGesture = lastGesture)
+            Phase.REST -> RestPanel(
+                s, restLeft, onSkip = vm::skipRest, onStop = vm::stop,
+                gestureHold = gestureHold, lastGesture = lastGesture, refereeNote = refereeNote,
+            )
             Phase.DEAD -> EndPanel(s, onSummary = { /* wait for persistence */ }, onExit = onExit)
         }
         if (s.ended && s.phase != Phase.DEAD) EndPanel(s, onSummary = {}, onExit = onExit)
@@ -284,6 +291,7 @@ private fun PausedOverlay(onResume: () -> Unit, onStop: () -> Unit) {
 fun RestPanel(
     s: SessionState, restLeft: Int?, onSkip: () -> Unit, onStop: () -> Unit,
     gestureHold: Pair<HandGesture, Float>? = null, lastGesture: HudEvent.Gesture? = null,
+    refereeNote: String? = null,
 ) {
     val t = s.telemetry
     Box(Modifier.fillMaxSize()) {
@@ -307,6 +315,20 @@ fun RestPanel(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Coach", style = MaterialTheme.typography.labelMedium, color = Ember)
                 Text(coach?.coachLine ?: "…", fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.Medium, color = Ink)
+            }
+        }
+        // What the model saw in the photograph of your worst rep. It appears when it arrives and
+        // is simply absent when there is no on-device model — never a spinner, never an apology.
+        refereeNote?.let { note ->
+            AppCard(Modifier.fillMaxWidth(), padding = 20, container = PanelLift) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(AppIcons.Eye, contentDescription = null, tint = Fresh, modifier = Modifier.size(16.dp))
+                        Text("The referee looked at rep ${s.telemetry?.worstRep?.index ?: 0}", style = MaterialTheme.typography.labelMedium, color = Fresh)
+                    }
+                    Text(note, style = MaterialTheme.typography.titleMedium, color = Ink)
+                    Text("Seen on this phone. The picture was not saved.", style = MaterialTheme.typography.labelSmall, color = InkFaint)
+                }
             }
         }
         AppCard(Modifier.fillMaxWidth(), padding = 20) {

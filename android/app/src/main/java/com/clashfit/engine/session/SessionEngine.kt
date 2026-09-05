@@ -134,6 +134,8 @@ class SessionEngine(
     /** The landmarks at the deepest point of the rep in progress, and how deep that was. */
     private var deepestLms: Landmarks? = null
     private var deepestAngle: Float = Float.MAX_VALUE
+    /** Frame time at the deepest point of the rep in progress; -1 until the first descent. */
+    private var deepestTMs: Long = -1L
     private val topRefSamples = ArrayList<Float>(128)
     private var topRef: Float? = null
 
@@ -403,6 +405,7 @@ class SessionEngine(
             if (phase == Phase.FIGHTING && !angle.isNaN() && angle < deepestAngle) {
                 deepestAngle = angle
                 deepestLms = lms
+                deepestTMs = tMs
             }
             if (phase == Phase.FIGHTING) machine.onFrame(angle, tMs)?.let { completeRep(it, lms) }
         } else {
@@ -476,6 +479,7 @@ class SessionEngine(
         asymmetryTracker.reset()
         deepestLms = null
         deepestAngle = Float.MAX_VALUE
+        deepestTMs = -1L
         // The filter too. Everything else that carries state across a rep was reset above, and
         // leaving this one holding the previous set's last sample and timestamp means the first
         // frame after a rest is blended with wherever you were standing when the last set ended.
@@ -546,8 +550,10 @@ class SessionEngine(
         if (romBaselineU == null) romBaselineU = raw.uMax - raw.uMin
         // The bottom of this rep, falling back to the current frame if nothing was recorded.
         val alignAt = deepestLms ?: lms
+        val deepestAt = deepestTMs
         deepestLms = null
         deepestAngle = Float.MAX_VALUE
+        deepestTMs = -1L
         val align = alignmentSample(alignAt, side, exercise.form?.alignment?.type)
         var score = scoreRep(raw, align)
         if (mode == GameMode.TEMPO_TRIAL) {
@@ -579,6 +585,7 @@ class SessionEngine(
             damage = dmg, combo = c.comboMultiplier,
             validFrameRatio = raw.validFrameRatio, depthCm = depthCm(raw),
             asymmetry = asymmetry,
+            tDeepestMs = deepestAt,
         )
         record(rec, c)
     }

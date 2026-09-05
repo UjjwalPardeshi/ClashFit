@@ -20,7 +20,8 @@ enum class Side { LEFT, RIGHT }
 
 enum class EndReason { BOSS_DOWN, TIME, GAME_WON, GAME_LOST, STOPPED, WALKED_AWAY }
 
-enum class CoachSource { LLM, TEMPLATE }
+/** Who spoke: the on-device model, the opt-in cloud model, or the template bank. Shown as a badge. */
+enum class CoachSource { LLM, CLOUD, TEMPLATE }
 
 enum class LinkState { IDLE, ADVERTISING, SEARCHING, LINKED, LOST }
 
