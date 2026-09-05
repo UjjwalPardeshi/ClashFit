@@ -804,15 +804,6 @@ t('recovery · lowers the band without rewriting the baseline', () => {
   eq(JSON.stringify(e.fatigue.baseline), baselineBefore, 'recovery rewrote the baseline');
 });
 
-t('breathing · is configured as a real exercise with breath-scale gates', () => {
-  const b = cfg('exercises/breathing.json');
-  eq(b.family, 'CADENCE');
-  eq(b.detector.signalJoint, 'SHOULDER');
-  ok(b.detector.minProminence < 0.01, 'prominence gate is set for limbs, not for a chest rise');
-  ok(b.detector.refractoryMs >= 1000, 'refractory is set for reps, not for breaths');
-  ok(b.detector.targetCadence.max <= 20, 'target rate is in reps per minute, not breaths');
-});
-
 // ---------- persistence and progression ----------
 /** In-memory backend, so persistence is testable without a DOM. */
 const memBackend = () => {

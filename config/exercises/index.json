@@ -1,6 +1,6 @@
 {
   "generated": true,
-  "count": 57,
+  "count": 56,
   "exercises": [
     {
       "id": "bicep_curl",
@@ -438,18 +438,6 @@
       "tags": [
         "core",
         "isometric"
-      ]
-    },
-    {
-      "id": "breathing",
-      "name": "Breathing",
-      "family": "CADENCE",
-      "difficulty": 1,
-      "games": [],
-      "tags": [
-        "mindfulness",
-        "recovery",
-        "no-equipment"
       ]
     },
     {
