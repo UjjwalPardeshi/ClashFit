@@ -96,7 +96,7 @@ import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import com.clashfit.ui.nav.Outbreak
+import com.clashfit.ui.nav.ZombieRun
 import com.clashfit.ui.theme.Gassed
 
 /** Register run routes in the nav graph. */
@@ -192,13 +192,13 @@ fun RunHomeScreen(graph: AppGraph, nav: NavHostController) {
             }
 
             SectionGap(16)
-            AppCard(Modifier.fillMaxWidth(), padding = 18, onClick = { nav.navigate(Outbreak) }) {
+            AppCard(Modifier.fillMaxWidth(), padding = 18, onClick = { nav.navigate(ZombieRun) }) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     IconBubble(AppIcons.Bolt, size = 48, tint = Gassed)
                     Column(Modifier.weight(1f)) {
-                        Text("Outbreak", style = MaterialTheme.typography.titleLarge, color = Ink)
+                        Text("Zombie Run", style = MaterialTheme.typography.titleLarge, color = Ink)
                         Text(
-                            "A real chase, on a real map. Sixty seconds head start, then they close when you slow down.",
+                            "A real chase, on a real map. Sixty seconds head start, then the horde closes when you slow down.",
                             style = MaterialTheme.typography.bodySmall, color = InkMuted,
                         )
                     }
@@ -342,8 +342,15 @@ private fun RunActiveScreen(graph: AppGraph, nav: NavHostController) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.size(10.dp).clip(CircleShape).background(if (state.isPaused) InkFaint else Success))
             Text(
-                (if (state.isPaused) "Paused" else "Recording") + if (state.isWalk) " · walk" else "",
-                style = MaterialTheme.typography.labelLarge, color = InkMuted,
+                buildString {
+                    append(if (state.isPaused) "Paused" else "Recording")
+                    if (state.isWalk) append(" · walk")
+                    // Said out loud rather than hidden. A route built from footsteps is an
+                    // estimate, and the person looking at it is entitled to know which it is.
+                    append(if (state.indoors) " · steps, no GPS" else "")
+                },
+                style = MaterialTheme.typography.labelLarge,
+                color = if (state.indoors) Rival else InkMuted,
             )
         }
         Spacer(Modifier.height(24.dp))

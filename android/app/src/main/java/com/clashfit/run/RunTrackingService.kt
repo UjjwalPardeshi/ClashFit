@@ -25,6 +25,7 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.clashfit.AppGraph
 import com.clashfit.R
+import com.clashfit.core.util.Clock
 import com.clashfit.data.ActivityKind
 import com.clashfit.data.RunPointEntity
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -72,6 +73,26 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
     private val elevation = ElevationTracker()
     private val cadence = CadenceEstimator()
     private val movingTime = MovingTimeTracker()
+
+    // Indoors every GPS fix is wider than the accuracy gate and gets thrown away, so a run in a
+    // lab recorded nothing at all. These two carry the activity when the sky is not available:
+    // the step counter and the compass say how far and which way, and the fuser decides which
+    // source is currently worth believing. See PositionFuser for the handover.
+    private val deadReckoning = DeadReckoning()
+    private val fuser = PositionFuser()
+    private val rotationMatrix = FloatArray(9)
+    private val orientationOut = FloatArray(3)
+
+    /**
+     * The activity's origin in latitude and longitude.
+     *
+     * Everything downstream works in metres east and north of it. It is the first accepted fix
+     * where there is one, and the last known location where there is not — because a route drawn
+     * from steps alone still has to be pinned somewhere to appear on a map.
+     */
+    private var originLat: Double? = null
+    private var originLon: Double? = null
+    private var lastPointMs: Long? = null
 
     private val CHANNEL_ID = "run"
     private val NOTIFICATION_ID = 2
@@ -130,8 +151,14 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         elevation.reset()
         cadence.reset()
         movingTime.reset()
+        deadReckoning.reset()
+        fuser.reset()
+        originLat = null
+        originLon = null
+        lastPointMs = null
         lastKmMovingMs = 0L
         nextKmMarker = 1000f
+        seedOriginFromLastKnown()
 
         // Acquire wake lock to ensure GPS doesn't get throttled
         wakeLock?.acquire()
@@ -146,17 +173,7 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         requestUpdatesGuarded(locationRequest)
 
         // Register step counter, fallback to accelerometer
-        val stepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
-        if (stepCounter != null) {
-            // The estimator takes its baseline from the first reading together with that
-            // reading's own timestamp, so the gap until the sensor first fires cannot skew cadence.
-            sensorManager.registerListener(this, stepCounter, SensorManager.SENSOR_DELAY_NORMAL)
-        } else {
-            val accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-            if (accel != null) {
-                sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_NORMAL)
-            }
-        }
+        registerMotionSensors()
 
         // Don't insert run yet; wait for first valid GPS fix
         // This prevents "ghost runs" with 0 distance if app crashes before first location
@@ -169,6 +186,7 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         currentState = currentState.copy(isPaused = true)
         // The next fix after a resume starts a new leg; the distance covered while paused is not ours.
         fixFilter.clearAnchor()
+        fuser.clearAnchor()
         fusedClient.removeLocationUpdates(this)
         sensorManager.unregisterListener(this)
         tracker.setState(currentState)
@@ -184,16 +202,7 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
             .build()
         requestUpdatesGuarded(locationRequest)
 
-        // Register step counter, fallback to accelerometer
-        val stepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
-        if (stepCounter != null) {
-            sensorManager.registerListener(this, stepCounter, SensorManager.SENSOR_DELAY_NORMAL)
-        } else {
-            val accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-            if (accel != null) {
-                sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_NORMAL)
-            }
-        }
+        registerMotionSensors()
 
         tracker.setState(currentState)
     }
@@ -269,35 +278,67 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
 
         // The first settled fix seeds the run row; tracking starts on the next one. The insert is
         // asynchronous so a location callback never blocks the main thread on the database.
-        val rid = currentState.runId
-        if (rid == null) {
+        if (currentState.runId == null) {
             insertRunOnFirstFix()
             return
         }
 
-        val points = currentState.points + RunPointEntity(
-            runId = rid,
-            tMs = fix.tMs,
-            lat = fix.lat,
-            lon = fix.lon,
-            altM = fix.altM ?: 0.0,
-            accuracyM = fix.accuracyM,
-            speedMps = accepted.speedMps,
-        )
+        if (originLat == null) {
+            originLat = fix.lat
+            originLon = fix.lon
+        }
+        val local = metresEastNorth(originLat!!, originLon!!, fix.lat, fix.lon)
+        // The satellite measured this stretch, so it also gets to teach the stride that will
+        // carry the activity when the next doorway takes the sky away.
+        fuser.onGpsFix(local.eastM, local.northM, accepted.distanceM, fix.tMs, deadReckoning)
+        commitPosition(fix.tMs, accepted.speedMps, fix.altM, fix.accuracyM)
+    }
 
-        movingTime.onFix(fix.tMs, accepted.speedMps, accepted.deltaMs)
+    /**
+     * Records the fused position, whichever sensor produced it.
+     *
+     * One path for both sources on purpose: a route point, the distance, the moving clock, the
+     * splits and the batch flush must behave identically indoors and out, or the two halves of an
+     * activity that crosses a doorway would disagree about what happened.
+     */
+    private fun commitPosition(tMs: Long, speedMps: Float, altM: Double?, accuracyM: Float) {
+        val rid = currentState.runId ?: return
+        val lat = originLat
+        val lon = originLon
+
+        val mPerDegLat = 111_320.0
+        val previous = lastPointMs
+        val deltaMs = if (previous == null) 0L else (tMs - previous).coerceAtLeast(0L)
+        lastPointMs = tMs
+
+        // With no origin there is no coordinate to record — the phone has never seen the sky and
+        // has no last known location either. The activity is still real: the distance, the moving
+        // clock and the splits all keep counting, and only the map has nothing to draw.
+        val points = if (lat == null || lon == null) currentState.points else {
+            val mPerDegLon = mPerDegLat * kotlin.math.cos(lat * Math.PI / 180.0)
+            currentState.points + RunPointEntity(
+                runId = rid,
+                tMs = tMs,
+                lat = lat + fuser.northM / mPerDegLat,
+                lon = lon + fuser.eastM / mPerDegLon,
+                altM = altM ?: 0.0,
+                accuracyM = accuracyM,
+                speedMps = speedMps,
+            )
+        }
+
+        movingTime.onFix(tMs, speedMps, deltaMs)
         currentState = currentState.copy(
-            distanceM = currentState.distanceM + accepted.distanceM,
+            distanceM = fuser.distanceM,
             points = points,
             movingMs = movingTime.movingMs,
             isMoving = movingTime.isMoving,
+            indoors = fuser.indoors,
         )
 
         recordSplits()
 
-        fix.altM?.let { altM ->
-            currentState = currentState.copy(elevationGainM = elevation.onAltitude(altM))
-        }
+        altM?.let { currentState = currentState.copy(elevationGainM = elevation.onAltitude(it)) }
 
         if (currentState.distanceM > 0 && currentState.movingMs > 0) {
             currentState = currentState.copy(
@@ -305,13 +346,10 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
             )
         }
 
-        // Batch save to DB every BATCH_SIZE points
         if (points.size >= BATCH_SIZE) {
             lifecycleScope.launch {
                 // Use withContext to AWAIT the DB write before clearing buffer
-                withContext(Dispatchers.IO) {
-                    repo.insertPoints(rid, points)
-                }
+                withContext(Dispatchers.IO) { repo.insertPoints(rid, points) }
                 currentState = currentState.copy(points = emptyList())
             }
         }
@@ -319,7 +357,61 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         tracker.setState(currentState)
     }
 
+    /**
+     * Registers the sensors that carry an activity indoors.
+     *
+     * The step counter is the distance and the rotation vector is the direction. Where there is no
+     * hardware step counter the accelerometer stands in for it, counting footfalls; it is worse,
+     * and it is far better than a blank screen in a basement.
+     */
+    private fun registerMotionSensors() {
+        val stepCounter = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+        if (stepCounter != null) {
+            // The estimator takes its baseline from the first reading together with that
+            // reading's own timestamp, so the gap until the sensor first fires cannot skew cadence.
+            sensorManager.registerListener(this, stepCounter, SensorManager.SENSOR_DELAY_NORMAL)
+        } else {
+            sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.let {
+                sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+            }
+        }
+        // Heading. Without it a step has a length but no direction, and dead reckoning cannot run.
+        val rotation = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+            ?: sensorManager.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR)
+        if (rotation != null) {
+            sensorManager.registerListener(this, rotation, SensorManager.SENSOR_DELAY_NORMAL)
+        } else {
+            Log.w(TAG, "No rotation sensor; indoor tracking will not have a heading.")
+        }
+    }
+
+    /**
+     * Pins the activity to a coordinate before the first fix arrives.
+     *
+     * An activity that begins indoors may never see a usable fix, and a route with no origin
+     * cannot be drawn on a map at all. The last known location is coarse — it may be the last
+     * place the phone saw the sky — but it is the right neighbourhood, which is all the origin
+     * has to be. If there is not even that, the route is still recorded and simply has no
+     * position on a street map.
+     */
+    @SuppressLint("MissingPermission")
+    private fun seedOriginFromLastKnown() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        fusedClient.lastLocation.addOnSuccessListener { location ->
+            if (location != null && originLat == null) {
+                originLat = location.latitude
+                originLon = location.longitude
+                Log.d(TAG, "Origin seeded from the last known location.")
+            }
+        }
+    }
+
     private fun insertRunOnFirstFix() {
+
         if (runInsertInFlight) return
         runInsertInFlight = true
         lifecycleScope.launch {
@@ -356,13 +448,40 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
 
     override fun onSensorChanged(event: SensorEvent) {
         val nowMs = graph.clock.nowMs()
-        val spm = when (event.sensor.type) {
+        if (currentState.isPaused) return
+
+        when (event.sensor.type) {
+            Sensor.TYPE_ROTATION_VECTOR, Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR -> {
+                SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+                SensorManager.getOrientation(rotationMatrix, orientationOut)
+                // getOrientation gives azimuth in radians, anticlockwise from north; the dead
+                // reckoner wants degrees clockwise, and normalises the wrap itself.
+                deadReckoning.setHeading(Math.toDegrees(orientationOut[0].toDouble()).toFloat())
+                return
+            }
             Sensor.TYPE_STEP_COUNTER -> cadence.onStepCount(event.values[0].toLong(), nowMs)
             Sensor.TYPE_ACCELEROMETER ->
                 cadence.onAccelerometer(event.values[0], event.values[1], event.values[2], nowMs)
             else -> return
         }
+
+        val spm = cadence.cadenceSpm
         val steps = cadence.stepsTaken
+
+        // Indoors there may never be a fix to open the run row, so the first counted step does it.
+        // Without this an activity that starts in a building is never written down at all.
+        if (currentState.runId == null && steps > 0) {
+            insertRunOnFirstFix()
+            return
+        }
+
+        val movedIndoors = fuser.onSteps(deadReckoning.onSteps(steps), nowMs)
+        if (movedIndoors) {
+            // No Doppler speed indoors; the step rate is the honest substitute.
+            val speedMps = if (spm > 0) deadReckoning.strideM * spm / 60f else 0f
+            commitPosition(nowMs, speedMps, altM = null, accuracyM = INDOOR_ACCURACY_M)
+        }
+
         if (spm != currentState.cadenceSpm || steps != currentState.steps) {
             currentState = currentState.copy(cadenceSpm = spm, steps = steps)
             tracker.setState(currentState)
@@ -402,6 +521,14 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
 
     companion object {
         private const val TAG = "ClashFit/run"
+
+        /**
+         * The accuracy recorded against a dead-reckoned point.
+         *
+         * Not a GPS figure and not pretending to be one: it marks the point as an estimate so
+         * that anything reading the stored route later can tell the two apart.
+         */
+        private const val INDOOR_ACCURACY_M = 99f
         const val ACTION_START = "com.clashfit.run.START"
         const val ACTION_PAUSE = "com.clashfit.run.PAUSE"
         const val ACTION_RESUME = "com.clashfit.run.RESUME"

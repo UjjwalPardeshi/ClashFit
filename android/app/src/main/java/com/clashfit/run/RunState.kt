@@ -18,6 +18,13 @@ data class RunState(
     val elevationGainM: Float = 0f,
     val isMoving: Boolean = false,
     val isPaused: Boolean = false,
+    /**
+     * True while the position is coming from the step counter rather than from satellites.
+     *
+     * Surfaced rather than hidden: a route drawn from footsteps is an estimate, and the athlete
+     * should be able to see which of the two they are looking at.
+     */
+    val indoors: Boolean = false,
     val points: List<RunPointEntity> = emptyList(),
     val splits: List<Float> = emptyList(), // per-km pace, seconds
 ) {
