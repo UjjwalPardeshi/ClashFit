@@ -37,6 +37,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.clashfit.core.model.FatigueBand
 import com.clashfit.core.model.Verdict
@@ -135,6 +139,38 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier, action: String? = 
 }
 
 /** Condensed uppercase headline; pass `accent` for the ember second line. For heroes and fights. */
+/**
+ * A headline that shrinks rather than wraps.
+ *
+ * The display styles are 88 and 128sp, which is the point of them — but a single long word at
+ * 88sp is wider than a 384dp phone, and Compose's answer to that is to break it mid-word. On a
+ * real device "Recovered" rendered as "Recovere / d". Font scale makes it worse: somebody running
+ * at 1.5x turns a headline that just fitted into one that cannot.
+ *
+ * So the size is a ceiling, not a promise. It steps down until the line fits, and never below
+ * [minSp], where the answer is a smaller headline rather than an unreadable one.
+ */
+@Composable
+fun FitHeadline(
+    text: String,
+    modifier: Modifier = Modifier,
+    style: TextStyle = MaterialTheme.typography.displayMedium,
+    color: Color = Ink,
+    minSp: Int = 28,
+) {
+    BasicText(
+        text = text,
+        modifier = modifier.fillMaxWidth(),
+        style = style.copy(color = color),
+        maxLines = 1,
+        autoSize = TextAutoSize.StepBased(
+            minFontSize = minSp.sp,
+            maxFontSize = style.fontSize,
+            stepSize = 2.sp,
+        ),
+    )
+}
+
 @Composable
 fun Headline(text: String, modifier: Modifier = Modifier, accent: String? = null) {
     Column(modifier) {

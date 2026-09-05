@@ -118,7 +118,16 @@ fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Uni
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f).padding(end = 16.dp)) {
-            Text(label, style = MaterialTheme.typography.bodyLarge, color = Ink)
+            // Ellipsis rather than a wrap. At 320 dp with the text scaled up, "Leaderboard" does not
+        // fit the row and Compose's answer to a word that cannot fit is to break it mid-word, so
+        // the People list read "Leaderbo / ard". A trimmed word is a word; a split one is a defect.
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = Ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
             if (supporting != null) Text(supporting, style = MaterialTheme.typography.bodySmall, color = InkMuted)
         }
         Switch(
@@ -150,7 +159,16 @@ fun NavRow(
     ) {
         if (icon != null) IconBubble(icon, tint = tint)
         Column(Modifier.weight(1f)) {
-            Text(label, style = MaterialTheme.typography.bodyLarge, color = Ink)
+            // Ellipsis rather than a wrap. At 320 dp with the text scaled up, "Leaderboard" does not
+        // fit the row and Compose's answer to a word that cannot fit is to break it mid-word, so
+        // the People list read "Leaderbo / ard". A trimmed word is a word; a split one is a defect.
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = Ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
             if (supporting != null) Text(supporting, style = MaterialTheme.typography.bodySmall, color = InkMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         if (value != null) Text(value, style = MaterialTheme.typography.bodyMedium, color = InkMuted)

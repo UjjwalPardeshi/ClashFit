@@ -32,6 +32,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.clashfit.meta.Achievement
 import com.clashfit.meta.LevelProgress
@@ -220,17 +223,28 @@ fun StatStrip(stats: List<Pair<String, String>>, modifier: Modifier = Modifier, 
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(value, style = MaterialTheme.typography.headlineSmall, color = Ink, maxLines = 1)
-                    Text(
-                        label.uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = InkMuted,
-                        textAlign = TextAlign.Center,
-                        // Every label reserves two lines. "CLEAN THIS WEEK" wraps and "SESSIONS"
-                        // does not, and one column dropping lower than its neighbours turns the
-                        // strip from a grid into a list of three unrelated numbers. Capping at one
-                        // line instead would truncate the long one at 1.5x text.
+                    // Two lines reserved, and a size that steps down to fit them.
+                    //
+                    // The reserved pair keeps the three columns level: "CLEAN THIS WEEK" wraps and
+                    // "SESSIONS" does not, and one column dropping lower turns the strip from a
+                    // grid into three unrelated numbers. The autosize is the other half — a third
+                    // of a 320 dp screen at 1.3x text is not wide enough for the word SESSIONS,
+                    // and Compose's answer to a word that will not fit is to break it, which read
+                    // as "SESSION / S". Shrinking two points is invisible; a split word is not.
+                    BasicText(
+                        text = label.uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = InkMuted,
+                            textAlign = TextAlign.Center,
+                        ),
                         minLines = 2,
-                        modifier = Modifier.padding(top = 2.dp),
+                        maxLines = 2,
+                        autoSize = TextAutoSize.StepBased(
+                            minFontSize = 8.sp,
+                            maxFontSize = MaterialTheme.typography.labelSmall.fontSize,
+                            stepSize = 1.sp,
+                        ),
+                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
                     )
                 }
             }

@@ -44,6 +44,7 @@ import com.clashfit.ui.components.AppIcons
 import com.clashfit.ui.components.Bar
 import com.clashfit.ui.components.PrimaryButton
 import com.clashfit.ui.components.SecondaryButton
+import com.clashfit.ui.components.FitHeadline
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.StatTile
 import com.clashfit.ui.components.Tag
@@ -338,7 +339,7 @@ private fun Done(completed: Int, target: Int, seconds: Int, onBack: () -> Unit, 
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
         Text("Recovery", style = MaterialTheme.typography.labelMedium, color = InkMuted)
         SectionGap(12)
-        Text("Recovered", style = MaterialTheme.typography.displayMedium, color = Ink, modifier = Modifier)
+        FitHeadline("Recovered")
         if (recovered > 0) {
             Text("-$recovered% fatigue", style = MaterialTheme.typography.titleSmall, color = Fresh)
         } else {
