@@ -25,9 +25,9 @@ A real-world chase, on a real map.
 
 1. You start the mode. The map centres on where you are.
 2. You get a **sixty-second head start**.
-3. Pursuers spawn around you, inside a 400 m radius.
+3. Zombies spawn around you, inside a 400 m radius.
 4. You run. Ammo caches are scattered on the map; reaching one arms you.
-5. A pursuer that closes to within 12 m catches you.
+5. A zombie that closes to within 12 m catches you.
 
 The chase is not a metaphor and the distance is not simulated. You are outside, moving, and the
 thing following you is drawn at a real coordinate.
@@ -44,7 +44,25 @@ Zombie Run is not a second product bolted on. It reuses what already exists:
 | Session record | The same store, the same export |
 
 Position comes from GPS. **Effort still comes from the phone's own motion sensing**, which is why a
-pursuer closes when your cadence drops rather than only when your coordinate stops moving.
+zombie closes when your cadence drops rather than only when your coordinate stops moving.
+
+## Indoors
+
+A chase demonstrated in a lab has a problem the outdoor design never faced: a GPS receiver inside a
+building reports an accuracy circle of thirty to a hundred metres, `FixFilter` refuses every one of
+them, and the route records nothing at all. That is the filter behaving correctly — those fixes are
+not worth integrating — but it left the mode unusable anywhere it would actually be shown.
+
+So position has a second source. `DeadReckoning` turns the step counter and the rotation sensor
+into a displacement, and `PositionFuser` decides which of the two to believe: satellites when they
+can be trusted, footsteps when they cannot, converging back toward GPS rather than snapping when a
+good fix returns. The stride the indoor track uses is learned from GPS whenever both sensors can be
+trusted over the same stretch, so it describes this runner's legs rather than a textbook's.
+
+Two things this does not change. Effort still comes from cadence, so the horde still closes when
+your legs stop rather than when your coordinate does — indoors that is now the *only* signal, which
+if anything makes the mode truer to its own premise. And the estimate is never passed off as a
+measurement: the screen says "steps, no GPS" while the indoor path is in charge.
 
 ## Configuration
 
