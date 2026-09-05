@@ -73,9 +73,17 @@ fun ExercisePoints(
             if (!deg.isFinite()) continue
             val layout = measurer.measure("${deg.toInt()}°", TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White))
             val p = pt(b)
-            val at = Offset(p.x + 22f, p.y - layout.size.height / 2f)
-            drawRoundRect(SHADE, topLeft = Offset(at.x - 9f, at.y - 5f), size = Size(layout.size.width + 18f, layout.size.height + 10f), cornerRadius = CornerRadius(9f, 9f))
-            drawText(layout, topLeft = at)
+            val boxW = layout.size.width + 18f
+            val boxH = layout.size.height + 10f
+            // Beside the joint, on whichever side has room, and never past an edge. A joint near
+            // the frame's border is exactly when you want the number, and a reading half off the
+            // screen is no reading at all.
+            val toTheRight = p.x + 13f
+            val x = (if (toTheRight + boxW <= size.width - 8f) toTheRight else p.x - 13f - boxW)
+                .coerceIn(8f, maxOf(8f, size.width - boxW - 8f))
+            val y = (p.y - boxH / 2f).coerceIn(8f, maxOf(8f, size.height - boxH - 8f))
+            drawRoundRect(SHADE, topLeft = Offset(x, y), size = Size(boxW, boxH), cornerRadius = CornerRadius(9f, 9f))
+            drawText(layout, topLeft = Offset(x + 9f, y + 5f))
         }
     }
 }
