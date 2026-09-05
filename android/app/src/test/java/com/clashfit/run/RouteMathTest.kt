@@ -4,6 +4,7 @@ import com.clashfit.data.RunPointEntity
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -161,6 +162,77 @@ class RouteMathTest {
     fun `elevation profile of a route that never moved is empty`() {
         val stuck = straightPath(10, metresPerStep = 0.0)
         assertTrue(elevationProfile(stuck).isEmpty())
+    }
+
+    @Test
+    fun `a profile in metres above sea level is scaled into the band a chart can draw`() {
+        // The bug this pins: the profile is hundreds of metres above sea level, the chart clamps
+        // to nought-to-one, so every real altitude used to land on the top edge as a flat line.
+        val climbed = normaliseProfile(listOf(560f, 570f, 580f, 590f, 600f))
+        assertEquals(0f, climbed.first(), 0.001f)
+        assertEquals(1f, climbed.last(), 0.001f)
+        assertEquals(0.5f, climbed[2], 0.001f)
+        assertTrue(climbed.all { it in 0f..1f }, "nothing may sit outside the band")
+    }
+
+    @Test
+    fun `a route flat to within a couple of metres is drawn down the middle, not blown up`() {
+        // Satellite altitude wanders by a metre or so standing still. Stretching that to full
+        // height would draw a mountain range across a flat lap of a car park.
+        val noise = normaliseProfile(listOf(560.0f, 560.7f, 559.9f, 560.4f, 560.1f))
+        assertTrue(noise.all { it == 0.5f }, "a flat route is a flat line")
+    }
+
+    @Test
+    fun `an empty profile normalises to an empty profile`() {
+        assertTrue(normaliseProfile(emptyList()).isEmpty())
+    }
+
+    @Test
+    fun `a dead-reckoned stretch written as sea level would ruin the profile`() {
+        // Why RunTrackingService carries the last real altitude forward instead of writing zero:
+        // one zero among five-hundred-metre readings squashes the entire real range into nothing.
+        val withHole = normaliseProfile(listOf(560f, 0f, 570f, 580f))
+        assertEquals(0f, withHole[1], 0.001f, "the hole becomes the whole range")
+        assertTrue(withHole[3] - withHole[0] < 0.05f, "and the real climb collapses to a hair")
+    }
+
+    // ── how a distance is said ──────────────────────────────────────────────
+
+    @Test
+    fun `a short activity is said in metres, not in two decimal places of nothing`() {
+        assertEquals("35 m", formatDistance(35.1f))
+        assertEquals("0 m", formatDistance(0f))
+        assertEquals("999 m", formatDistance(999.4f))
+    }
+
+    @Test
+    fun `a kilometre and beyond is said in kilometres`() {
+        assertEquals("1.00 km", formatDistance(1000f))
+        assertEquals("5.24 km", formatDistance(5243f))
+    }
+
+    @Test
+    fun `the number and its unit are split the same way for a stacked layout`() {
+        assertEquals("35" to "m", distanceParts(35.1f))
+        assertEquals("5.24" to "km", distanceParts(5243f))
+    }
+
+    // ── what is worth keeping ───────────────────────────────────────────────
+
+    @Test
+    fun `start then finish records nothing and is not kept`() {
+        assertTrue(isTooShortToKeep(distanceM = 0f, movingMs = 0L))
+    }
+
+    @Test
+    fun `a slow first minute is kept, because time passed even if distance did not`() {
+        assertFalse(isTooShortToKeep(distanceM = 3f, movingMs = 45_000L))
+    }
+
+    @Test
+    fun `a short sprint is kept, because distance happened even if time did not`() {
+        assertFalse(isTooShortToKeep(distanceM = 60f, movingMs = 8_000L))
     }
 
     // ── records ─────────────────────────────────────────────────────────────

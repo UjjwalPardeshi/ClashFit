@@ -152,4 +152,66 @@ class GpsFixQualityTest {
         )
         assertTrue(later.deltaMs > 0, "Accepted fixes must span a non-zero interval")
     }
+
+    @Test
+    fun noiseFloor_scalesWithTheAccuracyCircle() {
+        // A five-metre step is real movement under a clear sky and is inside the noise of a
+        // twenty-five-metre circle. The same step must be believed in one case and not the other.
+        val clear = FixFilter()
+        clear.start(clock.nowMs())
+        clock.advance(10_000)
+        accepted(clear.accept(fix(0.0, 0.0, speedMps = 2.0f, accuracyM = 5f)), "anchor under a clear sky")
+        clock.advance(2_000)
+        accepted(
+            clear.accept(fix(0.000045, 0.0, speedMps = 2.0f, accuracyM = 5f)),
+            "five metres with a five-metre circle is movement",
+        )
+
+        val murky = FixFilter()
+        murky.start(clock.nowMs())
+        clock.advance(10_000)
+        accepted(murky.accept(fix(0.0, 0.0, speedMps = 2.0f, accuracyM = 24f)), "anchor indoors")
+        clock.advance(2_000)
+        val noise = rejected(
+            murky.accept(fix(0.000045, 0.0, speedMps = 2.0f, accuracyM = 24f)),
+            "five metres inside a twenty-four-metre circle is noise",
+        )
+        assertEquals(FixResult.Reason.JITTER, noise.reason)
+    }
+
+    @Test
+    fun noiseFloor_doesNotLoseASlowWalker() {
+        // The floor is raised, not the anchor: a walker keeps adding up against the same point
+        // until they clear it, so slow movement under a poor sky is delayed and never discarded.
+        val filter = FixFilter()
+        filter.start(clock.nowMs())
+        clock.advance(10_000)
+        accepted(filter.accept(fix(0.0, 0.0, speedMps = 1.2f, accuracyM = 22f)), "anchor")
+
+        var accept: FixResult.Accepted? = null
+        for (step in 1..12) {
+            clock.advance(1_000)
+            val r = filter.accept(fix(0.000018 * step, 0.0, speedMps = 1.2f, accuracyM = 22f))
+            if (r is FixResult.Accepted) { accept = r; break }
+        }
+        assertNotNull(accept, "A walker under a poor sky must still register distance eventually")
+        assertTrue(
+            accept.distanceM > 7f,
+            "…and it lands as one honest displacement, not a trickle (got ${accept.distanceM})",
+        )
+    }
+
+    @Test
+    fun reportedSpeedIsPreferredOverOneDerivedFromTwoPositions() {
+        // The Doppler speed does not inherit position error, so it is what the pace is built from.
+        val filter = FixFilter()
+        filter.start(clock.nowMs())
+        clock.advance(10_000)
+        accepted(filter.accept(fix(0.0, 0.0, speedMps = 3.0f)), "anchor")
+        clock.advance(1_000)
+        // Five and a half metres in the second, which is inside the impossible-speed gate but well
+        // above the three metres a second the receiver is reporting.
+        val a = accepted(filter.accept(fix(0.00005, 0.0, speedMps = 3.0f)), "a five-metre second")
+        assertEquals(3.0f, a.speedMps, 0.001f, "the receiver's own speed is the one that counts")
+    }
 }

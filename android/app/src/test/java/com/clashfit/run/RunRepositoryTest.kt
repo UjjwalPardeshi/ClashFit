@@ -66,6 +66,14 @@ class RunRepositoryTest {
         private val points = mutableListOf<RunPointEntity>()
         private var nextId = 1L
 
+        override suspend fun deletePoints(id: Long) {
+            points.removeAll { it.runId == id }
+        }
+
+        override suspend fun deleteRun(id: Long) {
+            runs.remove(id)
+        }
+
         override suspend fun insertRun(r: RunEntity): Long {
             val id = nextId++
             runs[id] = r.copy(id = id)

@@ -101,6 +101,16 @@ interface RunDao {
         cadence: Int, elev: Float, splits: String, steps: Int, fastestKmSec: Float?,
     )
     @Query("SELECT * FROM runs WHERE id = :id") suspend fun run(id: Long): RunEntity?
+
+    /**
+     * Throws an activity away, points and all.
+     *
+     * Used for the one that recorded nothing: started, then finished a second later by a thumb
+     * that meant to press something else. Deleting is right rather than leaving it unfinished,
+     * because an unfinished row is invisible to the feed but still sits in the table forever.
+     */
+    @Query("DELETE FROM run_points WHERE runId = :id") suspend fun deletePoints(id: Long)
+    @Query("DELETE FROM runs WHERE id = :id") suspend fun deleteRun(id: Long)
     @Query("SELECT * FROM run_points WHERE runId = :runId ORDER BY tMs") suspend fun points(runId: Long): List<RunPointEntity>
 
     /**
