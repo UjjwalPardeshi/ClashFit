@@ -109,6 +109,28 @@ class MigrationSqlTest {
     }
 
     @Test
+    fun `the column added by migration 5 to 6 matches the exported schema exactly`() {
+        val runsSql = normalise(requireNotNull(createSqlByTable(6)["runs"]) { "schema 6 has no runs entity" })
+        assertEquals(1, MIGRATION_5_6_SQL.size, "one column is added")
+        val column = "score INTEGER NOT NULL DEFAULT 0"
+        assertTrue(runsSql.contains(column), "schema 6's runs table does not declare `$column` in $runsSql")
+        val alter = normalise(MIGRATION_5_6_SQL.single())
+        assertTrue(alter.endsWith(column), "the migration does not add `$column` as the schema declares it: $alter")
+        assertTrue(alter.startsWith("ALTER TABLE runs ADD COLUMN"), "expected an ALTER on runs: $alter")
+    }
+
+    @Test
+    fun `schema 6 changes nothing but the runs table`() {
+        val before = createSqlByTable(5)
+        val after = createSqlByTable(6)
+        assertEquals(before.keys, after.keys, "version 6 must add and drop no tables")
+        before.forEach { (table, sql) ->
+            if (table == "runs") return@forEach
+            assertEquals(normalise(sql), normalise(after.getValue(table)), "version 6 changed `$table`")
+        }
+    }
+
+    @Test
     fun `schema 5 changes nothing but the runs table`() {
         val before = createSqlByTable(4)
         val after = createSqlByTable(5)

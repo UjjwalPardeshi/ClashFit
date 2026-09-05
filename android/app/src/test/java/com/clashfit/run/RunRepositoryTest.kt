@@ -10,6 +10,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import com.clashfit.data.ActivityKind
 
 /** Unit tests for RunRepository. */
 class RunRepositoryTest {
@@ -141,5 +142,14 @@ class RunRepositoryTest {
             runs.values.filter { it.endedAtMs != null }.sumOf { it.distanceM.toDouble() }.toFloat()
 
         override suspend fun totalCount() = runs.values.count { it.endedAtMs != null }
+
+        override suspend fun setScore(id: Long, score: Int) {
+            runs[id]?.let { runs[id] = it.copy(score = score) }
+        }
+
+        override suspend fun chaseScoreSince(sinceMs: Long) =
+            runs.values.filter {
+                it.endedAtMs != null && it.startedAtMs >= sinceMs && it.kind == ActivityKind.ZOMBIE_RUN
+            }.sumOf { it.score.toLong() }
     }
 }

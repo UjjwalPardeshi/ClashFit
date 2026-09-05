@@ -77,6 +77,7 @@ class FirestoreLeaderboard(
     private fun queryFor(board: Board, limit: Int): Query = when (board) {
         Board.WEEKLY_DAMAGE -> weekEntries().orderBy("weeklyDamage", Query.Direction.DESCENDING).limit(limit.toLong())
         Board.WEEKLY_CLEAN_REPS -> weekEntries().orderBy("weeklyCleanReps", Query.Direction.DESCENDING).limit(limit.toLong())
+        Board.WEEKLY_CHASE -> weekEntries().orderBy("weeklyChaseScore", Query.Direction.DESCENDING).limit(limit.toLong())
         Board.ALL_TIME_XP -> firestore.collection("users").orderBy("xp", Query.Direction.DESCENDING).limit(limit.toLong())
         Board.STREAK -> firestore.collection("users").orderBy("bestStreak", Query.Direction.DESCENDING).limit(limit.toLong())
     }
@@ -154,7 +155,7 @@ class FirestoreLeaderboard(
      */
     private suspend fun standingsFor(uids: List<String>, board: Board, me: String): List<LeaderboardEntry> {
         val source = when (board) {
-            Board.WEEKLY_DAMAGE, Board.WEEKLY_CLEAN_REPS -> weekEntries()
+            Board.WEEKLY_DAMAGE, Board.WEEKLY_CLEAN_REPS, Board.WEEKLY_CHASE -> weekEntries()
             Board.ALL_TIME_XP, Board.STREAK -> firestore.collection("users")
         }
         val found = uids.chunked(30).flatMap { chunk ->
@@ -175,6 +176,7 @@ class FirestoreLeaderboard(
             value = when (board) {
                 Board.WEEKLY_DAMAGE -> doc.getLong("weeklyDamage") ?: 0L
                 Board.WEEKLY_CLEAN_REPS -> doc.getLong("weeklyCleanReps") ?: 0L
+                Board.WEEKLY_CHASE -> doc.getLong("weeklyChaseScore") ?: 0L
                 Board.ALL_TIME_XP -> doc.getLong("xp") ?: 0L
                 Board.STREAK -> doc.getLong("bestStreak") ?: 0L
             },
@@ -221,6 +223,7 @@ class FirestoreLeaderboard(
                         "displayName" to snapshot.displayName,
                         "level" to snapshot.level,
                         "weeklyDamage" to snapshot.weeklyDamage,
+                        "weeklyChaseScore" to snapshot.weeklyChaseScore,
                         "weeklyCleanReps" to snapshot.weeklyCleanReps,
                         "updatedAt" to FieldValue.serverTimestamp(),
                     ),

@@ -82,6 +82,9 @@ class RunRepository(
         ),
     )
 
+    /** Records what a finished chase was worth. Ordinary runs and walks never call this. */
+    suspend fun setScore(runId: Long, score: Int) = dao.setScore(runId, score)
+
     suspend fun insertPoints(runId: Long, points: List<RunPointEntity>) {
         dao.insertPoints(points)
     }
@@ -155,6 +158,7 @@ data class RunSummary(
     val kind: String = ActivityKind.RUN,
     val steps: Int = 0,
     val fastestKmSec: Float? = null,
+    val score: Int = 0,
 ) {
     constructor(entity: RunEntity) : this(
         id = entity.id,
@@ -168,9 +172,18 @@ data class RunSummary(
         kind = entity.kind,
         steps = entity.steps,
         fastestKmSec = entity.fastestKmSec,
+        score = entity.score,
     )
 
     val isWalk: Boolean get() = kind == ActivityKind.WALK
+    val isZombieRun: Boolean get() = kind == ActivityKind.ZOMBIE_RUN
+
+    /** What to call this activity on a card or a share. */
+    val title: String get() = when (kind) {
+        ActivityKind.WALK -> "Walk"
+        ActivityKind.ZOMBIE_RUN -> "Zombie Run"
+        else -> "Run"
+    }
 
     /**
      * Wall-clock length of a finished activity.

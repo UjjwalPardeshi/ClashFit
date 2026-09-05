@@ -158,12 +158,31 @@ data class RunEntity(
      * genuinely has no fastest kilometre, and zero would be a lie that wins every comparison.
      */
     val fastestKmSec: Float? = null,
+    /**
+     * What a Zombie Run was worth. Zero for an ordinary run or walk, which have no score.
+     *
+     * Stored so a weekly board can sum it without replaying every chase, and written by the chase
+     * screen at the end rather than by the tracking service, because the service knows about
+     * distance and the chase knows about zombies.
+     */
+    @ColumnInfo(defaultValue = "0") val score: Int = 0,
 )
 
-/** The two things the run table records. Strings, because they are persisted. */
+/**
+ * What the run table is recording. Strings, because they are persisted.
+ *
+ * A new kind needs no migration: the column already exists with a default, and a row written by
+ * an older build simply reads as [RUN], which is what it was.
+ */
 object ActivityKind {
     const val RUN = "RUN"
     const val WALK = "WALK"
+
+    /**
+     * A Zombie Run. Stored as its own kind so the chase is distinguishable in history rather than
+     * looking like an ordinary run that happened to wander.
+     */
+    const val ZOMBIE_RUN = "ZOMBIE_RUN"
 }
 
 @Entity(tableName = "run_points", indices = [Index("runId")])

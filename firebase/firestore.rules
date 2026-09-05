@@ -28,7 +28,11 @@ service cloud.firestore {
       return d.displayName is string && d.displayName.size() > 0 && d.displayName.size() <= 24
         && d.level is number && d.level >= 0
         && d.weeklyDamage is number && d.weeklyDamage >= 0
-        && d.weeklyCleanReps is number && d.weeklyCleanReps >= 0;
+        && d.weeklyCleanReps is number && d.weeklyCleanReps >= 0
+        // Zombie Run points. Optional rather than required on purpose: a phone still running an
+        // older build does not send this field, and making it mandatory would start refusing
+        // every score those phones publish the moment these rules were deployed.
+        && (!('weeklyChaseScore' in d) || (d.weeklyChaseScore is number && d.weeklyChaseScore >= 0));
     }
 
     match /users/{userId} {

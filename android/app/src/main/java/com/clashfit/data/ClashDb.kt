@@ -14,7 +14,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         AlarmEntity::class, GhostEntity::class, PostureSampleEntity::class,
         MetaEntity::class, AchievementEntity::class, WeeklyEntity::class, XpLedgerEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class ClashDb : RoomDatabase() {
@@ -104,5 +104,22 @@ internal val MIGRATION_4_5_SQL: List<String> = listOf(
 val MIGRATION_4_5 = object : Migration(4, 5) {
     override fun migrate(db: SupportSQLiteDatabase) {
         MIGRATION_4_5_SQL.forEach(db::execSQL)
+    }
+}
+
+/**
+ * The Zombie Run score, so a chase can be put on a leaderboard.
+ *
+ * Same rule as the migration above, for the same reason: a NOT NULL column added to an existing
+ * table must carry a SQL default, the entity declares the identical default through
+ * `@ColumnInfo`, and `MigrationSqlTest` pins the two together.
+ */
+internal val MIGRATION_5_6_SQL: List<String> = listOf(
+    "ALTER TABLE `runs` ADD COLUMN `score` INTEGER NOT NULL DEFAULT 0",
+)
+
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        MIGRATION_5_6_SQL.forEach(db::execSQL)
     }
 }

@@ -138,6 +138,16 @@ interface RunDao {
     suspend fun totalDistanceM(): Float
     @Query("SELECT COUNT(*) FROM runs WHERE endedAtMs IS NOT NULL")
     suspend fun totalCount(): Int
+
+    @Query("UPDATE runs SET score = :score WHERE id = :id")
+    suspend fun setScore(id: Long, score: Int)
+
+    /** This week's Zombie Run points, for the chase leaderboard. */
+    @Query(
+        "SELECT COALESCE(SUM(score), 0) FROM runs WHERE endedAtMs IS NOT NULL " +
+            "AND kind = 'ZOMBIE_RUN' AND startedAtMs >= :sinceMs",
+    )
+    suspend fun chaseScoreSince(sinceMs: Long): Long
 }
 
 @Dao

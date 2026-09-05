@@ -19,7 +19,13 @@ import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 
 /** This week's totals, read from the session history rather than from the challenge counter. */
-data class WeeklyTotals(val damage: Long, val cleanReps: Long)
+/**
+ * The three weekly numbers the boards rank on.
+ *
+ * [chaseScore] defaults so that every existing caller and test keeps compiling and simply
+ * publishes a zero, which is the truth for a player who has not run from anything.
+ */
+data class WeeklyTotals(val damage: Long, val cleanReps: Long, val chaseScore: Long = 0)
 
 /**
  * Publishes the player's standing to the leaderboard whenever it changes.
@@ -77,6 +83,7 @@ class ScoreSync(
                 xp = metaState.xp,
                 weeklyDamage = totals.damage,
                 weeklyCleanReps = totals.cleanReps,
+                weeklyChaseScore = totals.chaseScore,
                 bestStreak = streak,
             ),
         )

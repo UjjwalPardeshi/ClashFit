@@ -317,7 +317,9 @@ private fun ActivityRow(run: RunSummary, points: List<RunPointEntity>, onClick: 
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("%.2f km".format(run.distanceM / 1000f), style = MaterialTheme.typography.bodyLarge, color = Ink)
-                if (run.isWalk) Tag("Walk", color = Rival)
+                if (run.kind != com.clashfit.data.ActivityKind.RUN) {
+                    Tag(run.title, color = if (run.isWalk) Rival else Gassed)
+                }
             }
             Text("${run.paceStr} · ${formatDuration(run.movingMs)}", style = MaterialTheme.typography.bodySmall, color = InkMuted)
             Text(dateLabel(run.startedAtMs), style = MaterialTheme.typography.labelSmall, color = InkFaint)
@@ -482,7 +484,9 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(dateLabel(r.startedAtMs), style = MaterialTheme.typography.bodyMedium, color = InkMuted)
-                if (r.isWalk) Tag("Walk", color = Rival)
+                if (r.kind != com.clashfit.data.ActivityKind.RUN) {
+                    Tag(r.title, color = if (r.isWalk) Rival else Gassed)
+                }
             }
             SectionGap(12)
 
@@ -625,7 +629,7 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
     if (sharing && r != null) {
         ShareDialog(
             stats = ShareCard.Stats(
-                title = if (r.isWalk) "Walk" else "Run",
+                title = r.title,
                 dateLabel = dateLabel(r.startedAtMs),
                 distanceM = r.distanceM,
                 movingMs = r.movingMs,
@@ -637,7 +641,7 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
                 records = records,
                 fastestKmSec = r.fastestKmSec,
                 effort = ShareCard.effortFraction(points),
-                effortLabel = if (r.isWalk) "STEADY" else "PUSHED",
+                effortLabel = if (r.isWalk) "STEADY" else if (r.isZombieRun) "CHASED" else "PUSHED",
             ),
             onDismiss = { sharing = false },
         )

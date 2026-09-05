@@ -31,6 +31,7 @@ data class RunState(
     val isActive: Boolean get() = runId != null && !isPaused
     val isRunning: Boolean get() = startedAtMs != null
     val isWalk: Boolean get() = kind == ActivityKind.WALK
+    val isZombieRun: Boolean get() = kind == ActivityKind.ZOMBIE_RUN
 
     fun asEntity(): RunEntity? = if (runId == null || startedAtMs == null) null
     else RunEntity(

@@ -13,6 +13,7 @@ enum class Board(val title: String, val unit: String) {
     WEEKLY_CLEAN_REPS("This week · clean reps", "reps"),
     ALL_TIME_XP("All time · XP", "xp"),
     STREAK("Longest streak", "days"),
+    WEEKLY_CHASE("This week · Zombie Run", "pts"),
 }
 
 data class LeaderboardEntry(
@@ -33,6 +34,7 @@ data class ScoreSnapshot(
     val weeklyDamage: Long,
     val weeklyCleanReps: Long,
     val bestStreak: Int,
+    val weeklyChaseScore: Long = 0,
 )
 
 sealed interface CloudAvailability {
