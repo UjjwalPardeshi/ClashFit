@@ -70,7 +70,14 @@ fun PrivacyScreen(graph: AppGraph, nav: NavHostController) {
                 InnerDivider()
                 Promise(AppIcons.Chart, "Rep timelines", "Depth, range, tempo and fatigue for every rep stay in the database on this phone.", Success)
                 InnerDivider()
-                Promise(AppIcons.Run, "Run routes", "GPS traces are stored locally. No map tiles, no route is uploaded.", Success)
+                Promise(
+                    AppIcons.Run, "Run routes",
+                    "Your route is stored on this phone and is never uploaded. The streets under it " +
+                        "are map tiles fetched from OpenStreetMap as you look at them, which tells " +
+                        "their servers roughly where you were. Turn Street maps off in Settings and " +
+                        "the route draws on our own grid with the radio off.",
+                    Success,
+                )
                 InnerDivider()
                 Promise(AppIcons.Heart, "Posture and breathing", "Sampled, scored, discarded. Never stored as an image.", Success)
             }

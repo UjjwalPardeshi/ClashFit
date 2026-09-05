@@ -14,9 +14,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +32,8 @@ import com.clashfit.map.RouteMapState
 import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.Ink
+import com.clashfit.ui.theme.InkMuted
+import com.clashfit.ui.theme.Panel
 import com.clashfit.ui.theme.Rule
 
 /**
@@ -89,6 +93,43 @@ private fun MapButton(
             modifier = Modifier.size(20.dp),
         )
     }
+}
+
+/**
+ * The one-time notice about where the streets come from.
+ *
+ * It lives here rather than on one screen because it has to appear wherever a map can first be
+ * drawn. It used to sit only on the Outdoors tab, which meant a player who reached Zombie Run from
+ * the Modes screen never saw it — and, since every map waits on this answer, never got a map
+ * either. The chase would have run on the plain grid forever with no way to say yes.
+ *
+ * Not dismissible by tapping outside. Both answers are one tap and both are reversible in
+ * Settings; a dialog you can dismiss without answering would leave the maps waiting on a question
+ * nobody asked again.
+ */
+@Composable
+fun StreetMapNotice(onShowStreets: () -> Unit, onKeepOffline: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = { },
+        title = { Text("Your route is drawn on real streets", color = Ink) },
+        text = {
+            Text(
+                "The map comes from OpenStreetMap and is downloaded as you look at it, so asking " +
+                    "for the right tiles tells their servers roughly where you were. Your route " +
+                    "itself never leaves this phone. Turn streets off and it draws on our own grid " +
+                    "instead, with the radio off. Settings can change this at any time.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = InkMuted,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onShowStreets) { Text("Show streets", color = Ember) }
+        },
+        dismissButton = {
+            TextButton(onClick = onKeepOffline) { Text("Keep it offline", color = InkMuted) }
+        },
+        containerColor = Panel,
+    )
 }
 
 /** A small caption that sits over a map, for the attribution a tile provider is owed. */

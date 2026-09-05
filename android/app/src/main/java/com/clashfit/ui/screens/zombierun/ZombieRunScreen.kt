@@ -27,6 +27,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +54,7 @@ import com.clashfit.run.RunTrackingService
 import com.clashfit.run.metresEastNorth
 import com.clashfit.ui.components.ChaseGlyphs
 import com.clashfit.ui.components.MapControls
+import com.clashfit.ui.components.StreetMapNotice
 import com.clashfit.ui.components.AppCard
 import com.clashfit.ui.components.PrimaryButton
 import com.clashfit.ui.components.RouteTrace
@@ -97,6 +99,7 @@ fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
     val tracker = RunTracker.getInstance()
     val runState by tracker.state.collectAsStateWithLifecycle()
     val settings by graph.prefs.settings.collectAsStateWithLifecycle(initialValue = com.clashfit.data.Prefs.Settings())
+    val scope = rememberCoroutineScope()
 
     // Collected rather than read as .value: the config store hot-reloads, and a screen holding a
     // snapshot would keep showing the numbers it was born with while the briefing beside it
@@ -157,6 +160,15 @@ fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
             }
             delay(100)
         }
+    }
+
+    // Said here as well as on the Outdoors tab, because this screen is also reachable from Modes
+    // and every map in the app waits on the answer.
+    if (settings.loaded && !settings.mapTilesAsked) {
+        StreetMapNotice(
+            onShowStreets = { scope.launch { graph.prefs.setMapTiles(true) } },
+            onKeepOffline = { scope.launch { graph.prefs.setMapTiles(false) } },
+        )
     }
 
     ScreenScaffold(title = "Zombie Run", onBack = { nav.navigateUp() }) { padding ->

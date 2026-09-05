@@ -89,6 +89,7 @@ import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SecondaryButton
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.SectionTitle
+import com.clashfit.ui.components.StreetMapNotice
 import com.clashfit.ui.components.StatStrip
 import com.clashfit.ui.components.StatTile
 import com.clashfit.ui.components.Tag
@@ -247,31 +248,10 @@ fun RunHomeScreen(graph: AppGraph, nav: NavHostController) {
     // the time this appears, and `mapTilesAsked` is what the maps themselves wait on. The card
     // this replaced sat below the fold and only appeared once an activity already existed, which
     // meant a new player met the street map before they met the sentence explaining it.
-    if (!settings.mapTilesAsked) {
-        AlertDialog(
-            onDismissRequest = { },
-            title = { Text("Your route is drawn on real streets", color = Ink) },
-            text = {
-                Text(
-                    "The map comes from OpenStreetMap and is downloaded as you look at it, so asking " +
-                        "for the right tiles tells their servers roughly where you were. Your route " +
-                        "itself never leaves this phone. Turn streets off and it draws on our own grid " +
-                        "instead, with the radio off. Settings can change this at any time.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = InkMuted,
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { scope.launch { graph.prefs.setMapTiles(true) } }) {
-                    Text("Show streets", color = Ember)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { scope.launch { graph.prefs.setMapTiles(false) } }) {
-                    Text("Keep it offline", color = InkMuted)
-                }
-            },
-            containerColor = Panel,
+    if (settings.loaded && !settings.mapTilesAsked) {
+        StreetMapNotice(
+            onShowStreets = { scope.launch { graph.prefs.setMapTiles(true) } },
+            onKeepOffline = { scope.launch { graph.prefs.setMapTiles(false) } },
         )
     }
 }

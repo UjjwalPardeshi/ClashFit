@@ -78,6 +78,16 @@ class Prefs(private val context: Context) {
         /** Weekly distance goal for runs and walks, in metres. */
         val weeklyDistanceGoalM: Int = 15_000,
         /**
+         * False until these values have actually come back from disk.
+         *
+         * Every screen collects this flow with a default instance as its initial value, so for the
+         * first frame of every screen the defaults are indistinguishable from the player's real
+         * choices. That is harmless for a colour and not harmless for a one-time notice, which
+         * flashed on screen every single visit because `mapTilesAsked` reads false in the default
+         * before the real `true` arrives a frame later.
+         */
+        val loaded: Boolean = false,
+        /**
          * Read hand gestures from the camera during a fight: open palm pauses, thumb up ends the
          * set, fist skips the rest. On by default because it is the one mid-set input that works
          * in a loud room and needs no permission the fight does not already have.
@@ -135,6 +145,7 @@ class Prefs(private val context: Context) {
             boss3d = p[BOSS_3D] ?: true,
             mapTiles = p[MAP_TILES] ?: true,
             mapTilesAsked = p[MAP_TILES_ASKED] ?: false,
+            loaded = true,
             shareNoticeSeen = p[SHARE_NOTICE_SEEN] ?: false,
             weeklyDistanceGoalM = p[WEEKLY_DISTANCE_GOAL_M] ?: 15_000,
             gestures = p[GESTURES] ?: true,

@@ -67,14 +67,24 @@ class RouteMapState {
         if (!userMoved) userMoved = true
     }
 
+    /**
+     * Both zooms do nothing at all until a map is attached.
+     *
+     * They used to set [userMoved] regardless, so a zoom pressed during the seconds before the
+     * first fix — when the controls are on screen but no map is behind them — told the map for the
+     * rest of the activity that the player had taken over, and it then never framed or followed
+     * anything.
+     */
     fun zoomIn() {
+        val controller = view?.controller ?: return
         userMoved = true
-        view?.controller?.zoomIn()
+        controller.zoomIn()
     }
 
     fun zoomOut() {
+        val controller = view?.controller ?: return
         userMoved = true
-        view?.controller?.zoomOut()
+        controller.zoomOut()
     }
 
     /** Gives control back to the map: it frames the route, or follows the runner, once more. */

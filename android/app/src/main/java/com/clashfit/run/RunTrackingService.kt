@@ -93,6 +93,21 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
     private var originLat: Double? = null
     private var originLon: Double? = null
     private var lastPointMs: Long? = null
+
+    /**
+     * How many of the route's points are already in the database.
+     *
+     * The route used to BE the write buffer: every ten fixes it was inserted and then emptied, so
+     * `RunState.points` never held more than ten seconds of running. That was invisible while the
+     * map was a thumbnail and fatal once it filled the screen — the live map showed ten seconds of
+     * route, then went empty, which took the map view down with it and rebuilt it from scratch
+     * roughly every ten seconds for the whole activity. Keeping the route whole and remembering
+     * how much of it has been written is the same number of database rows and none of that.
+     */
+    private var persistedPoints = 0
+
+    /** One batch write at a time, so two flushes cannot insert the same points twice. */
+    private var pointWriteInFlight = false
     /**
      * The last altitude a satellite actually reported.
      *
@@ -183,6 +198,8 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         originLon = null
         lastPointMs = null
         lastAltM = null
+        persistedPoints = 0
+        pointWriteInFlight = false
         lastKmMovingMs = 0L
         nextKmMarker = 1000f
         seedOriginFromLastKnown()
@@ -273,11 +290,13 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
                     return@launch
                 }
 
-                // Persist remaining points synchronously
-                if (currentState.points.isNotEmpty()) {
+                // Persist whatever the last batch did not reach.
+                val tail = currentState.points.drop(persistedPoints)
+                if (tail.isNotEmpty()) {
                     withContext(Dispatchers.IO) {
-                        repo.insertPoints(rid, currentState.points)
+                        repo.insertPoints(rid, tail)
                     }
+                    persistedPoints = currentState.points.size
                 }
 
                 // The fastest kilometre is computed once, here, from every point the activity
@@ -405,11 +424,25 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
             )
         }
 
-        if (points.size >= BATCH_SIZE) {
+        // Write the tail that is not in the database yet, and keep the route itself intact.
+        //
+        // The count is advanced only after the insert returns, so a failed write is retried on the
+        // next batch rather than losing the points. Nothing is removed from the list, so whatever
+        // is drawing the route sees the whole of it at every moment.
+        val unwritten = points.size - persistedPoints
+        if (unwritten >= BATCH_SIZE && !pointWriteInFlight) {
+            pointWriteInFlight = true
+            val batch = points.subList(persistedPoints, points.size).toList()
+            val writtenUpTo = points.size
             lifecycleScope.launch {
-                // Use withContext to AWAIT the DB write before clearing buffer
-                withContext(Dispatchers.IO) { repo.insertPoints(rid, points) }
-                currentState = currentState.copy(points = emptyList())
+                try {
+                    withContext(Dispatchers.IO) { repo.insertPoints(rid, batch) }
+                    persistedPoints = writtenUpTo
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to persist a batch of route points", e)
+                } finally {
+                    pointWriteInFlight = false
+                }
             }
         }
 
