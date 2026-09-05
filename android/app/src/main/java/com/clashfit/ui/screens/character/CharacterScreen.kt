@@ -39,6 +39,7 @@ import com.clashfit.ui.components.AppIcons
 import com.clashfit.ui.components.ScreenEmptyState
 import com.clashfit.ui.components.PrimaryButton
 import com.clashfit.ui.nav.Modes
+import com.clashfit.ui.screens.picker.FEATURED_EXERCISES
 import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.grouped
 import com.clashfit.ui.components.SectionGap
@@ -140,7 +141,7 @@ fun CharacterScreen(graph: AppGraph, nav: NavHostController) {
                 InnerDivider()
                 RuleRow("Average form", "${(sheet.formAvg * 100).toInt()}%")
                 InnerDivider()
-                RuleRow("Movements tried", "${sheet.distinctExercises} of ${exercises.size}")
+                RuleRow("Movements tried", "${sheet.distinctExercises} of ${exercises.values.count { it.id in FEATURED_EXERCISES }}")
                 InnerDivider()
                 RuleRow("Current streak", "${streak?.current ?: 0} days")
             }

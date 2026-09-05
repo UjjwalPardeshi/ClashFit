@@ -35,6 +35,7 @@ import com.clashfit.AppGraph
 import com.clashfit.core.model.GameMode
 import com.clashfit.core.model.ModeKind
 import com.clashfit.data.Prefs
+import com.clashfit.ui.screens.picker.FEATURED_EXERCISES
 import com.clashfit.ui.components.AppIcons
 import com.clashfit.ui.components.LinkButton
 import com.clashfit.ui.components.ModeCard
@@ -136,7 +137,7 @@ fun HomeScreen(graph: AppGraph, nav: NavHostController) {
                         Text("Exercise library", style = MaterialTheme.typography.titleSmall, color = Ink)
                         // One line. It wrapped to two and still said less than the count does.
                         Text(
-                            "${exercises.size} movements",
+                            "${exercises.values.count { it.id in FEATURED_EXERCISES }} movements",
                             style = MaterialTheme.typography.bodySmall, color = InkMuted, maxLines = 1,
                         )
                     }
