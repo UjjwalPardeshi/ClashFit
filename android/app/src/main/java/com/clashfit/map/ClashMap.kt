@@ -127,6 +127,12 @@ fun RouteMap(
     val mapView = remember {
         MapView(context).apply {
             setTileSource(TileSourceFactory.MAPNIK)
+            // Raster tiles are drawn for a 160 dpi screen. On a phone at three times that they come
+            // out a third of the intended size: street names too small to read, and a zoom level
+            // that frames three times as much ground as the number suggests. Scaling to the device
+            // density is what every other map client does, and it is the difference between a map
+            // and a photograph of a map.
+            setTilesScaledToDpi(true)
             setMultiTouchControls(interactive)
             zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
             setUseDataConnection(true)
@@ -144,6 +150,17 @@ fun RouteMap(
         state?.view = mapView
         onDispose { if (state?.view === mapView) state.view = null }
     }
+
+    /**
+     * Which recentre request this map has already applied its opening zoom for.
+     *
+     * A following map must set its zoom exactly once and then only pan, or every GPS fix cancels
+     * whatever zoom the player had reached. Deciding that by looking at the current zoom level does
+     * not work — a fresh MapView does not reliably start at zero, so the check silently never fired
+     * and the run opened on a map of the whole city. Remembering the decision is the only version
+     * that is actually correct.
+     */
+    val zoomedForRequest = remember(mapView) { intArrayOf(Int.MIN_VALUE) }
 
     // osmdroid is a View with its own lifecycle: without this it keeps its tile threads and its
     // download queue running behind a screen the player has left.
@@ -193,12 +210,52 @@ fun RouteMap(
                 // Markers are drawn as plain circles only when nobody has offered to draw them
                 // better. The chase hands its own painter in and gets a figure instead of a dot.
                 if (onMarkerLayout == null) extraOverlays.forEach { drawMarker(map, it) }
-                state?.frameRequest // read, so a recentre request recomposes this block
-                if (state?.userMoved != true) frame(map, points, extraOverlays, follow)
+                val request = state?.frameRequest ?: 0
+                if (state?.userMoved != true) {
+                    val opening = zoomedForRequest[0] != request
+                    frame(map, points, extraOverlays, follow, applyZoom = opening)
+                    if (opening && points.isNotEmpty()) zoomedForRequest[0] = request
+                }
                 map.invalidate()
                 onMarkerLayout?.invoke(placeMarkers(map, extraOverlays))
             },
         )
+    }
+}
+
+/** The start or the finish of a route: a fixed-size ring or dot, whatever the zoom. */
+private class EndpointOverlay(
+    private val lat: Double,
+    private val lon: Double,
+    private val colour: Color,
+    private val filled: Boolean,
+) : org.osmdroid.views.overlay.Overlay() {
+
+    override fun draw(canvas: android.graphics.Canvas, map: MapView, shadow: Boolean) {
+        if (shadow) return
+        val p = map.projection?.toPixels(GeoPoint(lat, lon), null) ?: return
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            color = colour.toArgb()
+        }
+        // A dark plate underneath, so a marker landing on a pale building still reads.
+        canvas.drawCircle(
+            p.x.toFloat(), p.y.toFloat(), RADIUS_PX + 4f,
+            android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                color = Ground.toArgb()
+                alpha = 190
+            },
+        )
+        if (filled) {
+            canvas.drawCircle(p.x.toFloat(), p.y.toFloat(), RADIUS_PX, paint)
+        } else {
+            paint.style = android.graphics.Paint.Style.STROKE
+            paint.strokeWidth = 5f
+            canvas.drawCircle(p.x.toFloat(), p.y.toFloat(), RADIUS_PX, paint)
+        }
+    }
+
+    private companion object {
+        const val RADIUS_PX = 11f
     }
 }
 
@@ -298,8 +355,13 @@ private fun drawRoute(map: MapView, points: List<RunPointEntity>, paceColoured: 
     )
 
     // Start hollow, finish solid — the same language the tile-free renderer uses.
-    map.overlays.add(circle(map, GeoPoint(simplified.first().lat, simplified.first().lon), 9.0, Success, filled = false))
-    map.overlays.add(circle(map, GeoPoint(simplified.last().lat, simplified.last().lon), 8.0, Ink, filled = true))
+    //
+    // Drawn at a fixed size in pixels rather than as a circle nine metres across. A marker stated in
+    // metres is honest about ground truth and useless as a marker: zoomed out it disappears, and
+    // zoomed in to read a junction it swells into a disc that covers the whole route. "Where this
+    // run began" is a label, not a place with an extent.
+    map.overlays.add(EndpointOverlay(simplified.first().lat, simplified.first().lon, Success, filled = false))
+    map.overlays.add(EndpointOverlay(simplified.last().lat, simplified.last().lon, Ink, filled = true))
 }
 
 private fun polyline(map: MapView, pts: List<GeoPoint>, colour: Color): Polyline =
@@ -341,13 +403,22 @@ private fun drawMarker(map: MapView, m: MapMarker) {
  * Following pins the newest point at a fixed zoom, which is what a runner wants mid-run. Otherwise
  * the whole route is framed once — `zoomToBoundingBox` with a degenerate box (a route that never
  * left one spot) puts osmdroid at maximum zoom over a car park, so that case is handled explicitly.
+ *
+ * @param applyZoom true only on the opening frame and after a recentre. A following map that
+ *   re-applied its zoom on every fix would cancel any zoom the player had reached a second later.
  */
-private fun frame(map: MapView, points: List<RunPointEntity>, markers: List<MapMarker>, follow: Boolean) {
+private fun frame(
+    map: MapView,
+    points: List<RunPointEntity>,
+    markers: List<MapMarker>,
+    follow: Boolean,
+    applyZoom: Boolean = true,
+) {
     if (follow && points.isNotEmpty()) {
         val last = points.last()
-        // Set the zoom once and then only pan. Re-applying it on every fix cancelled any zoom the
-        // player had reached, and made the map feel like it was resisting them.
-        if (map.zoomLevelDouble < 3.0) map.controller.setZoom(17.0)
+        // Chosen against density-scaled tiles: close enough to see which side of the road you
+        // are on, wide enough to see the junction you are running towards.
+        if (applyZoom) map.controller.setZoom(16.5)
         map.controller.setCenter(GeoPoint(last.lat, last.lon))
         return
     }
@@ -360,6 +431,9 @@ private fun frame(map: MapView, points: List<RunPointEntity>, markers: List<MapM
         return
     }
     if (bounds.spanM < 40f) {
+        // Close, because a forty-metre route framed at a comfortable street zoom is a dot with a
+        // road name beside it. Not as close as the tiles go: past this the basemap runs out of
+        // detail and the route floats on an empty grey field, which looks broken rather than zoomed.
         map.controller.setZoom(17.5)
         map.controller.setCenter(GeoPoint(bounds.centreLat, bounds.centreLon))
         return

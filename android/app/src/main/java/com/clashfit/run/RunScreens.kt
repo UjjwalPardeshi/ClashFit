@@ -53,6 +53,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -77,6 +79,7 @@ import com.clashfit.ui.components.EmptyState
 import com.clashfit.ui.components.FilterPill
 import com.clashfit.ui.components.IconBubble
 import com.clashfit.ui.components.InnerDivider
+import com.clashfit.ui.components.MapCaption
 import com.clashfit.ui.components.MapControls
 import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.PrimaryButton
@@ -476,8 +479,19 @@ private fun RunActiveScreen(graph: AppGraph, nav: NavHostController) {
                             val finished = state.runId
                             RunTrackingService.stop(context)
                             if (finished != null) {
-                                nav.navigate(RunSummaryRoute(finished))
-                                nav.popBackStack(RunActive, inclusive = true)
+                                // One navigation, not two.
+                                //
+                                // This used to push the summary and then pop back to the recording
+                                // screen inclusively, which takes the summary down with it: every
+                                // finished run landed straight back on the feed and the summary was
+                                // never seen. It was invisible until now because the run id was
+                                // usually still null at this point, so the other branch ran instead.
+                                // popUpTo removes the recording screen as part of the same move, so
+                                // Back from the summary goes to the feed rather than to a recording
+                                // screen for an activity that is already over.
+                                nav.navigate(RunSummaryRoute(finished)) {
+                                    popUpTo(RunActive) { inclusive = true }
+                                }
                             } else {
                                 nav.popBackStack()
                             }
@@ -546,6 +560,57 @@ private fun ActivityMap(
     }
 }
 
+/**
+ * How long the summary waits for the tracking service to write the activity down.
+ *
+ * Generous, because the alternative to waiting is showing zeroes as though they were the result.
+ * In practice the write lands in tens of milliseconds; this only matters when the database is busy.
+ */
+private const val FINISH_WAIT_MS = 5_000L
+private const val FINISH_POLL_MS = 80L
+
+/**
+ * The route, owning the whole display.
+ *
+ * A route is a shape you want to look *into* — which junction, which side of the park — and no map
+ * inside a scrolling page can offer that, because it has to give the drag back to the page. So the
+ * inline map is a picture and this is the map: full screen, every gesture, zoom and recentre
+ * controls, and one obvious way out.
+ */
+@Composable
+private fun FullScreenMap(
+    points: List<RunPointEntity>,
+    tilesAllowed: Boolean,
+    onClose: () -> Unit,
+) {
+    Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        val mapState = rememberRouteMapState()
+        Box(Modifier.fillMaxSize().background(Ground)) {
+            ActivityMap(
+                points = points,
+                tilesAllowed = tilesAllowed,
+                modifier = Modifier.fillMaxSize(),
+                interactive = tilesAllowed,
+                mapState = mapState,
+            )
+            Column(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    SecondaryButton("Close", Modifier.width(120.dp), onClick = onClose)
+                }
+                Spacer(Modifier.weight(1f))
+                if (tilesAllowed) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+                        // OpenStreetMap asks to be named wherever its tiles are shown large.
+                        MapCaption("© OpenStreetMap contributors", Modifier.padding(end = 8.dp))
+                        Spacer(Modifier.weight(1f))
+                        MapControls(mapState)
+                    }
+                }
+            }
+        }
+    }
+}
+
 // ── summary ─────────────────────────────────────────────────────────────────
 
 @Composable
@@ -564,10 +629,25 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
     var sharing by remember { mutableStateOf(false) }
     var showShareNotice by remember { mutableStateOf(false) }
     var loaded by remember { mutableStateOf(false) }
+    var expandedMap by remember { mutableStateOf(false) }
 
     LaunchedEffect(runId) {
-        run = repo.getRun(runId)
-        val entity = repo.dao.run(runId)
+        // Wait for the tracking service to close the activity before reading it.
+        //
+        // This screen is opened by the very tap that finishes the run, and the service writes the
+        // distance, the moving time and the fastest kilometre from its own coroutine. Reading once,
+        // immediately, gets the row as it looked when the run *started* — every field zero — and
+        // that is exactly what a finished run used to show. The row is also deleted here when the
+        // activity recorded nothing, so a row that vanishes ends the wait too and the screen says
+        // so instead of spinning.
+        var entity = repo.dao.run(runId)
+        var waitedMs = 0L
+        while (entity != null && entity.endedAtMs == null && waitedMs < FINISH_WAIT_MS) {
+            delay(FINISH_POLL_MS)
+            waitedMs += FINISH_POLL_MS
+            entity = repo.dao.run(runId)
+        }
+        run = if (entity == null) null else repo.getRun(runId)
         if (entity != null && entity.splitsJson.isNotEmpty()) splits = parseSplits(entity.splitsJson)
         // The route was drawn the whole way round and then thrown away at the finish line. It is
         // the one thing about a run worth looking at afterwards, and it was already on the phone.
@@ -613,6 +693,7 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
             }
             return@ScreenScaffold
         }
+        val tilesOn = settings.mapTiles && settings.mapTilesAsked
         Column(
             Modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp).padding(top = 4.dp, bottom = 28.dp),
@@ -626,21 +707,40 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
             SectionGap(12)
 
             if (points.size >= 2) {
-                val summaryMap = rememberRouteMapState()
+                // Deliberately not interactive here.
+                //
+                // This map lives inside a column that scrolls, and a map that answers to a drag
+                // eats the drag: the page then refuses to scroll past it, which reads as a frozen
+                // screen rather than as a map doing its job. So the inline one is a picture, and
+                // tapping it opens a real one that owns the whole display and every gesture.
                 AppCard(Modifier.fillMaxWidth(), padding = 0) {
                     Box {
                         ActivityMap(
                             points = points,
-                            tilesAllowed = settings.mapTiles && settings.mapTilesAsked,
+                            tilesAllowed = tilesOn,
                             // Tall enough to be a map rather than a stamp. Two thirds of a phone
                             // screen is roughly what every other running app gives a finished route.
                             modifier = Modifier.fillMaxWidth().height(380.dp),
-                            interactive = settings.mapTiles && settings.mapTilesAsked,
-                            mapState = summaryMap,
+                            interactive = false,
                         )
-                        if (settings.mapTiles && settings.mapTilesAsked) {
-                            MapControls(summaryMap, Modifier.align(Alignment.BottomEnd).padding(10.dp))
-                        }
+                        // The tap target has to sit *above* the map rather than around it.
+                        //
+                        // A MapView is an Android View and it swallows every touch that reaches it,
+                        // whether or not multi-touch controls are switched on, so a clickable on
+                        // the card behind it never fires — the caption said "tap to open" and
+                        // nothing happened. A transparent Compose surface drawn after the map wins
+                        // the hit test, and forwards the tap to the full-screen map.
+                        Box(
+                            Modifier.matchParentSize()
+                                .clickable(
+                                    onClickLabel = "Open the map full screen",
+                                    onClick = { expandedMap = true },
+                                ),
+                        )
+                        MapCaption(
+                            "Tap to open the map",
+                            Modifier.align(Alignment.BottomEnd).padding(10.dp),
+                        )
                     }
                 }
                 SectionGap(14)
@@ -765,6 +865,14 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
                 color = InkFaint,
             )
         }
+    }
+
+    if (expandedMap) {
+        FullScreenMap(
+            points = points,
+            tilesAllowed = settings.mapTiles && settings.mapTilesAsked,
+            onClose = { expandedMap = false },
+        )
     }
 
     if (showShareNotice) {
