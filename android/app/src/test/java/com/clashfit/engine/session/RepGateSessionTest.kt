@@ -126,14 +126,15 @@ class RepGateSessionTest {
     fun `a curl flung up is not a rep`() {
         val rec = Recorder(); val d = Driver(engine("bicep_curl", rec = rec))
         calibrate(d, curl(175f, 175f))
-        // The full range of a counted rep, thrown up in a third of the time. The gate measures the
-        // 135-to-80 segment, about a third of the sweep, so 600 ms of travel is 213 ms of lift
-        // against the 500 ms the config asks for.
+        // Thrown through the whole range in 300 ms. The gate measures the 135-to-80 segment, about
+        // a third of the sweep, so this is 106 ms of lift against the 120 ms the config asks for.
+        // The player's own curls, measured 6 Sep 2026, take 159-262 ms over that segment, so the
+        // line sits below the slowest thing a human did and above a throw.
         repeat(3) {
-            d.ramp(600, 175f, 20f) { e -> curl(e, e) }; d.hold(200, curl(20f, 20f))
+            d.ramp(300, 175f, 20f) { e -> curl(e, e) }; d.hold(200, curl(20f, 20f))
             d.ramp(600, 20f, 175f) { e -> curl(e, e) }; d.hold(400, curl(175f, 175f))
         }
-        assertEquals(0, rec.reps.size, "a curl flung up in 600 ms is not a rep, however deep it goes")
+        assertEquals(0, rec.reps.size, "a curl thrown through its whole range in 300 ms is not a rep")
     }
 
     @Test

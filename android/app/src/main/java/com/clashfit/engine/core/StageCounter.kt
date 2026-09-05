@@ -145,7 +145,6 @@ class StageCounter(val config: Config) {
         var tMin = 0L; var tMax = 0L
         var reached = false                // the signal has been past `count` since the last rest
         var brokeCeiling = false           // and it went past `ceiling` while it was there
-        var brokeLine = false              // the upper arm left the torso somewhere in this rep
         var reachedAt: Long? = null        // first frame past `count` — the top of the lift
         var lastPastAt: Long? = null       // last frame past `count`; with the above, the squeeze
         var liftMs = 0L                    // rest to the top, banked at the top (see step)
@@ -155,7 +154,7 @@ class StageCounter(val config: Config) {
             reached = false; brokeCeiling = false; clearRep()
         }
         /** Everything one rep accumulates, cleared when the next one starts. */
-        fun clearRep() { brokeLine = false; reachedAt = null; lastPastAt = null; liftMs = 0L; movingSince = null }
+        fun clearRep() { reachedAt = null; lastPastAt = null; liftMs = 0L; movingSince = null }
         /** The squeeze so far: how long the signal has stayed past the counting threshold. */
         fun heldMs(): Long {
             val from = reachedAt ?: return 0L
@@ -266,6 +265,9 @@ class StageCounter(val config: Config) {
                     " rest=${p(config.rest.holds(sL), config.rest.holds(sR))}" +
                     " cnt=${p(config.count.holds(sL), config.count.holds(sR))}" +
                     " plane=${p(plL, plR)} over=${p(overL, overR)}" +
+                    " line=${n(armLineDeg(world, Side.LEFT))}/${n(armLineDeg(world, Side.RIGHT))}" +
+                    " tuck=${p(tkL, tkR)} lead=${if (leadLeft) "L" else "R"}" +
+                    " lift=${t.liftMs} held=${t.heldMs()}" +
                     " stage=${t.stage} reached=${if (t.reached) "T" else "f"} broke=${if (t.brokeCeiling) "T" else "f"}" +
                     if (out.isNotEmpty()) "  <<< REP" else ""
             )
@@ -314,7 +316,6 @@ class StageCounter(val config: Config) {
         }
         // Only once the movement has left rest, so standing with the arms out does not latch a
         // fault the player can no longer clear by getting into position.
-        if (!r.tucked && r.moving && t.stage == Stage.REST) t.brokeLine = true
         // When the lift actually began. `restAt` cannot answer this under EITHER: the arm left
         // hanging satisfies rest on every frame, so the combined rest never ends and `restAt`
         // walks forward to the frame before the count, making every one-armed curl look instant.
@@ -339,11 +340,11 @@ class StageCounter(val config: Config) {
         // rep lands when the movement comes back to rest, which is also the moment the player has
         // actually finished it.
         if (config.countAt == CountAt.RETURN) {
-            if (countHolds && r.inPlane && t.stage == Stage.REST) t.reached = true
+            if (countHolds && r.inPlane && r.tucked && t.stage == Stage.REST) t.reached = true
             if (over && t.stage == Stage.REST) t.brokeCeiling = true
             if (restHolds) {
                 var rep: Rep? = null
-                val clean = !t.brokeLine && slowEnough && heldEnough
+                val clean = slowEnough && heldEnough
                 if (t.reached && !t.brokeCeiling && clean && debounced) {
                     t.lastCountMs = tMs
                     val deepest = if (config.count.op == "<") t.tMin else t.tMax
@@ -371,9 +372,13 @@ class StageCounter(val config: Config) {
             if (config.wristAboveShoulderAt == Check.COUNT && !above) { lastMissMs = tMs; return null }
             // The right movement in the wrong plane is a different exercise, not a bad rep.
             if (!r.inPlane) { lastMissMs = tMs; return null }
-            // Swung, not curled: the elbow left the torso on the way up. The angle closed all the
-            // same, which is exactly why the angle alone cannot be trusted to have seen a rep.
-            if (t.brokeLine) { lastMissMs = tMs; return null }
+            // Swung, not curled: the elbow is off the torso at the moment of peak contraction.
+            // Judged here rather than accumulated over the rep. Measured on the player 6 Sep 2026:
+            // at the counting frame a correct curl reads 3.9-22.1 degrees off the torso, but
+            // somewhere earlier in the same rep the reading spikes as far as 48, so "did it ever
+            // exceed the line" threw away four good reps in fourteen on one noisy frame. The plane
+            // guard is checked at this same moment for the same reason.
+            if (!r.tucked) { lastMissMs = tMs; return null }
             // Flung. `debounceMs` only spaces reps apart; this is the first thing that asks the
             // lift itself to have taken time.
             if (!slowEnough) { lastMissMs = tMs; return null }
