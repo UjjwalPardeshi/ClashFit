@@ -342,7 +342,7 @@ private fun Done(completed: Int, target: Int, seconds: Int, onBack: () -> Unit, 
         if (recovered > 0) {
             Text("-$recovered% fatigue", style = MaterialTheme.typography.titleSmall, color = Fresh)
         } else {
-            Text("Nothing banked", style = MaterialTheme.typography.titleSmall, color = InkMuted)
+            Text("No fatigue cleared yet", style = MaterialTheme.typography.titleSmall, color = InkMuted)
         }
         SectionGap(12)
         Text(

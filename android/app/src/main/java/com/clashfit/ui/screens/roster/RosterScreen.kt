@@ -59,6 +59,7 @@ import com.clashfit.ui.components.InnerDivider
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.OutlineButton
+import com.clashfit.ui.components.grouped
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.StatTile
 import com.clashfit.ui.components.Tag
@@ -117,7 +118,7 @@ fun RosterScreen(graph: AppGraph, nav: NavHostController, route: Roster) {
     }
     val exerciseName = exercises[exerciseId]?.name ?: exerciseId.uppercase()
 
-    val names = rememberNames("roster-names", "PLAYER 1", "PLAYER 2")
+    val names = rememberNames("roster-names", "Player 1", "Player 2")
     val teams = rememberNames("roster-teams", "A", "B")
     var turnSec by rememberSaveable { mutableIntStateOf(30) }
 
@@ -214,7 +215,7 @@ private fun Setup(
     }
     if (names.size < MAX_PLAYERS) {
         OutlineButton("+ Add player", Modifier.fillMaxWidth()) {
-            names.add("PLAYER ${names.size + 1}")
+            names.add("Player ${names.size + 1}")
             teams.add(if (names.size % 2 == 1) "A" else "B")
         }
     }
@@ -359,7 +360,7 @@ private fun Finished(state: RosterState, onAgain: () -> Unit, onHome: () -> Unit
         }
         SectionGap(20)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StatTile("${winner.damage}", "Damage", Modifier.weight(1f), color = Ember)
+            StatTile("${winner.damage.grouped()}", "Damage", Modifier.weight(1f), color = Ember)
             StatTile("${winner.reps}", "Reps", Modifier.weight(1f))
             StatTile("${winner.turns}", "Turns", Modifier.weight(1f))
         }
@@ -425,7 +426,7 @@ private fun LeaderRow(rank: Int, player: RosterPlayer, modifier: Modifier = Modi
             )
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text("${player.damage}", style = MaterialTheme.typography.headlineSmall, color = if (dim) InkFaint else Ink)
+            Text("${player.damage.grouped()}", style = MaterialTheme.typography.headlineSmall, color = if (dim) InkFaint else Ink)
             Text("damage", style = MaterialTheme.typography.labelSmall, color = InkFaint)
         }
     }

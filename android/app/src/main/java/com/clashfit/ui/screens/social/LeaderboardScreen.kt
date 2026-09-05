@@ -41,6 +41,12 @@ import com.clashfit.cloud.LeaderboardEntry
 import com.clashfit.ui.components.AppCard
 import com.clashfit.ui.components.AppIcons
 import com.clashfit.ui.components.Avatar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import com.clashfit.ui.components.LoadingState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.clashfit.ui.components.EmptyState
 import com.clashfit.ui.components.InnerDivider
 import com.clashfit.ui.components.ListGroup
@@ -68,12 +74,33 @@ fun LeaderboardScreen(graph: AppGraph, onBack: () -> Unit, onSignIn: () -> Unit,
     val auth by graph.auth.state.collectAsStateWithLifecycle()
     val availabilityFlow = remember(graph) { graph.leaderboard.availability }
     val availability by availabilityFlow.collectAsStateWithLifecycle(initialValue = CloudAvailability.Unavailable("Connecting…"))
-    val entriesFlow = remember(graph, board, friendsOnly) { if (friendsOnly) graph.leaderboard.friends(board) else graph.leaderboard.top(board) }
-    val entries by entriesFlow.collectAsStateWithLifecycle(initialValue = emptyList())
+    // A board that has not answered yet is not an empty board. Starting at emptyList() meant the
+    // screen said "Nobody on this board yet" for as long as the round trip took, which is a
+    // sentence that is both wrong and discouraging. Null is "still asking".
+    //
+    // The key includes [refresh]: the Firestore listener is live, so there is nothing to re-fetch
+    // — pulling tears the subscription down and opens a new one, which is the thing that actually
+    // recovers a listener that died with the network.
+    var refresh by remember { mutableIntStateOf(0) }
+    var refreshing by remember { mutableStateOf(false) }
+    val entriesFlow = remember(graph, board, friendsOnly, refresh) {
+        if (friendsOnly) graph.leaderboard.friends(board) else graph.leaderboard.top(board)
+    }
+    val entries by entriesFlow.collectAsStateWithLifecycle(initialValue = null)
+    val scope = rememberCoroutineScope()
 
     ScreenScaffold(title = "Leaderboard", onBack = onBack) { padding ->
+        PullToRefreshBox(
+            isRefreshing = refreshing,
+            onRefresh = {
+                refreshing = true
+                refresh++
+                scope.launch { delay(700); refreshing = false }
+            },
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
         LazyColumn(
-            Modifier.fillMaxSize().padding(padding),
+            Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 28.dp),
         ) {
             item(key = "scope") {
@@ -118,7 +145,9 @@ fun LeaderboardScreen(graph: AppGraph, onBack: () -> Unit, onSignIn: () -> Unit,
                         }
                     }
                 }
-            } else if (entries.isEmpty()) {
+            } else if (entries == null) {
+                item(key = "loading") { LoadingState("Reading the board", Modifier.padding(top = 60.dp)) }
+            } else if (entries!!.isEmpty()) {
                 item(key = "empty") {
                     EmptyState(
                         if (friendsOnly) "No friends on the board yet" else "Nobody on this board yet",
@@ -130,13 +159,14 @@ fun LeaderboardScreen(graph: AppGraph, onBack: () -> Unit, onSignIn: () -> Unit,
             } else {
                 item(key = "list") {
                     ListGroup(Modifier.padding(top = 16.dp)) {
-                        entries.forEachIndexed { i, e ->
+                        entries!!.forEachIndexed { i, e ->
                             EntryRow(e, board.unit)
-                            if (i < entries.lastIndex) InnerDivider()
+                            if (i < entries!!.lastIndex) InnerDivider()
                         }
                     }
                 }
             }
+        }
         }
     }
 }

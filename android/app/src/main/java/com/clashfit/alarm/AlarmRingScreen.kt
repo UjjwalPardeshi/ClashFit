@@ -216,7 +216,7 @@ private fun RepCameraStage(
             .background(PanelLift),
     ) {
         Text(
-            text = if (synthetic) "Synthetic body" else "Camera on",
+            text = "Camera on",
             style = MaterialTheme.typography.labelMedium,
             color = if (skeleton == null) InkFaint else Ember,
             modifier = Modifier
@@ -226,7 +226,7 @@ private fun RepCameraStage(
         SkeletonOverlay(skeleton, Modifier.fillMaxSize())
         if (skeleton == null) {
             Text(
-                text = "FIND YOUR FRAME",
+                text = "STEP INTO THE FRAME",
                 style = MaterialTheme.typography.labelMedium,
                 color = InkFaint,
                 modifier = Modifier.align(Alignment.Center),
@@ -255,7 +255,7 @@ private fun RepCountdown(state: AlarmRingUiState) {
         val verdict = state.repEvent.lastVerdict
         Spacer(Modifier.height(8.dp))
         Text(
-            text = cue ?: verdict?.let { "LAST REP: $it" } ?: " ",
+            text = cue ?: verdict?.let { "Last rep: $it" } ?: " ",
             style = MaterialTheme.typography.bodyMedium,
             color = if (cue != null) Working else InkFaint,
             textAlign = TextAlign.Center,

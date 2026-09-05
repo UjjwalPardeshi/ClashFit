@@ -118,7 +118,7 @@ fun ClinicScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = M
                 // The clinic is designed as five protocols; one is measured well enough to ship.
                 // Naming the other four is more useful than pretending the set is complete, and
                 // more honest than a greyed-out button that does nothing.
-                SectionTitle("Designed, not in this build")
+                SectionTitle("Coming next")
                 SectionGap(10)
                 AppCard(Modifier.fillMaxWidth()) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -134,8 +134,8 @@ fun ClinicScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = M
                             }
                         }
                         Text(
-                            "Each needs its own reference angles and a validated scoring window. " +
-                                "A protocol measured approximately is worth less than no protocol at all.",
+                            "Each one needs its own validated scoring before it can be trusted. A test measured roughly is " +
+                                "worth less than no test at all.",
                             style = MaterialTheme.typography.bodySmall,
                             color = InkFaint,
                             modifier = Modifier.padding(top = 4.dp),
@@ -146,7 +146,7 @@ fun ClinicScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = M
                 SectionGap(8)
                 EmptyState(
                     title = "Protocol not found",
-                    body = "The sit-to-stand protocol is not configured. Check that the config is loaded.",
+                    body = "This test could not be loaded. Close ClashFit and open it again.",
                     icon = AppIcons.Heart
                 )
             }

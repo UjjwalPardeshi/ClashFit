@@ -45,6 +45,8 @@ import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Success
 import com.clashfit.ui.components.RankInsignia
+import com.clashfit.meta.VoucherCatalog
+import com.clashfit.ui.nav.Rewards
 
 /**
  * Everything to do with other people, in one place.
@@ -64,7 +66,9 @@ fun CompeteScreen(graph: AppGraph, nav: NavHostController) {
     val signedIn = auth is AuthState.SignedIn
 
     val boardFlow = remember(graph) { graph.leaderboard.top(Board.WEEKLY_DAMAGE, limit = 3) }
-    val top by boardFlow.collectAsStateWithLifecycle(initialValue = emptyList())
+    // Null while the board is still being asked. Empty means asked and answered with nobody, and
+    // saying that before the answer arrives is both wrong and discouraging.
+    val top by boardFlow.collectAsStateWithLifecycle(initialValue = null)
     val availability by graph.leaderboard.availability
         .collectAsStateWithLifecycle(initialValue = CloudAvailability.Available)
 
@@ -72,6 +76,7 @@ fun CompeteScreen(graph: AppGraph, nav: NavHostController) {
     val friends by friendsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
 
     val badges = meta?.unlocked?.size ?: 0
+    val vouchers by graph.db.vouchers().all().collectAsStateWithLifecycle(initialValue = emptyList())
     val weekly = meta?.weekly
 
     ScreenScaffold(title = "Compete") { padding ->
@@ -79,8 +84,99 @@ fun CompeteScreen(graph: AppGraph, nav: NavHostController) {
             Modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp).padding(top = 4.dp, bottom = 28.dp),
         ) {
-            // This week, live. The top of the board is the reason to come here, so it is the
-            // first thing on the page rather than a row you have to open.
+            // What is yours comes first.
+            //
+            // This page used to open on the global board, which at three players reads as "nobody
+            // uses this" no matter how good the app is — and it is the one screen whose emptiness
+            // is not the player's fault. Their rank, their level and their week are never empty,
+            // so the page opens on those and the board sits below, where its size is a fact rather
+            // than the headline.
+            val myRank = top?.firstOrNull { it.isMe }?.rank
+            AppCard(Modifier.fillMaxWidth(), padding = 18, onClick = { nav.navigate(Leaderboard) }) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RankInsignia(meta?.progress?.level ?: 1, size = 46)
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                meta?.progress?.let { "${it.title} · level ${it.level}" } ?: "Recruit",
+                                style = MaterialTheme.typography.titleMedium, color = Ink,
+                            )
+                            Text(
+                                when {
+                                    myRank != null -> "Ranked $myRank this week"
+                                    !signedIn -> "Sign in and your week appears on the board"
+                                    else -> "Finish a set and you are on this week's board"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (myRank != null) Ember else InkMuted,
+                            )
+                        }
+                    }
+                    meta?.progress?.let { p ->
+                        Bar(p.fraction, color = Ember)
+                        Text(
+                            "${p.xpForLevel - p.xpIntoLevel} XP to level ${p.level + 1}",
+                            style = MaterialTheme.typography.labelMedium, color = InkFaint,
+                        )
+                    }
+                }
+            }
+
+            SectionGap(20)
+
+            // The weekly target, with its bar, because a number without a bar is homework.
+            weekly?.let { w ->
+                AppCard(Modifier.fillMaxWidth(), padding = 18, onClick = { nav.navigate(Weekly) }) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Weekly challenge", style = MaterialTheme.typography.labelMedium, color = InkMuted)
+                            Text(
+                                if (w.done) "Done" else "${w.value} / ${w.challenge.target}",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (w.done) Success else Ember,
+                            )
+                        }
+                        Text(w.challenge.title, style = MaterialTheme.typography.titleMedium, color = Ink)
+                        Bar(w.fraction, color = if (w.done) Success else Ember, height = 8)
+                        Text(
+                            w.challenge.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = InkFaint,
+                        )
+                    }
+                }
+            }
+
+            SectionGap(20)
+            SectionTitle("Earned")
+            SectionGap(10)
+            ListGroup {
+                NavRow(
+                    "Badges",
+                    { nav.navigate(Achievements) },
+                    icon = AppIcons.Star,
+                    tint = Brass,
+                    value = "$badges of ${AchievementCatalog.all.size}",
+                    supporting = "From showing up and from clean reps. None can be bought.",
+                )
+                InnerDivider()
+                NavRow(
+                    "Rewards",
+                    { nav.navigate(Rewards) },
+                    icon = AppIcons.Trophy,
+                    tint = Success,
+                    value = "${vouchers.size} of ${VoucherCatalog.all.size}",
+                    supporting = "What partners put up for measured training.",
+                )
+            }
+
+            SectionGap(20)
+            SectionTitle("The board")
+            SectionGap(10)
             AppCard(Modifier.fillMaxWidth(), padding = 18, onClick = { nav.navigate(Leaderboard) }) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -96,12 +192,16 @@ fun CompeteScreen(graph: AppGraph, nav: NavHostController) {
                             (availability as CloudAvailability.Unavailable).reason,
                             style = MaterialTheme.typography.bodySmall, color = InkFaint,
                         )
-                        top.isEmpty() -> Text(
+                        top == null -> Text(
+                            "Reading the board…",
+                            style = MaterialTheme.typography.bodySmall, color = InkFaint,
+                        )
+                        top!!.isEmpty() -> Text(
                             "Nobody has scored this week yet. Finish a fight and the board starts with you.",
                             style = MaterialTheme.typography.bodySmall, color = InkFaint,
                         )
                         else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            top.forEach { entry ->
+                            top!!.forEach { entry ->
                                 Row(
                                     Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -130,32 +230,8 @@ fun CompeteScreen(graph: AppGraph, nav: NavHostController) {
                 }
             }
 
-            SectionGap(16)
 
-            // The weekly target, with its bar, because a number without a bar is homework.
-            weekly?.let { w ->
-                AppCard(Modifier.fillMaxWidth(), padding = 18, onClick = { nav.navigate(Weekly) }) {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Weekly challenge", style = MaterialTheme.typography.labelMedium, color = InkMuted)
-                            Text(
-                                if (w.done) "Done" else "${w.value} / ${w.challenge.target}",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = if (w.done) Success else Ember,
-                            )
-                        }
-                        Text(w.challenge.title, style = MaterialTheme.typography.titleMedium, color = Ink)
-                        Bar(w.fraction, color = if (w.done) Success else Ember, height = 8)
-                        Text(
-                            w.challenge.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = InkFaint,
-                        )
-                    }
-                }
-                SectionGap(20)
-            }
-
+            SectionGap(20)
             SectionTitle("People")
             SectionGap(10)
             ListGroup {
@@ -179,20 +255,6 @@ fun CompeteScreen(graph: AppGraph, nav: NavHostController) {
                     { nav.navigate(Challenge) },
                     icon = AppIcons.Bolt,
                     supporting = "A dare, sent as text. Works with no server and no account.",
-                )
-            }
-
-            SectionGap(20)
-            SectionTitle("Earned")
-            SectionGap(10)
-            ListGroup {
-                NavRow(
-                    "Badges",
-                    { nav.navigate(Achievements) },
-                    icon = AppIcons.Star,
-                    tint = Brass,
-                    value = "$badges of ${AchievementCatalog.all.size}",
-                    supporting = "From showing up and from clean reps. None can be bought.",
                 )
             }
 

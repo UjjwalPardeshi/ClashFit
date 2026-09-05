@@ -38,6 +38,7 @@ import com.clashfit.ui.components.InnerDivider
 import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.NavRow
 import com.clashfit.ui.components.RuleRow
+import com.clashfit.ui.screens.picker.FEATURED_EXERCISES
 import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.SectionTitle
@@ -55,7 +56,6 @@ import java.io.File
 @Composable
 fun AboutScreen(graph: AppGraph, nav: NavHostController, onPrivacy: () -> Unit, onHelp: () -> Unit) {
     val context = LocalContext.current
-    val configVersion by graph.config.version.collectAsStateWithLifecycle(initialValue = 0)
     val exercises by graph.config.exercises.collectAsStateWithLifecycle()
     val modelInstalled = remember { graph.llmEngine.modelInstalled }
 
@@ -70,7 +70,7 @@ fun AboutScreen(graph: AppGraph, nav: NavHostController, onPrivacy: () -> Unit, 
                 }
                 Text("ClashFit", style = MaterialTheme.typography.headlineMedium, color = Ink, modifier = Modifier.padding(top = 12.dp))
                 Text(
-                    "Version ${BuildConfig.VERSION_NAME} · build ${BuildConfig.VERSION_CODE}",
+                    "Version ${BuildConfig.VERSION_NAME}",
                     style = MaterialTheme.typography.bodySmall, color = InkMuted,
                 )
             }
@@ -86,18 +86,16 @@ fun AboutScreen(graph: AppGraph, nav: NavHostController, onPrivacy: () -> Unit, 
             }
 
             SectionGap(24)
-            SectionTitle("This build")
+            SectionTitle("What's inside")
             SectionGap(10)
             ListGroup {
                 RuleRow("Game modes", "${GameMode.grid.size}")
                 InnerDivider()
-                RuleRow("Exercises", "${exercises.size}")
+                RuleRow("Exercises", "${exercises.values.count { it.id in FEATURED_EXERCISES }}")
                 InnerDivider()
-                RuleRow("Config version", "$configVersion")
+                RuleRow("Coach", if (modelInstalled) "Runs on this phone" else "Built-in coaching")
                 InnerDivider()
-                RuleRow("Coach model", if (modelInstalled) "Installed" else "Not installed · templates speak")
-                InnerDivider()
-                RuleRow("Accounts", if (graph.auth.isCloud) "Firebase" else "This phone only")
+                RuleRow("Your account", if (graph.auth.isCloud) "Syncs across devices" else "Stays on this phone")
             }
 
             SectionGap(24)
@@ -126,9 +124,9 @@ fun AboutScreen(graph: AppGraph, nav: NavHostController, onPrivacy: () -> Unit, 
             ListGroup {
                 RuleRow("Team", "Da Goats")
                 InnerDivider()
-                RuleRow("Omkar Kadam", "")
+                RuleRow("Omkar Kadam", "Engineering")
                 InnerDivider()
-                RuleRow("Ujjwal Pardeshi", "")
+                RuleRow("Ujjwal Pardeshi", "Engineering")
                 InnerDivider()
                 RuleRow("For", "iQOO Hackathon 2026 · Pune")
             }

@@ -49,7 +49,9 @@ fun LinkStrip(link: LinkHud, myReps: Int, myDamage: Int, modifier: Modifier = Mo
                 text = when (link.state) {
                     LinkState.LINKED -> "LINKED · ${link.peers}"
                     LinkState.IDLE -> "NO LINK"
-                    else -> link.state.name
+                    LinkState.ADVERTISING -> "WAITING"
+                    LinkState.SEARCHING -> "LOOKING"
+                    LinkState.LOST -> "LINK LOST"
                 },
                 color = if (link.state == LinkState.LINKED) Ink else InkMuted,
             )
@@ -133,7 +135,7 @@ private fun Side(label: String, value: String, align: Alignment.Horizontal, lead
 private fun Leaderboard(link: LinkHud) {
     val rows = link.standings.take(4)
     if (rows.isEmpty()) {
-        Text("WAITING FOR THE OTHERS…", style = MaterialTheme.typography.labelMedium, color = InkMuted)
+        Text("WAITING FOR THE OTHERS · KEEP GOING", style = MaterialTheme.typography.labelMedium, color = InkMuted)
         return
     }
     rows.forEachIndexed { i, s ->

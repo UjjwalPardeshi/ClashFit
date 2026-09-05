@@ -96,7 +96,7 @@ fun ModeCard(mode: GameMode, onClick: () -> Unit, modifier: Modifier = Modifier,
             Spacer(Modifier.height(2.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 when {
-                    !mode.enabled -> Tag("Coming online", color = InkMuted)
+                    !mode.enabled -> Tag("Coming soon", color = InkMuted)
                     mode.timed -> Tag("Timed", color = Brass)
                     mode.kind == ModeKind.CLINIC -> Tag("Protocol", color = Success)
                     else -> Tag(mode.kind.label())

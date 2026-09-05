@@ -42,6 +42,8 @@ import com.clashfit.data.GhostEntity
 import com.clashfit.data.Prefs
 import com.clashfit.engine.core.ChallengeCard
 import com.clashfit.engine.core.ChallengeCodec
+import com.clashfit.ui.screens.picker.FEATURED_EXERCISES
+import androidx.compose.ui.text.style.TextOverflow
 import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.AppCard
 import com.clashfit.ui.components.PrimaryButton
@@ -146,7 +148,7 @@ private fun MakeOneSection(
     SectionGap(12)
 
     ChipRow(
-        items = exercises.values.sortedBy { it.name }.map { it.id to it.name },
+        items = exercises.values.filter { it.id in FEATURED_EXERCISES }.sortedBy { it.name }.map { it.id to it.name },
         selectedId = exerciseId,
         onSelect = onExercise,
     )
@@ -166,7 +168,7 @@ private fun MakeOneSection(
     SectionGap(16)
 
     if (code == null) {
-        Text("Nothing to encode yet.", style = MaterialTheme.typography.bodyMedium, color = InkFaint)
+        Text("Pick an exercise and a target above, and the code appears here.", style = MaterialTheme.typography.bodyMedium, color = InkFaint)
     } else {
         AppCard(Modifier.fillMaxWidth(), container = PanelLift, padding = 12) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -298,6 +300,8 @@ private fun ChipRow(items: List<Pair<String, String>>, selectedId: String, onSel
                     label,
                     style = MaterialTheme.typography.labelMedium,
                     color = if (on) Ground else Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -324,7 +328,7 @@ private fun acceptCode(
         return AcceptResult(error = friendly?.takeIf { it.isNotBlank() } ?: "That code did not read. Check you copied all of it.")
     }
     if (exercises.isNotEmpty() && !exercises.containsKey(card.exerciseId)) {
-        return AcceptResult(error = "This build has no exercise called ${card.exerciseId}.")
+        return AcceptResult(error = "That challenge uses an exercise ClashFit does not have.")
     }
     val mode = runCatching { GameMode.valueOf(card.mode) }.getOrDefault(GameMode.BOSS_FIGHT)
     val events = card.ghost?.events.orEmpty().map { GhostData.Event(t = it.t, damage = it.damage) }

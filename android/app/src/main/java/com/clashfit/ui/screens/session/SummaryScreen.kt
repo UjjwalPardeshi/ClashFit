@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -55,6 +56,7 @@ import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.PrimaryButton
 import com.clashfit.ui.components.RuleRow
 import com.clashfit.ui.components.SecondaryButton
+import com.clashfit.ui.components.grouped
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.SectionTitle
 import com.clashfit.ui.components.StatTile
@@ -66,6 +68,7 @@ import com.clashfit.ui.theme.Fresh
 import com.clashfit.ui.theme.Gassed
 import com.clashfit.ui.theme.Heavy
 import com.clashfit.ui.theme.Ink
+import com.clashfit.ui.theme.LocalUiHaptics
 import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Panel
@@ -203,8 +206,8 @@ class SummaryViewModel(private val graph: AppGraph, private val sessionId: Long)
 
         // Stats section
         val stats = listOf(
-            "Reps" to "${d.session.totalReps}",
-            "Damage" to "${d.session.totalDamage}",
+            "Reps" to "${d.session.totalReps.grouped()}",
+            "Damage" to "${d.session.totalDamage.grouped()}",
             "Form" to "${d.formMeanPct}%",
         )
 
@@ -314,9 +317,19 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
         // here was already computed; showing them arriving one at a time is what turns a receipt
         // into the thing you did the set for.
         reward?.let { r ->
-            val steps = 2 + r.lines.size + (if (r.leveledUp) 1 else 0) + r.newAchievements.size
+            val steps = 2 + r.lines.size + (if (r.leveledUp) 1 else 0) + r.newAchievements.size + r.newVouchers.size
             val shown by rememberReveal(steps, reduceMotion = reduceMotion)
             val total by rememberCountUp(r.xp, revealed = shown >= 1)
+
+            // The XP lines are arithmetic; the level, the badges and the vouchers are the things
+            // you did the set for. Each one lands in the hand as it lands on the screen — the same
+            // motor that has been ticking every rep for the last three minutes, so the reward
+            // arrives in the language the fight already established.
+            val haptics = LocalUiHaptics.current
+            val firstPrize = 1 + r.lines.size
+            LaunchedEffect(shown) {
+                if (shown > firstPrize && shown <= steps) haptics.reward()
+            }
 
             AppCard(Modifier.fillMaxWidth(), padding = 18) {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -366,6 +379,32 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
                             }
                         }
                     }
+
+                    // A voucher lands last and alone, because it is the rarest thing this screen
+                    // can show and stacking it under the badges would bury it.
+                    if (r.newVouchers.isNotEmpty()) {
+                        SectionGap(8)
+                        val voucherFrom = 1 + r.lines.size + (if (r.leveledUp) 1 else 0) + r.newAchievements.size
+                        r.newVouchers.forEachIndexed { i, v ->
+                            BadgeSlam(
+                                visible = shown > voucherFrom + i,
+                                reduceMotion = reduceMotion,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                AppCard(Modifier.fillMaxWidth(), padding = 14, container = PanelLift) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text("A reward, from ${v.brand}", style = MaterialTheme.typography.labelMedium, color = Success)
+                                        Text(v.offer, style = MaterialTheme.typography.titleMedium, color = Ink)
+                                        Text(
+                                            "${v.milestone} · find it under Rewards",
+                                            style = MaterialTheme.typography.labelSmall, color = InkFaint,
+                                        )
+                                    }
+                                }
+                            }
+                            SectionGap(8)
+                        }
+                    }
                 }
             }
 
@@ -391,8 +430,8 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
         // stacked syllables. Half as many per row is twice the width, and it holds at 1.5x text
         // as well, which four never could.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile("${d.session.totalReps}", "reps", Modifier.weight(1f))
-            StatTile("${d.session.totalDamage}", "damage", Modifier.weight(1f))
+            StatTile("${d.session.totalReps.grouped()}", "reps", Modifier.weight(1f))
+            StatTile("${d.session.totalDamage.grouped()}", "damage", Modifier.weight(1f))
         }
         SectionGap(10)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -411,7 +450,7 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
         SectionTitle("Form per rep")
         SectionGap(10)
         AppCard(Modifier.fillMaxWidth(), padding = 12) { FormSparkline(d.reps, Modifier.fillMaxWidth().height(90.dp)) }
-        Text("CLEAN ${d.cleanCount} · OK ${d.okCount} · SHALLOW ${d.shallowCount}", style = MaterialTheme.typography.labelMedium, color = InkMuted, modifier = Modifier.padding(top = 8.dp))
+        Text("${d.cleanCount} clean · ${d.okCount} good · ${d.shallowCount} shallow", style = MaterialTheme.typography.labelMedium, color = InkMuted, modifier = Modifier.padding(top = 8.dp))
         SectionGap()
 
         // Best and worst reps in a ListGroup

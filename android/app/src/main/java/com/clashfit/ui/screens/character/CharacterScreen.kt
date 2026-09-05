@@ -35,7 +35,12 @@ import com.clashfit.ui.components.InnerDivider
 import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.RadarChart
 import com.clashfit.ui.components.RuleRow
+import com.clashfit.ui.components.AppIcons
+import com.clashfit.ui.components.ScreenEmptyState
+import com.clashfit.ui.components.PrimaryButton
+import com.clashfit.ui.nav.Modes
 import com.clashfit.ui.components.ScreenScaffold
+import com.clashfit.ui.components.grouped
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.SectionTitle
 import com.clashfit.ui.theme.Brass
@@ -62,17 +67,26 @@ fun CharacterScreen(graph: AppGraph, nav: NavHostController) {
     val sheet = remember(sessions, streak, exercises) { CharacterStats.compute(sessions, streak, exercises) }
 
     ScreenScaffold(title = "Character", onBack = { nav.navigateUp() }) { padding ->
+        if (sheet.sessions == 0) {
+            // Seven domains at zero draw a dot in the middle of a spider web, and a page of empty
+            // bars under it. Nothing there is information — so the page waits, centred, with the
+            // one thing worth tapping.
+            ScreenEmptyState(
+                title = "Your sheet is blank",
+                body = "Seven domains, each earned from movement the camera measured — never from a " +
+                    "plan you wrote when you were fresh. One fight starts filling it in.",
+                modifier = Modifier.padding(padding),
+                icon = AppIcons.Shield,
+                action = { PrimaryButton("Start training") { nav.navigate(Modes) } },
+            )
+            return@ScreenScaffold
+        }
         Column(
             Modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp).padding(top = 4.dp, bottom = 28.dp),
         ) {
             Text(
-                if (sheet.sessions == 0) {
-                    "Nothing to show yet. Finish one fight and this page fills in: every domain below is " +
-                        "earned from movement the camera measured, never from a plan you wrote when you were fresh."
-                } else {
-                    "Every domain is earned from measured movement, never from a plan you wrote when you were fresh."
-                },
+                "Every domain is earned from measured movement, never from a plan you wrote when you were fresh.",
                 style = MaterialTheme.typography.bodyMedium, color = InkMuted,
             )
 
@@ -101,7 +115,7 @@ fun CharacterScreen(graph: AppGraph, nav: NavHostController) {
             }
 
             SectionGap(20)
-            SectionTitle("Waiting on data this build does not collect")
+            SectionTitle("Not tracked yet")
             SectionGap(10)
             AppCard(Modifier.fillMaxWidth()) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -109,8 +123,8 @@ fun CharacterScreen(graph: AppGraph, nav: NavHostController) {
                         DomainBar(d, 0f, dimmed = true)
                     }
                     Text(
-                        "Energy reads from sleep and Nourishment from logged meals. Neither is tracked yet, so " +
-                            "neither shows a number you have not earned.",
+                        "Energy comes from sleep and Nourishment from meals. ClashFit measures neither, so it will not " +
+                            "put a number on either one.",
                         style = MaterialTheme.typography.bodySmall, color = InkFaint,
                     )
                 }
@@ -122,7 +136,7 @@ fun CharacterScreen(graph: AppGraph, nav: NavHostController) {
             ListGroup {
                 RuleRow("Sessions", "${sheet.sessions}")
                 InnerDivider()
-                RuleRow("Reps", "${sheet.totalReps}")
+                RuleRow("Reps", "${sheet.totalReps.grouped()}")
                 InnerDivider()
                 RuleRow("Average form", "${(sheet.formAvg * 100).toInt()}%")
                 InnerDivider()

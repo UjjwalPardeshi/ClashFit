@@ -31,7 +31,7 @@ import com.clashfit.ui.components.ChartCard
 import com.clashfit.ui.components.ChartLegend
 import com.clashfit.ui.components.DonutChart
 import com.clashfit.ui.components.TrendLine
-import com.clashfit.ui.components.EmptyState
+import com.clashfit.ui.components.ScreenEmptyState
 import com.clashfit.ui.components.IconBubble
 import com.clashfit.ui.components.InnerDivider
 import com.clashfit.ui.components.ListGroup
@@ -63,14 +63,15 @@ fun HistoryScreen(graph: AppGraph, nav: NavHostController) {
 
     ScreenScaffold(title = "History", onBack = { nav.navigateUp() }) { padding ->
         if (sessions.isEmpty()) {
-            EmptyState("No sessions yet", "Start a fight and it lands here with its fatigue curve and every rep.", Modifier.padding(padding), icon = AppIcons.Grid)
+            ScreenEmptyState("No sessions yet", "Start a fight and it lands here with its fatigue curve and every rep.", Modifier.padding(padding), icon = AppIcons.Grid)
             return@ScreenScaffold
         }
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 28.dp),
         ) {
-            item(key = "trend") {
+            // A one-point line is a dot with a label. The card waits for a second session.
+            if (sessions.size >= 2) item(key = "trend") {
                 val recent = remember(sessions) { sessions.take(20).reversed() }
                 ChartCard(
                     "Form over your last ${recent.size} sessions",

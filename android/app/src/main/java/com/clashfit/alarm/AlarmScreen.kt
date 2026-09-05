@@ -51,6 +51,7 @@ fun AlarmsScreen(graph: AppGraph, navController: NavHostController) {
     val scope = rememberCoroutineScope()
     val dao = graph.db.alarms()
     val alarms by dao.all().collectAsStateWithLifecycle(initialValue = emptyList())
+    val exercises by graph.config.exercises.collectAsStateWithLifecycle()
 
     ScreenScaffold(title = "Wake-up alarm", onBack = { navController.navigateUp() }) { padding ->
         Column(
@@ -72,6 +73,7 @@ fun AlarmsScreen(graph: AppGraph, navController: NavHostController) {
                     alarms.forEachIndexed { index, alarm ->
                         AlarmListItem(
                             alarm = alarm,
+                            exerciseName = exercises[alarm.exerciseId]?.name ?: alarm.exerciseId,
                             dao = dao,
                             scope = scope,
                             onEdit = { navController.navigate(com.clashfit.ui.nav.AlarmEdit(alarm.id)) }
@@ -97,6 +99,7 @@ fun AlarmsScreen(graph: AppGraph, navController: NavHostController) {
 @Composable
 private fun AlarmListItem(
     alarm: AlarmEntity,
+    exerciseName: String,
     dao: com.clashfit.data.AlarmDao,
     scope: kotlinx.coroutines.CoroutineScope,
     onEdit: () -> Unit
@@ -118,7 +121,7 @@ private fun AlarmListItem(
         ) {
             Column(Modifier.weight(1f).padding(end = 16.dp)) {
                 Text(String.format(Locale.US, "%02d:%02d", alarm.hour, alarm.minute), style = MaterialTheme.typography.bodyLarge, color = Ink)
-                Text(buildSupportingText(alarm), style = MaterialTheme.typography.bodySmall, color = InkMuted)
+                Text(buildSupportingText(alarm, exerciseName), style = MaterialTheme.typography.bodySmall, color = InkMuted)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { onEdit() }, modifier = Modifier.size(40.dp)) {
@@ -147,9 +150,9 @@ private fun AlarmListItem(
 }
 
 @Composable
-private fun buildSupportingText(alarm: AlarmEntity): String {
+private fun buildSupportingText(alarm: AlarmEntity, exerciseName: String): String {
     val dayText = formatDaysMask(alarm.daysMask)
-    val exerciseText = alarm.exerciseId
+    val exerciseText = exerciseName
     val repsText = "${alarm.reps} rep" + (if (alarm.reps != 1) "s" else "")
 
     return "$dayText · $exerciseText · $repsText"

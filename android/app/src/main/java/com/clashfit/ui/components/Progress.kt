@@ -185,8 +185,9 @@ fun BadgeTile(achievement: Achievement, unlocked: Boolean, icon: ImageVector, mo
             )
         }
         Text(
+            // Two lines always, so a two-word badge does not push its description below the row.
             achievement.title, style = MaterialTheme.typography.labelLarge, color = if (unlocked) Ink else InkMuted,
-            textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis,
         )
         Text(
             if (unlocked) achievement.description else "Locked",
@@ -224,6 +225,11 @@ fun StatStrip(stats: List<Pair<String, String>>, modifier: Modifier = Modifier, 
                         style = MaterialTheme.typography.labelSmall,
                         color = InkMuted,
                         textAlign = TextAlign.Center,
+                        // Every label reserves two lines. "CLEAN THIS WEEK" wraps and "SESSIONS"
+                        // does not, and one column dropping lower than its neighbours turns the
+                        // strip from a grid into a list of three unrelated numbers. Capping at one
+                        // line instead would truncate the long one at 1.5x text.
+                        minLines = 2,
                         modifier = Modifier.padding(top = 2.dp),
                     )
                 }

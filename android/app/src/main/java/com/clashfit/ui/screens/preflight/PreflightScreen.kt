@@ -50,9 +50,6 @@ import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Working
 import java.io.File
 import java.util.Locale
-import com.clashfit.core.model.GameMode
-import com.clashfit.ui.theme.InkFaint
-import com.clashfit.ui.components.SwitchRow
 import com.clashfit.ui.components.SectionTitle
 import com.clashfit.ui.components.SecondaryButton
 import com.clashfit.util.CrashLog
@@ -61,7 +58,13 @@ import kotlinx.coroutines.Dispatchers
 
 enum class PreflightStatus { PASS, WARN, FAIL }
 
-/** Run Preflight-style checks: camera permission, pose model, config version, TTS, debug, calibration, ghosts, alarm, storage. */
+/**
+ * Everything that has to be true before a set can be measured, in the words a player would use.
+ *
+ * These were named for whoever wrote them — "Pose Model", "Exact Alarms", "PASS" — which is fine
+ * in a log and wrong on a screen somebody opens because their reps are not counting. Each row now
+ * says what it does for the player and what to do when it is not green.
+ */
 @Composable
 fun PreflightScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = Modifier) {
     var checks by remember { mutableStateOf<List<PreflightCheck>>(emptyList()) }
@@ -78,21 +81,20 @@ fun PreflightScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier 
         }
 
         checks = listOf(
-            PreflightCheck("Camera", checkCamera(graph.app), "Required to measure movement"),
-            PreflightCheck("Pose Model", checkPoseModel(graph.app), "MediaPipe landmarks detector"),
-            PreflightCheck("Hand Model", checkGestureModel(graph.app), "Palm, thumb and fist, read from the camera"),
-            PreflightCheck("Config", checkConfig(configVersion), "Game balance and exercise data"),
-            PreflightCheck("Text-to-Speech", checkTts(graph.app), "Coach audio and voice feedback"),
-            PreflightCheck("Debug Overlay", if (settings.debugOverlay) PreflightStatus.WARN else PreflightStatus.PASS, "Turn off before playing"),
-            PreflightCheck("Calibration", calibStatus, "Per-exercise form baseline"),
-            PreflightCheck("Ghosts", if (ghosts.isNotEmpty()) PreflightStatus.PASS else PreflightStatus.WARN, "Ghost race opponents"),
-            PreflightCheck("Exact Alarms", checkAlarms(graph.app), "Wake-up and training bells"),
-            PreflightCheck("Storage", checkStorage(graph.app), "Database and model cache"),
+            PreflightCheck("Camera", checkCamera(graph.app), "ClashFit cannot count a rep it cannot see"),
+            PreflightCheck("Movement tracking", checkPoseModel(graph.app), "Reads your body from the camera, on this phone"),
+            PreflightCheck("Hand gestures", checkGestureModel(graph.app), "Palm, thumb and fist, to control a set without touching the phone"),
+            PreflightCheck("Exercise data", checkConfig(configVersion), "The movements, their targets and how they score"),
+            PreflightCheck("Coach voice", checkTts(graph.app), "So your feedback can be spoken while you move"),
+            PreflightCheck("Your baseline", calibStatus, "Measured once, so depth is judged against your body"),
+            PreflightCheck("Pacers", if (ghosts.isNotEmpty()) PreflightStatus.PASS else PreflightStatus.WARN, "Opponents to race in Ghost Race"),
+            PreflightCheck("Alarms", checkAlarms(graph.app), "So a training bell rings at the minute you set"),
+            PreflightCheck("Space", checkStorage(graph.app), "Room for your sessions and the coach"),
             PreflightCheck("Battery", checkBattery(graph.app), "A fight is hard on the camera and the screen"),
         )
     }
 
-    ScreenScaffold(title = "System check", onBack = { nav.navigateUp() }) { padding ->
+    ScreenScaffold(title = "Check your setup", onBack = { nav.navigateUp() }) { padding ->
         Column(modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 8.dp)) {
             val passCount = checks.count { it.status == PreflightStatus.PASS }
             val failCount = checks.count { it.status == PreflightStatus.FAIL }
@@ -101,12 +103,13 @@ fun PreflightScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier 
             AppCard(Modifier.fillMaxWidth(), padding = 16) {
                 Column {
                     Text(
-                        if (isReady) "Referee ready" else "Not ready yet",
+                        if (isReady) "You are ready to train" else "A few things to look at",
                         style = MaterialTheme.typography.titleMedium,
                         color = Ink,
                     )
                     Text(
-                        "$passCount of ${checks.size} checks passed",
+                        if (isReady) "Everything the camera needs is in place."
+                        else "${checks.size - passCount} of ${checks.size} need a look. You can still train — these only limit what works.",
                         style = MaterialTheme.typography.bodySmall,
                         color = InkMuted,
                         modifier = Modifier.padding(top = 4.dp),
@@ -115,8 +118,6 @@ fun PreflightScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier 
             }
 
             SectionGap(20)
-            Kicker("System checks")
-            SectionGap(12)
 
             ListGroup {
                 checks.forEachIndexed { index, check ->
@@ -136,23 +137,30 @@ fun PreflightScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier 
             }
             val lastCrash = crash
             if (lastCrash != null) {
+                var showTrace by remember { mutableStateOf(false) }
                 SectionGap(28)
-                SectionTitle("Last crash")
+                SectionTitle("ClashFit closed unexpectedly")
                 SectionGap(10)
                 AppCard(Modifier.fillMaxWidth(), padding = 16) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(lastCrash, style = MaterialTheme.typography.bodySmall, color = Gassed)
                         Text(
-                            "Written to the app's own storage, so it survives the restart. " +
-                                "Read it out and it is usually enough to say what happened.",
-                            style = MaterialTheme.typography.bodySmall, color = InkFaint,
+                            "It happened once and the app recovered. Nothing you had finished was lost.",
+                            style = MaterialTheme.typography.bodySmall, color = InkMuted,
                         )
-                        SecondaryButton("Clear", Modifier.fillMaxWidth()) { CrashLog.clear(graph.app) }
+                        if (showTrace) {
+                            Text(lastCrash, style = MaterialTheme.typography.bodySmall, color = Gassed)
+                        }
+                        SecondaryButton(
+                            if (showTrace) "Hide details" else "Show details",
+                            Modifier.fillMaxWidth(),
+                        ) { showTrace = !showTrace }
+                        SecondaryButton("Dismiss", Modifier.fillMaxWidth()) {
+                            CrashLog.clear(graph.app)
+                            crash = null
+                        }
                     }
                 }
             }
-
-            RescueSection(nav, settings.arenaMode) { v -> scope.launch { graph.prefs.setArenaMode(v) } }
 
             SectionGap(20)
         }
@@ -175,7 +183,14 @@ private fun PreflightRow(check: PreflightCheck) {
                 Text(check.description, style = MaterialTheme.typography.bodySmall, color = InkMuted, modifier = Modifier.padding(top = 2.dp))
             }
         }
-        Tag(check.status.name, color = statusColor(check.status))
+        Tag(
+            when (check.status) {
+                PreflightStatus.PASS -> "Ready"
+                PreflightStatus.WARN -> "Check"
+                PreflightStatus.FAIL -> "Fix"
+            },
+            color = statusColor(check.status),
+        )
     }
 }
 
@@ -265,49 +280,6 @@ private fun checkBattery(context: Context): PreflightStatus {
         pct >= 50 -> PreflightStatus.PASS
         pct >= 20 -> PreflightStatus.WARN
         else -> PreflightStatus.FAIL
-    }
-}
-
-/**
- * The escapes the demo script names, as buttons.
- *
- * docs/11-DEMO-SCRIPT.md §7 lists what to do when something fails in front of a judge: switch to
- * the recorded trace when the reps miscount, switch to Arena Mode when the pose will not detect.
- * Both were prose. A playbook you cannot execute in ten seconds under a judge's eye is not a
- * playbook, so both are one tap from the screen you already open before a round.
- */
-@Composable
-private fun RescueSection(nav: NavHostController, arena: Boolean, onArena: (Boolean) -> Unit) {
-    SectionGap(28)
-    SectionTitle("If it goes wrong")
-    SectionGap(10)
-    AppCard(Modifier.fillMaxWidth(), padding = 16) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                "Two escapes, from the demo playbook. Both are honest about what they are.",
-                style = MaterialTheme.typography.bodySmall, color = InkFaint,
-            )
-            SecondaryButton("Replay a recorded set", Modifier.fillMaxWidth()) {
-                nav.navigate(
-                    com.clashfit.ui.nav.Session(
-                        mode = GameMode.BOSS_FIGHT.name,
-                        exerciseId = "squat",
-                        replay = true,
-                    ),
-                )
-            }
-            Text(
-                "A real squat set to failure, recorded and replayed through the same engine. " +
-                    "Labelled REPLAY on screen throughout. Use it when the room's light beats the camera.",
-                style = MaterialTheme.typography.bodySmall, color = InkFaint,
-            )
-            SwitchRow(
-                "Arena mode",
-                arena,
-                onArena,
-                supporting = "Bigger numerals, for a phone on the floor. Takes effect on the next session.",
-            )
-        }
     }
 }
 

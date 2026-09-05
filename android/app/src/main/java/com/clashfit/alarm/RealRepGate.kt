@@ -218,9 +218,9 @@ class RealRepGate(
      * always counts; the verdict only says how deep it was against the configured target angle.
      */
     private fun verdictOf(rep: RepEvent): String = when {
-        depthOf(rep) >= CLEAN_DEPTH -> "CLEAN"
-        depthOf(rep) >= OK_DEPTH -> "OK"
-        else -> "SHALLOW"
+        depthOf(rep) >= CLEAN_DEPTH -> "Clean"
+        depthOf(rep) >= OK_DEPTH -> "Good"
+        else -> "Shallow"
     }
 
     /** 1.0 when the rep reached the configured target angle, 0.0 when it never left the top. */

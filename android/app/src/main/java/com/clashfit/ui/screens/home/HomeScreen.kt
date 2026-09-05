@@ -195,7 +195,7 @@ private val HEALTH_TOOLS = listOf(
     Tool("Breathing", "Pull the band back", AppIcons.Heart, Breathing),
     Tool("Clinic", "The sit-to-stand test", AppIcons.Heart, Clinic),
     Tool("Desk timer", "A minute every fifty", AppIcons.Bolt, Desk),
-    Tool("Posture", "Scored, then discarded", AppIcons.Person, Posture),
+    Tool("Posture", "How you stand, scored", AppIcons.Person, Posture),
     Tool("Wake-up alarm", "Reps stop the ringing", AppIcons.Bell, Alarms),
 )
 

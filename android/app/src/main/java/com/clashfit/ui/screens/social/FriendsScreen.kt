@@ -58,12 +58,20 @@ import com.clashfit.ui.theme.MonoReadout
 import com.clashfit.ui.theme.Panel
 import com.clashfit.ui.theme.Rule
 import com.clashfit.ui.theme.Success
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.foundation.layout.fillMaxSize
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** Your code, a field for theirs, and the list. Friends are mutual: adding once adds both ways. */
 @Composable
 fun FriendsScreen(graph: AppGraph, onBack: () -> Unit) {
-    val friendsFlow = remember(graph) { graph.friends.friends }
+    // Pulling re-opens the Firestore listener rather than re-fetching: the listener is live, and
+    // the failure this recovers from is one that died with the network, not stale data.
+    var refresh by remember { mutableIntStateOf(0) }
+    var refreshing by remember { mutableStateOf(false) }
+    val friendsFlow = remember(graph, refresh) { graph.friends.friends }
     val codeFlow = remember(graph) { graph.friends.myCode }
     val friends by friendsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
     val myCode by codeFlow.collectAsStateWithLifecycle(initialValue = null)
@@ -76,8 +84,17 @@ fun FriendsScreen(graph: AppGraph, onBack: () -> Unit) {
     var message by remember { mutableStateOf<Pair<String, Boolean>?>(null) } // text to isSuccess
 
     ScreenScaffold(title = "Friends", onBack = onBack) { padding ->
+        PullToRefreshBox(
+            isRefreshing = refreshing,
+            onRefresh = {
+                refreshing = true
+                refresh++
+                scope.launch { delay(700); refreshing = false }
+            },
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
         Column(
-            Modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState())
+            Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp).padding(top = 4.dp, bottom = 28.dp),
         ) {
             AppCard(Modifier.fillMaxWidth()) {
@@ -148,6 +165,7 @@ fun FriendsScreen(graph: AppGraph, onBack: () -> Unit) {
                     }
                 }
             }
+        }
         }
     }
 }

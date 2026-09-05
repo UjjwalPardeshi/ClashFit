@@ -25,7 +25,7 @@ enum class GameMode(
     TIME_ATTACK("Time Attack", ModeKind.SOLO, Family.REP_CYCLE, true,
         "Maximum damage in sixty seconds. Go out too hard and the back half costs you.", "Sixty seconds flat"),
     GHOST_RACE("Ghost Race", ModeKind.SOLO, Family.REP_CYCLE, false,
-        "Two bars, one boss. Race a shipped pacer, yesterday's you, or a friend's file.", "Race yesterday"),
+        "Two bars, one boss. Race a built-in pacer, yesterday's you, or a friend's ghost.", "Race yesterday"),
     SURVIVAL("Survival", ModeKind.SOLO, Family.REP_CYCLE, false,
         "Endless waves, mercy rule off. The one mode where fatigue genuinely ends the run.", "No mercy rule"),
     BOSS_RUSH("Boss Rush", ModeKind.SOLO, Family.REP_CYCLE, false,

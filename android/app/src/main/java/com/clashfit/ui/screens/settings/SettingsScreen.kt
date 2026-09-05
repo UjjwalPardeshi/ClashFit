@@ -24,6 +24,7 @@ import androidx.navigation.compose.composable
 import com.clashfit.AppGraph
 import com.clashfit.data.Prefs
 import com.clashfit.ui.components.EmberButton
+import com.clashfit.core.model.GameMode
 import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.OutlineButton
 import com.clashfit.ui.components.RuleRow
@@ -71,14 +72,14 @@ fun SettingsScreen(graph: AppGraph, nav: NavHostController) {
             SectionGap(4)
             SwitchRow("Reduce motion", settings.reduceMotion, { v -> scope.launch { graph.prefs.setReduceMotion(v) } },
                 supporting = "Swaps shakes and flashes for a border pulse")
-            SwitchRow("Debug overlay", settings.debugOverlay, { v -> scope.launch { graph.prefs.setDebugOverlay(v) } },
-                supporting = "Landmarks and angles drawn over the camera")
+            SwitchRow("Tracking overlay", settings.debugOverlay, { v -> scope.launch { graph.prefs.setDebugOverlay(v) } },
+                supporting = "Draws the points and angles the camera is measuring, live over your body")
             SwitchRow("3D boss", settings.boss3d, { v -> scope.launch { graph.prefs.setBoss3d(v) } },
                 supporting = "Off draws the boss in flat shapes instead. Same fight either way.")
             SwitchRow("Exo-suit overlay", settings.exoSuit, { v -> scope.launch { graph.prefs.setExoSuit(v) } },
                 supporting = "Armour drawn on your body instead of the measured points and angles. The same landmarks either way.")
-            NavRow("Boss preview", { nav.navigate(BossPreview) }, icon = AppIcons.Bolt,
-                supporting = "Every state, without starting a fight")
+            NavRow("Meet the boss", { nav.navigate(BossPreview) }, icon = AppIcons.Bolt,
+                supporting = "The Pacemaker, in every state it fights you in")
 
             SectionGap(28)
             Kicker("Audio and haptics")
@@ -128,12 +129,30 @@ fun SettingsScreen(graph: AppGraph, nav: NavHostController) {
             SectionGap(28)
             Kicker("Configuration")
             SectionGap(4)
-            RuleRow("Config version", "$configVersion")
-            RuleRow("Coach model", if (modelInstalled) "Installed" else "Not installed · templates speak")
+            RuleRow("Coach", if (modelInstalled) "Runs on this phone" else "Built-in coaching")
             SwitchRow("Cloud coach", settings.cloudCoach, { v -> scope.launch { graph.prefs.setCloudCoach(v) } },
                 supporting = "When the on-device coach is not installed, send the set's numbers to a cloud model for its lines. Never a frame, never a landmark. Off keeps everything on the phone.")
+
+            SectionGap(28)
+            Kicker("Advanced")
+            SectionGap(4)
+            NavRow(
+                "Replay a recorded set",
+                {
+                    nav.navigate(
+                        com.clashfit.ui.nav.Session(
+                            mode = GameMode.BOSS_FIGHT.name,
+                            exerciseId = "squat",
+                            replay = true,
+                        ),
+                    )
+                },
+                icon = AppIcons.Bolt,
+                supporting = "A real squat set, recorded and played back through the same scoring. " +
+                    "Labelled REPLAY throughout. Use it when the light beats the camera.",
+            )
             SectionGap(12)
-            OutlineButton("Reload config", Modifier.fillMaxWidth()) { graph.config.reload() }
+            OutlineButton("Reload exercise data", Modifier.fillMaxWidth()) { graph.config.reload() }
 
             SectionGap(36)
             Kicker("Danger zone", color = Gassed)

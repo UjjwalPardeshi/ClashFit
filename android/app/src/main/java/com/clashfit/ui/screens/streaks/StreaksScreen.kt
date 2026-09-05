@@ -29,6 +29,10 @@ import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.ChartCard
 import com.clashfit.ui.components.Heatmap
 import com.clashfit.ui.components.RuleRow
+import com.clashfit.ui.components.AppIcons
+import com.clashfit.ui.components.ScreenEmptyState
+import com.clashfit.ui.components.PrimaryButton
+import com.clashfit.ui.nav.Modes
 import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.StatTile
@@ -56,6 +60,18 @@ fun StreaksScreen(graph: AppGraph, nav: NavHostController) {
     val best = streak?.best ?: 0
 
     ScreenScaffold(title = "Streak", onBack = { nav.navigateUp() }) { padding ->
+        if (sessions.isEmpty()) {
+            // Two zeroes over twelve weeks of unlit squares says one thing, three times over.
+            ScreenEmptyState(
+                title = "No streak yet",
+                body = "One set today starts it. Miss a day and a protected rest day covers you, so a " +
+                    "streak here is never lost to a life that happened.",
+                modifier = Modifier.padding(padding),
+                icon = AppIcons.Bolt,
+                action = { PrimaryButton("Start training") { nav.navigate(Modes) } },
+            )
+            return@ScreenScaffold
+        }
         Column(
             Modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 8.dp),

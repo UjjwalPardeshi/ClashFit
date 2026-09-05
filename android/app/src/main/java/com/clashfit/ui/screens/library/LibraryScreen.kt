@@ -84,6 +84,10 @@ fun LibraryScreen(graph: AppGraph, nav: NavHostController) {
     var query by rememberSaveable { mutableStateOf("") }
     var family by rememberSaveable { mutableStateOf<Family?>(null) }
 
+    // The count in the search box has to be the count you can actually reach, or the first
+    // search that "loses" forty exercises reads as a broken list.
+    val libraryCount = remember(exercises) { exercises.values.count { it.id in FEATURED_EXERCISES } }
+
     val shown = remember(exercises, query, family) {
         exercises.values
             .filter { it.id in FEATURED_EXERCISES }
@@ -103,7 +107,7 @@ fun LibraryScreen(graph: AppGraph, nav: NavHostController) {
                     value = query,
                     onValueChange = { query = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Search ${exercises.size} exercises", color = InkFaint) },
+                    placeholder = { Text("Search $libraryCount exercises", color = InkFaint) },
                     leadingIcon = { Icon(AppIcons.Grid, contentDescription = null, tint = InkMuted, modifier = Modifier.size(18.dp)) },
                     singleLine = true,
                     shape = CircleShape,
@@ -180,7 +184,7 @@ fun ExerciseDetailScreen(exerciseId: String, graph: AppGraph, nav: NavHostContro
 
     ScreenScaffold(title = exercise?.name ?: "Exercise", onBack = { nav.navigateUp() }) { padding ->
         if (exercise == null) {
-            EmptyState("Not found", "That exercise is not in this build's library.", Modifier.padding(padding))
+            EmptyState("Not found", "That exercise is not in the library.", Modifier.padding(padding))
             return@ScreenScaffold
         }
         Column(

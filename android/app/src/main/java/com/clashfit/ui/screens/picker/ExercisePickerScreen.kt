@@ -122,7 +122,7 @@ fun ExercisePickerScreen(modeStr: String, graph: AppGraph, nav: NavHostControlle
         },
     ) { padding ->
         if (!mode.enabled) {
-            EmptyState("Goes online", "Zombie Run happens on a real map and picks no exercise. Start it from Outdoors.", Modifier.padding(padding), icon = AppIcons.Run)
+            EmptyState("No exercise to pick", "Zombie Run is a run, on a real map. Start it from Outdoors.", Modifier.padding(padding), icon = AppIcons.Run)
             return@ScreenScaffold
         }
         LazyColumn(
@@ -164,7 +164,7 @@ fun ExercisePickerScreen(modeStr: String, graph: AppGraph, nav: NavHostControlle
                 item(key = "ghost-head") { SectionTitle("Race against", Modifier.padding(top = 24.dp, bottom = 10.dp)) }
                 item(key = "ghost-list") {
                     if (ghosts.isEmpty()) {
-                        Text("No ghosts shipped for this build.", style = MaterialTheme.typography.bodySmall, color = InkFaint)
+                        Text("No pacers for this exercise yet.", style = MaterialTheme.typography.bodySmall, color = InkFaint)
                     } else {
                         ListGroup {
                             ghosts.entries.forEachIndexed { i, (id, g) ->

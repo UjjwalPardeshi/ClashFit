@@ -352,7 +352,7 @@ private fun ChaseHud(state: com.clashfit.core.model.ZombieRunState, score: Int?)
                     color = if (state.phase == ZombieRunPhase.ESCAPED) Success else Gassed,
                 )
                 Text(
-                    "%.2f km · %d caches · %d down".format(
+                    "%.2f km · %d caches · %d zombies down".format(
                         state.distanceM / 1000f, state.cachesCollected, state.neutralised,
                     ),
                     style = MaterialTheme.typography.bodyMedium, color = InkMuted,

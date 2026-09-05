@@ -90,7 +90,7 @@ fun HelpScreen(graph: AppGraph, nav: NavHostController, onStart: () -> Unit) {
             AppCard(Modifier.fillMaxWidth(), padding = 6) {
                 Column {
                     Meaning(AppIcons.Check, Clean, "Clean", "Full depth, controlled tempo, aligned. Worth the most damage.")
-                    Meaning(AppIcons.Bolt, Ok, "Ok", "It counted, but something slipped. Depth, speed or alignment.")
+                    Meaning(AppIcons.Bolt, Ok, "Good", "It counted, but something slipped. Depth, speed or alignment.")
                     Meaning(AppIcons.Close, Shallow, "Shallow", "Counted, barely. Half-reps never count at all.")
                 }
             }

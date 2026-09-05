@@ -69,7 +69,7 @@ object ChallengeCodec {
         }
         val p = runCatching { json.decodeFromString(Wire.serializer(), body) }
             .getOrElse { throw IllegalArgumentException("Challenge code did not read.") }
-        if (p.v != 1) throw IllegalArgumentException("Challenge code is version ${p.v}, this build reads version 1.")
+        if (p.v != 1) throw IllegalArgumentException("That code was made by a newer version of ClashFit. Update the app to open it.")
         return ChallengeCard(
             kind = p.k.ifEmpty { "GHOST" },
             exerciseId = p.e.ifEmpty { "squat" },

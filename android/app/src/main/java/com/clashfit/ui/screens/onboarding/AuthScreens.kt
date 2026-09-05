@@ -206,7 +206,7 @@ private fun SubmitButton(text: String, busy: Boolean, onClick: () -> Unit) {
 private fun LocalNote(isCloud: Boolean) {
     if (!isCloud) {
         Text(
-            "This build has no cloud keys, so the account lives on this phone. Add the keys and the same screens sign in to Firebase.",
+            "Your account stays on this phone. Nothing is uploaded, and everything works with no network at all.",
             style = MaterialTheme.typography.bodySmall, color = InkFaint, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
         )
     } else {

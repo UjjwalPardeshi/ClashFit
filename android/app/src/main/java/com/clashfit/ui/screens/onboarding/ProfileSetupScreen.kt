@@ -42,6 +42,8 @@ import com.clashfit.ui.components.AppCard
 import com.clashfit.ui.components.AppIcons
 import com.clashfit.ui.components.Avatar
 import com.clashfit.ui.components.PrimaryButton
+import com.clashfit.ui.screens.picker.FEATURED_EXERCISES
+import androidx.compose.ui.text.style.TextOverflow
 import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.SectionTitle
@@ -69,10 +71,10 @@ fun ProfileSetupScreen(graph: AppGraph, onDone: () -> Unit) {
     var exercise by rememberSaveable { mutableStateOf(settings.preferredExercise) }
     var saving by remember { mutableStateOf(false) }
 
+    // The same four the picker offers. Letting somebody choose a favourite they can never fight
+    // with is a promise the next screen breaks.
     val popular = remember(exercises) {
-        val order = listOf("squat", "push_up", "lunge", "glute_bridge", "plank", "jumping_jack", "sit_up", "wall_push_up")
-        val byId = exercises.values.associateBy { it.id }
-        (order.mapNotNull { byId[it] } + exercises.values.sortedBy { it.name }).distinctBy { it.id }.take(12)
+        FEATURED_EXERCISES.mapNotNull { id -> exercises.values.firstOrNull { it.id == id } }
     }
 
     ScreenScaffold(title = "Your profile") { padding ->
@@ -128,7 +130,7 @@ fun ProfileSetupScreen(graph: AppGraph, onDone: () -> Unit) {
                     FilterChip(
                         selected = ex.id == exercise,
                         onClick = { exercise = ex.id },
-                        label = { Text(ex.name, style = MaterialTheme.typography.labelLarge) },
+                        label = { Text(ex.name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                         shape = CircleShape,
                         colors = FilterChipDefaults.filterChipColors(
                             containerColor = Panel, labelColor = InkMuted, selectedContainerColor = Ember, selectedLabelColor = Ink,

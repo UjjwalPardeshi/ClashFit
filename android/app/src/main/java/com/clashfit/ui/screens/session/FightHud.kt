@@ -52,6 +52,7 @@ import com.clashfit.ui.components.AppIcons
 import com.clashfit.ui.components.FatiguePips
 import com.clashfit.ui.components.SegmentedBar
 import com.clashfit.ui.components.color
+import com.clashfit.ui.components.label
 import androidx.compose.material3.Icon
 import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Fresh
@@ -91,7 +92,7 @@ fun BossHeader(combat: CombatState, modifier: Modifier = Modifier, timeLeftMs: L
         SegmentedBar(fraction = combat.hpPct, color = hpColor(combat.hpPct), height = 10, segments = 20)
         Spacer(Modifier.height(6.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(combat.phaseLabel, style = MaterialTheme.typography.labelSmall, color = InkFaint)
+            phaseName(combat.phaseLabel)?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = Ember) }
             if (combat.staggered) Text("Staggered", style = MaterialTheme.typography.labelSmall, color = Heavy)
             if (combat.mercyActive) Text("Finish it", style = MaterialTheme.typography.labelSmall, color = Ember)
         }
@@ -112,6 +113,19 @@ fun formatClock(ms: Long): String {
 // The boss character lives in BossCharacter.kt: THE PACEMAKER, drawn in code with the six
 // states the asset brief specifies. docs/15-ASSET-BRIEF.md §1
 
+/**
+ * What the boss is doing, or nothing.
+ *
+ * `phaseLabel` is an id out of combat.json — the opening phase is literally called "phase1", and it
+ * was being printed under the boss's name for the first half of every fight. A phase is only worth
+ * saying when it changes, so the opening says nothing and the two that mean something shout.
+ */
+private fun phaseName(label: String): String? = when (label) {
+    "enrage" -> "ENRAGED"
+    "desperation" -> "DESPERATE"
+    else -> null
+}
+
 /** Damage numeral: punches in at the boss, scales 1.0 → 1.25 → 1.0, drifts up, fades over 700ms. */
 @Composable
 fun DamageNumeral(hit: HudEvent.Hit?, modifier: Modifier = Modifier) {
@@ -126,7 +140,7 @@ fun DamageNumeral(hit: HudEvent.Hit?, modifier: Modifier = Modifier) {
     }
     Column(modifier.offset { IntOffset(0, rise.value.dp.roundToPx()) }.scale(scale.value).alpha(alpha.value), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("+${hit.damage}", fontSize = 96.sp, lineHeight = 96.sp, fontWeight = FontWeight.Black, fontFamily = MaterialTheme.typography.displayLarge.fontFamily, color = hit.verdict.color())
-        Text(hit.verdict.name, style = MaterialTheme.typography.labelLarge, color = hit.verdict.color())
+        Text(hit.verdict.label(), style = MaterialTheme.typography.labelLarge, color = hit.verdict.color())
     }
 }
 

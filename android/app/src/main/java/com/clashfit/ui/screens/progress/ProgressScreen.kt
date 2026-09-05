@@ -19,14 +19,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.clashfit.AppGraph
 import com.clashfit.data.SessionEntity
+import com.clashfit.ui.nav.Modes
 import com.clashfit.ui.components.AppCard
 import com.clashfit.ui.components.AppIcons
 import com.clashfit.ui.components.EmptyState
 import com.clashfit.ui.components.InnerDivider
 import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.NavRow
+import com.clashfit.ui.components.PrimaryButton
 import com.clashfit.ui.components.ProgressRing
 import com.clashfit.ui.components.ScreenScaffold
+import com.clashfit.ui.components.grouped
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.SectionTitle
 import com.clashfit.ui.components.StatStrip
@@ -105,27 +108,33 @@ fun ProgressScreen(graph: AppGraph, nav: NavHostController) {
                 }
             }
 
-            SectionGap(16)
-            AppCard(Modifier.fillMaxWidth()) {
-                Column {
-                    SectionTitle("This week")
-                    Text(
-                        "${week.sessions} sessions · ${week.reps} reps · ${week.damage} damage",
-                        style = MaterialTheme.typography.bodySmall, color = InkMuted, modifier = Modifier.padding(top = 2.dp, bottom = 14.dp),
-                    )
-                    WeekBars(week.perDay, labels = week.labels)
-                }
-            }
-
-            SectionGap(20)
-            StatStrip(listOf("$sessionCount" to "Sessions", "$best" to "Best streak", "${week.cleanPct}%" to "Clean this week"))
-
+            // Before the first set there is nothing to draw, and a week of empty bars over a row of
+            // zeroes is the loudest way an app can say it has no data in it. So the page holds one
+            // thing — what to do — and grows the rest as it is earned.
             if (sessionCount == 0) {
+                SectionGap(16)
                 EmptyState(
-                    title = "Nothing on the board yet",
-                    body = "Your first set writes the first line here. Every rep after that is measured against it.",
+                    title = "Nothing measured yet",
+                    body = "Your first set writes the first line here: form per rep, the week's shape, " +
+                        "and every number after that measured against it.",
                     icon = AppIcons.Chart,
+                    action = { PrimaryButton("Start training") { nav.navigate(Modes) } },
                 )
+            } else {
+                SectionGap(16)
+                AppCard(Modifier.fillMaxWidth()) {
+                    Column {
+                        SectionTitle("This week")
+                        Text(
+                            "${week.sessions} sessions · ${week.reps.grouped()} reps · ${week.damage.grouped()} damage",
+                            style = MaterialTheme.typography.bodySmall, color = InkMuted, modifier = Modifier.padding(top = 2.dp, bottom = 14.dp),
+                        )
+                        WeekBars(week.perDay, labels = week.labels)
+                    }
+                }
+
+                SectionGap(20)
+                StatStrip(listOf("$sessionCount" to "Sessions", "$best" to "Best streak", "${week.cleanPct}%" to "Clean this week"))
             }
 
             // The charts, on the page rather than behind a list. They are the most convincing
@@ -139,28 +148,30 @@ fun ProgressScreen(graph: AppGraph, nav: NavHostController) {
                     CharacterStats.compute(sessions, streak, exercises)
                 }
 
-                SectionGap(22)
-                ChartCard(
-                    "Form, last ${trend.size} sessions",
-                    subtitle = "The dashed line is your average. Tap for every session.",
-                    modifier = Modifier.clickable { nav.navigate(History) },
-                ) {
-                    TrendLine(
-                        points = trend,
-                        marker = remember(trend) { SessionInsights.average(trend) },
-                        height = 120,
-                        description = remember(trend) {
-                            val avg = SessionInsights.average(trend)
-                            if (avg == null) "No sessions yet"
-                            else "Form trend, average ${(avg * 100).toInt()} percent"
-                        },
-                    )
+                // One session is a dot, not a trend. The card appears with the second.
+                if (trend.size >= 2) {
+                    SectionGap(22)
+                    ChartCard(
+                        "Form, last ${trend.size} sessions",
+                        subtitle = "The dashed line is your average. Tap for every session.",
+                        modifier = Modifier.clickable { nav.navigate(History) },
+                    ) {
+                        TrendLine(
+                            points = trend,
+                            marker = remember(trend) { SessionInsights.average(trend) },
+                            height = 120,
+                            description = remember(trend) {
+                                val avg = SessionInsights.average(trend)
+                                "Form trend, average ${((avg ?: 0f) * 100).toInt()} percent"
+                            },
+                        )
+                    }
                 }
 
                 SectionGap(16)
                 ChartCard(
                     "Every rep, graded",
-                    subtitle = "Clean, ok or shallow. Tap for the full history.",
+                    subtitle = "Clean, good or shallow. Tap for the full history.",
                     modifier = Modifier.clickable { nav.navigate(History) },
                 ) {
                     Row(

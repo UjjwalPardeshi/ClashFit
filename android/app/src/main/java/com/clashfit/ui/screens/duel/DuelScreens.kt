@@ -53,6 +53,7 @@ import com.clashfit.ui.components.Kicker
 import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.PrimaryButton
 import com.clashfit.ui.components.SecondaryButton
+import com.clashfit.ui.components.grouped
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.Tag
 import com.clashfit.ui.components.color
@@ -251,7 +252,7 @@ private fun Standings(hub: PlayHub) {
         Kicker("The room · ${rows.size}")
         SectionGap(10)
         if (rows.isEmpty()) {
-            Text("Nobody else yet.", style = MaterialTheme.typography.bodyMedium, color = InkMuted)
+            Text("Nobody else yet. They join by opening the same mode nearby.", style = MaterialTheme.typography.bodyMedium, color = InkMuted)
         } else {
             ListGroup {
                 rows.forEachIndexed { index, s ->
@@ -280,7 +281,7 @@ private fun StandingRow(s: Standing) {
                 color = if (s.out) InkFaint else Ink,
             )
             // A raid is scored on damage. Showing only a fatigue tag hides the whole contest.
-            Text("${s.reps} reps · ${s.damage} damage", style = MaterialTheme.typography.bodySmall, color = InkMuted)
+            Text("${s.reps.grouped()} reps · ${s.damage.grouped()} damage", style = MaterialTheme.typography.bodySmall, color = InkMuted)
         }
         when {
             s.out -> Tag("Out", color = Gassed)
@@ -307,7 +308,7 @@ private fun NameField(name: String, onName: (String) -> Unit) {
                 cursorBrush = androidx.compose.ui.graphics.SolidColor(Ember),
                 decorationBox = { inner ->
                     if (name.isEmpty()) {
-                        Text("YOU", style = MaterialTheme.typography.titleLarge, color = InkFaint)
+                        Text("Your name", style = MaterialTheme.typography.titleLarge, color = InkFaint)
                     }
                     inner()
                 },

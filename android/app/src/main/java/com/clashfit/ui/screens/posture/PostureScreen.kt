@@ -126,9 +126,9 @@ private fun PostureSampler(graph: AppGraph) {
                 SectionGap(8)
                 Text(r.description, style = MaterialTheme.typography.bodySmall, color = Ink)
                 SectionGap(12)
-                Text("Frame read and discarded. Only the number is kept.", style = MaterialTheme.typography.labelSmall, color = InkMuted)
+                Text("The photo is never saved. Only this score is.", style = MaterialTheme.typography.labelSmall, color = InkMuted)
             } else {
-                PrimaryButton("Sample", Modifier.fillMaxWidth()) {
+                PrimaryButton("Take a reading", Modifier.fillMaxWidth()) {
                     sampling = true
                     countdown = 3
                     scope.launch {
@@ -176,7 +176,7 @@ private data class PostureSampleResult(val score: Int, val description: String)
 private fun PostureCurve(samples: List<PostureSampleEntity>, modifier: Modifier = Modifier) {
     if (samples.isEmpty()) {
         Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Text("No data yet — take a sample", style = MaterialTheme.typography.bodySmall, color = InkMuted)
+            Text("No readings yet. Take one and it lands here.", style = MaterialTheme.typography.bodySmall, color = InkMuted)
         }
         return
     }

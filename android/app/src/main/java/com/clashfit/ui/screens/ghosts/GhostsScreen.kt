@@ -83,10 +83,10 @@ fun GhostsScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = M
 
             SectionGap(26)
 
-            Kicker("Shipped pacers")
+            Kicker("Built-in pacers")
             SectionGap(12)
             if (shipped.isEmpty()) {
-                EmptyState("No pacers bundled", "Add more challenge codes to unlock pacers.")
+                EmptyState("No pacers yet", "Pacers arrive with new exercises. Race a saved ghost in the meantime.")
             } else {
                 // Easiest first. A config map has no order of its own, so the bronze/silver/gold
                 // ladder arrived shuffled and read as if the tiers meant nothing.

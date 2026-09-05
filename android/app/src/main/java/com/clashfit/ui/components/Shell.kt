@@ -179,6 +179,29 @@ fun EmptyState(
     }
 }
 
+/**
+ * An empty state that owns the whole screen, rather than sitting at the top of one.
+ *
+ * [EmptyState] is written to sit inside a column of other content. When it IS the content — a
+ * character sheet before the first fight, a history with no sessions — hugging the top leaves a
+ * screen that is one paragraph and then a metre of nothing, which reads as a page that failed to
+ * load rather than a page waiting for you.
+ */
+@Composable
+fun ScreenEmptyState(
+    title: String,
+    body: String,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    action: (@Composable () -> Unit)? = null,
+) {
+    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(Modifier.padding(bottom = 48.dp)) {
+            EmptyState(title, body, icon = icon, action = action)
+        }
+    }
+}
+
 @Composable
 fun LoadingState(message: String = "Loading", modifier: Modifier = Modifier) {
     Column(modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {

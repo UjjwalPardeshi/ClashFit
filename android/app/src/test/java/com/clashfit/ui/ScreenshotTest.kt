@@ -59,6 +59,8 @@ import com.clashfit.ui.screens.posture.PostureScreen
 import com.clashfit.ui.screens.breathing.BreathingScreen
 import com.clashfit.run.RunHomeScreen
 import com.clashfit.ui.screens.zombierun.ZombieRunScreen
+import com.clashfit.ui.nav.Rewards
+import com.clashfit.ui.screens.social.RewardsScreen
 
 /**
  * Renders every non-camera screen on the JVM and writes a PNG under app/screenshots. This is how
@@ -144,6 +146,14 @@ class ScreenshotTest {
     @Test fun help() = shot("25-help", Help) { HelpScreen(graph, it, onStart = {}) }
     @Test fun bossPreview() = shot("26-boss-preview", BossPreview) { BossPreviewScreen(graph, it) }
     @Test fun compete() = shot("27-compete", Compete) { CompeteScreen(graph, it) }
+
+    /**
+     * The rewards shelf, with nothing earned.
+     *
+     * This is the state a judge sees first, and the one that has to carry the SAMPLE warning
+     * clearly — a locked shelf is still a shelf of offers, and it must not read as real money.
+     */
+    @Test fun rewards() = shot("2f-rewards", Rewards) { RewardsScreen(graph, onBack = {}) }
 
     // The health tools. Four of the six never involve a boss at all, which is the whole argument
     // that this is more than a game — and not one of them had ever been rendered.
