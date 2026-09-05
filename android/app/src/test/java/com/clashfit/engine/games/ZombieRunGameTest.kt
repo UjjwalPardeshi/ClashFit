@@ -1,6 +1,7 @@
 package com.clashfit.engine.games
 
 import com.clashfit.core.model.GameOutcome
+import com.clashfit.core.model.WinBy
 import com.clashfit.core.model.ZombieRunPhase
 import kotlin.math.hypot
 import kotlin.test.Test
@@ -21,27 +22,27 @@ class ZombieRunGameTest {
         headStartSec: Int = 60,
         survivalSec: Int = 600,
         zombies: Int = 4,
-        ammoPickups: Int = 6,
         captureRadiusM: Int = 12,
+        winBy: WinBy = WinBy.TIME,
+        winDistanceM: Int = 3_000,
     ) = ZombieRunGame(
         ZombieRunGame.ZombieRunConfig(
             headStartSec = headStartSec,
             survivalSec = survivalSec,
             zombies = zombies,
-            ammoPickups = ammoPickups,
             captureRadiusM = captureRadiusM,
+            winBy = winBy,
+            winDistanceM = winDistanceM,
         ),
     )
 
     @Test
-    fun `spawns the configured number of zombies and caches`() {
+    fun `spawns the configured number of zombies`() {
         val g = game()
         g.start(seed = 42L, tMs = 0L)
         val s = g.state(0L)
         assertEquals(4, s.zombies.size)
-        assertEquals(6, s.caches.size)
         assertTrue(s.zombies.all { it.alive })
-        assertTrue(s.caches.none { it.taken })
     }
 
     @Test
@@ -61,7 +62,6 @@ class ZombieRunGameTest {
         val a = game().also { it.start(99L, 0L) }.state(0L)
         val b = game().also { it.start(99L, 0L) }.state(0L)
         assertEquals(a.zombies, b.zombies)
-        assertEquals(a.caches, b.caches)
     }
 
     @Test
@@ -95,7 +95,7 @@ class ZombieRunGameTest {
 
     @Test
     fun `standing still after the head start gets you caught`() {
-        val g = game(headStartSec = 1, ammoPickups = 0)
+        val g = game(headStartSec = 1)
         g.start(11L, 0L)
         var t = 1_000L
         var caught = false
@@ -109,13 +109,13 @@ class ZombieRunGameTest {
             }
             t += 1_000L
         }
-        assertTrue(caught, "a stationary player with no ammo was never caught")
+        assertTrue(caught, "a stationary player was never caught")
     }
 
     @Test
     fun `a low cadence closes the gap faster than a high one`() {
         fun gapAfter(cadence: Int): Float {
-            val g = game(headStartSec = 0, ammoPickups = 0)
+            val g = game(headStartSec = 0)
             g.start(3L, 0L)
             g.onTick(0L, 0f, 0f, cadence)
             g.onTick(60_000L, 0f, 0f, cadence)
@@ -141,46 +141,58 @@ class ZombieRunGameTest {
     }
 
     @Test
-    fun `walking onto a cache banks a round`() {
-        val g = game(headStartSec = 600)
-        g.start(21L, 0L)
-        val cache = g.state(0L).caches.first()
-        val s = g.onTick(1_000L, cache.eastM, cache.northM, 150)
-        assertEquals(1, s.ammo)
-        assertEquals(1, s.cachesCollected)
-        assertTrue(s.caches.first { it.id == cache.id }.taken)
-    }
-
-    @Test
-    fun `a cache is only worth one round however long you stand on it`() {
-        val g = game(headStartSec = 600)
-        g.start(21L, 0L)
-        val cache = g.state(0L).caches.first()
-        g.onTick(1_000L, cache.eastM, cache.northM, 150)
-        val s = g.onTick(2_000L, cache.eastM, cache.northM, 150)
-        assertEquals(1, s.ammo)
-    }
-
-    @Test
-    fun `a round spends itself on a zombie that reaches you`() {
-        val g = game(headStartSec = 600, zombies = 1)
+    fun `a zombie that reaches you ends the run, with nothing to spend against it`() {
+        // The mode used to hand out caches that armed you; walking into a zombie spent a round and
+        // killed it. Nothing does that now, so contact is the end of the chase every time.
+        val g = game(headStartSec = 0, zombies = 1)
         g.start(33L, 0L)
-        val cache = g.state(0L).caches.first()
-        // Collect a round while the head start still holds the zombie in place.
-        g.onTick(1_000L, cache.eastM, cache.northM, 150)
-        // Then walk into the zombie, after the head start.
+        g.onTick(0L, 0f, 0f, 150)
         val p = g.state(0L).zombies.first()
-        val g2 = g.onTick(700_000L, p.eastM, p.northM, 150)
-        assertEquals(0, g2.ammo)
-        assertEquals(1, g2.neutralised)
-        assertEquals(0, g2.zombiesLeft)
-        // Clearing the map is an escape.
-        assertEquals(GameOutcome.WON, g2.outcome)
+        val s = g.onTick(1_000L, p.eastM, p.northM, 150)
+        assertEquals(GameOutcome.LOST, s.outcome)
+        assertEquals(ZombieRunPhase.CAUGHT, s.phase)
+        assertEquals(1, s.zombiesLeft, "a zombie that took you is still standing")
+    }
+
+    @Test
+    fun `covering the distance wins, when the goal is a distance`() {
+        val g = game(headStartSec = 600, zombies = 0, winBy = WinBy.DISTANCE, winDistanceM = 100)
+        g.start(9L, 0L)
+        g.onTick(1_000L, 0f, 0f, 150)
+        assertEquals(GameOutcome.RUNNING, g.onTick(2_000L, 0f, 60f, 150).outcome)
+        val s = g.onTick(3_000L, 0f, 130f, 150)
+        assertEquals(GameOutcome.WON, s.outcome)
+    }
+
+    @Test
+    fun `a distance goal ignores the clock, and a time goal ignores the distance`() {
+        // Each goal is answered by its own measurement only. A chase that could be won two ways
+        // gives the runner two things to watch and the bar stops meaning one thing.
+        val far = game(headStartSec = 0, survivalSec = 5, zombies = 0, winBy = WinBy.DISTANCE, winDistanceM = 10_000)
+        far.start(1L, 0L)
+        assertEquals(GameOutcome.RUNNING, far.onTick(60_000L, 0f, 0f, 150).outcome)
+
+        val long = game(headStartSec = 0, survivalSec = 10_000, zombies = 0, winBy = WinBy.TIME)
+        long.start(1L, 0L)
+        long.onTick(1_000L, 0f, 0f, 150)
+        assertEquals(GameOutcome.RUNNING, long.onTick(2_000L, 0f, 50_000f, 150).outcome)
+    }
+
+    @Test
+    fun `progress reads against whichever goal was set`() {
+        val byTime = game(headStartSec = 0, survivalSec = 100, zombies = 0)
+        byTime.start(1L, 0L)
+        assertEquals(0.5f, byTime.onTick(50_000L, 0f, 0f, 150).progress, 0.02f)
+
+        val byDist = game(headStartSec = 600, zombies = 0, winBy = WinBy.DISTANCE, winDistanceM = 1_000)
+        byDist.start(1L, 0L)
+        byDist.onTick(1_000L, 0f, 0f, 150)
+        assertEquals(0.25f, byDist.onTick(2_000L, 0f, 250f, 150).progress, 0.02f)
     }
 
     @Test
     fun `surviving the clock wins`() {
-        val g = game(headStartSec = 0, survivalSec = 10, zombies = 0, ammoPickups = 0)
+        val g = game(headStartSec = 0, survivalSec = 10, zombies = 0)
         g.start(4L, 0L)
         val s = g.onTick(11_000L, 0f, 0f, 150)
         assertEquals(GameOutcome.WON, s.outcome)
@@ -199,7 +211,7 @@ class ZombieRunGameTest {
 
     @Test
     fun `a finished chase ignores further ticks`() {
-        val g = game(headStartSec = 0, survivalSec = 5, zombies = 0, ammoPickups = 0)
+        val g = game(headStartSec = 0, survivalSec = 5, zombies = 0)
         g.start(4L, 0L)
         val won = g.onTick(6_000L, 0f, 0f, 150)
         assertEquals(GameOutcome.WON, won.outcome)
@@ -211,7 +223,7 @@ class ZombieRunGameTest {
     @Test
     fun `a zombie never overshoots the player`() {
         // One zombie, an absurd tick gap: without the clamp it would sail past and read as a miss.
-        val g = ZombieRunGame(ZombieRunGame.ZombieRunConfig(headStartSec = 0, zombies = 1, ammoPickups = 0))
+        val g = ZombieRunGame(ZombieRunGame.ZombieRunConfig(headStartSec = 0, zombies = 1))
         g.start(5L, 0L)
         g.onTick(0L, 0f, 0f, 150)
         val s = g.onTick(600_000L, 0f, 0f, 150)
@@ -221,7 +233,7 @@ class ZombieRunGameTest {
     }
 
     @Test
-    fun `score rewards survival, ground covered and caches`() {
+    fun `score rewards progress toward the goal and ground covered`() {
         val g = game(headStartSec = 600, survivalSec = 600)
         g.start(12L, 0L)
         val idle = g.score(0L)

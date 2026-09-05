@@ -27,6 +27,11 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import com.clashfit.ui.components.ChaseGlyphs
 import com.clashfit.ui.components.FamilyMark
 import com.clashfit.core.model.Family
 import com.clashfit.ui.components.BadgeTile
@@ -164,5 +169,50 @@ class GameArtScreenshotTest {
         }
         repeat(3) { Thread.sleep(200); compose.waitForIdle() }
         compose.onRoot().captureRoboImage("screenshots/71-mode-sigils.png")
+    }
+
+    /**
+     * The pursuer, at the four distances the chase actually shows it.
+     *
+     * It is drawn straight onto a Canvas rather than composed, so nothing else in the suite would
+     * ever catch it going wrong: a path typo produces a shape, not an exception, and the only way
+     * to know it still reads as a head is to look at one.
+     */
+    @Test
+    fun chaseGlyphs() {
+        compose.setContent {
+            ClashFitTheme {
+                Row(
+                    Modifier.fillMaxSize().background(Ground).padding(20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    listOf(0f, 0.35f, 0.7f, 1f).forEach { near ->
+                        Column(
+                            Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Canvas(Modifier.size(72.dp)) {
+                                drawIntoCanvas { c ->
+                                    ChaseGlyphs.zombie(
+                                        c.nativeCanvas,
+                                        size.width / 2f, size.height / 2f,
+                                        radiusPx = size.minDimension * 0.26f,
+                                        closeness = near, pulse = 0.25f,
+                                    )
+                                }
+                            }
+                            Text(
+                                "${(near * 100).toInt()}%",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = InkMuted,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        repeat(3) { Thread.sleep(200); compose.waitForIdle() }
+        compose.onRoot().captureRoboImage("screenshots/74-chase-glyphs.png")
     }
 }

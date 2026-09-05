@@ -135,7 +135,6 @@ data class CombatConfig(
             val headStartSec: Int = 60,
             val spawnRadiusM: Int = 400,
             val captureRadiusM: Int = 12,
-            val ammoPickups: Int = 6,
             val note: String = "Zombie Run. The one mode that leaves the device. See docs/33-FEATURE-ZOMBIE-RUN.md."
         )
     }

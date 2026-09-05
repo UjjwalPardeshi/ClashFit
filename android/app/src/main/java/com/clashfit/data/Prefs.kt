@@ -77,6 +77,16 @@ class Prefs(private val context: Context) {
         val shareNoticeSeen: Boolean = false,
         /** Weekly distance goal for runs and walks, in metres. */
         val weeklyDistanceGoalM: Int = 15_000,
+
+        // ── the chase, as the player set it up last time ──────────────────────────────────
+        /** True to win Zombie Run by covering ground, false to win it by outlasting a clock. */
+        val chaseWinByDistance: Boolean = false,
+        /** The distance goal, in kilometres. 1..50. */
+        val chaseDistanceKm: Int = 3,
+        /** The time goal, in minutes. 1..300, which is five hours. */
+        val chaseMinutes: Int = 10,
+        /** How fast the pack moves at a steady jog, in km/h. 1..10. */
+        val chaseZombieKph: Int = 8,
         /**
          * False until these values have actually come back from disk.
          *
@@ -148,6 +158,10 @@ class Prefs(private val context: Context) {
             loaded = true,
             shareNoticeSeen = p[SHARE_NOTICE_SEEN] ?: false,
             weeklyDistanceGoalM = p[WEEKLY_DISTANCE_GOAL_M] ?: 15_000,
+            chaseWinByDistance = p[CHASE_BY_DISTANCE] ?: false,
+            chaseDistanceKm = (p[CHASE_DISTANCE_KM] ?: 3).coerceIn(1, 50),
+            chaseMinutes = (p[CHASE_MINUTES] ?: 10).coerceIn(1, 300),
+            chaseZombieKph = (p[CHASE_ZOMBIE_KPH] ?: 8).coerceIn(1, 10),
             gestures = p[GESTURES] ?: true,
             cloudCoach = p[CLOUD_COACH] ?: false,
             exoSuit = p[EXO_SUIT] ?: false,
@@ -192,6 +206,21 @@ class Prefs(private val context: Context) {
         it[MAP_TILES_ASKED] = true
     }
 
+    /**
+     * The chase the player just dialled in, kept so the next one opens on it.
+     *
+     * Clamped on the way in as well as on the way out. A slider cannot produce a value outside its
+     * range, but a preferences file edited by hand or carried forward from an older build can, and
+     * a zombie at zero km/h is a mode that cannot be lost.
+     */
+    suspend fun setChase(byDistance: Boolean, distanceKm: Int, minutes: Int, zombieKph: Int) =
+        context.dataStore.edit {
+            it[CHASE_BY_DISTANCE] = byDistance
+            it[CHASE_DISTANCE_KM] = distanceKm.coerceIn(1, 50)
+            it[CHASE_MINUTES] = minutes.coerceIn(1, 300)
+            it[CHASE_ZOMBIE_KPH] = zombieKph.coerceIn(1, 10)
+        }
+
     /** Everything the first-run flow decides, in one write. */
     suspend fun completeOnboarding(goal: Goal, preferredExercise: String, avatarColor: Int) = context.dataStore.edit {
         it[GOAL] = goal.name
@@ -210,6 +239,10 @@ class Prefs(private val context: Context) {
         val CASUAL = booleanPreferencesKey("casual")
         val DEBUG = booleanPreferencesKey("debug_overlay")
         val PREFERRED_EXERCISE = stringPreferencesKey("preferred_exercise")
+        val CHASE_BY_DISTANCE = booleanPreferencesKey("chase_by_distance")
+        val CHASE_DISTANCE_KM = intPreferencesKey("chase_distance_km")
+        val CHASE_MINUTES = intPreferencesKey("chase_minutes")
+        val CHASE_ZOMBIE_KPH = intPreferencesKey("chase_zombie_kph")
         val DESK_ENABLED = booleanPreferencesKey("desk_enabled")
         val DESK_INTERVAL_MIN = intPreferencesKey("desk_interval_min")
         val DESK_EXERCISE_ID = stringPreferencesKey("desk_exercise_id")

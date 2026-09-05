@@ -6,12 +6,11 @@ import android.graphics.Path
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.clashfit.ui.theme.Gassed
-import com.clashfit.ui.theme.Success
 import kotlin.math.max
 import kotlin.math.sin
 
 /**
- * What a pursuer and a supply cache look like on the chase map.
+ * What a pursuer looks like on the chase map.
  *
  * Drawn straight onto an [android.graphics.Canvas] rather than as a composable or a bitmap, for
  * one reason: it has to appear identically in two very different renderers. On top of the
@@ -26,13 +25,19 @@ import kotlin.math.sin
 object ChaseGlyphs {
 
     /**
-     * A pursuer: a horned, hunched thing with its claws out, facing the runner.
+     * A pursuer: a zombie's head, facing the runner.
+     *
+     * A head rather than a whole figure, because at map-marker size a full body is six or seven
+     * pixels of limb and reads as a smudge — while a head is two eyes and a mouth, which is the
+     * one arrangement human sight resolves instantly and from the corner of an eye. It is drawn
+     * rather than dropped in as an image so it can be any size on any screen without going soft,
+     * costs nothing in the APK, and can react: the skin runs from sickly green to hot as it
+     * closes, the eyes widen, and the whole pack breathes on one phase so a tightening chase is
+     * visible before the distance readout is read.
      *
      * @param closeness 0 when it is as far away as the chase ever spawns them, 1 when it is on
-     *   top of you. Drives size, brightness and how hard the threat ring pulses, so the danger is
-     *   readable from the corner of an eye at running pace.
-     * @param pulse a 0..1 phase that advances with the heartbeat, so the whole pack breathes
-     *   together and speeds up as the nearest one closes.
+     *   top of you.
+     * @param pulse a 0..1 phase that advances with the heartbeat.
      */
     fun zombie(canvas: Canvas, cx: Float, cy: Float, radiusPx: Float, closeness: Float, pulse: Float) {
         val near = closeness.coerceIn(0f, 1f)
@@ -43,7 +48,6 @@ object ChaseGlyphs {
         val s = r * breathe
 
         val body = lerpColour(DISTANT, Gassed, near)
-        val glow = lerpColour(DISTANT, EYE, near)
 
         // The threat ring. It is the thing the eye actually catches while running, so it grows and
         // brightens with proximity rather than staying a constant decoration.
@@ -71,115 +75,119 @@ object ChaseGlyphs {
             color = body.toArgb()
         }
 
-        // The silhouette is the whole design.
-        //
-        // At map size nobody resolves a face, so what has to read from the corner of an eye at
-        // running pace is an outline: horns, hunched shoulders, and hands splayed into claws. An
-        // upright figure with a round head and straight arms reads as the pictogram on a toilet
-        // door, which is what the first version of this looked like. It is drawn as one closed
-        // path so the shape stays solid at any size instead of coming apart into strokes.
-        val figure = Path().apply {
-            // Left horn, over the brow.
-            moveTo(cx - s * 0.62f, cy - s * 1.22f)
-            lineTo(cx - s * 0.30f, cy - s * 0.72f)
-            // Skull, low and wide.
+        // The skull. Wider at the temples than the jaw, with a dented crown, so it reads as
+        // something that used to be a person rather than as a ball.
+        val skull = Path().apply {
+            moveTo(cx - s * 0.86f, cy - s * 0.12f)
             cubicTo(
-                cx - s * 0.16f, cy - s * 0.98f,
-                cx + s * 0.16f, cy - s * 0.98f,
-                cx + s * 0.30f, cy - s * 0.72f,
+                cx - s * 0.92f, cy - s * 0.86f,
+                cx - s * 0.34f, cy - s * 1.10f,
+                cx - s * 0.06f, cy - s * 0.94f,
             )
-            // Right horn.
-            lineTo(cx + s * 0.62f, cy - s * 1.22f)
-            lineTo(cx + s * 0.42f, cy - s * 0.52f)
-            // Right shoulder, dropping into the reaching arm.
-            lineTo(cx + s * 0.52f, cy - s * 0.30f)
-            lineTo(cx + s * 1.02f, cy + s * 0.16f)
-            // Three claws on the right hand.
-            lineTo(cx + s * 0.84f, cy + s * 0.20f)
-            lineTo(cx + s * 1.00f, cy + s * 0.40f)
-            lineTo(cx + s * 0.76f, cy + s * 0.34f)
-            lineTo(cx + s * 0.84f, cy + s * 0.56f)
-            lineTo(cx + s * 0.60f, cy + s * 0.30f)
-            // Down the right flank into the trailing leg.
-            lineTo(cx + s * 0.30f, cy + s * 0.34f)
-            lineTo(cx + s * 0.44f, cy + s * 1.10f)
-            lineTo(cx + s * 0.16f, cy + s * 1.12f)
-            lineTo(cx + s * 0.06f, cy + s * 0.52f)
-            // Leading leg, mid-stride, so it never looks like it is standing still.
-            lineTo(cx - s * 0.22f, cy + s * 1.16f)
-            lineTo(cx - s * 0.50f, cy + s * 1.06f)
-            lineTo(cx - s * 0.22f, cy + s * 0.30f)
-            // Left arm and claws, mirrored.
-            lineTo(cx - s * 0.58f, cy + s * 0.28f)
-            lineTo(cx - s * 0.82f, cy + s * 0.54f)
-            lineTo(cx - s * 0.74f, cy + s * 0.32f)
-            lineTo(cx - s * 0.98f, cy + s * 0.38f)
-            lineTo(cx - s * 0.82f, cy + s * 0.18f)
-            lineTo(cx - s * 1.00f, cy + s * 0.14f)
-            lineTo(cx - s * 0.52f, cy - s * 0.32f)
-            lineTo(cx - s * 0.42f, cy - s * 0.52f)
+            // The dent, which is what stops the crown reading as a smooth dome.
+            cubicTo(
+                cx + s * 0.06f, cy - s * 1.06f,
+                cx + s * 0.52f, cy - s * 1.06f,
+                cx + s * 0.84f, cy - s * 0.62f,
+            )
+            cubicTo(
+                cx + s * 1.02f, cy - s * 0.18f,
+                cx + s * 0.78f, cy + s * 0.62f,
+                cx + s * 0.30f, cy + s * 0.90f,
+            )
+            // The jaw, hanging slightly to one side.
+            cubicTo(
+                cx - s * 0.06f, cy + s * 1.06f,
+                cx - s * 0.66f, cy + s * 0.72f,
+                cx - s * 0.86f, cy - s * 0.12f,
+            )
             close()
         }
 
-        // A dark outline first, so the figure holds its shape over a pale building or a road label.
+        // Three hairs. Not decoration: they break the outline at the top, which is what keeps the
+        // marker from reading as a plain circle in peripheral vision.
+        val hair = paint().apply {
+            style = Paint.Style.STROKE
+            strokeWidth = max(1.5f, s * 0.10f)
+            strokeCap = Paint.Cap.ROUND
+            color = OUTLINE.toArgb()
+        }
+        listOf(-0.34f to -1.02f, 0.02f to -1.10f, 0.34f to -0.98f).forEachIndexed { idx, (hx, hy) ->
+            val lean = (idx - 1) * 0.16f
+            canvas.drawLine(
+                cx + s * hx, cy + s * hy,
+                cx + s * (hx + lean), cy + s * (hy - 0.34f),
+                hair,
+            )
+        }
+
         canvas.drawPath(
-            figure,
+            skull,
             paint().apply {
                 style = Paint.Style.STROKE
-                strokeWidth = max(2f, s * 0.22f)
+                strokeWidth = max(2f, s * 0.20f)
                 strokeJoin = Paint.Join.ROUND
                 color = OUTLINE.toArgb()
             },
         )
-        canvas.drawPath(figure, fill)
+        canvas.drawPath(skull, fill)
 
-        // Eyes. The only bright thing on it, with a bloom behind them, so what the eye locks onto
-        // is a thing looking back rather than a shape. They brighten as it closes.
-        val eyeR = max(1.4f, s * 0.11f)
-        val eyeY = cy - s * 0.62f
-        val bloom = paint().apply {
-            style = Paint.Style.FILL
-            color = glow.toArgb()
-            alpha = (70 + 120 * near).toInt().coerceIn(0, 255)
+        // The eyes are the whole read. Big, white, and deliberately mismatched — one larger and
+        // sitting lower — because two identical circles read as a machine and two different ones
+        // read as something wrong with it. They widen as it closes.
+        val white = paint().apply { style = Paint.Style.FILL; color = EYE.toArgb() }
+        val pupil = paint().apply { style = Paint.Style.FILL; color = OUTLINE.toArgb() }
+        val open = 1f + 0.22f * near
+        listOf(
+            Triple(-0.32f, -0.30f, 0.30f),
+            Triple(0.30f, -0.24f, 0.34f),
+        ).forEach { (ex, ey, er) ->
+            val x = cx + s * ex
+            val y = cy + s * ey
+            val r2 = s * er * open
+            canvas.drawCircle(x, y, r2, white)
+            canvas.drawCircle(
+                x, y, r2,
+                paint().apply {
+                    style = Paint.Style.STROKE
+                    strokeWidth = max(1f, s * 0.07f)
+                    color = OUTLINE.toArgb()
+                },
+            )
+            // The pupil sits toward the runner, so every one of them is looking at you.
+            canvas.drawCircle(x + r2 * 0.16f, y + r2 * 0.18f, r2 * 0.42f, pupil)
         }
-        val core = paint().apply {
-            style = Paint.Style.FILL
-            color = glow.toArgb()
-        }
-        listOf(-1f, 1f).forEach { side ->
-            val ex = cx + side * s * 0.17f
-            canvas.drawCircle(ex, eyeY, eyeR * 2.3f, bloom)
-            canvas.drawCircle(ex, eyeY, eyeR, core)
-        }
-    }
 
-    /**
-     * A supply cache: a hollow diamond with a cross inside.
-     *
-     * Deliberately geometric where the pursuer is organic, so the two are never confused at a
-     * glance while running, even in peripheral vision and even for a colour-blind player.
-     */
-    fun cache(canvas: Canvas, cx: Float, cy: Float, radiusPx: Float, pulse: Float) {
-        val r = max(radiusPx, 16f) * (1f + 0.06f * sin(pulse * TWO_PI))
-        val stroke = paint().apply {
-            style = Paint.Style.STROKE
-            strokeWidth = max(2f, r * 0.20f)
-            strokeJoin = Paint.Join.ROUND
-            color = Success.toArgb()
-        }
-        val diamond = Path().apply {
-            moveTo(cx, cy - r)
-            lineTo(cx + r, cy)
-            lineTo(cx, cy + r)
-            lineTo(cx - r, cy)
+        // A wide gap-toothed grin. Drawn as a dark mouth with a few pale teeth left in it, rather
+        // than a row of teeth, so at small sizes it collapses into a dark bar and still reads.
+        val mouth = Path().apply {
+            moveTo(cx - s * 0.52f, cy + s * 0.36f)
+            cubicTo(
+                cx - s * 0.20f, cy + s * 0.78f,
+                cx + s * 0.24f, cy + s * 0.76f,
+                cx + s * 0.52f, cy + s * 0.30f,
+            )
+            cubicTo(
+                cx + s * 0.24f, cy + s * 0.50f,
+                cx - s * 0.20f, cy + s * 0.52f,
+                cx - s * 0.52f, cy + s * 0.36f,
+            )
             close()
         }
-        canvas.drawPath(diamond, stroke)
-        canvas.drawLine(cx - r * 0.34f, cy, cx + r * 0.34f, cy, stroke)
-        canvas.drawLine(cx, cy - r * 0.34f, cx, cy + r * 0.34f, stroke)
+        canvas.drawPath(mouth, paint().apply { style = Paint.Style.FILL; color = OUTLINE.toArgb() })
+
+        val tooth = paint().apply { style = Paint.Style.FILL; color = EYE.toArgb() }
+        // Two teeth and a gap, which is more of a zombie than a full set would be.
+        listOf(-0.30f, 0.06f).forEach { tx ->
+            canvas.drawRect(
+                cx + s * tx, cy + s * 0.36f,
+                cx + s * (tx + 0.18f), cy + s * 0.58f,
+                tooth,
+            )
+        }
     }
 
-    /** The runner's own position: a solid dot inside a soft halo, so it is never lost in a route. */
+    /** The runner: you, a filled dot with a white ring so it never disappears into the map. */
     fun runner(canvas: Canvas, cx: Float, cy: Float, radiusPx: Float, colour: Color) {
         val r = max(radiusPx, 9f)
         canvas.drawCircle(
@@ -203,8 +211,8 @@ object ChaseGlyphs {
 
     private const val TWO_PI = 6.2831855f
 
-    /** Far away: drained of colour, so distance is felt before the number is read. */
-    private val DISTANT = Color(0xFF6B7280)
+    /** Far away: sickly and drained, so distance is felt before the number is read. */
+    private val DISTANT = Color(0xFF7E9C74)
     private val EYE = Color(0xFFFFF1C4)
 
     /** Nearly black, for the outline that keeps the silhouette readable over any basemap. */

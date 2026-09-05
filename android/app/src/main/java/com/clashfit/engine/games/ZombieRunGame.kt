@@ -1,7 +1,7 @@
 package com.clashfit.engine.games
 
 import com.clashfit.core.model.GameOutcome
-import com.clashfit.core.model.AmmoCache
+import com.clashfit.core.model.WinBy
 import com.clashfit.core.model.ZombieRunPhase
 import com.clashfit.core.model.Zombie
 import com.clashfit.core.model.ZombieRunState
@@ -61,17 +61,19 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
         val headStartSec: Int = 60,
         /** Outer radius of the spawn ring, in metres. */
         val spawnRadiusM: Int = 400,
-        /** A zombie this close takes you, unless you can spend a round. */
+        /** A zombie this close has you. There is nothing to spend against it. */
         val captureRadiusM: Int = 12,
-        /** How many ammo caches are scattered at the start. */
-        val ammoPickups: Int = 6,
 
         /** Inner radius of the spawn ring. Nothing may open the mode closer than this. */
         val spawnMinRadiusM: Int = 220,
         /** How many zombies spawn. */
         val zombies: Int = 4,
-        /** Survive this long and the chase is won. */
+        /** Whether this chase is won by outlasting a clock or by covering ground. */
+        val winBy: WinBy = WinBy.TIME,
+        /** Survive this long and the chase is won, when [winBy] is [WinBy.TIME]. */
         val survivalSec: Int = 600,
+        /** Cover this far and the chase is won, when [winBy] is [WinBy.DISTANCE]. */
+        val winDistanceM: Int = 3_000,
         /** A zombie's ground speed at the player's target cadence, metres per second. */
         val zombieBaseMps: Float = 2.35f,
         /**
@@ -83,8 +85,6 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
         val slackestMultiplier: Float = 1.35f,
         /** Speed multiplier at or above the target cadence. Below 1, so honest work pays. */
         val keenestMultiplier: Float = 0.9f,
-        /** Reaching a cache within this many metres banks a round. */
-        val pickupRadiusM: Int = 20,
     )
 
     private var seed: Long = 1L
@@ -96,10 +96,6 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
     private var cadenceSpm: Int = 0
 
     private var zombies: MutableList<Zombie> = mutableListOf()
-    private var caches: MutableList<AmmoCache> = mutableListOf()
-    private var ammo: Int = 0
-    private var neutralised: Int = 0
-    private var collected: Int = 0
     private var distanceM: Float = 0f
     private var outcome: GameOutcome = GameOutcome.RUNNING
 
@@ -116,9 +112,6 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
         playerEastM = 0f
         playerNorthM = 0f
         cadenceSpm = 0
-        ammo = 0
-        neutralised = 0
-        collected = 0
         distanceM = 0f
         outcome = GameOutcome.RUNNING
 
@@ -126,12 +119,6 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
         zombies = MutableList(cfg.zombies) { i ->
             val (e, n) = rng.onRing(cfg.spawnMinRadiusM.toFloat(), cfg.spawnRadiusM.toFloat())
             Zombie(id = i, eastM = e, northM = n, alive = true)
-        }
-        // Caches sit inside the zombie ring so that going to get one is a real decision: it is
-        // ground you cover away from your escape, not a freebie on the way out.
-        caches = MutableList(cfg.ammoPickups) { i ->
-            val (e, n) = rng.onRing(cfg.pickupRadiusM * 3f, cfg.spawnMinRadiusM.toFloat())
-            AmmoCache(id = i, eastM = e, northM = n, taken = false)
         }
     }
 
@@ -157,31 +144,33 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
         val deltaMs = (tMs - last).coerceAtLeast(0L)
         lastTickMs = tMs
 
-        collectCaches()
-
         val elapsedSec = (tMs - startedAt) / 1000f
         if (elapsedSec >= cfg.headStartSec) {
             advancePursuers(deltaMs)
             resolveContact()
         }
 
-        if (outcome == GameOutcome.RUNNING && elapsedSec >= cfg.survivalSec) {
+        if (outcome == GameOutcome.RUNNING && reachedTarget(elapsedSec)) {
             outcome = GameOutcome.WON
         }
         return state(tMs)
     }
 
-    /** Banks a round for every unclaimed cache the player is standing on. */
-    private fun collectCaches() {
-        for (i in caches.indices) {
-            val c = caches[i]
-            if (c.taken) continue
-            if (hypot(c.eastM - playerEastM, c.northM - playerNorthM) <= cfg.pickupRadiusM) {
-                caches[i] = c.copy(taken = true)
-                ammo += 1
-                collected += 1
-            }
-        }
+    /**
+     * Whether the goal the player set has been met.
+     *
+     * The two are exclusive on purpose. A chase with a clock and a distance both ticking gives the
+     * runner two questions to answer at once, and the one number on the HUD stops meaning anything.
+     */
+    private fun reachedTarget(elapsedSec: Float): Boolean = when (cfg.winBy) {
+        WinBy.TIME -> elapsedSec >= cfg.survivalSec
+        WinBy.DISTANCE -> distanceM >= cfg.winDistanceM
+    }
+
+    /** How far through the chosen goal the chase is, 0..1. Drives the bar and nothing else. */
+    private fun progressToward(elapsedSec: Float): Float = when (cfg.winBy) {
+        WinBy.TIME -> (elapsedSec / cfg.survivalSec.coerceAtLeast(1)).coerceIn(0f, 1f)
+        WinBy.DISTANCE -> (distanceM / cfg.winDistanceM.coerceAtLeast(1)).coerceIn(0f, 1f)
     }
 
     /**
@@ -223,25 +212,21 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
         return cfg.slackestMultiplier + (cfg.keenestMultiplier - cfg.slackestMultiplier) * effort
     }
 
-    /** A zombie inside the capture radius is spent against a round, or it takes you. */
+    /**
+     * A zombie inside the capture radius takes you.
+     *
+     * There is nothing to spend against it any more. The chase used to hand out caches that armed
+     * you, which made the mode partly about walking over the right patch of ground; now the only
+     * answer to a zombie is not being where it is, which is the answer the mode was always about.
+     */
     private fun resolveContact() {
-        for (i in zombies.indices) {
-            val p = zombies[i]
+        for (p in zombies) {
             if (!p.alive) continue
-            val gap = hypot(p.eastM - playerEastM, p.northM - playerNorthM)
-            if (gap > cfg.captureRadiusM) continue
-            if (ammo > 0) {
-                ammo -= 1
-                neutralised += 1
-                zombies[i] = p.copy(alive = false)
-            } else {
+            if (hypot(p.eastM - playerEastM, p.northM - playerNorthM) <= cfg.captureRadiusM) {
                 outcome = GameOutcome.LOST
                 return
             }
         }
-        // Clearing the map is an escape in its own right; standing in an empty field for the rest
-        // of the ten minutes is not gameplay, it is waiting.
-        if (zombies.none { it.alive }) outcome = GameOutcome.WON
     }
 
     /** Metres to the closest living zombie, or null when none is left. */
@@ -267,30 +252,23 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
             playerEastM = playerEastM,
             playerNorthM = playerNorthM,
             zombies = zombies.toList(),
-            caches = caches.toList(),
-            ammo = ammo,
-            neutralised = neutralised,
-            cachesCollected = collected,
             distanceM = distanceM,
             nearestZombieM = nearestZombieM(),
-            progress = (elapsedSec / cfg.survivalSec).coerceIn(0f, 1f),
+            progress = progressToward(elapsedSec),
         )
     }
 
     /**
      * What the chase was worth, for XP and the session record.
      *
-     * Surviving is the bulk of it, and the rest rewards the two things that took real work:
-     * covering ground, and going out of your way for a cache. Being caught still scores what was
-     * earned up to that point — the mode is meant to be attempted, not feared.
+     * Getting to the goal is the bulk of it and ground covered is the rest, whichever goal was
+     * set. Being caught still scores what was earned up to that point — the mode is meant to be
+     * attempted, not feared.
      */
     fun score(tMs: Long): Int {
         val s = state(tMs)
-        val survived = (s.elapsedSec / cfg.survivalSec).coerceIn(0f, 1f)
-        return (survived * 400).toInt() +
+        return (s.progress * 400).toInt() +
             (s.distanceM / 10f).toInt() +
-            s.cachesCollected * 25 +
-            s.neutralised * 40 +
             if (s.outcome == GameOutcome.WON) 250 else 0
     }
 

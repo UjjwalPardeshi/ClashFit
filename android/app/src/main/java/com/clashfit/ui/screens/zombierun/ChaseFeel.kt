@@ -50,16 +50,13 @@ fun ChaseFeel(state: ZombieRunState, graph: AppGraph) {
         }
     }
 
-    var lastCaches by remember { mutableStateOf(state.cachesCollected) }
-    LaunchedEffect(state.cachesCollected) {
-        if (state.cachesCollected > lastCaches) { sfx.milestone(); haptics.milestone() }
-        lastCaches = state.cachesCollected
-    }
-
-    var lastDown by remember { mutableStateOf(state.neutralised) }
-    LaunchedEffect(state.neutralised) {
-        if (state.neutralised > lastDown) { sfx.bossDown(); haptics.playerHit() }
-        lastDown = state.neutralised
+    // Every kilometre, once. With nothing to pick up and nothing to put down, ground covered is
+    // the only thing left worth marking, and it is also the thing the mode is actually asking for.
+    var lastKm by remember { mutableStateOf((state.distanceM / 1000f).toInt()) }
+    LaunchedEffect((state.distanceM / 1000f).toInt()) {
+        val km = (state.distanceM / 1000f).toInt()
+        if (km > lastKm) { sfx.milestone(); haptics.milestone() }
+        lastKm = km
     }
 
     // A pulse in the hand as the gap crosses each threshold, once per crossing. Latched on the

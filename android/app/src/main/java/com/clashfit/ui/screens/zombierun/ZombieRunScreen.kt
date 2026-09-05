@@ -60,6 +60,20 @@ import com.clashfit.ui.components.PrimaryButton
 import com.clashfit.ui.components.RouteTrace
 import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SecondaryButton
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.graphics.Color
+import com.clashfit.core.model.WinBy
+import com.clashfit.data.Prefs
+import com.clashfit.ui.components.SectionTitle
+import com.clashfit.ui.theme.Panel
+import com.clashfit.ui.theme.Rule
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import com.clashfit.ui.components.SectionGap
 import com.clashfit.ui.components.StatStrip
 import com.clashfit.ui.theme.Ember
@@ -107,18 +121,14 @@ fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
     // promised different ones.
     val combat by graph.config.combat.collectAsStateWithLifecycle()
     val cfg = combat.modes.zombieRun
-    val game = remember {
-        ZombieRunGame(
-            ZombieRunGame.ZombieRunConfig(
-                headStartSec = cfg.headStartSec,
-                spawnRadiusM = cfg.spawnRadiusM,
-                captureRadiusM = cfg.captureRadiusM,
-                ammoPickups = cfg.ammoPickups,
-            ),
-        )
+    // Rebuilt on start rather than remembered once, because the goal and the pack's speed are the
+    // player's to set and they set them on the screen immediately before this one.
+    var game by remember {
+        mutableStateOf(ZombieRunGame(ZombieRunGame.ZombieRunConfig(headStartSec = cfg.headStartSec)))
     }
 
     var started by remember { mutableStateOf(false) }
+    var goal by remember { mutableStateOf(Chase()) }
     var origin by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     var state by remember { mutableStateOf(game.state(0L)) }
     // The last position we were sure of, held here rather than read from the tracker each tick.
@@ -179,10 +189,25 @@ fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
         ) {
             if (!started) {
                 Briefing(
+                    graph = graph,
                     cfg = cfg,
                     locationOk = locationOk,
-                    onStart = {
+                    onStart = { chase ->
                         RunTrackingService.start(context, ActivityKind.ZOMBIE_RUN)
+                        game = ZombieRunGame(
+                            ZombieRunGame.ZombieRunConfig(
+                                headStartSec = cfg.headStartSec,
+                                spawnRadiusM = cfg.spawnRadiusM,
+                                captureRadiusM = cfg.captureRadiusM,
+                                winBy = if (chase.byDistance) WinBy.DISTANCE else WinBy.TIME,
+                                survivalSec = chase.minutes * 60,
+                                winDistanceM = chase.distanceKm * 1000,
+                                // The slider is in km/h because that is how a runner thinks about
+                                // being chased; the engine works in metres a second.
+                                zombieBaseMps = chase.zombieKph / 3.6f,
+                            ),
+                        )
+                        goal = chase
                         // Seeded from the wall clock so two players never get the same layout, and
                         // so a chase could be replayed from its seed later.
                         game.start(graph.clock.nowMs(), graph.clock.nowMs())
@@ -193,14 +218,11 @@ fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
             }
 
             ChaseFeel(state, graph)
-            ChaseHud(state, if (state.outcome == GameOutcome.RUNNING) null else game.score(graph.clock.nowMs()))
+            ChaseHud(state, goal, if (state.outcome == GameOutcome.RUNNING) null else game.score(graph.clock.nowMs()))
             SectionGap(12)
 
             val o = origin
             val markers = if (o == null) emptyList() else buildList {
-                state.caches.filter { !it.taken }.forEach {
-                    add(marker(o, it.eastM, it.northM, radiusM = 14.0, colour = Success, glyph = MapMarker.Glyph.CACHE))
-                }
                 state.zombies.filter { it.alive }.forEach { z ->
                     // How near this one is, on the scale the chase was configured with, so the
                     // figure looks more dangerous the closer it gets rather than being one flat
@@ -257,9 +279,6 @@ fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
                                             canvas.nativeCanvas, pm.xPx, pm.yPx, pm.radiusPx,
                                             pm.marker.closeness, pulse,
                                         )
-                                        MapMarker.Glyph.CACHE -> ChaseGlyphs.cache(
-                                            canvas.nativeCanvas, pm.xPx, pm.yPx, pm.radiusPx, pulse,
-                                        )
                                         MapMarker.Glyph.CIRCLE -> Unit
                                     }
                                 }
@@ -289,6 +308,80 @@ fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
     }
 }
 
+
+/**
+ * One labelled slider: what it sets on the left, what it is set to on the right, the track under.
+ *
+ * The readout is beside the label rather than on the thumb because a value that rides the thumb is
+ * under the finger that is dragging it, and this screen is read at arm's length before a run.
+ */
+@Composable
+private fun ChaseSlider(
+    label: String,
+    value: String,
+    position: Float,
+    range: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    onChange: (Float) -> Unit,
+    onSettled: () -> Unit,
+    supporting: String? = null,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = Ink)
+            Text(value, style = MaterialTheme.typography.titleSmall, color = Ember)
+        }
+        Slider(
+            value = position,
+            onValueChange = onChange,
+            onValueChangeFinished = onSettled,
+            valueRange = range,
+            steps = steps,
+            colors = SliderDefaults.colors(
+                thumbColor = Ember,
+                activeTrackColor = Ember,
+                inactiveTrackColor = Rule,
+                activeTickColor = Color.Transparent,
+                inactiveTickColor = Color.Transparent,
+            ),
+        )
+        if (supporting != null) {
+            Text(supporting, style = MaterialTheme.typography.bodySmall, color = InkFaint)
+        }
+    }
+}
+
+/**
+ * The chase, as the player set it up: one goal and how fast the pack moves.
+ *
+ * The two goals are exclusive on purpose. A clock and a distance both counting down gives a runner
+ * two questions to answer at once and turns the one big number on the HUD into a number that could
+ * mean either — which is the last thing anybody needs while being chased.
+ */
+data class Chase(
+    val byDistance: Boolean = false,
+    val distanceKm: Int = 3,
+    val minutes: Int = 10,
+    val zombieKph: Int = 8,
+) {
+    /** What is still owed, in the unit of whichever goal was chosen. */
+    fun remaining(state: com.clashfit.core.model.ZombieRunState): String =
+        if (byDistance) "%.1f".format(((distanceKm * 1000f - state.distanceM) / 1000f).coerceAtLeast(0f))
+        else clock((minutes * 60f - state.elapsedSec).coerceAtLeast(0f))
+}
+
+/** Seconds as the shortest thing a glance can read: 45s, 12m, 1h20. */
+internal fun clock(seconds: Float): String {
+    val total = seconds.toInt().coerceAtLeast(0)
+    val h = total / 3600
+    val m = (total % 3600) / 60
+    return when {
+        h > 0 -> "${h}h${m.toString().padStart(2, '0')}"
+        m > 0 -> "${m}m"
+        else -> "${total}s"
+    }
+}
+
 /** Converts a chase coordinate back to latitude and longitude for the map. */
 private fun marker(
     origin: Pair<Double, Double>,
@@ -315,10 +408,24 @@ private fun marker(
 
 @Composable
 private fun Briefing(
+    graph: AppGraph,
     cfg: com.clashfit.core.config.CombatConfig.ModesSpec.ZombieRunSpec,
     locationOk: Boolean,
-    onStart: () -> Unit,
+    onStart: (Chase) -> Unit,
 ) {
+    val scope = rememberCoroutineScope()
+    val settings by graph.prefs.settings.collectAsStateWithLifecycle(initialValue = Prefs.Settings())
+    // Seeded from the stored chase and re-seeded whenever it changes, so a drag reads smoothly and
+    // the value that survives the screen is the one on disk.
+    var byDistance by remember(settings.chaseWinByDistance) { mutableStateOf(settings.chaseWinByDistance) }
+    var km by remember(settings.chaseDistanceKm) { mutableFloatStateOf(settings.chaseDistanceKm.toFloat()) }
+    var mins by remember(settings.chaseMinutes) { mutableFloatStateOf(settings.chaseMinutes.toFloat()) }
+    var kph by remember(settings.chaseZombieKph) { mutableFloatStateOf(settings.chaseZombieKph.toFloat()) }
+    val chase = Chase(byDistance, km.roundToInt(), mins.roundToInt(), kph.roundToInt())
+    fun persist() = scope.launch {
+        graph.prefs.setChase(chase.byDistance, chase.distanceKm, chase.minutes, chase.zombieKph)
+    }
+
     val context = LocalContext.current
     val gpsOn = remember {
         runCatching {
@@ -327,19 +434,73 @@ private fun Briefing(
         }.getOrDefault(true)
     }
 
-    Column(Modifier.fillMaxWidth().safeDrawingPadding()) {
+    // Scrolls, because it no longer fits. Two explanation cards and a set of controls is taller
+    // than a phone, and a Column that overflows does not clip politely — it compresses its
+    // children until a slider is drawn through the buttons above it.
+    Column(
+        Modifier.fillMaxWidth().safeDrawingPadding().verticalScroll(rememberScrollState()),
+    ) {
         SectionGap(8)
         Text("A real chase, on a real map", style = MaterialTheme.typography.headlineSmall, color = Ink)
         SectionGap(10)
         Text(
             "You get ${cfg.headStartSec} seconds. Then zombies spawn within ${cfg.spawnRadiusM} metres and " +
                 "start closing. They move faster when your cadence drops, so stopping is what gets you " +
-                "caught — not standing in the wrong place. ${cfg.ammoPickups} caches are scattered around " +
-                "you; reaching one arms you, and a zombie that gets within ${cfg.captureRadiusM} metres is " +
-                "spent against a round if you have one.",
+                "caught. There is nothing to pick up and nothing to fight with: one of them reaching " +
+                "${cfg.captureRadiusM} metres ends the run, so the only answer is not being there.",
             style = MaterialTheme.typography.bodyMedium, color = InkMuted,
         )
-        SectionGap(18)
+        SectionGap(22)
+        SectionTitle("Set the chase")
+        SectionGap(10)
+        AppCard(Modifier.fillMaxWidth(), padding = 16) {
+            Column {
+                // One goal, chosen first, because it decides which of the two sliders is even
+                // worth showing.
+                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                    listOf(false to "Last a time", true to "Cover a distance").forEachIndexed { i, (v, label) ->
+                        SegmentedButton(
+                            selected = byDistance == v,
+                            onClick = { byDistance = v; persist() },
+                            shape = SegmentedButtonDefaults.itemShape(index = i, count = 2),
+                            colors = SegmentedButtonDefaults.colors(
+                                activeContainerColor = Ember, activeContentColor = Ground,
+                                inactiveContainerColor = Panel, inactiveContentColor = InkMuted,
+                                inactiveBorderColor = Rule, activeBorderColor = Ember,
+                            ),
+                        ) { Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 1) }
+                    }
+                }
+
+                Spacer(Modifier.height(18.dp))
+                if (byDistance) {
+                    ChaseSlider(
+                        label = "Distance to cover",
+                        value = "${km.roundToInt()} km",
+                        position = km, range = 1f..50f, steps = 48,
+                        onChange = { km = it }, onSettled = { persist() },
+                    )
+                } else {
+                    ChaseSlider(
+                        label = "Time to last",
+                        value = clock(mins * 60f),
+                        position = mins, range = 1f..300f, steps = 298,
+                        onChange = { mins = it }, onSettled = { persist() },
+                    )
+                }
+
+                Spacer(Modifier.height(18.dp))
+                ChaseSlider(
+                    label = "Zombie speed",
+                    value = "${kph.roundToInt()} km/h",
+                    position = kph, range = 1f..10f, steps = 8,
+                    onChange = { kph = it }, onSettled = { persist() },
+                    supporting = "At a steady jog. They gain when you slow and drop back when you push.",
+                )
+            }
+        }
+
+        SectionGap(22)
         AppCard(Modifier.fillMaxWidth(), padding = 16) {
             Column {
                 Text("This is the one mode that goes online", style = MaterialTheme.typography.titleSmall, color = Ember)
@@ -380,7 +541,7 @@ private fun Briefing(
 
         SectionGap(18)
         if (locationOk) {
-            PrimaryButton("Start the head start", Modifier.fillMaxWidth(), onClick = onStart)
+            PrimaryButton("Start the head start", Modifier.fillMaxWidth()) { onStart(chase) }
         } else {
             Text(
                 "Zombie Run needs location. Grant it from the run tracker, then come back.",
@@ -391,7 +552,7 @@ private fun Briefing(
 }
 
 @Composable
-private fun ChaseHud(state: com.clashfit.core.model.ZombieRunState, score: Int?) {
+private fun ChaseHud(state: com.clashfit.core.model.ZombieRunState, goal: Chase, score: Int?) {
     when (state.phase) {
         ZombieRunPhase.HEAD_START -> {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -421,9 +582,9 @@ private fun ChaseHud(state: com.clashfit.core.model.ZombieRunState, score: Int?)
             SectionGap(8)
             StatStrip(
                 listOf(
-                    "${state.ammo}" to "Ammo",
                     "${state.zombiesLeft}" to "Chasing",
-                    "${(state.secondsLeft / 60).roundToInt()}m" to "Left",
+                    "%.2f".format(state.distanceM / 1000f) to "Km run",
+                    goal.remaining(state) to "To go",
                 ),
             )
         }
@@ -435,8 +596,8 @@ private fun ChaseHud(state: com.clashfit.core.model.ZombieRunState, score: Int?)
                     color = if (state.phase == ZombieRunPhase.ESCAPED) Success else Gassed,
                 )
                 Text(
-                    "%.2f km · %d caches · %d zombies down".format(
-                        state.distanceM / 1000f, state.cachesCollected, state.neutralised,
+                    "%.2f km covered, %s outrun".format(
+                        state.distanceM / 1000f, clock(state.elapsedSec),
                     ),
                     style = MaterialTheme.typography.bodyMedium, color = InkMuted,
                     textAlign = TextAlign.Center,
@@ -448,7 +609,7 @@ private fun ChaseHud(state: com.clashfit.core.model.ZombieRunState, score: Int?)
                         style = MaterialTheme.typography.headlineSmall, color = Ember,
                     )
                     Text(
-                        "Surviving is most of it. The rest is ground covered and caches reached.",
+                        "Getting to the goal is most of it. The rest is ground covered.",
                         style = MaterialTheme.typography.labelSmall, color = InkFaint,
                         textAlign = TextAlign.Center,
                     )

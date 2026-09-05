@@ -82,13 +82,8 @@ data class Zombie(
     val alive: Boolean,
 )
 
-/** One ammo cache. Taken caches stay in the list so the map can grey them out. */
-data class AmmoCache(
-    val id: Int,
-    val eastM: Float,
-    val northM: Float,
-    val taken: Boolean,
-)
+/** What ends a chase in your favour: a clock run out, or ground covered. */
+enum class WinBy { TIME, DISTANCE }
 
 data class ZombieRunState(
     val phase: ZombieRunPhase,
@@ -99,10 +94,6 @@ data class ZombieRunState(
     val playerEastM: Float,
     val playerNorthM: Float,
     val zombies: List<Zombie>,
-    val caches: List<AmmoCache>,
-    val ammo: Int,
-    val neutralised: Int,
-    val cachesCollected: Int,
     val distanceM: Float,
     /** Metres to the closest living zombie, or null when the map is clear. */
     val nearestZombieM: Float?,

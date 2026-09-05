@@ -330,7 +330,7 @@ data class MapMarker(
     /** 0 far, 1 on top of you. Only a pursuer uses it, to say how frightened to look. */
     val closeness: Float = 0f,
 ) {
-    enum class Glyph { CIRCLE, ZOMBIE, CACHE }
+    enum class Glyph { CIRCLE, ZOMBIE }
 }
 
 private fun drawRoute(map: MapView, points: List<RunPointEntity>, paceColoured: Boolean) {

@@ -112,8 +112,6 @@ fun RouteTrace(
                     when (m.glyph) {
                         MapMarker.Glyph.ZOMBIE ->
                             ChaseGlyphs.zombie(canvas.nativeCanvas, at.x, at.y, radiusPx, m.closeness, markerPulse)
-                        MapMarker.Glyph.CACHE ->
-                            ChaseGlyphs.cache(canvas.nativeCanvas, at.x, at.y, radiusPx, markerPulse)
                         MapMarker.Glyph.CIRCLE -> drawCircle(
                             color = m.outline,
                             radius = radiusPx.coerceAtLeast(6f),
