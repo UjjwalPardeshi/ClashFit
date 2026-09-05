@@ -1,5 +1,6 @@
 package com.clashfit.ui.screens.picker
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,7 +15,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.rotate
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -43,6 +48,8 @@ import com.clashfit.core.model.ModeKind
 import com.clashfit.data.Prefs
 import com.clashfit.ui.components.AppIcons
 import com.clashfit.ui.components.EmptyState
+import com.clashfit.ui.components.ExerciseDemo
+import com.clashfit.ui.components.hasExerciseDemo
 import com.clashfit.ui.components.InnerDivider
 import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.PrimaryButton
@@ -147,7 +154,7 @@ fun ExercisePickerScreen(modeStr: String, graph: AppGraph, nav: NavHostControlle
                 item(key = "group-${family.name}") {
                     ListGroup {
                         list.forEachIndexed { i, ex ->
-                            ExerciseChoice(ex, ex.id == selectedId) { selectedId = ex.id }
+                            ExerciseChoice(ex, ex.id == selectedId, settings.reduceMotion) { selectedId = ex.id }
                             if (i < list.lastIndex) InnerDivider()
                         }
                     }
@@ -182,27 +189,53 @@ fun ExercisePickerScreen(modeStr: String, graph: AppGraph, nav: NavHostControlle
 }
 
 @Composable
-private fun ExerciseChoice(ex: ExerciseSpec, selected: Boolean, onSelect: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().background(if (selected) EmberTint else androidx.compose.ui.graphics.Color.Transparent)
-            .clickable(onClick = onSelect).heightIn(min = 60.dp).padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        RadioDot(selected)
-        Column(Modifier.weight(1f)) {
-            Text(ex.name, style = MaterialTheme.typography.bodyLarge, color = Ink)
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 5.dp)) {
-                repeat(3) { i ->
-                    Box(Modifier.size(width = 14.dp, height = 4.dp).clip(CircleShape).background(if (i < ex.difficulty) Ember else RuleSoft))
+private fun ExerciseChoice(ex: ExerciseSpec, selected: Boolean, reduceMotion: Boolean, onSelect: () -> Unit) {
+    var showing by rememberSaveable(ex.id) { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().background(if (selected) EmberTint else androidx.compose.ui.graphics.Color.Transparent)) {
+        Row(
+            Modifier.fillMaxWidth().clickable(onClick = onSelect).heightIn(min = 60.dp)
+                .padding(start = 16.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            RadioDot(selected)
+            Column(Modifier.weight(1f)) {
+                Text(ex.name, style = MaterialTheme.typography.bodyLarge, color = Ink)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 5.dp)) {
+                    repeat(3) { i ->
+                        Box(Modifier.size(width = 14.dp, height = 4.dp).clip(CircleShape).background(if (i < ex.difficulty) Ember else RuleSoft))
+                    }
+                    Text(
+                        when (ex.difficulty) { 1 -> "Easy"; 2 -> "Moderate"; else -> "Hard" },
+                        style = MaterialTheme.typography.labelSmall, color = InkMuted, modifier = Modifier.padding(start = 6.dp),
+                    )
                 }
-                Text(
-                    when (ex.difficulty) { 1 -> "Easy"; 2 -> "Moderate"; else -> "Hard" },
-                    style = MaterialTheme.typography.labelSmall, color = InkMuted, modifier = Modifier.padding(start = 6.dp),
-                )
+            }
+            if (ex.tags.isNotEmpty()) Tag(ex.tags.first())
+            // The drawing is a second, quieter affordance: tapping it must not change the selection.
+            if (hasExerciseDemo(ex.id)) {
+                Box(
+                    Modifier.size(40.dp).clickable { showing = !showing },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    val turn by animateFloatAsState(if (showing) -90f else 90f, label = "demo-chevron")
+                    Icon(
+                        AppIcons.Chevron,
+                        contentDescription = if (showing) "Hide how to do it" else "Show how to do it",
+                        tint = InkMuted, modifier = Modifier.size(18.dp).rotate(turn),
+                    )
+                }
             }
         }
-        if (ex.tags.isNotEmpty()) Tag(ex.tags.first())
+        AnimatedVisibility(visible = showing && hasExerciseDemo(ex.id)) {
+            Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
+                ExerciseDemo(ex.id, reduceMotion)
+                ex.cues["enter"]?.let {
+                    Spacer(Modifier.height(6.dp))
+                    Text(it, style = MaterialTheme.typography.bodyMedium, color = InkMuted)
+                }
+            }
+        }
     }
 }
 
