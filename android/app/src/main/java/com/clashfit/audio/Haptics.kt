@@ -7,8 +7,11 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
 import com.clashfit.data.Prefs
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 /**
  * Haptic feedback with VibrationEffect primitives: rep tick, shallow thud, milestone pulse,
@@ -17,6 +20,7 @@ import kotlinx.coroutines.flow.map
 class Haptics(
     private val context: Context,
     private val prefs: Prefs,
+    private val scope: CoroutineScope? = null,
 ) {
     private val tag = "ClashFit/audio"
     private val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -28,10 +32,23 @@ class Haptics(
 
     private var hapticsEnabled = true
 
+    /**
+     * The switch in Settings, actually connected.
+     *
+     * This class documented that it honoured `prefs.haptics` and did not: the observer was a
+     * comment saying a real implementation would add one, `setEnabled` was never called from
+     * anywhere, and the flag stayed true forever. Turning haptics off in Settings changed
+     * nothing, which is worse than not offering the switch.
+     *
+     * The scope is optional so a test can construct this class without one; when it is absent
+     * the setting is simply not observed and [setEnabled] remains the way in.
+     */
     init {
-        // Observe prefs.haptics and update the local flag
-        // Note: In a real implementation, this would be wrapped in a coroutine scope
-        // For now, we set it directly and it can be updated by the observer
+        scope?.launch {
+            prefs.settings.map { it.haptics }.distinctUntilChanged().collectLatest {
+                hapticsEnabled = it
+            }
+        }
     }
 
     /**

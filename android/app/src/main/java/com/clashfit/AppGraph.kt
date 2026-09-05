@@ -59,6 +59,7 @@ class AppGraph(val app: Context) {
                 com.clashfit.data.MIGRATION_2_3,
                 com.clashfit.data.MIGRATION_3_4,
                 com.clashfit.data.MIGRATION_4_5,
+                com.clashfit.data.MIGRATION_5_6,
             )
             .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
             .build()
@@ -76,7 +77,7 @@ class AppGraph(val app: Context) {
 
     // Audio fires first. Everything is synthesised; there are no sound assets.
     val sfx: Sfx by lazy { Sfx() }
-    val haptics: Haptics by lazy { Haptics(app, prefs) }
+    val haptics: Haptics by lazy { Haptics(app, prefs, scope) }
     val voiceCommands: VoiceCommands by lazy { VoiceCommands(app, mainScope) }
 
     // Multiplayer links and pass-the-phone rosters outlive any one screen.
@@ -99,7 +100,11 @@ class AppGraph(val app: Context) {
             scope = scope,
             clock = clock,
             weeklyTotals = { since ->
-                WeeklyTotals(db.sessions().damageSince(since), db.sessions().cleanRepsSince(since))
+                WeeklyTotals(
+                    damage = db.sessions().damageSince(since),
+                    cleanReps = db.sessions().cleanRepsSince(since),
+                    chaseScore = db.runs().chaseScoreSince(since),
+                )
             },
         )
     }

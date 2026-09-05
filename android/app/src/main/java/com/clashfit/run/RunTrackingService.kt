@@ -161,7 +161,11 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         seedOriginFromLastKnown()
 
         // Acquire wake lock to ensure GPS doesn't get throttled
-        wakeLock?.acquire()
+        // Bounded on purpose. An activity that is started and never finished — the phone is put
+        // down, the app is killed — would otherwise hold the CPU awake until the battery went.
+        // Four hours is longer than any activity this app expects and short enough to be a floor
+        // under that mistake.
+        wakeLock?.acquire(WAKELOCK_LIMIT_MS)
 
         // Start location updates at 1 Hz with no max update delay to prevent batching
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 1000L)
@@ -475,6 +479,10 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
             return
         }
 
+        // No fix has ever landed, so this activity began somewhere without a sky. Say so now
+        // rather than after the first step happens to move the estimate.
+        if (!fuser.hasEverFixed) fuser.seedOrigin()
+
         val movedIndoors = fuser.onSteps(deadReckoning.onSteps(steps), nowMs)
         if (movedIndoors) {
             // No Doppler speed indoors; the step rate is the honest substitute.
@@ -529,6 +537,9 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
          * that anything reading the stored route later can tell the two apart.
          */
         private const val INDOOR_ACCURACY_M = 99f
+
+        /** The longest an activity may hold the CPU awake. */
+        private const val WAKELOCK_LIMIT_MS = 4L * 60 * 60 * 1000
         const val ACTION_START = "com.clashfit.run.START"
         const val ACTION_PAUSE = "com.clashfit.run.PAUSE"
         const val ACTION_RESUME = "com.clashfit.run.RESUME"
