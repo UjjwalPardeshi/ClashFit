@@ -1,7 +1,85 @@
 {
   "generated": true,
-  "count": 51,
+  "count": 57,
   "exercises": [
+    {
+      "id": "lateral_raise",
+      "name": "Lateral Raise",
+      "family": "REP_CYCLE",
+      "difficulty": 1,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "upper",
+        "shoulders",
+        "no-equipment"
+      ]
+    },
+    {
+      "id": "bicep_curl",
+      "name": "Bicep Curl",
+      "family": "REP_CYCLE",
+      "difficulty": 1,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "upper",
+        "arms",
+        "no-equipment"
+      ]
+    },
+    {
+      "id": "shoulder_press",
+      "name": "Shoulder Press",
+      "family": "REP_CYCLE",
+      "difficulty": 2,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "upper",
+        "shoulders"
+      ]
+    },
+    {
+      "id": "squat",
+      "name": "Squat",
+      "family": "REP_CYCLE",
+      "difficulty": 1,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "lower",
+        "no-equipment"
+      ]
+    },
     {
       "id": "calf_raise",
       "name": "Calf Raise",
@@ -40,6 +118,26 @@
       ]
     },
     {
+      "id": "front_raise",
+      "name": "Front Raise",
+      "family": "REP_CYCLE",
+      "difficulty": 1,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "upper",
+        "shoulders",
+        "no-equipment"
+      ]
+    },
+    {
       "id": "glute_bridge",
       "name": "Glute Bridge",
       "family": "REP_CYCLE",
@@ -55,25 +153,6 @@
       "tags": [
         "strength",
         "posterior"
-      ]
-    },
-    {
-      "id": "squat",
-      "name": "Squat",
-      "family": "REP_CYCLE",
-      "difficulty": 1,
-      "games": [
-        "BOSS_FIGHT",
-        "TIME_ATTACK",
-        "GHOST_RACE",
-        "SURVIVAL",
-        "BOSS_RUSH",
-        "DUEL"
-      ],
-      "tags": [
-        "strength",
-        "lower",
-        "no-equipment"
       ]
     },
     {
@@ -93,6 +172,25 @@
         "accessible",
         "upper",
         "no-equipment"
+      ]
+    },
+    {
+      "id": "bench_press",
+      "name": "Floor Press",
+      "family": "REP_CYCLE",
+      "difficulty": 2,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "upper",
+        "equipment"
       ]
     },
     {
@@ -129,6 +227,25 @@
       "tags": [
         "accessible",
         "upper"
+      ]
+    },
+    {
+      "id": "triceps_extension",
+      "name": "Overhead Triceps Extension",
+      "family": "REP_CYCLE",
+      "difficulty": 2,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "upper",
+        "arms"
       ]
     },
     {

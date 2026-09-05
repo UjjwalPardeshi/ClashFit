@@ -32,6 +32,7 @@ import com.clashfit.ui.screens.session.FatigueTile
 import com.clashfit.ui.screens.session.HudEvent
 import com.clashfit.ui.screens.session.PAUSE_TARGET_INSET
 import com.clashfit.ui.screens.session.PauseTarget
+import com.clashfit.ui.screens.session.PlayerBar
 import com.clashfit.ui.screens.session.RepCounter
 import com.clashfit.ui.theme.ClashFitTheme
 import com.clashfit.ui.theme.Ground
@@ -91,6 +92,8 @@ class FightHudScreenshotTest {
     private fun combat(
         hp: Int,
         maxHp: Int = 1200,
+        playerHp: Int = 100,
+        playerMaxHp: Int = 100,
         phase: String = "opening",
         combo: Float = 1f,
         streak: Int = 0,
@@ -99,6 +102,7 @@ class FightHudScreenshotTest {
         damage: Int = 0,
     ) = CombatState(
         bossId = "pacemaker", bossName = "The Pacemaker", hp = hp, maxHp = maxHp,
+        playerHp = playerHp, playerMaxHp = playerMaxHp,
         phaseLabel = phase, phaseModifier = 1f, reps = 12, totalDamage = damage,
         dead = dead, comboStreak = streak, comboMultiplier = combo, lastDamage = null,
         staggered = staggered, mercyActive = false,
@@ -114,6 +118,8 @@ class FightHudScreenshotTest {
         timeLeftMs: Long? = null,
         gestureHold: Pair<HandGesture, Float>? = null,
         gesture: HudEvent.Gesture? = null,
+        lastPlayerHit: Int? = null,
+        nextAttackInMs: Long? = null,
     ) {
         compose.setContent {
             ClashFitTheme {
@@ -125,6 +131,8 @@ class FightHudScreenshotTest {
 
                     Column(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)) {
                         BossHeader(state, Modifier.padding(start = PAUSE_TARGET_INSET), timeLeftMs = timeLeftMs)
+                        Spacer(Modifier.height(8.dp))
+                        PlayerBar(state.copy(nextAttackInMs = nextAttackInMs, attackIntervalMs = nextAttackInMs?.let { 5_000L }), lastPlayerHit?.let { HudEvent.PlayerHit(it, state.playerHpPct) })
                         Spacer(Modifier.weight(1f))
                         cue?.let {
                             Text(
@@ -214,5 +222,13 @@ class FightHudScreenshotTest {
     @Test fun timed() = shot(
         "54-fight-timed", combat(hp = 820, combo = 1.2f, streak = 2, damage = 380),
         FatigueBand.WORKING, reps = 9, cue = null, timeLeftMs = 41_000,
+    )
+
+    /** Player bar showing damage taken, health remaining, and attack charge. */
+    @Test fun playerHit() = shot(
+        "56-fight-player-bar",
+        combat(hp = 640, playerHp = 37, playerMaxHp = 100, phase = "enrage", combo = 1.6f, streak = 4, damage = 560),
+        FatigueBand.WORKING, reps = 14, cue = "Depth held. Same tempo.",
+        lastPlayerHit = 8, nextAttackInMs = 2100,
     )
 }

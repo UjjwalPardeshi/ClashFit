@@ -1,0 +1,65 @@
+{
+  "id": "bench_press",
+  "family": "REP_CYCLE",
+  "name": "Floor Press",
+  "tags": [
+    "strength",
+    "upper",
+    "equipment"
+  ],
+  "framing": "side",
+  "difficulty": 2,
+  "games": [
+    "BOSS_FIGHT",
+    "TIME_ATTACK",
+    "GHOST_RACE",
+    "SURVIVAL",
+    "BOSS_RUSH",
+    "DUEL"
+  ],
+  "detector": {
+    "primaryAngle": {
+      "a": "SHOULDER",
+      "b": "ELBOW",
+      "c": "WRIST"
+    },
+    "topEnter": 150,
+    "topExit": 140,
+    "bottomEnter": 95,
+    "bottomExit": 110,
+    "targetAngle": 80,
+    "minDescendMs": 200,
+    "minBottomMs": 80,
+    "minRepMs": 900,
+    "maxRepMs": 8000,
+    "requiredJoints": [
+      "SHOULDER",
+      "ELBOW",
+      "WRIST"
+    ]
+  },
+  "form": {
+    "weights": {
+      "depth": 0.45,
+      "rom": 0.25,
+      "tempo": 0.30,
+      "alignment": 0.0
+    },
+    "tempo": {
+      "eccentricTargetSec": 0.35,
+      "bottomPauseSec": 0.10,
+      "_note": "measured window: topExit crossing -> bottomEnter crossing, not the full descent"
+    },
+    "depthExponent": 1.5
+  },
+  "fatigue": {
+    "signal": "VELOCITY_LOSS",
+    "baselineReps": 3
+  },
+  "cues": {
+    "enter": "Lie on your back, side-on to the camera, arms pressed straight up.",
+    "tooHigh": "Lower until the elbows pass ninety degrees.",
+    "tooFast": "Control the way down.",
+    "framing": "I can't see your arms — move the phone back."
+  }
+}

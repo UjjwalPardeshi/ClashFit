@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Angle Check</title>
+  <link rel="icon" href="data:,">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0a0a0a;
+      --fg: #e0e0e0;
+      --dim: #888;
+      --accent: #ff6b00;
+      --success: #4a9d6f;
+      --danger: #d64545;
+      --border: #333;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f5f5f5;
+        --fg: #1a1a1a;
+        --dim: #777;
+        --accent: #ff6b00;
+        --success: #3d8659;
+        --danger: #c33;
+        --border: #ccc;
+      }
+    }
+
+    body {
+      margin: 0;
+      padding: 12px;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      overflow-y: auto;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 12px 0;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    h2 {
+      margin: 16px 0 8px 0;
+      font-size: 14px;
+      font-weight: bold;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .col {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 8px;
+      padding: 8px;
+      background: rgba(255, 107, 0, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="checkbox"],
+    select {
+      padding: 4px 6px;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      font-family: inherit;
+      font-size: inherit;
+    }
+
+    select {
+      cursor: pointer;
+    }
+
+    button {
+      padding: 6px 12px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 2px;
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    button:hover {
+      opacity: 0.8;
+    }
+
+    button:active {
+      opacity: 0.6;
+    }
+
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .canvas-container canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .status {
+      padding: 8px;
+      background: rgba(200, 200, 200, 0.1);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    .status.error {
+      background: rgba(212, 69, 69, 0.2);
+      border-color: var(--danger);
+    }
+
+    .status.success {
+      background: rgba(74, 157, 111, 0.2);
+      border-color: var(--success);
+    }
+
+    .gauge {
+      width: 100%;
+      height: 60px;
+      background: #1a1a1a;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      position: relative;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .gauge-bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--success), var(--accent), var(--danger));
+      width: 100%;
+      opacity: 0.3;
+    }
+
+    .gauge-marker {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 2px;
+      background: var(--dim);
+      font-size: 10px;
+      display: flex;
+      align-items: flex-end;
+      color: var(--dim);
+      padding-bottom: 2px;
+    }
+
+    .gauge-needle {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      width: 3px;
+      background: var(--fg);
+      z-index: 10;
+      box-shadow: 0 0 6px var(--accent);
+    }
+
+    .gauge-label {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--bg);
+      padding: 2px 4px;
+      border-radius: 2px;
+      font-size: 11px;
+      z-index: 5;
+      white-space: nowrap;
+    }
+
+    .panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+
+    .stat-value.normal {
+      color: var(--fg);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      background: var(--accent);
+      color: #000;
+      border-radius: 2px;
+      font-size: 11px;
+      font-weight: bold;
+      margin: 2px;
+    }
+
+    .badge.alt {
+      background: var(--success);
+    }
+
+    .badge.info {
+      background: var(--dim);
+      color: var(--bg);
+    }
+
+    .rep-log {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-bottom: 12px;
+    }
+
+    .rep-log th,
+    .rep-log td {
+      padding: 4px 6px;
+      text-align: right;
+      border: 1px solid var(--border);
+    }
+
+    .rep-log th {
+      background: rgba(255, 107, 0, 0.1);
+      font-weight: bold;
+    }
+
+    .rep-log td.desc {
+      text-align: left;
+    }
+
+    .rep-log tr.rejected {
+      background: rgba(212, 69, 69, 0.1);
+    }
+
+    .rep-log tr.rejected td {
+      color: var(--dim);
+    }
+
+    .suggestion {
+      padding: 8px;
+      background: rgba(74, 157, 111, 0.1);
+      border: 1px solid var(--success);
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    .suggestion-label {
+      font-size: 11px;
+      color: var(--dim);
+      margin-bottom: 4px;
+    }
+
+    .suggestion-text {
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .error-msg {
+      color: var(--danger);
+    }
+
+    .section-title {
+      font-weight: bold;
+      margin-top: 12px;
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Angle Check</h1>
+
+  <div class="controls">
+    <label>
+      Camera:
+      <select id="cameraSelect">
+        <option value="">Loading cameras...</option>
+      </select>
+    </label>
+    <label>
+      Exercise:
+      <select id="exerciseSelect">
+        <option value="">Loading exercises...</option>
+      </select>
+    </label>
+    <button id="resetBtn">Reset (R)</button>
+    <button id="copyLogBtn">Copy log (C)</button>
+    <label>
+      <input type="checkbox" id="smoothing" checked>
+      Smoothing (as the app)
+    </label>
+    <label>
+      <input type="checkbox" id="show2d" checked>
+      Also show the flat 2D angle
+    </label>
+  </div>
+
+  <div class="status" id="status">
+    Initializing...
+  </div>
+
+  <div class="canvas-container" id="canvasBox">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <h2>Rep Log</h2>
+  <table class="rep-log" id="repLog">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Side</th>
+        <th>Min °</th>
+        <th>Max °</th>
+        <th>Ecc (s)</th>
+        <th>Bottom (s)</th>
+        <th>Con (s)</th>
+        <th>Total (s)</th>
+        <th class="desc">Result</th>
+      </tr>
+    </thead>
+    <tbody id="repLogBody">
+    </tbody>
+  </table>
+
+  <div class="suggestion" id="suggestion" style="display: none;">
+    <div class="suggestion-label">Suggested Thresholds</div>
+    <div class="suggestion-text" id="suggestionText"></div>
+  </div>
+</div>
+
+<script type="module">
+// ============================================================================
+// OneEuroFilter - exact port from Kotlin
+// ============================================================================
+
+class LowPass {
+  constructor() {
+    this.y = null;
+  }
+
+  filter(x, a) {
+    const out = this.y === null ? x : a * x + (1 - a) * this.y;
+    this.y = out;
+    return out;
+  }
+
+  reset() {
+    this.y = null;
+  }
+}
+
+class OneEuroFilter {
+  constructor(minCutoff = 1.0, beta = 0.007, dCutoff = 1.0) {
+    this.minCutoff = minCutoff;
+    this.beta = beta;
+    this.dCutoff = dCutoff;
+    this.xf = new LowPass();
+    this.dxf = new LowPass();
+    this.prev = null;
+    this.tPrev = null;
+  }
+
+  alpha(cutoff, dt) {
+    const tau = 1 / (2 * Math.PI * cutoff);
+    return 1 / (1 + tau / dt);
+  }
+
+  filter(value, tMs) {
+    if (this.tPrev === null) {
+      this.tPrev = tMs;
+      this.prev = value;
+      return this.xf.filter(value, this.alpha(this.minCutoff, 1 / 30));
+    }
+
+    let dt = (tMs - this.tPrev) / 1000;
+    if (dt <= 0) dt = 1 / 30;
+    this.tPrev = tMs;
+
+    const dxRaw = (value - (this.prev ?? value)) / dt;
+    this.prev = value;
+    const dxHat = this.dxf.filter(dxRaw, this.alpha(this.dCutoff, dt));
+    const cutoff = this.minCutoff + this.beta * Math.abs(dxHat);
+    return this.xf.filter(value, this.alpha(cutoff, dt));
+  }
+
+  reset() {
+    this.xf.reset();
+    this.dxf.reset();
+    this.prev = null;
+    this.tPrev = null;
+  }
+}
+
+class LandmarkFilter {
+  constructor(minCutoff = 1.0, beta = 0.007, dCutoff = 1.0, landmarkCount = 33) {
+    this.filters = Array(landmarkCount).fill(null).map(() => ({
+      x: new OneEuroFilter(minCutoff, beta, dCutoff),
+      y: new OneEuroFilter(minCutoff, beta, dCutoff),
+      z: new OneEuroFilter(minCutoff, beta, dCutoff),
+    }));
+  }
+
+  apply(landmarks, tMs) {
+    return landmarks.map((lm, i) => ({
+      x: this.filters[i].x.filter(lm.x, tMs),
+      y: this.filters[i].y.filter(lm.y, tMs),
+      z: this.filters[i].z.filter(lm.z, tMs),
+      visibility: lm.visibility,
+    }));
+  }
+
+  reset() {
+    this.filters.forEach(f => {
+      f.x.reset();
+      f.y.reset();
+      f.z.reset();
+    });
+  }
+}
+
+// ============================================================================
+// Geometry - exact port from Kotlin
+// ============================================================================
+
+const LM = {
+  NOSE: 0,
+  LEFT_SHOULDER: 11,
+  RIGHT_SHOULDER: 12,
+  LEFT_ELBOW: 13,
+  RIGHT_ELBOW: 14,
+  LEFT_WRIST: 15,
+  RIGHT_WRIST: 16,
+  LEFT_HIP: 23,
+  RIGHT_HIP: 24,
+  LEFT_KNEE: 25,
+  RIGHT_KNEE: 26,
+  LEFT_ANKLE: 27,
+  RIGHT_ANKLE: 28,
+  LEFT_HEEL: 29,
+  RIGHT_HEEL: 30,
+  LEFT_FOOT_INDEX: 31,
+  RIGHT_FOOT_INDEX: 32,
+};
+
+const JOINT_MAP = {
+  'SHOULDER': [LM.LEFT_SHOULDER, LM.RIGHT_SHOULDER],
+  'ELBOW': [LM.LEFT_ELBOW, LM.RIGHT_ELBOW],
+  'WRIST': [LM.LEFT_WRIST, LM.RIGHT_WRIST],
+  'HIP': [LM.LEFT_HIP, LM.RIGHT_HIP],
+  'KNEE': [LM.LEFT_KNEE, LM.RIGHT_KNEE],
+  'ANKLE': [LM.LEFT_ANKLE, LM.RIGHT_ANKLE],
+  'HEEL': [LM.LEFT_HEEL, LM.RIGHT_HEEL],
+  'FOOT_INDEX': [LM.LEFT_FOOT_INDEX, LM.RIGHT_FOOT_INDEX],
+};
+
+function jointIdx(joint, side) {
+  const pair = JOINT_MAP[joint];
+  if (!pair) return -1;
+  return side === 'LEFT' ? pair[0] : pair[1];
+}
+
+function angle3(a, b, c) {
+  const v1x = a.x - b.x, v1y = a.y - b.y, v1z = a.z - b.z;
+  const v2x = c.x - b.x, v2y = c.y - b.y, v2z = c.z - b.z;
+  const n1 = Math.sqrt(v1x*v1x + v1y*v1y + v1z*v1z);
+  const n2 = Math.sqrt(v2x*v2x + v2y*v2y + v2z*v2z);
+  if (n1 < 1e-9 || n2 < 1e-9) return NaN;
+  const cos = Math.max(-1, Math.min(1, (v1x*v2x + v1y*v2y + v1z*v2z) / (n1 * n2)));
+  return Math.acos(cos) * 180 / Math.PI;
+}
+
+function angle2d(x1, y1, x2, y2) {
+  // atan2 on normalized coordinates
+  const dx = x1 - x2;
+  const dy = y1 - y2;
+  return Math.atan2(dy, dx) * 180 / Math.PI;
+}
+
+function sideVisibility(landmarks, jointNames, side) {
+  let sum = 0;
+  for (const j of jointNames) {
+    const i = jointIdx(j, side);
+    if (i >= 0 && i < landmarks.length) {
+      sum += landmarks[i].visibility;
+    }
+  }
+  return sum / jointNames.length;
+}
+
+function chooseSide(landmarks, jointNames, threshold = 0.6) {
+  const l = sideVisibility(landmarks, jointNames, 'LEFT');
+  const r = sideVisibility(landmarks, jointNames, 'RIGHT');
+  const bothOk = l >= threshold && r >= threshold;
+  const best = l >= r ? 'LEFT' : 'RIGHT';
+  const bestVis = Math.max(l, r);
+  return {
+    side: best,
+    both: bothOk,
+    visibility: bestVis,
+    valid: bestVis >= threshold,
+  };
+}
+
+function primaryAngle(landmarks, aName, bName, cName, jointNames, threshold = 0.6) {
+  const sel = chooseSide(landmarks, jointNames, threshold);
+  if (!sel.valid) {
+    return {
+      angle: NaN,
+      left: NaN,
+      right: NaN,
+      side: sel.side,
+      both: sel.both,
+      visibility: sel.visibility,
+      valid: sel.valid,
+    };
+  }
+
+  const one = (side) => {
+    const ai = jointIdx(aName, side);
+    const bi = jointIdx(bName, side);
+    const ci = jointIdx(cName, side);
+    if (ai < 0 || bi < 0 || ci < 0) return NaN;
+    return angle3(landmarks[ai], landmarks[bi], landmarks[ci]);
+  };
+
+  const left = one('LEFT');
+  const right = one('RIGHT');
+  const deg = sel.both
+    ? (Number.isFinite(left) && Number.isFinite(right) ? (left + right) / 2 : NaN)
+    : one(sel.side);
+
+  return {
+    angle: deg,
+    left,
+    right,
+    side: sel.side,
+    both: sel.both,
+    visibility: sel.visibility,
+    valid: sel.valid,
+  };
+}
+
+// ============================================================================
+// RepStateMachine - exact port from Kotlin
+// ============================================================================
+
+class RepStateMachine {
+  constructor(config) {
+    this.config = config;
+    this.s = config.topEnter > config.bottomEnter ? 1 : -1;
+    this.uTopEnter = this.s * config.topEnter;
+    this.uTopExit = this.s * config.topExit;
+    this.uBottomEnter = this.s * config.bottomEnter;
+    this.uBottomExit = this.s * config.bottomExit;
+    this.uTarget = this.s * config.targetAngle;
+
+    this.state = 'TOP';
+    this.repIndex = 0;
+    this.stateEnteredMs = 0;
+    this.topRefU = null;
+    this.lastRepEndMs = null;
+    this.seenValid = false;
+    this.rep = null;
+  }
+
+  setTopRef(angleDeg) {
+    this.topRefU = this.s * angleDeg;
+  }
+
+  reset() {
+    this.state = 'TOP';
+    this.repIndex = 0;
+    this.rep = null;
+    this.lastRepEndMs = null;
+    this.topRefU = null;
+    this.seenValid = false;
+    this.stateEnteredMs = 0;
+  }
+
+  onFrame(angleDeg, tMs) {
+    const valid = Number.isFinite(angleDeg);
+    if (this.rep) {
+      this.rep.frames++;
+      if (valid) this.rep.validFrames++;
+    }
+    if (!valid) return null;
+
+    const u = this.s * angleDeg;
+    if (!this.seenValid) {
+      this.seenValid = true;
+      this.stateEnteredMs = tMs;
+    }
+    if (this.topRefU === null) this.topRefU = u;
+
+    if (this.rep) {
+      if (u < this.rep.uMin) this.rep.uMin = u;
+      if (u > this.rep.uMax) this.rep.uMax = u;
+    }
+
+    const dwell = tMs - this.stateEnteredMs;
+
+    switch (this.state) {
+      case 'TOP':
+        if (u >= this.uTopEnter && this.topRefU !== null && u > this.topRefU) {
+          this.topRefU = u;
+        }
+        if (u < this.uTopExit) {
+          this.rep = { tStartMs: tMs, uMin: u, uMax: u, frames: 1, validFrames: 1, tBottomStart: null, tBottomEnd: null, uAtBottomExit: 0 };
+          this.state = 'DESCENDING';
+          this.stateEnteredMs = tMs;
+        }
+        break;
+      case 'DESCENDING':
+        if (u >= this.uTopEnter) {
+          this.rep = null;
+          this.state = 'TOP';
+          this.stateEnteredMs = tMs;
+        } else if (u <= this.uBottomEnter && dwell >= this.config.minDescendMs) {
+          this.rep.tBottomStart = tMs;
+          this.state = 'BOTTOM';
+          this.stateEnteredMs = tMs;
+        }
+        break;
+      case 'BOTTOM':
+        if (u > this.uBottomExit && dwell >= this.config.minBottomMs) {
+          this.rep.tBottomEnd = tMs;
+          this.rep.uAtBottomExit = u;
+          this.state = 'ASCENDING';
+          this.stateEnteredMs = tMs;
+        }
+        break;
+      case 'ASCENDING':
+        if (u <= this.uBottomEnter) {
+          this.state = 'BOTTOM';
+          this.stateEnteredMs = tMs;
+        } else if (u >= this.uTopEnter) {
+          const result = this.complete(tMs, u);
+          this.state = 'TOP';
+          this.stateEnteredMs = tMs;
+          this.rep = null;
+          return result;
+        }
+        break;
+    }
+    return null;
+  }
+
+  complete(tMs, u) {
+    const r = this.rep;
+    if (!r) return null;
+    const dur = tMs - r.tStartMs;
+
+    if (dur < this.config.minRepMs || dur > this.config.maxRepMs) return null;
+    if (r.tBottomStart === null || r.tBottomEnd === null) return null;
+    const ratio = r.frames > 0 ? r.validFrames / r.frames : 0;
+    if (ratio < 0.9) return null;
+
+    const topRef = this.topRefU ?? u;
+    const tEcc = (r.tBottomStart - r.tStartMs) / 1000;
+    const tBottom = (r.tBottomEnd - r.tBottomStart) / 1000;
+    const tCon = (tMs - r.tBottomEnd) / 1000;
+
+    this.repIndex++;
+    const gap = this.lastRepEndMs ? (r.tStartMs - this.lastRepEndMs) / 1000 : 0;
+    this.lastRepEndMs = tMs;
+
+    return {
+      repIndex: this.repIndex,
+      tStartMs: r.tStartMs,
+      tEndMs: tMs,
+      thetaMin: this.s * (this.s > 0 ? r.uMin : r.uMax),
+      thetaMax: this.s * (this.s > 0 ? r.uMax : r.uMin),
+      uMin: r.uMin,
+      uMax: r.uMax,
+      uTopRef: topRef,
+      tEccSec: tEcc,
+      tBottomSec: tBottom,
+      tConSec: tCon,
+      validFrameRatio: ratio,
+    };
+  }
+}
+
+// ============================================================================
+// UI and App Logic
+// ============================================================================
+
+const { PoseLandmarker, FilesetResolver } = await import(
+  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs'
+);
+
+const MODEL = '/android/app/src/main/assets/models/pose_landmarker_full.task';
+const WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm';
+
+const VIS = 0.6;            // Geometry.primaryAngle's side threshold, as the app
+const DRAW_VIS = 0.3;       // below this a joint is not drawn
+const MERGE_DEFAULT_MS = 500;
+const FLASH_MS = 800;
+const CUE_MS = 2500;
+
+const C = {
+  bone: 'rgba(255,255,255,0.55)',
+  joint: '#d8d8d8',
+  primary: '#ff6b00',
+  primaryDim: 'rgba(255,107,0,0.4)',
+  gate: '#3fa7ff',
+  ok: '#4a9d6f',
+  bad: '#e04b4b',
+  ink: '#ffffff',
+  dim: '#c8c8c8',
+  pill: 'rgba(0,0,0,0.62)',
+};
+
+const $ = (id) => document.getElementById(id);
+const els = {
+  canvas: $('canvas'),
+  canvasBox: $('canvasBox'),
+  status: $('status'),
+  cameraSelect: $('cameraSelect'),
+  exerciseSelect: $('exerciseSelect'),
+  resetBtn: $('resetBtn'),
+  copyLogBtn: $('copyLogBtn'),
+  smoothing: $('smoothing'),
+  show2d: $('show2d'),
+  repLogBody: $('repLogBody'),
+  suggestion: $('suggestion'),
+  suggestionText: $('suggestionText'),
+};
+
+const ctx = els.canvas.getContext('2d');
+let poseLandmarker = null;
+let camera = null;
+let video = null;
+let loopStarted = false;
+let exercises = {};
+let currentExercise = null;
+
+// One machine ('MEAN') or one per arm ('LEFT', 'RIGHT'), as SessionEngine.setExercise.
+let machines = {};
+let sidesEach = false;
+let mergeWindowMs = MERGE_DEFAULT_MS;
+let dirSign = 1;
+let worldFilter = new LandmarkFilter(1.0, 0.007, 1.0);
+
+let sessionReps = [];
+let nextRepIndex = 1;
+let lastLeftRepEndMs = null;
+let lastRightRepEndMs = null;
+let deepest = null;      // { u, gate, side } of the rep in progress — where an END gate is judged
+let flash = null;        // { text, sub, color, untilMs }
+let cue = null;          // { text, untilMs }
+let fps = 0, fpsCounter = 0, fpsStamp = performance.now();
+let inferenceMs = 0;
+let lastDebug = null;    // what the last frame measured, for the test hook
+
+const setStatus = (msg, type = 'normal') => {
+  els.status.textContent = msg;
+  els.status.className = 'status ' + (type === 'error' ? 'error' : type === 'success' ? 'success' : '');
+};
+
+const fmt = (v, d = 0) => Number.isFinite(v) ? v.toFixed(d) + '°' : '--';
+
+// ---------------------------------------------------------------- engine pieces the page mirrors
+
+// The gate follows the primary angle's side selection (SessionEngine.gateAngle).
+const gateAngle = (lms, names, side, both) => {
+  const one = (sd) => {
+    const ai = jointIdx(names[0], sd), bi = jointIdx(names[1], sd), ci = jointIdx(names[2], sd);
+    if (ai < 0 || bi < 0 || ci < 0) return NaN;
+    return angle3(lms[ai], lms[bi], lms[ci]);
+  };
+  if (!both) return one(side);
+  const l = one('LEFT'), r = one('RIGHT');
+  return Number.isFinite(l) && Number.isFinite(r) ? (l + r) / 2 : NaN;
+};
+
+const gateOk = (det, g) => {
+  if (!det.gate || !Number.isFinite(g)) return true;
+  const min = det.gate.min ?? -Infinity, max = det.gate.max ?? Infinity;
+  return g >= min && g <= max;
+};
+
+// Flat image-plane angle at the same three joints, what a 2D tutorial would measure.
+const angle2 = (img, pa, side) => {
+  const ai = jointIdx(pa.a, side), bi = jointIdx(pa.b, side), ci = jointIdx(pa.c, side);
+  if (ai < 0 || bi < 0 || ci < 0) return NaN;
+  const flat = (p) => ({ x: p.x, y: p.y, z: 0 });
+  return angle3(flat(img[ai]), flat(img[bi]), flat(img[ci]));
+};
+
+const trackDeepest = (a, side, gate) => {
+  if (!Number.isFinite(a)) return;
+  const u = dirSign * a;
+  if (!deepest || u < deepest.u) deepest = { u, gate, side };
+};
+
+const logRow = (cells, cls = '') => {
+  const row = document.createElement('tr');
+  if (cls) row.className = cls;
+  row.innerHTML = cells.map((c, i) => `<td${i === cells.length - 1 ? ' class="desc"' : ''}>${c}</td>`).join('');
+  els.repLogBody.appendChild(row);
+};
+
+const completeRep = (raw, side, tMs) => {
+  const det = currentExercise.detector;
+  const gateAtDeepest = deepest ? deepest.gate : NaN;
+  deepest = null;
+  const total = raw.tEccSec + raw.tBottomSec + raw.tConSec;
+  const times = [raw.thetaMin.toFixed(1), raw.thetaMax.toFixed(1), raw.tEccSec.toFixed(2), raw.tBottomSec.toFixed(2), raw.tConSec.toFixed(2), total.toFixed(2)];
+  if (det.gate && det.gate.at === 'END' && !gateOk(det, gateAtDeepest)) {
+    const text = (currentExercise.cues && currentExercise.cues.gate) || 'Finish the movement.';
+    cue = { text, untilMs: tMs + CUE_MS };
+    flash = { text: 'NO REP', sub: `gate ${fmt(gateAtDeepest)} at the deepest point`, color: C.bad, untilMs: tMs + FLASH_MS };
+    logRow(['—', side, ...times, `refused: gate ${fmt(gateAtDeepest)} outside ${det.gate.min ?? 0}–${det.gate.max ?? 180}`], 'rejected');
+    return;
+  }
+  const rep = { ...raw, repIndex: nextRepIndex++, side };
+  sessionReps.push(rep);
+  flash = { text: `REP ${rep.repIndex}`, sub: `${rep.thetaMax.toFixed(0)}° → ${rep.thetaMin.toFixed(0)}°`, color: C.ok, untilMs: tMs + FLASH_MS };
+  logRow([rep.repIndex, side, ...times, 'counted']);
+  updateSuggestions();
+};
+
+// Per-arm crediting (SessionEngine.creditSide): a rep from either arm counts; both arms finishing
+// within the merge window is one rep.
+const creditSide = (raw, side, tMs) => {
+  const otherEnd = side === 'LEFT' ? lastRightRepEndMs : lastLeftRepEndMs;
+  if (side === 'LEFT') lastLeftRepEndMs = tMs; else lastRightRepEndMs = tMs;
+  if (otherEnd !== null && tMs - otherEnd <= mergeWindowMs) {
+    const total = raw.tEccSec + raw.tBottomSec + raw.tConSec;
+    logRow(['—', side, raw.thetaMin.toFixed(1), raw.thetaMax.toFixed(1), raw.tEccSec.toFixed(2), raw.tBottomSec.toFixed(2), raw.tConSec.toFixed(2), total.toFixed(2),
+      `merged into #${nextRepIndex - 1} (both arms within ${mergeWindowMs} ms)`], 'rejected');
+    return;
+  }
+  completeRep(raw, side, tMs);
+};
+
+const updateSuggestions = () => {
+  if (sessionReps.length < 2) {
+    els.suggestion.style.display = 'none';
+    return;
+  }
+  const mins = sessionReps.map(r => r.thetaMin).sort((a, b) => a - b);
+  const maxs = sessionReps.map(r => r.thetaMax).sort((a, b) => a - b);
+  const p90min = mins[Math.floor(mins.length * 0.9)];   // nearly every rep gets at least this low
+  const p10max = maxs[Math.floor(maxs.length * 0.1)];   // nearly every rep gets at least this high
+  const medMin = mins[Math.floor(mins.length * 0.5)];
+  const medMax = maxs[Math.floor(maxs.length * 0.5)];
+  const c = currentExercise.detector;
+  const increasing = c.topEnter < c.bottomEnter;
+  // Thresholds sit 3° inside what your reps actually reach, exits 10° further inside.
+  let topSugg, topExitSugg, botSugg, botExitSugg, med;
+  if (increasing) {          // rest is the low angle, the turn is the high one (raises, presses)
+    topSugg = Math.ceil(p90min + 3); topExitSugg = topSugg + 10;
+    botSugg = Math.floor(p10max - 3); botExitSugg = botSugg - 10;
+    med = medMax;
+  } else {                   // rest is the high angle, the turn is the low one (curls, squats)
+    topSugg = Math.floor(p10max - 3); topExitSugg = topSugg - 10;
+    botSugg = Math.ceil(p90min + 3); botExitSugg = botSugg + 10;
+    med = medMin;
+  }
+  els.suggestionText.innerHTML = `
+    topEnter: ${topSugg.toFixed(0)}<br>
+    topExit: ${topExitSugg.toFixed(0)}<br>
+    bottomEnter: ${botSugg.toFixed(0)}<br>
+    bottomExit: ${botExitSugg.toFixed(0)}<br>
+    targetAngle: ${med.toFixed(0)}<br>
+    <br>
+    <small>Based on ${sessionReps.length} counted reps: 3° inside the angles 90% of your reps reach (min ${p90min.toFixed(0)}, max ${p10max.toFixed(0)}), target at the median. Current: ${c.topEnter}/${c.topExit} → ${c.bottomEnter}/${c.bottomExit}, target ${c.targetAngle}.</small>
+  `;
+  els.suggestion.style.display = 'block';
+};
+
+// ---------------------------------------------------------------- drawing, all of it on the canvas
+
+const fitCanvas = () => {
+  if (!video || !video.videoWidth) return;
+  if (els.canvas.width !== video.videoWidth || els.canvas.height !== video.videoHeight) {
+    els.canvas.width = video.videoWidth;
+    els.canvas.height = video.videoHeight;
+    els.canvasBox.style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
+  }
+};
+
+// The preview is mirrored, as a mirror and as the phone's front camera; text is drawn upright.
+const P = (lm) => ({ x: (1 - lm.x) * els.canvas.width, y: lm.y * els.canvas.height });
+const FS = () => Math.max(12, Math.round(els.canvas.width / 64));
+
+const roundRect = (x, y, w, h, r) => {
+  ctx.beginPath();
+  if (ctx.roundRect) { ctx.roundRect(x, y, w, h, r); return; }
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+};
+
+const pill = (text, x, y, { color = C.ink, bg = C.pill, size = FS(), align = 'left', bold = true } = {}) => {
+  ctx.font = `${bold ? 'bold ' : ''}${size}px "Courier New", monospace`;
+  const w = ctx.measureText(text).width + size * 0.9;
+  const h = size * 1.55;
+  const left = align === 'left' ? x : align === 'right' ? x - w : x - w / 2;
+  ctx.fillStyle = bg;
+  roundRect(left, y - h / 2, w, h, size * 0.35);
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, left + size * 0.45, y);
+  return { left, top: y - h / 2, w, h };
+};
+
+const drawVideo = () => {
+  const W = els.canvas.width, H = els.canvas.height;
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  if (video) {
+    ctx.translate(W, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, W, H);
+  }
+  ctx.restore();
+};
+
+const CONNECTIONS = [
+  [LM.LEFT_SHOULDER, LM.LEFT_ELBOW], [LM.LEFT_ELBOW, LM.LEFT_WRIST],
+  [LM.RIGHT_SHOULDER, LM.RIGHT_ELBOW], [LM.RIGHT_ELBOW, LM.RIGHT_WRIST],
+  [LM.LEFT_HIP, LM.LEFT_KNEE], [LM.LEFT_KNEE, LM.LEFT_ANKLE],
+  [LM.RIGHT_HIP, LM.RIGHT_KNEE], [LM.RIGHT_KNEE, LM.RIGHT_ANKLE],
+  [LM.LEFT_SHOULDER, LM.LEFT_HIP], [LM.RIGHT_SHOULDER, LM.RIGHT_HIP],
+  [LM.LEFT_SHOULDER, LM.RIGHT_SHOULDER], [LM.LEFT_HIP, LM.RIGHT_HIP],
+];
+
+const segment = (img, i, j, color, width, dash = []) => {
+  const a = img[i], b = img[j];
+  if (!a || !b || a.visibility < DRAW_VIS || b.visibility < DRAW_VIS) return;
+  const pa = P(a), pb = P(b);
+  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash);
+  ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y); ctx.stroke();
+  ctx.setLineDash([]);
+};
+
+// The angle drawn as a wedge at the vertex, between the two rays, on the smaller side.
+const wedge = (img, ai, bi, ci, radius, color) => {
+  const a = img[ai], b = img[bi], c = img[ci];
+  if (!a || !b || !c || a.visibility < DRAW_VIS || b.visibility < DRAW_VIS || c.visibility < DRAW_VIS) return null;
+  const pa = P(a), pb = P(b), pc = P(c);
+  const t1 = Math.atan2(pa.y - pb.y, pa.x - pb.x);
+  const t2 = Math.atan2(pc.y - pb.y, pc.x - pb.x);
+  let d = t2 - t1;
+  while (d > Math.PI) d -= 2 * Math.PI;
+  while (d < -Math.PI) d += 2 * Math.PI;
+  ctx.fillStyle = color.replace(/[\d.]+\)$/, '0.28)');
+  ctx.strokeStyle = color; ctx.lineWidth = Math.max(1.5, radius / 12);
+  ctx.beginPath(); ctx.moveTo(pb.x, pb.y); ctx.arc(pb.x, pb.y, radius, t1, t1 + d, d < 0); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  return { vertex: pb, bisector: t1 + d / 2 };
+};
+
+const drawSkeleton = (img, det, res, gate, twoD) => {
+  const W = els.canvas.width;
+  const lw = Math.max(2, W / 420);
+  const r = Math.max(3, W / 240);
+  const fs = FS();
+
+  CONNECTIONS.forEach(([i, j]) => segment(img, i, j, C.bone, lw));
+
+  const highlighted = new Set();
+  const labels = [];
+  if (det) {
+    const pa = det.primaryAngle;
+    const used = sidesEach || !res || res.both ? ['LEFT', 'RIGHT'] : [res.side];
+    for (const side of ['LEFT', 'RIGHT']) {
+      const ai = jointIdx(pa.a, side), bi = jointIdx(pa.b, side), ci = jointIdx(pa.c, side);
+      if (ai < 0 || bi < 0 || ci < 0) continue;
+      const on = used.includes(side);
+      const color = on ? C.primary : C.primaryDim;
+      segment(img, ai, bi, color, lw * 2.2);
+      segment(img, bi, ci, color, lw * 2.2);
+      [ai, bi, ci].forEach(k => highlighted.add(k));
+      const w = wedge(img, ai, bi, ci, Math.max(18, W / 26), on ? 'rgba(255,107,0,1)' : 'rgba(255,107,0,0.4)');
+      if (w && res) {
+        const deg = side === 'LEFT' ? res.left : res.right;
+        labels.push({ at: w, side, text: `${side[0]} ${fmt(deg)}`, color: on ? C.primary : C.dim,
+          sub: els.show2d.checked ? `2D ${fmt(twoD[side])}` : null });
+      }
+    }
+    if (det.gate) {
+      const names = det.gate.angle;
+      const sides = res && !res.both ? [res.side] : ['LEFT', 'RIGHT'];
+      for (const side of sides) {
+        const ai = jointIdx(names[0], side), bi = jointIdx(names[1], side), ci = jointIdx(names[2], side);
+        if (ai < 0 || bi < 0 || ci < 0) continue;
+        segment(img, ai, bi, C.gate, lw * 1.2, [8, 6]);
+        segment(img, bi, ci, C.gate, lw * 1.2, [8, 6]);
+        [ai, bi, ci].forEach(k => highlighted.add(k));
+        const w = wedge(img, ai, bi, ci, Math.max(14, W / 34), 'rgba(63,167,255,1)');
+        if (w && gate) {
+          const okNow = gateOk(det, gate.angle);
+          const lim = `${det.gate.min != null ? '≥' + det.gate.min : ''}${det.gate.max != null && det.gate.max < 180 ? ' ≤' + det.gate.max : ''}`;
+          labels.push({ at: w, side, text: `gate ${fmt(gate.angle)} ${lim} ${okNow ? '✓' : '✗'}`, color: okNow ? C.gate : C.bad, sub: null, gate: true });
+        }
+      }
+    }
+  }
+
+  img.forEach((lm, i) => {
+    if (lm.visibility < DRAW_VIS) return;
+    const p = P(lm);
+    ctx.fillStyle = highlighted.has(i) ? C.primary : C.joint;
+    ctx.beginPath(); ctx.arc(p.x, p.y, highlighted.has(i) ? r * 1.5 : r, 0, 2 * Math.PI); ctx.fill();
+  });
+
+  // Labels sit just past the wedge along its bisector, so they never cover the joint.
+  for (const l of labels) {
+    const dist = Math.max(30, W / 16);
+    const x = l.at.vertex.x + Math.cos(l.at.bisector) * dist;
+    const y = l.at.vertex.y + Math.sin(l.at.bisector) * dist;
+    const align = Math.cos(l.at.bisector) < -0.3 ? 'right' : Math.cos(l.at.bisector) > 0.3 ? 'left' : 'center';
+    const size = l.gate ? Math.round(fs * 0.95) : Math.round(fs * 1.35);
+    const box = pill(l.text, x, y, { color: l.color, size, align });
+    if (l.sub) pill(l.sub, box.left, y + box.h * 0.95, { color: C.dim, size: Math.round(fs * 0.9), bold: false });
+  }
+};
+
+const drawGauge = (det, res) => {
+  const W = els.canvas.width, H = els.canvas.height;
+  const fs = FS();
+  const gh = Math.max(16, Math.round(H * 0.045));
+  const y0 = H - gh - fs * 2.2;
+  const x0 = W * 0.08, x1 = W * 0.92;
+  const vals = [det.topEnter, det.topExit, det.bottomEnter, det.bottomExit, det.targetAngle];
+  const lo = Math.max(0, Math.min(...vals) - 15), hi = Math.min(180, Math.max(...vals) + 15);
+  const X = (v) => x0 + (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo) * (x1 - x0);
+  const s = det.topEnter > det.bottomEnter ? 1 : -1;
+
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  roundRect(x0 - fs * 1.6, y0 - fs * 1.4, x1 - x0 + fs * 3.2, gh + fs * 3.4, fs * 0.5);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.fillRect(x0, y0, x1 - x0, gh);
+  // Where the machine calls "top" and "bottom".
+  ctx.fillStyle = 'rgba(74,157,111,0.45)';
+  if (s > 0) ctx.fillRect(X(det.topEnter), y0, x1 - X(det.topEnter), gh); else ctx.fillRect(x0, y0, X(det.topEnter) - x0, gh);
+  ctx.fillStyle = 'rgba(255,107,0,0.45)';
+  if (s > 0) ctx.fillRect(x0, y0, X(det.bottomEnter) - x0, gh); else ctx.fillRect(X(det.bottomEnter), y0, x1 - X(det.bottomEnter), gh);
+
+  ctx.font = `bold ${Math.round(fs * 0.85)}px "Courier New", monospace`;
+  ctx.textBaseline = 'top';
+  const mark = (v, label, color, below) => {
+    const x = X(v);
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x, y0 - 3); ctx.lineTo(x, y0 + gh + 3); ctx.stroke();
+    ctx.fillStyle = color; ctx.textAlign = 'center';
+    ctx.fillText(`${label} ${v}`, x, below ? y0 + gh + 5 : y0 - fs * 1.15);
+  };
+  mark(det.topEnter, 'top', C.ok, false);
+  mark(det.topExit, 'exit', C.ok, true);
+  mark(det.bottomEnter, 'bottom', C.primary, false);
+  mark(det.bottomExit, 'exit', C.primary, true);
+  ctx.fillStyle = C.ink; ctx.textAlign = 'center';
+  ctx.fillText(`◆ target ${det.targetAngle}`, X(det.targetAngle), y0 + gh + 5);
+  ctx.fillStyle = C.dim; ctx.textAlign = 'left'; ctx.fillText(`${lo}°`, x0 - fs * 1.4, y0 + gh / 2 - fs * 0.45);
+  ctx.textAlign = 'right'; ctx.fillText(`${hi}°`, x1 + fs * 1.4, y0 + gh / 2 - fs * 0.45);
+
+  const needle = (v, tag) => {
+    if (!Number.isFinite(v)) return;
+    const x = X(v);
+    ctx.fillStyle = C.ink; ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, y0 + gh * 0.15); ctx.lineTo(x - gh * 0.35, y0 + gh + 1); ctx.lineTo(x + gh * 0.35, y0 + gh + 1); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y0 - 2); ctx.lineTo(x, y0 + gh + 2); ctx.stroke();
+    if (tag) { ctx.fillStyle = '#000'; ctx.textAlign = 'center'; ctx.font = `bold ${Math.round(gh * 0.55)}px "Courier New", monospace`; ctx.fillText(tag, x, y0 + gh * 0.4); }
+  };
+  if (!res || !res.valid) return;
+  if (sidesEach) { needle(res.left, 'L'); needle(res.right, 'R'); } else needle(res.angle, null);
+};
+
+const drawHud = (det, res, gate, info = {}) => {
+  const W = els.canvas.width, H = els.canvas.height;
+  const fs = FS();
+  const pad = fs;
+  const line = fs * 1.75;
+  let y = pad + fs * 0.8;
+  const tMs = performance.now();
+
+  if (!det) {
+    pill('Pick an exercise above — the angle for it is drawn on you here', W / 2, H / 2, { size: Math.round(fs * 1.2), align: 'center' });
+  } else {
+    const pa = det.primaryAngle;
+    const idxL = `${jointIdx(pa.a, 'LEFT')}-${jointIdx(pa.b, 'LEFT')}-${jointIdx(pa.c, 'LEFT')}`;
+    const idxR = `${jointIdx(pa.a, 'RIGHT')}-${jointIdx(pa.b, 'RIGHT')}-${jointIdx(pa.c, 'RIGHT')}`;
+    pill(`${currentExercise.name} · ${pa.a}–${pa.b}–${pa.c} · keypoints ${idxL} / ${idxR}`, pad, y, { size: Math.round(fs * 1.05) }); y += line;
+    const s = det.topEnter > det.bottomEnter ? 1 : -1;
+    const top = s > 0 ? `top ≥${det.topEnter} (leaves <${det.topExit})` : `top ≤${det.topEnter} (leaves >${det.topExit})`;
+    const bottom = s > 0 ? `bottom ≤${det.bottomEnter} (leaves >${det.bottomExit})` : `bottom ≥${det.bottomEnter} (leaves <${det.bottomExit})`;
+    pill(`${top} · ${bottom} · target ${det.targetAngle} · rep ${det.minRepMs ?? 800}–${det.maxRepMs ?? 8000} ms`, pad, y, { color: C.dim, size: Math.round(fs * 0.95), bold: false }); y += line;
+    if (det.gate) {
+      const g = det.gate;
+      pill(`gate ${g.angle.join('–')} ${g.min != null ? '≥' + g.min : ''}${g.max != null && g.max < 180 ? ' ≤' + g.max : ''} judged ${g.at === 'END' ? 'at the deepest point' : 'every frame'}`,
+        pad, y, { color: C.gate, size: Math.round(fs * 0.95), bold: false }); y += line;
+    }
+    let stateText;
+    if (sidesEach) stateText = `L: ${machines.LEFT.state}   R: ${machines.RIGHT.state}   (each arm counts; both within ${mergeWindowMs} ms = one rep)`;
+    else stateText = `state: ${machines.MEAN.state}`;
+    pill(stateText, pad, y, { size: Math.round(fs * 1.05) }); y += line;
+    if (res) {
+      const vl = sideVisibility(info.world || [], det.requiredJoints, 'LEFT');
+      const vr = sideVisibility(info.world || [], det.requiredJoints, 'RIGHT');
+      const sideText = res.valid ? (res.both ? 'both sides' : `${res.side} only`) : 'joints not visible';
+      const used = sidesEach ? `L ${fmt(res.left)}  R ${fmt(res.right)}` : `used ${fmt(res.angle)}`;
+      pill(`${used} · ${sideText} · vis L ${vl.toFixed(2)} R ${vr.toFixed(2)}`, pad, y, { color: res.valid ? C.dim : C.bad, size: Math.round(fs * 0.95), bold: false }); y += line;
+    }
+    if (gate && Number.isFinite(gate.angle) && gate.blocked) {
+      pill(`frame ignored: gate ${fmt(gate.angle)} is out of range`, pad, y, { color: C.bad, size: Math.round(fs * 0.95) }); y += line;
+    }
+  }
+
+  if (info.noPerson) pill('no person in frame', W / 2, pad + fs * 0.8, { color: C.bad, align: 'center' });
+
+  // Reps, top right.
+  const big = Math.round(fs * 2.1);
+  const box = pill(`REPS ${sessionReps.length}`, W - pad, pad + big * 0.55, { size: big, align: 'right', color: C.primary });
+  pill(`${fps} fps · ${inferenceMs.toFixed(0)} ms`, W - pad, box.top + box.h + fs * 0.9, { size: Math.round(fs * 0.9), align: 'right', color: C.dim, bold: false });
+
+  if (det) drawGauge(det, res);
+
+  if (flash && tMs < flash.untilMs) {
+    const a = Math.min(1, (flash.untilMs - tMs) / (FLASH_MS * 0.5));
+    ctx.globalAlpha = a;
+    pill(flash.text, W / 2, H * 0.42, { size: Math.round(fs * 3.2), align: 'center', color: flash.color });
+    if (flash.sub) pill(flash.sub, W / 2, H * 0.42 + fs * 3.2, { size: Math.round(fs * 1.2), align: 'center', color: C.ink, bold: false });
+    ctx.globalAlpha = 1;
+  } else if (flash && tMs >= flash.untilMs) flash = null;
+
+  if (cue && tMs < cue.untilMs) pill(cue.text, W / 2, H * 0.62, { size: Math.round(fs * 1.3), align: 'center', color: C.bad });
+  else if (cue) cue = null;
+};
+
+// ---------------------------------------------------------------- the frame loop
+
+const processPose = (result, tMs) => {
+  const img = result.landmarks && result.landmarks[0];
+  const wldRaw = result.worldLandmarks && result.worldLandmarks[0];
+  const det = currentExercise ? currentExercise.detector : null;
+
+  if (!img || !wldRaw) {
+    drawHud(det, null, null, { noPerson: true });
+    setStatus('no person', 'error');
+    return;
+  }
+
+  // The app measures on the metric 3D world landmarks (view-invariant), smoothed by the same
+  // One Euro filter; the image landmarks only place the drawing on the picture.
+  const wld = wldRaw.map((lm, i) => ({ x: lm.x, y: lm.y, z: lm.z, visibility: lm.visibility ?? (img[i] && img[i].visibility) ?? 1 }));
+  const lms = els.smoothing.checked ? worldFilter.apply(wld, tMs) : wld;
+
+  if (!det) {
+    drawSkeleton(img, null, null, null, null);
+    drawHud(null, null, null, {});
+    setStatus('Camera on — pick an exercise', 'success');
+    return;
+  }
+
+  const pa = det.primaryAngle;
+  const res = primaryAngle(lms, pa.a, pa.b, pa.c, det.requiredJoints, VIS);
+  const twoD = { LEFT: angle2(img, pa, 'LEFT'), RIGHT: angle2(img, pa, 'RIGHT') };
+  let gate = null;
+  if (det.gate) {
+    const g = gateAngle(lms, det.gate.angle, res.side, res.both);
+    const ok = gateOk(det, g);
+    gate = { angle: g, ok, blocked: det.gate.at !== 'END' && !ok };
+  }
+
+  if (res.valid) {
+    const blocked = gate ? gate.blocked : false;
+    trackDeepest(blocked ? NaN : res.angle, res.side, gate ? gate.angle : NaN);
+    if (sidesEach) {
+      const l = machines.LEFT.onFrame(blocked ? NaN : res.left, tMs);
+      if (l) creditSide(l, 'LEFT', tMs);
+      const r = machines.RIGHT.onFrame(blocked ? NaN : res.right, tMs);
+      if (r) creditSide(r, 'RIGHT', tMs);
+    } else {
+      const rep = machines.MEAN.onFrame(blocked ? NaN : res.angle, tMs);
+      if (rep) completeRep(rep, res.both ? 'BOTH' : res.side, tMs);
+    }
+  }
+
+  lastDebug = { res, gate, tMs };
+  drawSkeleton(img, det, res, gate, twoD);
+  drawHud(det, res, gate, { world: lms });
+  setStatus(res.valid ? 'ok' : 'joints not visible — step back so the whole movement is in frame', res.valid ? 'success' : 'error');
+};
+
+const loop = () => {
+  if (!video || video.readyState < 2 || !poseLandmarker) { requestAnimationFrame(loop); return; }
+  fitCanvas();
+  const tMs = performance.now();
+  let result = null;
+  try {
+    result = poseLandmarker.detectForVideo(video, tMs);
+    inferenceMs = performance.now() - tMs;
+  } catch (e) {
+    console.error(e);
+  }
+  fpsCounter++;
+  if (tMs - fpsStamp >= 1000) { fps = fpsCounter; fpsCounter = 0; fpsStamp = tMs; }
+  drawVideo();
+  if (result) processPose(result, tMs);
+  requestAnimationFrame(loop);
+};
+
+// ---------------------------------------------------------------- setup
+
+const loadExercises = async () => {
+  try {
+    const indexRes = await fetch('/config/exercises/index.json');
+    const index = await indexRes.json();
+    for (const ex of index.exercises) {
+      if (ex.family !== 'REP_CYCLE') continue;
+      try {
+        const exRes = await fetch(`/config/exercises/${ex.id}.json`);
+        if (!exRes.ok) continue;
+        exercises[ex.id] = await exRes.json();
+      } catch (e) {
+        // skip
+      }
+    }
+    const armExercises = ['lateral_raise', 'bicep_curl', 'shoulder_press', 'squat', 'front_raise', 'triceps_extension', 'bench_press'];
+    const armLoaded = armExercises.filter(id => exercises[id]);
+    const rest = Object.keys(exercises).filter(id => !armExercises.includes(id)).sort();
+    els.exerciseSelect.innerHTML = '<option value="">-- Select Exercise --</option>' +
+      armLoaded.map(id => `<option value="${id}">${exercises[id].name}</option>`).join('') +
+      rest.map(id => `<option value="${id}">${exercises[id].name}</option>`).join('');
+  } catch (e) {
+    setStatus('Failed to load exercises: ' + e.message, 'error');
+  }
+};
+
+const initMediaPipe = async () => {
+  try {
+    const filesetResolver = await FilesetResolver.forVisionTasks(WASM);
+    const options = (delegate) => ({
+      baseOptions: { modelAssetPath: MODEL, delegate },
+      runningMode: 'VIDEO',
+      numPoses: 1,
+    });
+    try {
+      poseLandmarker = await PoseLandmarker.createFromOptions(filesetResolver, options('GPU'));
+    } catch (gpuErr) {
+      console.warn('GPU delegate unavailable, using CPU', gpuErr);
+      poseLandmarker = await PoseLandmarker.createFromOptions(filesetResolver, options('CPU'));
+    }
+    setStatus('Model ready', 'success');
+    window.__angles.modelReady = true;
+    window.__angles.ready.resolve();
+  } catch (e) {
+    setStatus('Failed to load MediaPipe: ' + (e.message || e), 'error');
+  }
+};
+
+// Ask for the camera first, with no device id: that is what makes the browser show the permission
+// prompt. Only after it is granted do device labels and ids exist to fill the picker with.
+const setupCamera = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+    });
+    await useStream(stream);
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cameras = devices.filter(d => d.kind === 'videoinput');
+    const current = stream.getVideoTracks()[0]?.getSettings().deviceId;
+    els.cameraSelect.innerHTML = cameras.map((cam, i) =>
+      `<option value="${cam.deviceId}"${cam.deviceId === current ? ' selected' : ''}>${cam.label || `Camera ${i + 1}`}</option>`
+    ).join('');
+  } catch (e) {
+    const why = e.name === 'NotAllowedError' ? 'permission denied — allow the camera in the address bar and reload'
+      : e.name === 'NotFoundError' || e.name === 'OverconstrainedError' ? 'no camera found — plug one in and reload'
+      : (e.message || e.name);
+    setStatus('No camera: ' + why, 'error');
+  }
+};
+
+const selectCamera = async (deviceId) => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { deviceId: deviceId ? { ideal: deviceId } : undefined, width: { ideal: 1280 }, height: { ideal: 720 } },
+    });
+    await useStream(stream);
+  } catch (e) {
+    setStatus('Could not switch camera: ' + (e.message || e.name), 'error');
+  }
+};
+
+const useStream = async (stream) => {
+  if (camera) camera.getTracks().forEach(t => t.stop());
+  camera = stream;
+  const v = document.createElement('video');
+  v.srcObject = stream;
+  v.muted = true;
+  v.playsInline = true;
+  await new Promise(resolve => { v.onloadedmetadata = resolve; });
+  await v.play();
+  video = v;
+  worldFilter.reset();
+  fitCanvas();
+  setStatus('Camera on — pick an exercise', 'success');
+  if (!loopStarted) { loopStarted = true; requestAnimationFrame(loop); }
+};
+
+const resetSession = () => {
+  Object.values(machines).forEach(m => m.reset());
+  worldFilter.reset();
+  sessionReps = [];
+  nextRepIndex = 1;
+  lastLeftRepEndMs = null;
+  lastRightRepEndMs = null;
+  deepest = null;
+  flash = null;
+  cue = null;
+  els.repLogBody.innerHTML = '';
+  els.suggestion.style.display = 'none';
+};
+
+const setExercise = (exId) => {
+  currentExercise = exercises[exId];
+  const det = currentExercise.detector;
+  sidesEach = det.sides === 'EACH';
+  mergeWindowMs = det.mergeWindowMs ?? MERGE_DEFAULT_MS;
+  dirSign = det.topEnter > det.bottomEnter ? 1 : -1;
+  machines = sidesEach
+    ? { LEFT: new RepStateMachine(det), RIGHT: new RepStateMachine(det) }
+    : { MEAN: new RepStateMachine(det) };
+  resetSession();
+  setStatus(`Exercise: ${currentExercise.name}`, 'success');
+};
+
+els.exerciseSelect.addEventListener('change', (e) => {
+  if (e.target.value) setExercise(e.target.value);
+});
+
+els.resetBtn.addEventListener('click', () => {
+  resetSession();
+  setStatus('Reset', 'success');
+});
+
+els.copyLogBtn.addEventListener('click', () => {
+  if (!currentExercise) return;
+  const c = currentExercise.detector;
+  const lines = [`Exercise: ${currentExercise.name} (${currentExercise.id})`];
+  lines.push(`Angle: ${c.primaryAngle.a}-${c.primaryAngle.b}-${c.primaryAngle.c}, 3D world, ${sidesEach ? 'each arm, merge ' + mergeWindowMs + ' ms' : 'mean of both sides'}`);
+  lines.push(`Thresholds: topEnter ${c.topEnter}, topExit ${c.topExit}, bottomEnter ${c.bottomEnter}, bottomExit ${c.bottomExit}, target ${c.targetAngle}`);
+  if (c.gate) lines.push(`Gate: ${c.gate.angle.join('-')} ${c.gate.min ?? ''}..${c.gate.max ?? ''} at ${c.gate.at}`);
+  lines.push('');
+  lines.push(['#', 'side', 'min', 'max', 'ecc', 'bottom', 'con', 'total', 'result'].join('\t'));
+  Array.from(els.repLogBody.children).forEach(row => {
+    lines.push(Array.from(row.children).map(td => td.textContent).join('\t'));
+  });
+  if (els.suggestion.style.display !== 'none') {
+    lines.push('');
+    lines.push('Suggested: ' + els.suggestionText.innerText.replace(/\n+/g, ' '));
+  }
+  navigator.clipboard.writeText(lines.join('\n'));
+  setStatus('Copied', 'success');
+});
+
+els.cameraSelect.addEventListener('change', (e) => {
+  selectCamera(e.target.value);
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+  if (e.key === 'r' || e.key === 'R') els.resetBtn.click();
+  if (e.key === 'c' || e.key === 'C') els.copyLogBtn.click();
+});
+
+// API for testing
+let readyResolve;
+const readyPromise = new Promise(r => { readyResolve = r; });
+window.__angles = {
+  ready: { promise: readyPromise, resolve: readyResolve },
+  modelReady: false,
+  get exercises() { return Object.keys(exercises); },
+  get machines() { return machines; },
+  get reps() { return sessionReps; },
+  get last() { return lastDebug; },
+  setExercise,
+  // Feed one frame of world landmarks straight into the page's pipeline (no camera needed).
+  feed: (world, tMs) => {
+    const img = world.map(lm => ({ x: 0.5 + lm.x * 0.3, y: 0.62 - lm.y * 0.3, z: lm.z, visibility: lm.visibility ?? 1 }));
+    drawVideo();
+    processPose({ landmarks: [img], worldLandmarks: [world] }, tMs);
+  },
+  runSequence: (exId, samples) => {
+    if (!exercises[exId]) return { error: 'Exercise not found' };
+    const ex = exercises[exId];
+    const machine = new RepStateMachine(ex.detector);
+    const reps = [];
+    const log = [];
+    samples.forEach(([tMs, angle]) => {
+      const rep = machine.onFrame(angle, tMs);
+      if (rep) {
+        reps.push(rep);
+        log.push({ repIndex: rep.repIndex, thetaMin: rep.thetaMin.toFixed(1), thetaMax: rep.thetaMax.toFixed(1) });
+      }
+    });
+    return { reps, log };
+  },
+};
+
+// A placeholder frame until the camera is on.
+els.canvas.width = 1280; els.canvas.height = 720;
+pill('Starting the camera…', 640, 360, { size: 24, align: 'center' });
+
+// Initialize
+await initMediaPipe();
+await loadExercises();
+await setupCamera();
+</script>
+
+</body>
+</html>

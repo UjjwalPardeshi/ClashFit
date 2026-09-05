@@ -87,7 +87,7 @@ private fun lookFor(combat: CombatState): Look {
  * @param shake horizontal offset in pixels, from a phase change or a heavy hit
  */
 @Composable
-fun BossFigure(combat: CombatState, jolt: Float, shake: Float, modifier: Modifier = Modifier) {
+fun BossFigure(combat: CombatState, jolt: Float, shake: Float, modifier: Modifier = Modifier, playerHit: HudEvent.PlayerHit? = null) {
     // Recomputed only when the fight's own state moves, not on every animation frame.
     val look = remember(combat.staggered, combat.phaseLabel, combat.hpPct) { lookFor(combat) }
 
@@ -101,6 +101,16 @@ fun BossFigure(combat: CombatState, jolt: Float, shake: Float, modifier: Modifie
     val beat = rememberInfinite(breathMs / 2, 0f, 1f, "beat")
     // A slow rotation on the outer ring so the thing never looks frozen.
     val spin = rememberInfinite(14000, 0f, TAU, "spin", reverse = false)
+
+    // Lunge attack when the boss hits the player
+    val lunge = remember { Animatable(1f) }
+    LaunchedEffect(playerHit) {
+        if (playerHit != null) {
+            lunge.snapTo(1f)
+            lunge.animateTo(1.12f, tween(150))
+            lunge.animateTo(1f, tween(150))
+        }
+    }
 
     // Death is a one-shot: plates blow outward, the core collapses, everything fades.
     val death = remember { Animatable(0f) }
@@ -120,11 +130,12 @@ fun BossFigure(combat: CombatState, jolt: Float, shake: Float, modifier: Modifie
         val pulse = beat.value
         val orbit = spin.value
         val d = death.value
+        val l = lunge.value
 
         val centre = Offset(size.width / 2f + shake, size.height / 2f)
         val unit = size.minDimension * 0.5f
-        // It recoils on a hit and shrinks as it dies.
-        val scale = b * (1f - 0.07f * jolt) * (1f - 0.35f * d)
+        // It recoils on a hit and shrinks as it dies, and lunges when it attacks the player.
+        val scale = b * (1f - 0.07f * jolt) * (1f - 0.35f * d) * l
         // Phase three is unstable: a small constant tremor, worse the closer to death.
         val tremor = if (look.damage > 0.75f) sin(pulse * TAU * 6f) * unit * 0.012f * look.damage else 0f
 

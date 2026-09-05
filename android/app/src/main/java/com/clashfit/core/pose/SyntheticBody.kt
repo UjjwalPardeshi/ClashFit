@@ -15,6 +15,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * A side-on figure built from angles. World landmarks are metric and hip-centred like MediaPipe's;
@@ -26,20 +27,42 @@ object SyntheticBody {
     private const val LEG = 0.45f
     private const val ARM = 0.30f
 
-    /** 33 world landmarks. `kneeDeg` is the hip–knee–ankle angle; 170 is standing, 90 is deep. */
-    fun world(kneeDeg: Float, elbowDeg: Float = 170f, visibility: Float = 1f): Landmarks {
-        val k = Math.toRadians(kneeDeg.toDouble()); val e = Math.toRadians(elbowDeg.toDouble())
+    /**
+     * 33 world landmarks. `kneeDeg` is the hip–knee–ankle angle; 170 is standing, 90 is deep.
+     *
+     * Arms hang from the shoulders. `shoulderAbductionDeg` swings the upper arm out to the side in
+     * the frontal plane (0 hanging, 90 level with the shoulder, 180 straight overhead) and
+     * `shoulderElevationDeg` swings it forward in the sagittal plane the same way; `elbowDeg` is the
+     * shoulder–elbow–wrist angle (170 straight, 40 curled). The forearm folds forward from a hanging
+     * arm and behind the head from an overhead one, as a real elbow does. Per-side values override
+     * the shared ones, so alternating curls and one-arm raises can be posed.
+     */
+    fun world(
+        kneeDeg: Float,
+        elbowDeg: Float = 170f,
+        visibility: Float = 1f,
+        leftElbowDeg: Float? = null,
+        rightElbowDeg: Float? = null,
+        shoulderAbductionDeg: Float = 0f,
+        shoulderElevationDeg: Float = 0f,
+        leftShoulderAbductionDeg: Float? = null,
+        rightShoulderAbductionDeg: Float? = null,
+        leftShoulderElevationDeg: Float? = null,
+        rightShoulderElevationDeg: Float? = null,
+    ): Landmarks {
+        val k = Math.toRadians(kneeDeg.toDouble())
         val lms = MutableList(33) { Landmark(0f, 1.05f, 0f, visibility) }
         fun set(i: Int, x: Float, y: Float, z: Float) { lms[i] = Landmark(x, y, z, visibility) }
         for ((side, sx) in listOf(11 to -0.15f, 12 to 0.15f)) {
-            val hip = if (side == 11) 23 else 24
-            val knee = if (side == 11) 25 else 26
-            val ankle = if (side == 11) 27 else 28
+            val left = side == 11
+            val hip = if (left) 23 else 24
+            val knee = if (left) 25 else 26
+            val ankle = if (left) 27 else 28
             val shoulder = side
-            val elbow = if (side == 11) 13 else 14
-            val wrist = if (side == 11) 15 else 16
-            val heel = if (side == 11) 29 else 30
-            val foot = if (side == 11) 31 else 32
+            val elbow = if (left) 13 else 14
+            val wrist = if (left) 15 else 16
+            val heel = if (left) 29 else 30
+            val foot = if (left) 31 else 32
             val hx = sx * 0.6f
             set(hip, hx, 0.50f, 0f)
             set(knee, hx, 0.00f, 0f)
@@ -48,9 +71,22 @@ object SyntheticBody {
             set(heel, hx, (LEG * cos(k)).toFloat() - 0.03f, (LEG * sin(k)).toFloat() - 0.02f)
             set(foot, hx, (LEG * cos(k)).toFloat() - 0.03f, (LEG * sin(k)).toFloat() + 0.10f)
             set(shoulder, sx, 0.95f, 0f)
-            set(elbow, sx, 0.95f - ARM, 0.02f)
-            // elbow→wrist makes angle elbowDeg with elbow→shoulder (straight up).
-            set(wrist, sx, 0.95f - ARM + (ARM * cos(e)).toFloat(), 0.02f + (ARM * sin(e)).toFloat())
+
+            val e = Math.toRadians((if (left) leftElbowDeg ?: elbowDeg else rightElbowDeg ?: elbowDeg).toDouble())
+            val a = Math.toRadians((if (left) leftShoulderAbductionDeg ?: shoulderAbductionDeg else rightShoulderAbductionDeg ?: shoulderAbductionDeg).toDouble())
+            val f = Math.toRadians((if (left) leftShoulderElevationDeg ?: shoulderElevationDeg else rightShoulderElevationDeg ?: shoulderElevationDeg).toDouble())
+            // Upper-arm direction: straight down, swung out (abduction) and forward (elevation).
+            val out = if (left) -1.0 else 1.0
+            val dx = out * sin(a); val dy = -cos(a) * cos(f); val dz = cos(a) * sin(f)
+            val ex = sx + (ARM * dx).toFloat(); val ey = 0.95f + (ARM * dy).toFloat(); val ez = 0.02f + (ARM * dz).toFloat()
+            set(elbow, ex, ey, ez)
+            // The forearm bends in the plane perpendicular to the upper arm: forward for a hanging
+            // arm, behind the head for an overhead one (cross product with the body's x axis).
+            var px = 0.0; var py = dz; var pz = -dy
+            val pn = sqrt(py * py + pz * pz)
+            if (pn < 1e-6) { px = 0.0; py = 0.0; pz = 1.0 } else { py /= pn; pz /= pn }
+            val wx = -dx * cos(e) + px * sin(e); val wy = -dy * cos(e) + py * sin(e); val wz = -dz * cos(e) + pz * sin(e)
+            set(wrist, ex + (ARM * wx).toFloat(), ey + (ARM * wy).toFloat(), ez + (ARM * wz).toFloat())
         }
         // Head cluster.
         for (i in 0..10) set(i, if (i % 2 == 0) 0.03f else -0.03f, 1.12f, 0.02f)

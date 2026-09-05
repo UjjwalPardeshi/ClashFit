@@ -70,12 +70,13 @@ data class CombatConfig(
     val setEnd: SetEndSpec = SetEndSpec(),
     val modes: ModesSpec = ModesSpec(),
     val familyGames: FamilyGamesSpec = FamilyGamesSpec(),
+    val bossAttack: BossAttackSpec? = null,
 ) {
     @Serializable
     data class ComboSpec(val step: Float = 0.12f, val cap: Float = 2.5f, val threshold: Float = 0.75f, val graceAtStreak: Int = 6)
 
     @Serializable
-    data class BossPhaseSpec(val fromHpPct: Float, val modifier: Float, val label: String)
+    data class BossPhaseSpec(val fromHpPct: Float, val modifier: Float, val label: String, val attackModifier: Float = 1f)
 
     @Serializable
     data class BossSpec(
@@ -83,6 +84,16 @@ data class CombatConfig(
         val name: String = "THE PACEMAKER",
         val maxHp: Int = 3000,
         val phases: List<BossPhaseSpec> = listOf(BossPhaseSpec(1f, 1f, "phase1")),
+    )
+
+    @Serializable
+    data class BossAttackSpec(
+        val playerMaxHp: Int = 100,
+        val everySec: Float = 5f,
+        val damage: Int = 8,
+        val healPerRep: Int = 3,
+        val graceSec: Float = 4f,
+        val modes: List<String> = emptyList(),
     )
 
     @Serializable
@@ -177,7 +188,13 @@ data class ExerciseSpec(
     ) {
         @Serializable data class Weights(val depth: Float = 0.4f, val rom: Float = 0.25f, val tempo: Float = 0.2f, val alignment: Float = 0.15f)
         @Serializable data class TempoSpec(val eccentricTargetSec: Float = 0.35f, val bottomPauseSec: Float = 0.12f)
-        @Serializable data class AlignmentSpec(val type: String = "KNEE_TRACKING", val fullMarksOffset: Float = 0.15f, val zeroMarksOffset: Float = 0.45f)
+        @Serializable data class AlignmentSpec(
+            val type: String = "KNEE_TRACKING",
+            val fullMarksOffset: Float = 0.15f,
+            val zeroMarksOffset: Float = 0.45f,
+            val fullMarksDeg: Float = 150f,
+            val zeroMarksDeg: Float = 100f,
+        )
     }
 
     @Serializable

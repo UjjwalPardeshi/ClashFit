@@ -2,6 +2,7 @@ package com.clashfit.ui.screens.session
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.IntOffset
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.clashfit.AppGraph
@@ -107,8 +109,10 @@ fun SessionScreen(
     val settings by graph.prefs.settings.collectAsStateWithLifecycle(initialValue = Prefs.Settings())
 
     var lastHit by remember { mutableStateOf<HudEvent.Hit?>(null) }
+    var lastPlayerHit by remember { mutableStateOf<HudEvent.PlayerHit?>(null) }
     val jolt = remember { Animatable(0f) }
     val shake = remember { Animatable(0f) }
+    val playerShake = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         vm.events.collect { e ->
             when (e) {
@@ -125,6 +129,16 @@ fun SessionScreen(
                             shake.snapTo(kick)
                             shake.animateTo(-kick * 0.6f, tween(60))
                             shake.animateTo(0f, tween(90))
+                        }
+                    }
+                }
+                is HudEvent.PlayerHit -> {
+                    lastPlayerHit = e
+                    if (!reduceMotion) {
+                        launch {
+                            playerShake.snapTo(6f)
+                            playerShake.animateTo(-6f, tween(60))
+                            playerShake.animateTo(0f, tween(90))
                         }
                     }
                 }
@@ -167,7 +181,7 @@ fun SessionScreen(
                 ExitCorner(onExit)
             }
             Phase.FIGHTING, Phase.FRAMING_LOST -> {
-                FightLayout(s, vm, lastHit, jolt.value, shake.value, paused, reduceMotion, camera, landmarks, meta, settings, sourceAspect, gestureHold, lastGesture)
+                FightLayout(s, vm, lastHit, lastPlayerHit, jolt.value, shake.value, playerShake.value, paused, reduceMotion, camera, landmarks, meta, settings, sourceAspect, gestureHold, lastGesture)
             }
             Phase.REST -> RestPanel(
                 s, restLeft, onSkip = vm::skipRest, onStop = vm::stop,
@@ -207,7 +221,7 @@ fun SessionScreen(
 
 @Composable
 private fun FightLayout(
-    s: SessionState, vm: SessionViewModel, lastHit: HudEvent.Hit?, jolt: Float, shake: Float,
+    s: SessionState, vm: SessionViewModel, lastHit: HudEvent.Hit?, lastPlayerHit: HudEvent.PlayerHit?, jolt: Float, shake: Float, playerShake: Float,
     paused: Boolean, reduceMotion: Boolean, camera: CameraPreviewSource?, landmarks: Landmarks?,
     meta: MetaState?, settings: Prefs.Settings, sourceAspect: Float?,
     gestureHold: Pair<HandGesture, Float>? = null, lastGesture: HudEvent.Gesture? = null,
@@ -235,23 +249,31 @@ private fun FightLayout(
                 .fillMaxWidth(if (prone) 0.52f else 0.66f)
                 .fillMaxHeight(if (prone) 0.34f else 0.44f)
                 .padding(top = 88.dp),
+            playerHit = lastPlayerHit,
         )
         // Sparks leave the point of contact, then the numeral, then a stamp if it earned one.
         ImpactBurst(lastHit, reduceMotion, Modifier.fillMaxSize())
         DamageNumeral(lastHit, Modifier.align(Alignment.Center).padding(bottom = 60.dp))
         CritStamp(lastHit, reduceMotion, Modifier.align(Alignment.Center).padding(bottom = 190.dp))
 
-        Column(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp)) {
+        Column(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp).offset { IntOffset(0, playerShake.toInt()) }) {
             // Clear of the pause target, which is a 72dp square pinned to the top-left with 12dp
             // of padding and drawn after this. Without the inset it sat on top of the boss's name.
-            if (!prone) BossHeader(s.combat, Modifier.padding(start = PAUSE_TARGET_INSET), timeLeftMs = s.timeLeftMs)
+            if (!prone) {
+                BossHeader(s.combat, Modifier.padding(start = PAUSE_TARGET_INSET), timeLeftMs = s.timeLeftMs)
+                PlayerBar(s.combat, lastPlayerHit, Modifier.padding(start = PAUSE_TARGET_INSET, top = 6.dp))
+            }
             link?.let { l -> Spacer(Modifier.height(8.dp)); LinkStrip(l, myReps = s.reps, myDamage = s.playerDamage) }
             Spacer(Modifier.weight(1f))
             if (s.phase == Phase.FRAMING_LOST) { FramingLostBanner(s.cue); Spacer(Modifier.height(12.dp)) }
             else s.cue?.let { cue ->
                 Text(cue, fontSize = 28.sp, lineHeight = 32.sp, fontWeight = FontWeight.Medium, color = InkMuted, modifier = Modifier.padding(bottom = 12.dp))
             }
-            if (prone) { BossHeader(s.combat, timeLeftMs = s.timeLeftMs); Spacer(Modifier.height(12.dp)) }
+            if (prone) {
+                BossHeader(s.combat, timeLeftMs = s.timeLeftMs)
+                PlayerBar(s.combat, lastPlayerHit, Modifier.padding(top = 6.dp))
+                Spacer(Modifier.height(12.dp))
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Bottom) {
                 RepCounter(if (s.mode == com.clashfit.core.model.GameMode.SURVIVAL) s.reps else s.setReps, Modifier.weight(1.1f), label = if (s.wave > 1) "Reps · Wave ${s.wave}" else "Reps")
                 FatigueTile(s.fatigue.band, Modifier.weight(1f))
@@ -259,6 +281,7 @@ private fun FightLayout(
             }
         }
         HitFlash(lastHit, reduceMotion)
+        PlayerHitFlash(lastPlayerHit, reduceMotion)
         Box(Modifier.align(Alignment.TopStart).safeDrawingPadding().padding(12.dp)) {
             PauseTarget(paused, onToggle = { if (paused) vm.resume() else vm.pause() })
         }
@@ -350,17 +373,26 @@ fun RestPanel(
 @Composable
 fun EndPanel(s: SessionState, onSummary: () -> Unit, onExit: () -> Unit) {
     val won = s.endReason == EndReason.BOSS_DOWN || s.endReason == EndReason.GAME_WON
+    val defeated = s.endReason == EndReason.DEFEATED
     val title = when (s.endReason) {
         EndReason.BOSS_DOWN -> "Boss down"
         EndReason.GAME_WON -> "You won"
         EndReason.GAME_LOST -> "It caught you"
+        EndReason.DEFEATED -> "Defeated"
         EndReason.TIME -> "Time"
         EndReason.STOPPED, EndReason.WALKED_AWAY, null -> "You stopped"
     }
     Column(Modifier.fillMaxSize().background(Ground.copy(alpha = 0.94f)).safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.Start) {
-        Kicker(if (won) "Victory" else "Set saved")
-        Text(title, style = MaterialTheme.typography.displayMedium, color = if (won) Ember else Ink)
+        Kicker(if (won) "Victory" else if (defeated) "Defeat" else "Set saved")
+        Text(title, style = MaterialTheme.typography.displayMedium, color = if (won) Ember else if (defeated) Ember else Ink)
         Spacer(Modifier.height(20.dp))
+        if (defeated) {
+            Text(
+                "The ${s.combat.bossName.lowercase()} had ${(s.combat.hpPct * 100).toInt()}% left",
+                style = MaterialTheme.typography.bodyLarge, color = InkMuted
+            )
+            Spacer(Modifier.height(20.dp))
+        }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             StatTile("${s.reps}", "reps", Modifier.weight(1f))
             StatTile("${s.playerDamage}", "damage", Modifier.weight(1f))
@@ -373,7 +405,11 @@ fun EndPanel(s: SessionState, onSummary: () -> Unit, onExit: () -> Unit) {
         Spacer(Modifier.height(28.dp))
         Text("Saving…", style = MaterialTheme.typography.labelSmall, color = InkFaint)
         Spacer(Modifier.height(8.dp))
-        SecondaryButton("Home", Modifier.fillMaxWidth(), onClick = onExit)
+        PrimaryButton("Again", Modifier.fillMaxWidth(), onClick = onSummary)
+        Spacer(Modifier.height(10.dp))
+        PrimaryButton("Done", Modifier.fillMaxWidth(), onClick = onExit)
+        Spacer(Modifier.height(10.dp))
+        SecondaryButton("Summary", Modifier.fillMaxWidth(), onClick = onSummary)
     }
 }
 

@@ -31,7 +31,8 @@ class RepStateMachine(private val config: RepDetectorConfig) {
 
     var state = RepState.TOP
         private set
-    private var repIndex = 0
+    var repIndex = 0
+        private set
     private var stateEnteredMs = 0L
     private var topRefU: Float? = null
     private var lastRepEndMs: Long? = null

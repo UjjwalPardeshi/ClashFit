@@ -52,6 +52,17 @@ object FormScorer {
         return clamp01((deg - zeroMarks) / (fullMarks - zeroMarks))
     }
 
+    /** Elbow extension alignment: straightness of the arm at the deepest point. */
+    fun elbowExtension(landmarks: List<Landmark>, side: Side, fullMarks: Float = 150f, zeroMarks: Float = 100f): Float {
+        val si = Geometry.idx("SHOULDER", side)
+        val ei = Geometry.idx("ELBOW", side)
+        val wi = Geometry.idx("WRIST", side)
+        if (si < 0 || ei < 0 || wi < 0 || si >= landmarks.size || ei >= landmarks.size || wi >= landmarks.size) return 1f
+        val aDeg = Geometry.angle3(landmarks[si], landmarks[ei], landmarks[wi])
+        if (!aDeg.isFinite()) return 1f
+        return clamp01((aDeg - zeroMarks) / (fullMarks - zeroMarks))
+    }
+
     /** Combine four sub-scores into one 0..1 form score plus the reason for the weakest link. */
     fun score(
         event: RepEvent,
@@ -89,9 +100,10 @@ data class FormWeights(
 )
 
 /** Alignment sample taken at the deepest point of the rep. */
-fun alignmentSample(landmarks: List<Landmark>, side: Side, alignmentType: String?): Float =
+fun alignmentSample(landmarks: List<Landmark>, side: Side, alignmentType: String?, alignmentSpec: com.clashfit.core.config.ExerciseSpec.FormSpec.AlignmentSpec? = null): Float =
     when (alignmentType) {
-        "KNEE_TRACKING" -> FormScorer.kneeTracking(landmarks, side)
-        "TORSO_LINE" -> FormScorer.torsoLine(landmarks, side)
+        "KNEE_TRACKING" -> FormScorer.kneeTracking(landmarks, side, alignmentSpec?.fullMarksOffset ?: 0.15f, alignmentSpec?.zeroMarksOffset ?: 0.45f)
+        "TORSO_LINE" -> FormScorer.torsoLine(landmarks, side, alignmentSpec?.fullMarksOffset ?: 172f, alignmentSpec?.zeroMarksOffset ?: 150f)
+        "ELBOW_EXTENSION" -> FormScorer.elbowExtension(landmarks, side, alignmentSpec?.fullMarksDeg ?: 150f, alignmentSpec?.zeroMarksDeg ?: 100f)
         else -> 1f
     }

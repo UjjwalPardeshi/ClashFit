@@ -111,6 +111,28 @@ completion  = accuracy sustained for the asana's target duration
   between a yoga feature and a yoga toy.
 - **Fatigue = accuracy drift** across the hold.
 
+### F3 Yoga rules checked against fitmon
+
+Reference poses were sourced from fitmon's JavaScript detector, which uses simple 2D pixel rules.
+This section validates that a real person holding each pose within fitmon's acceptance criteria
+will score ≥ 0.70 in ClashFit's 3D angle matching.
+
+**Methodology:** Translate fitmon's 2D pixel thresholds to 3D joint angle expectations, then calculate
+ClashFit accuracy. Adjust tolerances conservatively where fitmon-compliant poses would be rejected.
+
+| Pose | fitmon rule | Fitmon scenario → ClashFit accuracy | Decision | Adjustment |
+|---|---|---|---|---|
+| **Vrikshasana (Tree)** | One ankle ≥ 80 px higher; wrists < 100 px apart | Standing leg at 176°, arms at 165° → **accuracy 1.0** | Accept | None |
+| **Utkatasana (Chair)** | Both knees < 100° | Knees at 95° → **accuracy 0.615** ✗ | Adjust | HIP-KNEE-ANKLE: `120 ± 14` → `110 ± 20` |
+| **Virabhadrasana I (Warrior I)** | One knee < 120°, other > 150° | Front knee at 115° → **accuracy 0.630** ✗ | Adjust | HIP-KNEE-ANKLE: `100 ± 14` → `100 ± 20` |
+| **Virabhadrasana II (Warrior II)** | One knee < 120°, other > 150° | Front knee at 110° → **accuracy 0.643** ✗ | Adjust | HIP-KNEE-ANKLE: `95 ± 14` → `95 ± 20` |
+| **Tadasana (Mountain)** | Wrists below shoulders; shoulders & hips level ±40 px | Perfect posture at 178° → **accuracy 1.0** | Accept | None |
+
+**Adjustments applied:** All three tolerance widening changes result in fitmon-compliant poses
+scoring ≥ 0.70. Vrikshasana and Tadasana require no changes. The changes are minimal and conservative,
+preserving the distinction between poses while accommodating the full range of human variation within
+each pose's fitmon-defined acceptance window.
+
 ### F4 · `CADENCE`
 
 ```
@@ -151,7 +173,7 @@ centimetres rather than a pixel count.
 
 Every entry is a config record, not code. `framing` = where the phone must be.
 
-### F1 · `REP_CYCLE` — 21 exercises
+### F1 · `REP_CYCLE` — 27 exercises
 
 | Exercise | Primary angle | Framing | Tags |
 |---|---|---|---|
@@ -176,6 +198,12 @@ Every entry is a config record, not code. `framing` = where the phone must be.
 | Dead bug | shoulder–hip–knee | side | core, control |
 | Bird dog | shoulder–hip–knee | side | core, control |
 | Superman | shoulder–hip–knee | side | posterior, control |
+| Bicep curl | shoulder–elbow–wrist | front | strength, upper, arms |
+| Lateral raise | hip–shoulder–elbow | front | strength, upper, shoulders |
+| Front raise | hip–shoulder–elbow | front | strength, upper, shoulders |
+| Shoulder press | shoulder–elbow–wrist | front | strength, upper, shoulders |
+| Overhead triceps extension | shoulder–elbow–wrist | front | strength, upper, arms |
+| Floor press | shoulder–elbow–wrist | side | strength, upper |
 
 ### F2 · `ISOMETRIC_HOLD` — 9 holds
 
@@ -202,12 +230,28 @@ Skater hops · Skipping (no rope) · Shadow boxing (jabs) · Standing torso twis
 
 Burpee · Squat thrust · Jump squat · Tuck jump · Star jump · Lateral bound · Broad jump
 
-**Total: 61 exercises across 5 detectors.**
+**Total: 67 exercises across 5 detectors.**
 
-> **Shipped, as of 4 Sep 2026: 51 of these 61.** The ten still to come need reference angles
-> captured from a performer who can hold the pose properly, and shipping an approximate one is
-> worse than shipping none. The app's About screen reads its count from the config at runtime,
-> so it always states the honest number rather than this one.
+> **Measured thresholds (5 Sep 2026).** Four exercises were tuned by hand against the BlazePose
+> keypoints with the angle page and are pinned to the top of every exercise list, in this order:
+>
+> | Exercise | Keypoints | Rest (TOP) | Turn (BOTTOM) | Full depth |
+> |---|---|---|---|---|
+> | Lateral raise | 23-11-13 / 24-12-14 | ≤ 20° (10–20 hanging) | ≥ 90° | 90° |
+> | Bicep curl | 11-13-15 / 12-14-16 | ≥ 170° (170–180 open) | ≤ 30° (20–30 closed) | 25° |
+> | Shoulder press | 11-13-15 / 12-14-16 | ≤ 90° (hands at the shoulders) | ≥ 170° (170–180 locked out) | 175° |
+> | Squat | 23-25-27 / 24-26-28 | ≥ 165° (a locked knee reads 165–178) | ≤ 100° (100–70) | 85° |
+>
+> Each threshold has a 10° hysteresis exit inside it (`topExit`, `bottomExit`), and the landmarks
+> are smoothed by a 1 Hz One Euro filter before the angle is taken, so the ends of a rep must be
+> reached, not brushed.
+
+> **Shipped, as of 5 Sep 2026: 57 of these 67.** Six additional upper-body strength exercises
+> were added to the catalogue: Bicep Curl, Lateral Raise, Front Raise, Shoulder Press, Overhead
+> Triceps Extension, and Floor Press. The remaining ten exercises need reference angles captured
+> from a performer who can hold the pose properly, and shipping an approximate one is worse than
+> shipping none. The app's About screen reads its count from the config at runtime, so it always
+> states the honest number rather than this one.
 
 ---
 
@@ -245,6 +289,63 @@ An exercise is a JSON record in `config/exercises/`. Adding one requires no code
 - The library grows without a rebuild
 - A detector bug is fixed once for 21 exercises, not 21 times
 - Test fixtures attach per exercise, not per code path
+
+### F1 · `REP_CYCLE` detector schema extensions
+
+Two new optional fields extend the rep-cycle detector for exercises that need them:
+
+#### `sides` — for alternating or bilateral movements
+
+```json
+"sides": "EACH",
+"mergeWindowMs": 500
+```
+
+- **`EACH`**: Count reps independently per side. Used for alternating movements like bicep curls,
+  where each arm is credited separately. The `mergeWindowMs` field specifies the window in which
+  reps on both sides are temporally grouped (default 500 ms).
+
+#### `gate` — form-gating constraints
+
+```json
+"gate": {
+  "angle": ["HIP", "SHOULDER", "ELBOW"],
+  "min": 120,
+  "max": 180,
+  "at": "END"
+}
+```
+
+A gate enforces that a specific angle is within a valid range at a critical point in the movement:
+- **`angle`**: Three joints forming the angle to monitor.
+- **`min`, `max`**: Valid range in degrees.
+- **`at`**: When the gate is enforced:
+  - **`"END"`**: Only at the top of the movement (topExit crossing); used for pressing movements where overhead lockout matters
+  - **`"ALWAYS"`**: Throughout the movement; used for holds where posture must be constant (e.g., keeping elbows high during overhead triceps)
+
+When a gate is violated, the rep is rejected and a corrective cue is provided.
+
+#### `alignment` — new type for upper-body movements
+
+```json
+"alignment": {
+  "type": "ELBOW_EXTENSION",
+  "fullMarksDeg": 150,
+  "zeroMarksDeg": 100
+}
+```
+
+- **`ELBOW_EXTENSION`**: Scores the straightness of the arms. Used for lateral and front raises where
+  proper form requires extended elbows (not bent). The scores linearly interpolate between
+  `fullMarksDeg` (perfect, fully extended) and `zeroMarksDeg` (poor, too bent).
+
+#### Compatibility note
+
+The JavaScript prototype (web version in `src/repFsm.js`) does not explicitly interpret the
+`sides` and `gate` fields — it only reads the core threshold and duration fields from the
+detector. This means the prototype tolerates these new fields without modification; they are
+simply ignored by the rep state machine, which the engine builder implements separately. This
+allows the same config files to work across both implementations immediately.
 
 ---
 
@@ -285,3 +386,17 @@ communicates it better than a broken menu.
 
 **The line for the deck:** *"Five detectors, sixty-one exercises, one fatigue model. Adding an
 exercise is a config file, not a release."*
+
+---
+
+## Angle Check Page
+
+**Developer tool for threshold calibration:** open `tools/angles.html` on a laptop with a webcam to
+see live 3D and 2D joint angles as the Android app computes them. Select an exercise from the dropdown,
+perform reps in front of the camera, and watch the state machine track them in real time. A
+horizontal gauge shows the current angle against topEnter/topExit/bottomEnter/bottomExit thresholds;
+a rep log records each counted rep with times and depths. "Suggest Thresholds" computes empirical
+recommendations from the reps you just did (10th and 90th percentiles). The page is self-contained
+(one ES module, no build, no npm install) and loads exercises from the config directory plus cached
+MediaPipe pose estimation. `window.__angles.runSequence()` exposes the ported rep state machine for
+integration test validation.

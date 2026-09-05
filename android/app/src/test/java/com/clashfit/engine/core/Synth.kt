@@ -93,7 +93,16 @@ object Synth {
     }
 
     /** Generate synthetic WORLD landmarks for a given hip-knee-ankle angle (degrees). */
-    fun worldFrame(angleDeg: Float, leftAngleDeg: Float? = null, rightAngleDeg: Float? = null): List<Landmark> {
+    fun worldFrame(
+        angleDeg: Float,
+        leftAngleDeg: Float? = null,
+        rightAngleDeg: Float? = null,
+        leftElbowDeg: Float? = null,
+        rightElbowDeg: Float? = null,
+        shoulderAbductionDeg: Float = 0f,
+        leftShoulderAbductionDeg: Float? = null,
+        rightShoulderAbductionDeg: Float? = null,
+    ): List<Landmark> {
         val lm = MutableList(33) { Landmark(0f, 0f, 0f, 0f) }
 
         // Default initialization
@@ -110,16 +119,41 @@ object Synth {
                 else -> angleDeg
             }
 
+            val elbowAngle = when {
+                side == 0 && leftElbowDeg != null -> leftElbowDeg
+                side == 1 && rightElbowDeg != null -> rightElbowDeg
+                else -> 170f
+            }
+
+            val abduction = when {
+                side == 0 && leftShoulderAbductionDeg != null -> leftShoulderAbductionDeg
+                side == 1 && rightShoulderAbductionDeg != null -> rightShoulderAbductionDeg
+                else -> shoulderAbductionDeg
+            }
+
             val a = (angle * PI) / 180.0
             val sin_a = sin(a).toFloat()
             val cos_a = cos(a).toFloat()
 
-            // Shoulder
-            lm[11 + side] = Landmark(sx, -0.45f, 0f, 0.95f)
-            // Elbow
-            lm[13 + side] = Landmark(sx, -0.25f, 0f, 0.9f)
-            // Wrist
-            lm[15 + side] = Landmark(sx, -0.05f, 0f, 0.9f)
+            val e = (elbowAngle * PI) / 180.0
+            val sin_e = sin(e).toFloat()
+            val cos_e = cos(e).toFloat()
+
+            val abdRad = (abduction * PI) / 180.0
+            val sin_abd = sin(abdRad).toFloat()
+
+            // Shoulder with abduction
+            val shoulderX = sx + 0.1f * sin_abd
+            lm[11 + side] = Landmark(shoulderX, -0.45f, 0f, 0.95f)
+
+            // Elbow below shoulder
+            lm[13 + side] = Landmark(shoulderX, -0.45f - 0.20f, 0f, 0.9f)
+
+            // Wrist: arm length ~0.20, makes angle with elbow→shoulder
+            val wristY = -0.45f - 0.20f + (0.20f * sin_e)
+            val wristX = shoulderX + (0.20f * cos_e)
+            lm[15 + side] = Landmark(wristX, wristY, 0f, 0.9f)
+
             // Hip
             lm[23 + side] = Landmark(sx, 0f, 0f, 0.95f)
             // Knee

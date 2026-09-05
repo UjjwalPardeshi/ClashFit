@@ -66,6 +66,7 @@ import com.clashfit.ui.theme.RuleSoft
 import com.clashfit.ui.components.FilterPill
 import com.clashfit.ui.components.FamilyMark
 import com.clashfit.core.model.GameMode
+import com.clashfit.ui.screens.picker.featuredRank
 
 fun Family.displayName(): String = when (this) {
     Family.REP_CYCLE -> "Strength"
@@ -86,7 +87,7 @@ fun LibraryScreen(graph: AppGraph, nav: NavHostController) {
         exercises.values
             .filter { family == null || it.familyEnum == family }
             .filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
-            .sortedWith(compareBy({ it.familyEnum.ordinal }, { it.difficulty }, { it.name }))
+            .sortedWith(compareBy({ it.familyEnum.ordinal }, { featuredRank(it.id) }, { it.difficulty }, { it.name }))
             .groupBy { it.familyEnum }
     }
 

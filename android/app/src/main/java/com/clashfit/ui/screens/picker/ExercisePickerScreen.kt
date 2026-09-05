@@ -70,6 +70,11 @@ import com.clashfit.ui.theme.RuleSoft
  * Pick the movement for a mode. Only the families the mode allows are listed; the confirm
  * button sits in a bar at the bottom so it never scrolls away.
  */
+/** The exercises the angles were measured for by hand come first in every list, in this order. */
+val FEATURED_EXERCISES = listOf("lateral_raise", "bicep_curl", "shoulder_press", "squat")
+
+fun featuredRank(id: String): Int = FEATURED_EXERCISES.indexOf(id).let { if (it < 0) FEATURED_EXERCISES.size else it }
+
 @Composable
 fun ExercisePickerScreen(modeStr: String, graph: AppGraph, nav: NavHostController) {
     val mode = GameMode.valueOf(modeStr)
@@ -84,7 +89,7 @@ fun ExercisePickerScreen(modeStr: String, graph: AppGraph, nav: NavHostControlle
         exercises.values
             .filter { mode.family == null || it.familyEnum == mode.family }
             .filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
-            .sortedWith(compareBy({ it.familyEnum.ordinal }, { it.difficulty }, { it.name }))
+            .sortedWith(compareBy({ it.familyEnum.ordinal }, { featuredRank(it.id) }, { it.difficulty }, { it.name }))
     }
     val grouped = remember(filtered) { filtered.groupBy { it.familyEnum } }
 

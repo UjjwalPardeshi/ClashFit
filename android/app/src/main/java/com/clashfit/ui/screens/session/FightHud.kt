@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -53,6 +54,7 @@ import com.clashfit.ui.components.SegmentedBar
 import com.clashfit.ui.components.color
 import androidx.compose.material3.Icon
 import com.clashfit.ui.theme.Ember
+import com.clashfit.ui.theme.Fresh
 import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.Heavy
 import com.clashfit.ui.theme.Ink
@@ -60,6 +62,7 @@ import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.Motion
 import com.clashfit.ui.theme.Panel
 import com.clashfit.ui.theme.Rule
+import com.clashfit.ui.theme.Working
 import kotlinx.coroutines.launch
 import androidx.compose.animation.core.LinearEasing
 import com.clashfit.ui.theme.EmberDeep
@@ -341,4 +344,52 @@ fun RankChip(meta: MetaState?, modifier: Modifier = Modifier) {
             Bar(weekly.fraction, color = if (weekly.done) Success else Ember, height = 4)
         }
     }
+}
+
+/**
+ * Your health, under the boss's. The strip beneath the bar fills as the next attack charges, so a
+ * hit is never a surprise; the numeral is the last hit and fades on its own. Nothing is drawn when
+ * the mode has no boss attacks.
+ */
+@Composable
+fun PlayerBar(combat: CombatState, lastHit: HudEvent.PlayerHit?, modifier: Modifier = Modifier) {
+    val interval = combat.attackIntervalMs ?: return
+    val charge = combat.nextAttackInMs?.let { (1f - it.toFloat() / interval).coerceIn(0f, 1f) } ?: 0f
+    Column(modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
+            Text("YOU", style = MaterialTheme.typography.labelLarge, color = Ink)
+            Row(verticalAlignment = Alignment.Bottom) {
+                HitNumeral(lastHit)
+                Text("${(combat.playerHpPct * 100).toInt()}%", style = MaterialTheme.typography.labelLarge, color = playerHpColor(combat.playerHpPct))
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        SegmentedBar(fraction = combat.playerHpPct, color = playerHpColor(combat.playerHpPct), height = 8, segments = 20)
+        Spacer(Modifier.height(3.dp))
+        // The charge: empty right after a hit, full when the next one lands.
+        Box(Modifier.fillMaxWidth().height(3.dp).background(Panel)) {
+            Box(Modifier.fillMaxWidth(charge).fillMaxHeight().background(if (charge > 0.8f) Ember else InkFaint))
+        }
+    }
+}
+
+/** "-8", beside the percentage, gone in under a second. */
+@Composable
+private fun HitNumeral(hit: HudEvent.PlayerHit?) {
+    if (hit == null) return
+    val alpha = remember(hit) { Animatable(1f) }
+    LaunchedEffect(hit) { alpha.animateTo(0f, tween(700, delayMillis = 250)) }
+    if (alpha.value <= 0f) return
+    Text(
+        "-${hit.damage}",
+        style = MaterialTheme.typography.labelLarge,
+        color = Ember.copy(alpha = alpha.value),
+        modifier = Modifier.padding(end = 10.dp),
+    )
+}
+
+fun playerHpColor(pct: Float): Color = when {
+    pct > 0.5f -> Fresh
+    pct > 0.25f -> Working
+    else -> Ember
 }

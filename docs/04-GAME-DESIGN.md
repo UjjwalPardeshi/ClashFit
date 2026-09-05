@@ -156,7 +156,45 @@ land satisfying hits and see a victory screen.
 
 ---
 
-## 9. Balance testing plan
+## 9. The boss hits back: Player HP and attacks
+
+The boss deals periodic damage to the player, creating risk and urgency. Player HP defaults to off
+(disabled in TIME_ATTACK, DUEL, and games with family game active).
+
+```
+playerMaxHp   = 100
+everySec      = 5.0
+damage        = 8
+healPerRep    = 3
+graceSec      = 4.0
+modes         = ["BOSS_FIGHT", "BOSS_RUSH", "SURVIVAL"]
+```
+
+**Each rep heals by `healPerRep`.** A player maintains or gains HP by hitting reps. Missing reps or
+taking too long between them costs HP.
+
+**Attack damage scales by phase.** Each boss phase has an `attackModifier` (default 1.0) that scales
+the base damage, making later phases more dangerous: phase 2 enrage ×1.25, phase 3 desperation ×1.5.
+
+**The mercy rule:** When the player reaches GASSED (out of breath), the boss holds its attacks until
+they complete `mercyRepsToFinish` reps. This prevents an exhausted player from being pummeled while
+they have no stamina. Once they hit the target reps, they either recover or the run ends.
+
+**Timing:**
+
+- **Grace period:** First attack arrives `graceSec` after the fight starts (default 4s), giving the
+  player time to land initial reps and build momentum.
+- **Resume:** When a set ends and the next begins, attacks re-arm at the same grace interval.
+- **Framing loss:** When the player steps out of frame (FRAMING_LOST), attacks are suppressed. When
+  framing returns, attacks resume with 1500ms delay, preventing spam during frame transitions.
+
+**Session end:** If player HP reaches 0, the session ends with EndReason.DEFEATED. Reps are still
+banked and count toward progression, but the "won" flag is false for meta-tracking (analytics,
+leaderboards).
+
+---
+
+## 10. Balance testing plan
 
 Tune these on-device during Red Light, using the config file, with real reps:
 

@@ -92,6 +92,23 @@ class Sfx {
     }
 
     /**
+     * Player hit by boss — a short low thud with fast decay.
+     */
+    fun playerHit() {
+        if (muted) return
+        try {
+            // Low thud (90 Hz sine, 120 ms) plus brief noise burst
+            audioExecutor.submit {
+                playDecayingTone(90f, 120)
+                Thread.sleep(60)
+                playNoiseBurst(100)
+            }
+        } catch (e: Exception) {
+            Log.e(tag, "Error playing player hit sound", e)
+        }
+    }
+
+    /**
      * Framing lost — soft descending two-tone.
      */
     fun framingLost() {
@@ -154,6 +171,68 @@ class Sfx {
             // Wait for playback to complete before releasing (50ms safety margin for playback latency)
             // This runs on the audio background thread, so it doesn't block callers
             Thread.sleep(durationMs + 50)
+        } finally {
+            try {
+                audioTrack.stop()
+                audioTrack.release()
+            } catch (e: Exception) {
+                Log.e(tag, "Error releasing AudioTrack", e)
+            }
+        }
+    }
+
+    private fun playDecayingTone(frequency: Float, durationMs: Long) {
+        val numSamples = (sampleRate * durationMs / 1000).toInt()
+        val samples = ShortArray(numSamples)
+
+        // Generate sine wave with exponential decay envelope
+        for (i in 0 until numSamples) {
+            val angle = 2.0 * PI * frequency * i / sampleRate
+            // Exponential decay: starts at 1.0, falls to ~0.1 by end
+            val decay = kotlin.math.exp(-3.0f * i / numSamples)
+            samples[i] = (32767 * sin(angle) * decay).toInt().toShort()
+        }
+
+        playBuffer(samples, durationMs)
+    }
+
+    private fun playNoiseBurst(durationMs: Long) {
+        val numSamples = (sampleRate * durationMs / 1000).toInt()
+        val samples = ShortArray(numSamples)
+        val rng = java.util.Random(System.nanoTime())
+
+        // White noise with quick decay
+        for (i in 0 until numSamples) {
+            val noise = (rng.nextInt(32768) - 16384).toShort()
+            val decay = kotlin.math.exp(-5.0f * i / numSamples)
+            samples[i] = (noise * decay).toInt().toShort()
+        }
+
+        playBuffer(samples, durationMs)
+    }
+
+    private fun playBuffer(samples: ShortArray, durationMs: Long) {
+        val audioTrack = AudioTrack.Builder()
+            .setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+            )
+            .setAudioFormat(
+                AudioFormat.Builder()
+                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                    .setSampleRate(sampleRate)
+                    .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
+                    .build()
+            )
+            .setBufferSizeInBytes(samples.size * 2)
+            .build()
+
+        try {
+            audioTrack.play()
+            audioTrack.write(samples, 0, samples.size)
+            Thread.sleep(durationMs + 30)
         } finally {
             try {
                 audioTrack.stop()

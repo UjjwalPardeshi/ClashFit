@@ -49,7 +49,7 @@ data class ComboConfig(
 )
 
 /** Boss phase configuration. */
-data class BossPhase(val fromHpPct: Float, val modifier: Float, val label: String)
+data class BossPhase(val fromHpPct: Float, val modifier: Float, val label: String, val attackModifier: Float = 1f)
 
 /** Boss configuration. */
 data class BossConfig(
@@ -84,11 +84,20 @@ class CombatEngine(
     val combo: ComboTracker,
     private val casual: Boolean = false,
     private val casualConfig: CasualConfig = CasualConfig(),
+    private val playerMaxHpDefault: Int = Int.MAX_VALUE / 2,
 ) {
     var maxHp = boss.maxHp
         internal set
     var hp = maxHp
         internal set
+    var playerMaxHp = playerMaxHpDefault
+        internal set
+    var playerHp = playerMaxHpDefault
+        internal set
+    var playerDead = false
+        private set
+    var lastPlayerHit: Int? = null
+        private set
     var reps = 0
         private set
     var totalDamage = 0
@@ -105,6 +114,7 @@ class CombatEngine(
     private val recent = ArrayDeque<Float>()  // Combo-neutral, for mercy estimate
 
     val hpPct: Float get() = if (maxHp > 0) hp.toFloat() / maxHp else 0f
+    val playerHpPct: Float get() = if (playerMaxHp > 0) playerHp.toFloat() / playerMaxHp else 0f
 
     /** Get the current phase modifier and label. */
     fun phaseModifier(): Pair<Float, String> {
@@ -117,6 +127,17 @@ class CombatEngine(
             }
         }
         return mod to label
+    }
+
+    /** Get the current phase with attack modifier. */
+    private fun currentPhase(): BossPhase {
+        var result = boss.phases.first()
+        for (phase in boss.phases) {
+            if (hpPct <= phase.fromHpPct) {
+                result = phase
+            }
+        }
+        return result
     }
 
     /** Compute damage for a form score at a fatigue band. */
@@ -183,7 +204,7 @@ class CombatEngine(
         }
     }
 
-    /** Reset with an optional new boss. */
+    /** Reset with an optional new boss. Player HP is preserved across boss resets in BOSS_RUSH/SURVIVAL. */
     fun reset(newBoss: BossConfig = boss) {
         boss = newBoss
         maxHp = if (casual) (newBoss.maxHp * casualConfig.bossHpMultiplier).toInt() else newBoss.maxHp
@@ -196,6 +217,30 @@ class CombatEngine(
         combo.reset()
         applied.clear()
         recent.clear()
+        // Player HP carries across to the next boss in multi-boss modes (BOSS_RUSH, SURVIVAL).
+        // It is only reset when a new SessionEngine is created.
+    }
+
+    /** Apply an attack from the boss to the player, scaled by the current phase's attackModifier. */
+    fun bossAttack(baseDamage: Int): Int {
+        val phase = currentPhase()
+        val damage = maxOf(0, round(baseDamage * phase.attackModifier).toInt())
+        playerHp = maxOf(0, playerHp - damage)
+        lastPlayerHit = damage
+        if (playerHp <= 0) playerDead = true
+        return damage
+    }
+
+    /** A new fight: the player starts at full health. Boss and wave changes go through reset(), not this. */
+    fun resetPlayer() {
+        playerHp = playerMaxHp
+        playerDead = false
+        lastPlayerHit = null
+    }
+
+    /** Heal the player, capped at maxHp. */
+    fun healPlayer(amount: Int) {
+        playerHp = minOf(playerMaxHp, playerHp + amount)
     }
 
     /** Snapshot of the current combat state. */
@@ -216,6 +261,11 @@ class CombatEngine(
             lastDamage = null,
             staggered = staggerRepsLeft > 0,
             mercyActive = mercyActive,
+            playerHp = playerHp,
+            playerMaxHp = playerMaxHp,
+            playerDead = playerDead,
+            lastPlayerHit = lastPlayerHit,
+            nextAttackInMs = null,
         )
     }
 }

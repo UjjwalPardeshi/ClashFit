@@ -1,0 +1,69 @@
+{
+  "id": "bicep_curl",
+  "family": "REP_CYCLE",
+  "name": "Bicep Curl",
+  "tags": [
+    "strength",
+    "upper",
+    "arms",
+    "no-equipment"
+  ],
+  "framing": "front",
+  "difficulty": 1,
+  "games": [
+    "BOSS_FIGHT",
+    "TIME_ATTACK",
+    "GHOST_RACE",
+    "SURVIVAL",
+    "BOSS_RUSH",
+    "DUEL"
+  ],
+  "detector": {
+    "primaryAngle": {
+      "a": "SHOULDER",
+      "b": "ELBOW",
+      "c": "WRIST"
+    },
+    "topEnter": 170,
+    "topExit": 160,
+    "bottomEnter": 30,
+    "bottomExit": 45,
+    "targetAngle": 25,
+    "minDescendMs": 150,
+    "minBottomMs": 60,
+    "minRepMs": 800,
+    "maxRepMs": 8000,
+    "requiredJoints": [
+      "SHOULDER",
+      "ELBOW",
+      "WRIST"
+    ],
+    "sides": "EACH",
+    "mergeWindowMs": 500,
+    "_note": "Keypoints 11-13-15 / 12-14-16 (shoulder-elbow-wrist), 3D world angle. A rep opens to 170-180 and closes to 20-30: TOP at >=170, BOTTOM at <=30, 25 is full depth."
+  },
+  "form": {
+    "weights": {
+      "depth": 0.45,
+      "rom": 0.25,
+      "tempo": 0.3,
+      "alignment": 0.0
+    },
+    "tempo": {
+      "eccentricTargetSec": 0.35,
+      "bottomPauseSec": 0.1,
+      "_note": "measured window: topExit crossing -> bottomEnter crossing, not the full descent"
+    },
+    "depthExponent": 1.5
+  },
+  "fatigue": {
+    "signal": "VELOCITY_LOSS",
+    "baselineReps": 3
+  },
+  "cues": {
+    "enter": "Face the camera, arms straight down (170°+), elbows tucked to your sides.",
+    "tooHigh": "Curl all the way up — elbow closed to 30° or less.",
+    "tooFast": "Slow the curl and squeeze at the top.",
+    "framing": "I can't see your elbows — step back."
+  }
+}
