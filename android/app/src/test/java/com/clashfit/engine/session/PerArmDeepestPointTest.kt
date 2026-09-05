@@ -80,64 +80,48 @@ class PerArmDeepestPointTest {
     private fun curl(left: Float, right: Float) = SyntheticBody.world(170f, leftElbowDeg = left, rightElbowDeg = right)
 
     @Test
-    fun `both arms curling together are counted separately`() {
+    fun `both arms curling together are one rep`() {
         val rec = Recorder()
         val d = Driver(engine("bicep_curl", rec))
         calibrate(d, curl(175f, 175f))
-        val t0 = d.t
-        d.ramp(700, 175f, 22f) { t ->
-            val f = (t - t0).toFloat() / 700f
-            curl(175f - (175f - 22f) * f, 175f - (175f - 14f) * f)
-        }
+        // The right arm runs eight degrees deeper the whole way, so the two arms cross the
+        // counting line on different frames.
+        d.ramp(700, 175f, 22f) { e -> curl(e, e - 8f) }
         d.hold(200, curl(22f, 14f))
-        val t1 = d.t
-        d.ramp(600, 22f, 175f) { t ->
-            val f = (t - t1).toFloat() / 600f
-            curl(22f + (175f - 22f) * f, 14f + (175f - 14f) * f)
-        }
+        d.ramp(600, 22f, 175f) { e -> curl(e, e - 8f) }
         d.hold(400, curl(175f, 175f))
-        assertEquals(2, rec.reps.size, "fitmon counts each arm, so both arms together are two reps")
+        assertEquals(1, rec.reps.size, "one hand or both, a curl is one rep")
         rec.reps.forEach { assertNotEquals(0f, it.alignment, "each rep is scored") }
     }
 
     @Test
-    fun `alternating curls are counted one arm at a time`() {
+    fun `alternating curls are counted one at a time`() {
         val rec = Recorder()
         val d = Driver(engine("bicep_curl", rec))
         calibrate(d, curl(175f, 175f))
-        val t0 = d.t
-        d.ramp(700, 175f, 20f) { t -> curl(175f - (175f - 20f) * ((t - t0).toFloat() / 700f), 175f) }
+        d.ramp(700, 175f, 20f) { e -> curl(e, 175f) }
         d.hold(200, curl(20f, 175f))
-        val t0b = d.t
-        d.ramp(600, 20f, 175f) { t -> curl(20f + (175f - 20f) * ((t - t0b).toFloat() / 600f), 175f) }
+        d.ramp(600, 20f, 175f) { e -> curl(e, 175f) }
         d.hold(400, curl(175f, 175f))
-        val t1 = d.t
-        d.ramp(700, 175f, 15f) { t -> curl(175f, 175f - (175f - 15f) * ((t - t1).toFloat() / 700f)) }
+        d.ramp(700, 175f, 15f) { e -> curl(175f, e) }
         d.hold(200, curl(175f, 15f))
-        val t1b = d.t
-        d.ramp(600, 15f, 175f) { t -> curl(175f, 15f + (175f - 15f) * ((t - t1b).toFloat() / 600f)) }
+        d.ramp(600, 15f, 175f) { e -> curl(175f, e) }
         d.hold(400, curl(175f, 175f))
-        assertEquals(2, rec.reps.size, "one rep per arm")
+        assertEquals(2, rec.reps.size, "two curls, one after the other, are two reps")
         assertEquals(listOf(1, 2), rec.reps.map { it.repIndex })
     }
 
     @Test
-    fun `an arm that stops at eighty degrees does not count while the other does`() {
+    fun `an arm that stops at a hundred degrees does not count while the other does`() {
         val rec = Recorder()
         val d = Driver(engine("bicep_curl", rec))
         calibrate(d, curl(175f, 175f))
-        val t0 = d.t
-        d.ramp(700, 0f, 1f) { t ->
-            val f = (t - t0).toFloat() / 700f
-            curl(175f - (175f - 80f) * f, 175f - (175f - 20f) * f)
-        }
-        d.hold(200, curl(80f, 20f))
-        val t1 = d.t
-        d.ramp(600, 1f, 0f) { t ->
-            val f = (t - t1).toFloat() / 600f
-            curl(80f + (175f - 80f) * f, 20f + (175f - 20f) * f)
-        }
+        // ramp hands the lambda its interpolated value, so sweep a plain 0..1 fraction and build
+        // both arms from it: the left stops short at a hundred, the right closes to twenty.
+        d.ramp(700, 0f, 1f) { f -> curl(175f - (175f - 100f) * f, 175f - (175f - 20f) * f) }
+        d.hold(200, curl(100f, 20f))
+        d.ramp(600, 0f, 1f) { f -> curl(100f + (175f - 100f) * f, 20f + (175f - 20f) * f) }
         d.hold(400, curl(175f, 175f))
-        assertEquals(1, rec.reps.size, "only the arm that closed past forty counts")
+        assertEquals(1, rec.reps.size, "only the arm that closed past eighty counts")
     }
 }
