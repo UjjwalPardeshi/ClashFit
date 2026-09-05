@@ -72,9 +72,9 @@ fun AccountScreen(graph: AppGraph, onBack: () -> Unit, onSignedOut: () -> Unit) 
         ) {
             AppCard(Modifier.fillMaxWidth()) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Avatar(user?.displayName ?: "?", size = 64, color = AvatarPalette.at(settings.avatarColor))
+                    Avatar(user?.shownName() ?: "?", size = 64, color = AvatarPalette.at(settings.avatarColor))
                     Column {
-                        Text(user?.displayName ?: "Not signed in", style = MaterialTheme.typography.titleLarge, color = Ink)
+                        Text(user?.shownName() ?: "Not signed in", style = MaterialTheme.typography.titleLarge, color = Ink)
                         Text(user?.email ?: "", style = MaterialTheme.typography.bodySmall, color = InkMuted)
                         Text(
                             if (graph.auth.isCloud) "Synced to the cloud" else "Stored on this phone",

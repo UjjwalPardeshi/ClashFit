@@ -77,7 +77,7 @@ fun YouScreen(graph: AppGraph, nav: NavHostController) {
     val streak by streakFlow.collectAsStateWithLifecycle(initialValue = null)
     val sessionCount by countFlow.collectAsStateWithLifecycle(initialValue = 0)
 
-    val name = (auth as? AuthState.SignedIn)?.user?.displayName ?: "Athlete"
+    val name = (auth as? AuthState.SignedIn)?.user?.shownName() ?: "Athlete"
     val badges = meta?.unlocked?.size ?: 0
 
     ScreenScaffold(title = "You", actions = { BarAction(AppIcons.Gear, "Settings") { nav.navigate(Settings) } }) { padding ->
