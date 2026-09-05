@@ -2,4 +2,7 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Share CSV exports from the app's files/export directory. -->
     <files-path name="export" path="export/" />
+    <!-- Shareable activity cards. Written by ShareCard, handed out one URI at a time with a
+         read grant that dies with the receiving activity. Never world-readable storage. -->
+    <files-path name="share" path="share/" />
 </paths>

@@ -78,6 +78,51 @@ class MigrationSqlTest {
         }
     }
 
+    /**
+     * Migration 4 to 5 adds columns rather than tables, so the trap is the mirror image of the one
+     * above: `ALTER TABLE … ADD COLUMN … NOT NULL` *requires* a SQL default, and Room will reject
+     * the database unless its exported schema expects exactly that default. The entity therefore
+     * carries `@ColumnInfo(defaultValue = …)`, and this pins the two together.
+     */
+    @Test
+    fun `every column added by migration 4 to 5 matches the exported schema exactly`() {
+        val runsSql = normalise(requireNotNull(createSqlByTable(5)["runs"]) { "schema 5 has no runs entity" })
+        assertEquals(3, MIGRATION_4_5_SQL.size, "three columns are added")
+
+        // Each ALTER must name a column definition that appears verbatim in schema 5's CREATE.
+        val expected = listOf(
+            "kind TEXT NOT NULL DEFAULT 'RUN'",
+            "steps INTEGER NOT NULL DEFAULT 0",
+            "fastestKmSec REAL",
+        )
+        expected.zip(MIGRATION_4_5_SQL).forEach { (column, alter) ->
+            assertTrue(
+                runsSql.contains(column),
+                "schema 5's runs table does not declare `$column`; the migration and the entity have drifted.\n$runsSql",
+            )
+            assertTrue(
+                normalise(alter).endsWith(column),
+                "the migration statement does not add `$column` exactly as the schema declares it:\n$alter",
+            )
+            assertTrue(normalise(alter).startsWith("ALTER TABLE runs ADD COLUMN"), "expected an ALTER on runs:\n$alter")
+        }
+    }
+
+    @Test
+    fun `schema 5 changes nothing but the runs table`() {
+        val before = createSqlByTable(4)
+        val after = createSqlByTable(5)
+        assertEquals(before.keys, after.keys, "version 5 must add and drop no tables")
+        before.forEach { (table, sql) ->
+            if (table == "runs") return@forEach
+            assertEquals(
+                normalise(sql),
+                normalise(after.getValue(table)),
+                "version 5 changed `$table`, which migration 4 to 5 does not touch",
+            )
+        }
+    }
+
     @Test
     fun `schema 4 adds exactly the four progression tables to schema 3`() {
         val before = createSqlByTable(3).keys

@@ -1,5 +1,6 @@
 package com.clashfit.run
 
+import com.clashfit.data.ActivityKind
 import com.clashfit.data.RunEntity
 import com.clashfit.data.RunPointEntity
 
@@ -7,6 +8,9 @@ import com.clashfit.data.RunPointEntity
 data class RunState(
     val runId: Long? = null,
     val startedAtMs: Long? = null,
+    /** `RUN` or `WALK`. Chosen when the activity starts and never changes mid-activity. */
+    val kind: String = ActivityKind.RUN,
+    val steps: Int = 0,
     val distanceM: Float = 0f,
     val movingMs: Long = 0L,
     val avgPaceSecPerKm: Float = 0f,
@@ -19,6 +23,7 @@ data class RunState(
 ) {
     val isActive: Boolean get() = runId != null && !isPaused
     val isRunning: Boolean get() = startedAtMs != null
+    val isWalk: Boolean get() = kind == ActivityKind.WALK
 
     fun asEntity(): RunEntity? = if (runId == null || startedAtMs == null) null
     else RunEntity(
@@ -31,5 +36,7 @@ data class RunState(
         cadenceSpm = cadenceSpm,
         elevationGainM = elevationGainM,
         splitsJson = splits.joinToString(","),
+        kind = kind,
+        steps = steps,
     )
 }

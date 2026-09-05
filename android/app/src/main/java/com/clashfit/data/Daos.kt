@@ -91,12 +91,35 @@ interface LadderDao {
 interface RunDao {
     @Insert suspend fun insertRun(r: RunEntity): Long
     @Insert suspend fun insertPoints(points: List<RunPointEntity>)
-    @Query("UPDATE runs SET endedAtMs = :endedAtMs, distanceM = :distanceM, movingMs = :movingMs, avgPaceSecPerKm = :pace, cadenceSpm = :cadence, elevationGainM = :elev, splitsJson = :splits WHERE id = :id")
-    suspend fun finish(id: Long, endedAtMs: Long, distanceM: Float, movingMs: Long, pace: Float, cadence: Int, elev: Float, splits: String)
+    @Query(
+        "UPDATE runs SET endedAtMs = :endedAtMs, distanceM = :distanceM, movingMs = :movingMs, " +
+            "avgPaceSecPerKm = :pace, cadenceSpm = :cadence, elevationGainM = :elev, splitsJson = :splits, " +
+            "steps = :steps, fastestKmSec = :fastestKmSec WHERE id = :id",
+    )
+    suspend fun finish(
+        id: Long, endedAtMs: Long, distanceM: Float, movingMs: Long, pace: Float,
+        cadence: Int, elev: Float, splits: String, steps: Int, fastestKmSec: Float?,
+    )
     @Query("SELECT * FROM runs WHERE id = :id") suspend fun run(id: Long): RunEntity?
     @Query("SELECT * FROM run_points WHERE runId = :runId ORDER BY tMs") suspend fun points(runId: Long): List<RunPointEntity>
     @Query("SELECT * FROM runs WHERE endedAtMs IS NOT NULL ORDER BY startedAtMs DESC LIMIT :limit") fun recent(limit: Int = 50): Flow<List<RunEntity>>
+    @Query("SELECT * FROM runs WHERE endedAtMs IS NOT NULL AND kind = :kind ORDER BY startedAtMs DESC LIMIT :limit")
+    fun recentOfKind(kind: String, limit: Int = 50): Flow<List<RunEntity>>
     @Query("SELECT COALESCE(SUM(distanceM), 0) FROM runs WHERE endedAtMs IS NOT NULL AND startedAtMs >= :sinceMs") suspend fun distanceSince(sinceMs: Long): Float
+    @Query("SELECT COALESCE(SUM(steps), 0) FROM runs WHERE endedAtMs IS NOT NULL AND startedAtMs >= :sinceMs") suspend fun stepsSince(sinceMs: Long): Int
+    @Query("SELECT COALESCE(SUM(movingMs), 0) FROM runs WHERE endedAtMs IS NOT NULL AND startedAtMs >= :sinceMs") suspend fun movingMsSince(sinceMs: Long): Long
+    @Query("SELECT COUNT(*) FROM runs WHERE endedAtMs IS NOT NULL AND startedAtMs >= :sinceMs") suspend fun countSince(sinceMs: Long): Int
+
+    // Personal bests. Every one excludes the activity being judged, so a run cannot beat itself —
+    // it is already in the table by the time the summary screen asks.
+    @Query("SELECT MAX(distanceM) FROM runs WHERE endedAtMs IS NOT NULL AND id != :exceptId")
+    suspend fun bestDistanceM(exceptId: Long): Float?
+    @Query("SELECT MAX(elevationGainM) FROM runs WHERE endedAtMs IS NOT NULL AND id != :exceptId")
+    suspend fun bestClimbM(exceptId: Long): Float?
+    @Query("SELECT MIN(fastestKmSec) FROM runs WHERE endedAtMs IS NOT NULL AND fastestKmSec IS NOT NULL AND id != :exceptId")
+    suspend fun bestFastestKmSec(exceptId: Long): Float?
+    @Query("SELECT MAX(steps) FROM runs WHERE endedAtMs IS NOT NULL AND id != :exceptId")
+    suspend fun bestSteps(exceptId: Long): Int?
 }
 
 @Dao

@@ -326,6 +326,12 @@ dependencies {
     implementation(libs.filament.gltfio)
     implementation(libs.filament.utils)
 
+    // The map under a run and under Outbreak. osmdroid renders OpenStreetMap raster tiles and,
+    // unusually for a map library, declares no permissions of its own — checked against the AAR
+    // manifest before it was added, because PERMISSION_ALLOW_LIST would have failed the build.
+    // Tiles are cached in app-private storage, so nothing here needs storage access either.
+    implementation(libs.osmdroid.android)
+
     implementation(libs.mediapipe.tasks.vision)
     implementation(libs.mediapipe.tasks.genai)
     implementation(libs.play.services.nearby)

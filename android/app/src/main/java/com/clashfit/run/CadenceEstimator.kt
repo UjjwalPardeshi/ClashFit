@@ -27,6 +27,17 @@ class CadenceEstimator(
     var peakCount: Int = 0
         private set
 
+    /**
+     * Steps taken since the activity started.
+     *
+     * From the hardware counter where there is one, and from counted footfalls where there is not.
+     * Reported separately from cadence because a walk is judged on the total and a run on the
+     * rate, and deriving either from the other loses the pauses.
+     */
+    val stepsTaken: Int get() = if (hasStepBaseline) countedSteps else peakCount
+
+    private var countedSteps: Int = 0
+
     private var baselineSteps: Long? = null
     private var baselineMs: Long = 0L
 
@@ -50,6 +61,14 @@ class CadenceEstimator(
         }
 
         val stepsSinceBaseline = totalSteps - baseline
+        // The counter is monotonic since boot, so a negative delta means the phone rebooted
+        // mid-activity. Re-seed rather than report a wildly negative step count.
+        if (stepsSinceBaseline < 0L) {
+            baselineSteps = totalSteps
+            baselineMs = nowMs
+            return cadenceSpm
+        }
+        countedSteps = stepsSinceBaseline.toInt()
         val elapsedSec = (nowMs - baselineMs) / 1000f
         if (stepsSinceBaseline > 0L && elapsedSec > 0f) {
             cadenceSpm = (stepsSinceBaseline * 60 / elapsedSec).toInt().coerceIn(0, maxCadenceSpm)
@@ -91,6 +110,7 @@ class CadenceEstimator(
     fun reset() {
         cadenceSpm = 0
         peakCount = 0
+        countedSteps = 0
         baselineSteps = null
         baselineMs = 0L
         firstPeakMs = null

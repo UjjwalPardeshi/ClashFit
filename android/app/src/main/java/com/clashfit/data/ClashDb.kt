@@ -14,7 +14,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         AlarmEntity::class, GhostEntity::class, PostureSampleEntity::class,
         MetaEntity::class, AchievementEntity::class, WeeklyEntity::class, XpLedgerEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class ClashDb : RoomDatabase() {
@@ -80,5 +80,29 @@ internal val MIGRATION_3_4_SQL: List<String> = listOf(
 val MIGRATION_3_4 = object : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {
         MIGRATION_3_4_SQL.forEach(db::execSQL)
+    }
+}
+
+/**
+ * Walking, and the two numbers a personal best needs.
+ *
+ * Three columns added to `runs`. The rule from `MIGRATION_3_4` applies in reverse here: a NOT NULL
+ * column added to an existing table *must* carry a SQL default, so the entity declares the same
+ * default through `@ColumnInfo(defaultValue = …)` and Room's exported schema expects it. The two
+ * halves are pinned together by `MigrationSqlTest`; change one without the other and every phone
+ * that already has the app crashes on launch while a fresh install looks perfect.
+ *
+ * `fastestKmSec` is nullable and therefore needs no default: existing rows get NULL, which is the
+ * truth — nobody computed a fastest kilometre for them.
+ */
+internal val MIGRATION_4_5_SQL: List<String> = listOf(
+    "ALTER TABLE `runs` ADD COLUMN `kind` TEXT NOT NULL DEFAULT 'RUN'",
+    "ALTER TABLE `runs` ADD COLUMN `steps` INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE `runs` ADD COLUMN `fastestKmSec` REAL",
+)
+
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        MIGRATION_4_5_SQL.forEach(db::execSQL)
     }
 }

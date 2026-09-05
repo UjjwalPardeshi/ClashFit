@@ -1,5 +1,6 @@
 package com.clashfit.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -135,7 +136,35 @@ data class RunEntity(
     val elevationGainM: Float,
     /** JSON array of per-kilometre pace, seconds. */
     val splitsJson: String,
+    /**
+     * `RUN` or `WALK`. One table, because a walk and a run are the same measurement with
+     * different expectations of it, and splitting them would duplicate every query and every
+     * chart for no gain.
+     *
+     * The `@ColumnInfo(defaultValue = ...)` is not decoration. Room validates a migrated database
+     * against its exported schema *including* column defaults, and `ALTER TABLE … ADD COLUMN …
+     * NOT NULL` requires a SQL default. Without this annotation the migration would add a default
+     * the schema does not expect, and Room would reject the database on the next launch — on
+     * exactly the phones that already had the app. `MigrationSqlTest` pins the pair together.
+     */
+    @ColumnInfo(defaultValue = "RUN") val kind: String = ActivityKind.RUN,
+    /** Steps counted by the pedometer during the activity. Zero when the phone has no counter. */
+    @ColumnInfo(defaultValue = "0") val steps: Int = 0,
+    /**
+     * The quickest continuous kilometre of this activity, in seconds.
+     *
+     * Stored rather than recomputed so a personal-best check is one indexed query instead of
+     * loading every point of every previous activity. Nullable: an activity under a kilometre
+     * genuinely has no fastest kilometre, and zero would be a lie that wins every comparison.
+     */
+    val fastestKmSec: Float? = null,
 )
+
+/** The two things the run table records. Strings, because they are persisted. */
+object ActivityKind {
+    const val RUN = "RUN"
+    const val WALK = "WALK"
+}
 
 @Entity(tableName = "run_points", indices = [Index("runId")])
 data class RunPointEntity(

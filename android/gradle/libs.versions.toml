@@ -16,6 +16,7 @@ room = "2.8.4"
 datastore = "1.2.1"
 mediapipeVision = "1.0.0"
 filament = "1.75.1"
+osmdroid = "6.1.20"
 mediapipeGenai = "0.10.35"
 nearby = "19.5.0"
 location = "21.4.0"
@@ -73,6 +74,7 @@ mediapipe-tasks-vision = { group = "com.google.mediapipe", name = "tasks-vision"
 filament-android = { group = "com.google.android.filament", name = "filament-android", version.ref = "filament" }
 filament-gltfio = { group = "com.google.android.filament", name = "gltfio-android", version.ref = "filament" }
 filament-utils = { group = "com.google.android.filament", name = "filament-utils-android", version.ref = "filament" }
+osmdroid-android = { group = "org.osmdroid", name = "osmdroid-android", version.ref = "osmdroid" }
 mediapipe-tasks-genai = { group = "com.google.mediapipe", name = "tasks-genai", version.ref = "mediapipeGenai" }
 play-services-nearby = { group = "com.google.android.gms", name = "play-services-nearby", version.ref = "nearby" }
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "location" }

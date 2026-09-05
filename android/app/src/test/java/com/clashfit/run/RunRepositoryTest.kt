@@ -84,6 +84,8 @@ class RunRepositoryTest {
             cadence: Int,
             elev: Float,
             splits: String,
+            steps: Int,
+            fastestKmSec: Float?,
         ) {
             runs[id]?.let {
                 runs[id] = it.copy(
@@ -94,6 +96,8 @@ class RunRepositoryTest {
                     cadenceSpm = cadence,
                     elevationGainM = elev,
                     splitsJson = splits,
+                    steps = steps,
+                    fastestKmSec = fastestKmSec,
                 )
             }
         }
@@ -104,8 +108,30 @@ class RunRepositoryTest {
 
         override fun recent(limit: Int) = flowOf(runs.values.sortedByDescending { it.startedAtMs }.take(limit))
 
-        override suspend fun distanceSince(sinceMs: Long) =
+        override fun recentOfKind(kind: String, limit: Int) =
+            flowOf(runs.values.filter { it.kind == kind }.sortedByDescending { it.startedAtMs }.take(limit))
+
+        private fun finished(sinceMs: Long) =
             runs.values.filter { it.startedAtMs >= sinceMs && it.endedAtMs != null }
-                .sumOf { it.distanceM.toDouble() }.toFloat()
+
+        override suspend fun distanceSince(sinceMs: Long) =
+            finished(sinceMs).sumOf { it.distanceM.toDouble() }.toFloat()
+
+        override suspend fun stepsSince(sinceMs: Long) = finished(sinceMs).sumOf { it.steps }
+
+        override suspend fun movingMsSince(sinceMs: Long) = finished(sinceMs).sumOf { it.movingMs }
+
+        override suspend fun countSince(sinceMs: Long) = finished(sinceMs).size
+
+        private fun others(exceptId: Long) = runs.values.filter { it.id != exceptId && it.endedAtMs != null }
+
+        override suspend fun bestDistanceM(exceptId: Long) = others(exceptId).maxOfOrNull { it.distanceM }
+
+        override suspend fun bestClimbM(exceptId: Long) = others(exceptId).maxOfOrNull { it.elevationGainM }
+
+        override suspend fun bestFastestKmSec(exceptId: Long) =
+            others(exceptId).mapNotNull { it.fastestKmSec }.minOrNull()
+
+        override suspend fun bestSteps(exceptId: Long) = others(exceptId).maxOfOrNull { it.steps }
     }
 }

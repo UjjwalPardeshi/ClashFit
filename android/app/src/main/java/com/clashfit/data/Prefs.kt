@@ -58,6 +58,23 @@ class Prefs(private val context: Context) {
          * venue's projector, nobody wants to be recompiling.
          */
         val boss3d: Boolean = true,
+        /**
+         * Draw OpenStreetMap tiles under a route.
+         *
+         * Off until the player says yes, and they are asked in words rather than by a permission
+         * dialog. A map centred on you is a request that carries roughly where you are to a tile
+         * server, and this app's whole argument is that it says so when something leaves the
+         * phone. `docs/33-FEATURE-OUTBREAK.md` § Rules this mode must follow, rule 4.
+         *
+         * With this off the route still draws — on the app's own grid, with no network at all.
+         */
+        val mapTiles: Boolean = false,
+        /** True once the tile notice has been shown, so it is asked once and not every run. */
+        val mapTilesAsked: Boolean = false,
+        /** True once the share sheet's "this picture contains your route" notice was accepted. */
+        val shareNoticeSeen: Boolean = false,
+        /** Weekly distance goal for runs and walks, in metres. */
+        val weeklyDistanceGoalM: Int = 15_000,
     )
 
     enum class Goal(val title: String, val blurb: String) {
@@ -89,6 +106,10 @@ class Prefs(private val context: Context) {
             goal = p[GOAL] ?: Goal.GET_STRONGER.name,
             avatarColor = p[AVATAR_COLOR] ?: 0,
             boss3d = p[BOSS_3D] ?: true,
+            mapTiles = p[MAP_TILES] ?: false,
+            mapTilesAsked = p[MAP_TILES_ASKED] ?: false,
+            shareNoticeSeen = p[SHARE_NOTICE_SEEN] ?: false,
+            weeklyDistanceGoalM = p[WEEKLY_DISTANCE_GOAL_M] ?: 15_000,
         )
     }
 
@@ -112,6 +133,20 @@ class Prefs(private val context: Context) {
     suspend fun setOnboarded(v: Boolean) = context.dataStore.edit { it[ONBOARDED] = v }
     suspend fun setGoal(v: Goal) = context.dataStore.edit { it[GOAL] = v.name }
     suspend fun setAvatarColor(v: Int) = context.dataStore.edit { it[AVATAR_COLOR] = v }
+    suspend fun setShareNoticeSeen(v: Boolean) = context.dataStore.edit { it[SHARE_NOTICE_SEEN] = v }
+    suspend fun setWeeklyDistanceGoalM(v: Int) = context.dataStore.edit { it[WEEKLY_DISTANCE_GOAL_M] = v }
+
+    /**
+     * Answers the tile question, and records that it was asked.
+     *
+     * Both keys move together on purpose: a "no" that did not also record having asked would put
+     * the notice back in front of the player on the next run, which is nagging rather than
+     * consent. Settings still holds the switch, so "no" is never final.
+     */
+    suspend fun setMapTiles(v: Boolean) = context.dataStore.edit {
+        it[MAP_TILES] = v
+        it[MAP_TILES_ASKED] = true
+    }
 
     /** Everything the first-run flow decides, in one write. */
     suspend fun completeOnboarding(goal: Goal, preferredExercise: String, avatarColor: Int) = context.dataStore.edit {
@@ -142,5 +177,9 @@ class Prefs(private val context: Context) {
         val GUEST = booleanPreferencesKey("guest")
         val GOAL = stringPreferencesKey("goal")
         val AVATAR_COLOR = intPreferencesKey("avatar_color")
+        val MAP_TILES = booleanPreferencesKey("map_tiles")
+        val MAP_TILES_ASKED = booleanPreferencesKey("map_tiles_asked")
+        val SHARE_NOTICE_SEEN = booleanPreferencesKey("share_notice_seen")
+        val WEEKLY_DISTANCE_GOAL_M = intPreferencesKey("weekly_distance_goal_m")
     }
 }

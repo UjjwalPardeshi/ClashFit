@@ -25,6 +25,7 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.clashfit.AppGraph
 import com.clashfit.R
+import com.clashfit.data.ActivityKind
 import com.clashfit.data.RunPointEntity
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Granularity
@@ -94,7 +95,7 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         super.onStartCommand(intent, flags, startId)
 
         when (intent?.action) {
-            ACTION_START -> startRun()
+            ACTION_START -> startRun(intent.getStringExtra(EXTRA_KIND) ?: ActivityKind.RUN)
             ACTION_PAUSE -> pauseRun()
             ACTION_RESUME -> resumeRun()
             ACTION_STOP -> stopRun()
@@ -115,14 +116,15 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
     }
 
     @SuppressLint("MissingPermission")
-    private fun startRun() {
+    private fun startRun(kind: String) {
         if (currentState.isRunning) return
-        Log.d(TAG, "Starting run")
+        Log.d(TAG, "Starting $kind")
 
         val nowMs = graph.clock.nowMs()
         currentState = RunState(
             runId = null, // Will be set after first valid GPS fix
             startedAtMs = nowMs,
+            kind = kind,
         )
         fixFilter.start(nowMs)
         elevation.reset()
@@ -214,12 +216,21 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
                     }
                 }
 
-                // Finish the run
+                // The fastest kilometre is computed once, here, from every point the activity
+                // stored — a sliding window, so a quick kilometre that straddles a split boundary
+                // still counts. Storing it turns every later personal-best check into one indexed
+                // query instead of reloading the points of every previous activity.
+                val fastestKm = withContext(Dispatchers.IO) {
+                    runCatching { fastestKmSec(repo.getRunPoints(rid)) }.getOrNull()
+                }
+
                 withContext(Dispatchers.IO) {
                     repo.finishRun(
                         rid, endedAtMs, currentState.distanceM, currentState.movingMs,
                         currentState.avgPaceSecPerKm, currentState.cadenceSpm,
                         currentState.elevationGainM, currentState.splits.joinToString(","),
+                        steps = currentState.steps,
+                        fastestKmSec = fastestKm,
                     )
                 }
 
@@ -314,7 +325,10 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         lifecycleScope.launch {
             val rid = try {
                 withContext(Dispatchers.IO) {
-                    repo.insertRun(distanceM = 0f, movingMs = 0L, pace = 0f, cadence = 0, elev = 0f, splits = "")
+                    repo.insertRun(
+                        distanceM = 0f, movingMs = 0L, pace = 0f, cadence = 0, elev = 0f,
+                        splits = "", kind = currentState.kind,
+                    )
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to insert run on first valid GPS fix", e)
@@ -348,8 +362,9 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
                 cadence.onAccelerometer(event.values[0], event.values[1], event.values[2], nowMs)
             else -> return
         }
-        if (spm != currentState.cadenceSpm) {
-            currentState = currentState.copy(cadenceSpm = spm)
+        val steps = cadence.stepsTaken
+        if (spm != currentState.cadenceSpm || steps != currentState.steps) {
+            currentState = currentState.copy(cadenceSpm = spm, steps = steps)
             tracker.setState(currentState)
         }
     }
@@ -360,7 +375,7 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         val distKm = (currentState.distanceM / 1000f)
         val content = "%.2f km • %s".format(distKm, formatDuration(currentState.movingMs))
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Run in progress")
+            .setContentTitle(if (currentState.isWalk) "Walk in progress" else "Run in progress")
             .setContentText(content)
             .setSmallIcon(android.R.drawable.ic_dialog_map)
             .setOngoing(true)
@@ -392,9 +407,14 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         const val ACTION_RESUME = "com.clashfit.run.RESUME"
         const val ACTION_STOP = "com.clashfit.run.STOP"
 
-        fun start(context: Context) = ContextCompat.startForegroundService(
+        /** Extra naming which activity this is; see [ActivityKind]. */
+        const val EXTRA_KIND = "com.clashfit.run.KIND"
+
+        fun start(context: Context, kind: String = ActivityKind.RUN) = ContextCompat.startForegroundService(
             context,
-            Intent(context, RunTrackingService::class.java).setAction(ACTION_START),
+            Intent(context, RunTrackingService::class.java)
+                .setAction(ACTION_START)
+                .putExtra(EXTRA_KIND, kind),
         )
 
         fun pause(context: Context) = context.startService(
