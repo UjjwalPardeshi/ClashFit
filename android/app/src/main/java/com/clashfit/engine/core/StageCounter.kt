@@ -26,6 +26,20 @@ class StageCounter(val config: Config) {
     enum class Check { NONE, REST, COUNT }
     enum class Stage { NONE, REST, MOVED }
 
+    /**
+     * Where in the movement a rep lands.
+     *
+     * CROSSING is fitmon's rule and is right whenever the counting end is the end of the rep: you
+     * stand up out of a squat and the squat is over. RETURN is for a movement whose rep is not
+     * finished at the top — a lateral raise is only a rep once the arms come back down — and it is
+     * also the only way a ceiling can mean "do not go past here", because how far you went is not
+     * known until you turn around.
+     *
+     * Getting this backwards is not subtle: a squat judged on RETURN lands each rep at the start of
+     * the next one, and the last rep of every set is never counted at all.
+     */
+    enum class CountAt { CROSSING, RETURN }
+
     /** `op` is "<" or ">"; the condition holds when the signal is on that side of `value`. */
     data class Condition(val op: String, val value: Float) {
         fun holds(v: Float): Boolean = v.isFinite() && if (op == "<") v < value else v > value
@@ -38,6 +52,18 @@ class StageCounter(val config: Config) {
         val rest: Condition,
         val count: Condition,
         val wristAboveShoulderAt: Check = Check.NONE,
+        /**
+         * How far past the counting threshold the movement may go and still be that movement.
+         *
+         * Without one, a rep counts the instant the signal crosses `count`, which is fitmon's rule
+         * and right for a curl: there is no such thing as curling too far. A lateral raise is not
+         * like that. Past about 110 degrees the shoulder stops abducting and starts pressing, and
+         * counting it would reward the wrong movement. With a ceiling set the rep is judged over
+         * the whole cycle instead: it counts on the way back down, and only if the turning point
+         * stayed inside the band.
+         */
+        val ceiling: Float? = null,
+        val countAt: CountAt = CountAt.CROSSING,
         val debounceMs: Long = 800L,
     ) {
         companion object {
@@ -58,6 +84,8 @@ class StageCounter(val config: Config) {
                     rest = cond("rest"),
                     count = cond("count"),
                     wristAboveShoulderAt = st["wristAboveShoulderAt"]?.jsonPrimitive?.content?.let { Check.valueOf(it) } ?: Check.NONE,
+                    ceiling = st["ceiling"]?.jsonPrimitive?.floatOrNull,
+                    countAt = st["countAt"]?.jsonPrimitive?.content?.let { CountAt.valueOf(it) } ?: CountAt.CROSSING,
                     debounceMs = st["debounceMs"]?.jsonPrimitive?.longOrNull ?: 800L,
                 )
             }
@@ -73,7 +101,9 @@ class StageCounter(val config: Config) {
         var lastCountMs: Long? = null      // null, not a sentinel: tMs minus Long.MIN_VALUE overflows
         var min = Float.NaN; var max = Float.NaN
         var tMin = 0L; var tMax = 0L
-        fun reset() { stage = Stage.NONE; restAt = null; lastCountMs = null; min = Float.NaN; max = Float.NaN }
+        var reached = false                // the signal has been past `count` since the last rest
+        var brokeCeiling = false           // and it went past `ceiling` while it was there
+        fun reset() { stage = Stage.NONE; restAt = null; lastCountMs = null; min = Float.NaN; max = Float.NaN; reached = false; brokeCeiling = false }
     }
 
     private val left = Track()
@@ -100,26 +130,35 @@ class StageCounter(val config: Config) {
         angles[Side.LEFT] = aL; angles[Side.RIGHT] = aR
         val sL = signal(world, Side.LEFT, aL); val sR = signal(world, Side.RIGHT, aR)
         val upL = wristAbove(world, Side.LEFT); val upR = wristAbove(world, Side.RIGHT)
+        val overL = overCeiling(sL); val overR = overCeiling(sR)
         val out = ArrayList<Rep>(2)
         when (config.sides) {
             Sides.EACH -> {
-                step(left, config.rest.holds(sL), config.count.holds(sL), upL, aL, tMs, Side.LEFT)?.let { out += it }
-                step(right, config.rest.holds(sR), config.count.holds(sR), upR, aR, tMs, Side.RIGHT)?.let { out += it }
+                step(left, config.rest.holds(sL), config.count.holds(sL), upL, overL, aL, tMs, Side.LEFT)?.let { out += it }
+                step(right, config.rest.holds(sR), config.count.holds(sR), upR, overR, aR, tMs, Side.RIGHT)?.let { out += it }
             }
-            Sides.BOTH -> step(one, config.rest.holds(sL) && config.rest.holds(sR), config.count.holds(sL) && config.count.holds(sR), upL && upR, mean(aL, aR), tMs, null)?.let { out += it }
+            // Either arm going too far spoils the rep: both are doing the movement.
+            Sides.BOTH -> step(one, config.rest.holds(sL) && config.rest.holds(sR), config.count.holds(sL) && config.count.holds(sR), upL && upR, overL || overR, mean(aL, aR), tMs, null)?.let { out += it }
             // One rep whichever arm does it, and both arms together are still one rep.
-            Sides.EITHER -> step(one, config.rest.holds(sL) || config.rest.holds(sR), config.count.holds(sL) || config.count.holds(sR), upL || upR, leading(aL, aR), tMs, null)?.let { out += it }
+            Sides.EITHER -> step(one, config.rest.holds(sL) || config.rest.holds(sR), config.count.holds(sL) || config.count.holds(sR), upL || upR, overL || overR, leading(aL, aR), tMs, null)?.let { out += it }
             Sides.BEST -> {
                 val s = if (best == Side.LEFT) sL else sR
                 val up = if (best == Side.LEFT) upL else upR
                 val a = if (best == Side.LEFT) aL else aR
-                step(one, config.rest.holds(s), config.count.holds(s), up, a, tMs, best)?.let { out += it }
+                step(one, config.rest.holds(s), config.count.holds(s), up, overCeiling(s), a, tMs, best)?.let { out += it }
             }
         }
         return out
     }
 
-    private fun step(t: Track, restHolds: Boolean, countHolds: Boolean, above: Boolean, angle: Float, tMs: Long, side: Side?): Rep? {
+    /** True when the signal has gone further than the movement allows, in the counting direction. */
+    private fun overCeiling(signal: Float): Boolean {
+        val c = config.ceiling ?: return false
+        if (!signal.isFinite()) return false
+        return if (config.count.op == "<") signal < c else signal > c
+    }
+
+    private fun step(t: Track, restHolds: Boolean, countHolds: Boolean, above: Boolean, over: Boolean, angle: Float, tMs: Long, side: Side?): Rep? {
         if (angle.isFinite() && t.restAt != null) {
             if (angle < t.min) { t.min = angle; t.tMin = tMs }
             if (angle > t.max) { t.max = angle; t.tMax = tMs }
@@ -143,8 +182,39 @@ class StageCounter(val config: Config) {
             t.min = angle; t.max = angle; t.tMin = tMs; t.tMax = tMs
         }
         val debounced = t.lastCountMs?.let { tMs - it > config.debounceMs } ?: true
+
+        // Judged over the whole cycle: going too far is only visible at the turning point, so the
+        // rep lands when the movement comes back to rest, which is also the moment the player has
+        // actually finished it.
+        if (config.countAt == CountAt.RETURN) {
+            if (countHolds && t.stage == Stage.REST) t.reached = true
+            if (over && t.stage == Stage.REST) t.brokeCeiling = true
+            if (restHolds) {
+                var rep: Rep? = null
+                if (t.reached && !t.brokeCeiling && debounced) {
+                    t.lastCountMs = tMs
+                    val deepest = if (config.count.op == "<") t.tMin else t.tMax
+                    rep = Rep(side, t.restAt ?: tMs, tMs, t.min, t.max, deepest)
+                }
+                t.stage = Stage.REST
+                t.restAt = tMs
+                t.reached = false
+                t.brokeCeiling = false
+                // Always, not only after a rep: a cycle refused for going too far must not leave
+                // its turning point behind to be reported as the next rep's depth.
+                t.min = angle; t.max = angle; t.tMin = tMs; t.tMax = tMs
+                return rep
+            }
+            return null
+        }
+
         if (countHolds && t.stage == Stage.REST && debounced) {
             if (config.wristAboveShoulderAt == Check.COUNT && !above) { lastMissMs = tMs; return null }
+            // The ceiling on a movement that ends where it counts: the reading at the counting
+            // frame has to be one the joint can actually produce. It refuses a rep built on a bad
+            // frame rather than a rep performed wrongly, which is the only sense a ceiling can have
+            // when the rep is over the instant it crosses the line.
+            if (over) { lastMissMs = tMs; return null }
             t.stage = Stage.MOVED
             t.lastCountMs = tMs
             val start = t.restAt ?: tMs

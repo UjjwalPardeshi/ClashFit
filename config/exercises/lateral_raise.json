@@ -26,9 +26,9 @@
     },
     "topEnter": 20,
     "topExit": 30,
-    "bottomEnter": 90,
-    "bottomExit": 80,
-    "targetAngle": 90,
+    "bottomEnter": 100,
+    "bottomExit": 90,
+    "targetAngle": 100,
     "minDescendMs": 200,
     "minBottomMs": 80,
     "minRepMs": 1000,
@@ -39,21 +39,23 @@
       "ELBOW",
       "WRIST"
     ],
-    "_note": "Keypoints 23-11-13 / 24-12-14 (hip-shoulder-elbow), 3D world angle. Rest is 10-20 (TOP at <=20), the top of the raise is 90 or more (BOTTOM at >=90); wrist only feeds the straight-elbow alignment score.",
+    "_note": "Keypoints 23-11-13 / 24-12-14 (hip-shoulder-elbow), 3D world angle. Arms hang at 20-25 and a correct raise turns at about 100. Past 110 the shoulder stops abducting and starts pressing, which is a different movement and is not counted.",
     "counter": "STAGE",
     "stage": {
-      "signal": "WRIST_HEIGHT",
+      "signal": "ANGLE",
       "sides": "BOTH",
       "rest": [
         "<",
-        -0.25
+        30
       ],
       "count": [
         ">",
-        -0.08
+        100
       ],
+      "ceiling": 110,
       "debounceMs": 1000,
-      "_note": "Measured with pose_landmarker_full over the reference clip, 6 Sep 2026: WRIST_HEIGHT reaches -0.025 to +0.004 m at the top of a textbook raise and -0.42 to -0.46 m at the bottom. The old pair sat at 0 and 0 — adjacent, with no hysteresis, and demanding the wrist go ABOVE the shoulder when a lateral raise ends level with it. -0.08 counts a raise to shoulder height with 5 cm of margin; -0.25 rests well before the arms hang fully."
+      "_note": "Specified by the player, 6 Sep 2026: arms down at 20-25, the raise turns at 100, more than 110 is not a lateral raise and does not count, and the arms must come back into 20-30 for the rep to land. countAt RETURN makes this a whole-cycle rule, so the rep counts on the way down rather than on the way up. Replaces a wrist-height pair in metres that was measured off a drawing, not a body. Ceiling 110: Past 110 the shoulder stops abducting and starts pressing. The player's own number, 6 Sep 2026. A ceiling makes the rep a whole cycle: it lands when the movement returns to rest, not when it first crosses the line, so a half rep cannot count.",
+      "countAt": "RETURN"
     }
   },
   "form": {
