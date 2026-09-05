@@ -2,7 +2,7 @@
 
 What is built and verified, what is deliberately event-only, and what is genuinely still open.
 
-**Last updated:** 5 Sep 2026 · Android app shipping · 580 tests passing · 51 exercises · 16 modes · 72 screenshot baselines · 190 commits
+**Last updated:** 5 Sep 2026 · Android app shipping · 587 tests passing · 51 exercises · 16 modes · 72 screenshot baselines · 195 commits
 
 ---
 
@@ -54,6 +54,8 @@ What is built and verified, what is deliberately event-only, and what is genuine
 | **About and How to play** — the vocabulary of a fight, explained for a stranger | ✅ | [03](03-UI-UX-SPEC.md) |
 | **Screenshot suite** — 72 baselines rendered on the JVM, no phone needed to review the UI | ✅ | [14](14-TEST-PLAN.md) |
 | **Baseline profile** — the startup path, the component kit and the fight loop compiled ahead of time | ✅ | `app/src/main/baseline-prof.txt` |
+| **Permission lock file** — every permission the APK may hold, with its reason; the build fails on any drift in either direction | ✅ | `PERMISSION_ALLOW_LIST`, `checkPermissions<Variant>` |
+| **Opens with no network** — a third door on the welcome screen; an account buys the leaderboard and nothing else | ✅ | [34](34-ACCOUNTS-SOCIAL.md) |
 
 ---
 
@@ -131,6 +133,8 @@ Numbers 16 to 35 came from adversarial audit passes run against the code after i
 | 33 | `AppCard` lost its button semantics | The hand-rolled rewrite dropped `Role.Button` from every card in the app — invisible to sight, total to a screen reader |
 | 34 | The crash log raced itself | Two threads crashing at once, and the second write erased the first |
 | 35 | "Leaderboard" broke across two lines at 1.5x text | The tab a judge is told to open, mid-word, on every screen |
+| 36 | **A fresh install with no signal could not be opened** | Both doors on the welcome screen talked to Firebase. On a venue's wifi, a plane, or a phone with data off, the first screen was the last screen — for an app whose whole claim is that the referee runs on the phone |
+| 37 | Two permissions in the APK nobody had asked for | Play services added `READ_GSERVICES` and androidx a receiver permission; found the moment the permission set was written down as a lock file |
 
 ---
 
@@ -141,7 +145,7 @@ The Android app:
 ```bash
 cd android
 ./gradlew :app:installDebug          # onto a connected phone
-./gradlew :app:testDebugUnitTest     # 580 tests, no phone needed
+./gradlew :app:testDebugUnitTest     # 587 tests, no phone needed
 ./gradlew :app:recordRoborazziDebug  # re-render the 72 screenshot baselines
 ```
 
