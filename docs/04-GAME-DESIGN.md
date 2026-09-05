@@ -117,12 +117,14 @@ victory screen.
 
 ## 6. Rep targets and session shape
 
-There is no fixed rep target. The set ends when the boss dies, when the player stops for 12
-seconds, or when they walk away. Rep count is an outcome, not a quota — which is what makes the
-fatigue system meaningful rather than cosmetic.
+There is no fixed rep target. The set ends when the boss dies, when the player asks for it with a
+thumb up to the camera, or when they walk away — never on a timer, and never because they stood
+still. Rep count is an outcome, not a quota — which is what makes the fatigue system meaningful
+rather than cosmetic.
 
-**Session:** one boss, fought across as many sets as it takes, with a fatigue-derived rest between
-sets (30s fresh → 75s gassed). Typical first session: 3 sets, 8–15 reps each, 3–4 minutes total.
+**Session:** one boss, fought across as many sets as it takes, with no rest between them — the
+next set starts the moment the last one closes. Typical first session: 3 sets, 8–15 reps each,
+3–4 minutes total.
 
 ---
 

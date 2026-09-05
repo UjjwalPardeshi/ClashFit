@@ -47,7 +47,7 @@ class PerArmDeepestPointTest {
         var end: EndReason? = null
         override fun onRep(rec: RepRecord, combatState: CombatState) { reps += rec }
         override fun onBand(band: FatigueBand) {}
-        override fun onSetEnd(telemetry: SetTelemetry, restSec: Int) {}
+        override fun onSetEnd(telemetry: SetTelemetry) {}
         override fun onEnd(reason: EndReason, state: SessionState) { end = reason }
         override fun onPlayerHit(damage: Int, playerHp: Int) { hits += damage to playerHp }
     }

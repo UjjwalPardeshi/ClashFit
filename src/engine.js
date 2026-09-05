@@ -22,7 +22,7 @@ export const Calib = {
   TOO_FAR: 'TOO_FAR', HOLDING: 'HOLDING', READY: 'READY',
 };
 
-export const Phase = { CALIBRATING: 'CALIBRATING', FIGHTING: 'FIGHTING', FRAMING_LOST: 'FRAMING_LOST', REST: 'REST', DEAD: 'DEAD' };
+export const Phase = { CALIBRATING: 'CALIBRATING', FIGHTING: 'FIGHTING', FRAMING_LOST: 'FRAMING_LOST', DEAD: 'DEAD' };
 export const Mode = {
   BOSS_FIGHT: 'BOSS_FIGHT',
   TIME_ATTACK: 'TIME_ATTACK',
@@ -187,18 +187,12 @@ export class SessionEngine {
 
     if (this.phase === Phase.FIGHTING) this.asym.onFrame(sel.left, sel.right, tMs);
 
-    if (this.exercise.detector.primaryAngle && (this.phase === Phase.FIGHTING || this.phase === Phase.REST)) {
+    if (this.exercise.detector.primaryAngle && this.phase === Phase.FIGHTING) {
       const span = spanMetres(lms, this.exercise.detector.primaryAngle, sel.side);
       if (Number.isFinite(span)) {
         this.spanSamples.push([tMs, span]);
         if (this.spanSamples.length > 900) this.spanSamples.shift();   // ~30s at 30fps
       }
-    }
-
-    // A set ends when the player stops, not on a timer they have to beat.
-    if (this.phase === Phase.FIGHTING && this.setReps.length && this.lastRepEndMs !== null) {
-      const idleSec = (tMs - this.lastRepEndMs) / 1000;
-      if (idleSec >= (this.cfg.combat.setEnd?.noRepTimeoutSec ?? 12)) this.#endSet();
     }
 
     if (!this.ended) {
@@ -234,15 +228,17 @@ export class SessionEngine {
     return (Math.max(...win) - Math.min(...win)) * 100;
   }
 
-  async #endSet() {
+  /** Ends the set and starts the next one immediately. There is no rest; the coach arrives late
+   *  and talks over a fight that never left the screen. */
+  async endSet() {
     if (this.phase !== Phase.FIGHTING || !this.setReps.length) return;
-    this.phase = Phase.REST;
-    const restSec = this.#restSeconds();
-    const telemetry = summarise(this.setReps, this.combat.state(), this.exercise, this.setIndex, restSec);
+    const telemetry = summarise(this.setReps, this.combat.state(), this.exercise, this.setIndex);
     this.telemetry = telemetry;
+    this.coach = null;
+    this.nextSet();
     const coach = await coachFor(telemetry, this.llm);
     this.coach = coach;
-    this.onSetEnd(telemetry, coach, restSec);
+    this.onSetEnd(telemetry, coach);
   }
 
   /** Survival keeps going with a harder boss; Boss Rush advances the sequence; everything else
@@ -275,12 +271,6 @@ export class SessionEngine {
     this.#end('BOSS_DOWN');
   }
 
-  #restSeconds() {
-    const r = this.cfg.combat.rest ?? { freshSeconds: 30, gassedSeconds: 75 };
-    const v = this.fatigue.state().value;
-    return Math.round(r.freshSeconds + (r.gassedSeconds - r.freshSeconds) * Math.min(1, v / 0.5));
-  }
-
   /**
    * Tempo Trial: the boss sets a target eccentric and damage scales with how closely you match
    * it. It reframes the form engine — the point stops being that you moved and becomes how you
@@ -309,7 +299,7 @@ export class SessionEngine {
 
   /** Begin the next set. Fatigue baselines reset; boss HP and combo carry. */
   nextSet() {
-    if (this.phase !== Phase.REST) return;
+    if (this.phase !== Phase.FIGHTING) return;
     this.setIndex += 1;
     this.setReps = [];
     this.lastRepEndMs = null;

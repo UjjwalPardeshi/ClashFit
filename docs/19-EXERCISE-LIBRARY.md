@@ -241,14 +241,21 @@ Burpee · Squat thrust · Jump squat · Tuck jump · Star jump · Lateral bound 
 >
 > | Exercise | Keypoints | Rest | Counts at | Sides | Debounce |
 > |---|---|---|---|---|---|
-> | Lateral raise | 23-11-13 / 24-12-14 | wrists below the shoulders | wrists above them | both | 1000 ms |
+> | Lateral raise | 23-11-13 / 24-12-14 | both arms < 30° | both arms > 100°, never past 110° | both | 1000 ms |
 > | Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80° | either arm | 800 ms |
-> | Shoulder press | 11-13-15 / 12-14-16 | elbow < 100° | elbow > 160° overhead | better side | 1000 ms |
-> | Squat | 23-25-27 / 24-26-28 | both knees < 110° | both knees > 160° | both | 1000 ms |
+> | Shoulder press | 11-13-15 / 12-14-16 | elbow < 95° | elbow > 134° overhead | better side | 1000 ms |
+> | Squat | 23-25-27 / 24-26-28 | both knees < 72° | both knees > 150° | both | 1000 ms |
 >
-> Lunge, front raise, overhead triceps extension and floor press are stage-counted too. Two rules go
-> beyond fitmon, because fitmon miscounts without them: an overhead exercise needs the wrist above
-> the shoulder to be at rest, and dropping the arm clears the stage, so curling at your sides after
+> Lunge, front raise, overhead triceps extension and floor press are stage-counted too.
+>
+> Six of those eight numbers — every one but the squat's — were retuned on 6 Sep 2026 against
+> `traces/reference-*.jsonl`, the model's own reading of the four picker animations. As shipped,
+> only the squat counted a textbook rep. The world-landmark depth axis compresses limbs pointed at the camera, so a pressed-out elbow
+> reads about 146° and never the 160° the diagram promises. `ReferenceFormTest` now replays those
+> traces and fails the build if a threshold drifts back out of reach.
+>
+> Two rules go beyond fitmon, because fitmon miscounts without them: an overhead exercise needs
+> the wrist above the shoulder to be at rest, and dropping the arm clears the stage, so curling at your sides after
 > an overhead set cannot count. Every other exercise follows
 > `ClashFit_Exercise_Detection_Source_of_Truth.md`.
 

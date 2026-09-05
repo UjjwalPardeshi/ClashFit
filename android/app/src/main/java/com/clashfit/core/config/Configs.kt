@@ -66,7 +66,6 @@ data class CombatConfig(
     val boss: BossSpec = BossSpec(),
     val fatigueResponse: Map<String, FatigueResponseSpec> = emptyMap(),
     val casual: CasualSpec = CasualSpec(),
-    val rest: RestSpec = RestSpec(),
     val setEnd: SetEndSpec = SetEndSpec(),
     val modes: ModesSpec = ModesSpec(),
     val familyGames: FamilyGamesSpec = FamilyGamesSpec(),
@@ -108,10 +107,7 @@ data class CombatConfig(
     data class CasualSpec(val damageMultiplier: Float = 1.6f, val formFloor: Float = 0.6f, val bossHpMultiplier: Float = 0.5f)
 
     @Serializable
-    data class RestSpec(val freshSeconds: Int = 30, val gassedSeconds: Int = 75)
-
-    @Serializable
-    data class SetEndSpec(val noRepTimeoutSec: Int = 12, val noFrameTimeoutSec: Int = 30)
+    data class SetEndSpec(val noFrameTimeoutSec: Int = 30)
 
     @Serializable
     data class ModesSpec(

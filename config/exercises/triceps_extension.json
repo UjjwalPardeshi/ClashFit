@@ -51,7 +51,8 @@
       ],
       "wristAboveShoulderAt": "REST",
       "debounceMs": 1000,
-      "_note": "fitmon countTricepsExtensions: wrist above the shoulder with the elbow >160 is the start, <90 counts, 1000 ms."
+      "_note": "fitmon countTricepsExtensions: wrist above the shoulder with the elbow >160 is the start, <90 counts, 1000 ms. Ceiling 35: Likewise for the elbow at the bottom of an overhead extension. A ceiling makes the rep a whole cycle: it lands when the movement returns to rest, not when it first crosses the line, so a half rep cannot count.",
+      "ceiling": 35
     }
   },
   "form": {

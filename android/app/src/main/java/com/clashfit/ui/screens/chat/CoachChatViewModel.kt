@@ -132,7 +132,6 @@ class CoachChatViewModel(
             comboReps = reps.count { it.verdict == "CLEAN" },
             bossHpPct = 0,
             sessionSetIndex = last.setIndex,
-            restSec = last.restSec,
             trend = SetTelemetry.Trend.FLAT,
             asymmetryPct = null,
             weakerSide = null,

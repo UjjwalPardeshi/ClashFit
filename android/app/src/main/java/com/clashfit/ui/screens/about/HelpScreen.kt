@@ -76,8 +76,7 @@ fun HelpScreen(graph: AppGraph, nav: NavHostController, onStart: () -> Unit) {
             AppCard(Modifier.fillMaxWidth(), padding = 6) {
                 Column {
                     Meaning(AppIcons.Person, Ember, "Open palm — pause", "Hold your hand up flat to the camera for half a second. Again to resume.")
-                    Meaning(AppIcons.Check, Success, "Thumb up — set done", "Ends the set early and starts your rest. From the floor, it starts the next set.")
-                    Meaning(AppIcons.Bolt, Brass, "Fist — next set", "While resting, a fist skips what is left of the rest.")
+                    Meaning(AppIcons.Check, Success, "Thumb up — set done", "Closes the set and starts the next one straight away. The coach talks over it; you never leave the fight.")
                     Text(
                         "The camera reads your hand the same way it reads your body — on the phone. A ring fills while you hold, so you can let go if it is the wrong shape.",
                         style = MaterialTheme.typography.bodySmall, color = InkFaint, modifier = Modifier.padding(12.dp),

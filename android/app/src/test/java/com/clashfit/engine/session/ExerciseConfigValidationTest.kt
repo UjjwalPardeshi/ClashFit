@@ -50,9 +50,7 @@ class ExerciseConfigValidationTest {
             boss = CombatConfig.BossSpec(id = "test", name = "Test", maxHp = 100, phases = emptyList()),
             fatigueResponse = emptyMap(),
             combo = CombatConfig.ComboSpec(step = 0.05f, cap = 2f, threshold = 0.6f, graceAtStreak = 3),
-            rest = CombatConfig.RestSpec(freshSeconds = 30, gassedSeconds = 60),
-            // noRepTimeoutSec is whole seconds in the shipped schema, not a Float.
-            setEnd = CombatConfig.SetEndSpec(noRepTimeoutSec = 30),
+            setEnd = CombatConfig.SetEndSpec(),
             modes = CombatConfig.ModesSpec(
                 timeAttack = CombatConfig.ModesSpec.TimeAttackSpec(durationSec = 60),
                 tempoTrial = CombatConfig.ModesSpec.TempoTrialSpec(targetEccSec = 2f, tolerance = 1f, floor = 0.3f),

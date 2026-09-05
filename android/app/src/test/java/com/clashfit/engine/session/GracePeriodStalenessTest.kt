@@ -38,11 +38,10 @@ class GracePeriodStalenessTest {
         val reps = ArrayList<RepRecord>()
         val playerHits = ArrayList<Pair<Int, Int>>()  // (damage, hp)
         var telemetry: SetTelemetry? = null
-        var restSec: Int? = null
         var end: EndReason? = null
         override fun onRep(rec: RepRecord, combatState: com.clashfit.core.model.CombatState) { reps += rec }
         override fun onBand(band: FatigueBand) {}
-        override fun onSetEnd(telemetry: SetTelemetry, restSec: Int) { this.telemetry = telemetry; this.restSec = restSec }
+        override fun onSetEnd(telemetry: SetTelemetry) { this.telemetry = telemetry }
         override fun onEnd(reason: EndReason, state: SessionState) { end = reason }
         override fun onPlayerHit(damage: Int, playerHp: Int) { playerHits += damage to playerHp }
     }
@@ -82,14 +81,12 @@ class GracePeriodStalenessTest {
         assertEquals(1, rec.reps.size)
         val t1 = d.t  // Approximate time of end of set 1
 
-        // End the set
+        // End the set. Set two begins inside endSet(); there is no rest phase to sit in, and the
+        // next attack is armed from lastTMs — which is still t1.
         d.engine.endSet()
-        assertEquals(Phase.REST, d.engine.state().phase)
 
-        // Simulate a 60-second rest (in real time: app paused, camera restarted, etc.)
-        // WITHOUT calling frame(). This leaves lastTMs stale at t1.
-        // Then call nextSet() which sets phase to FIGHTING.
-        d.engine.nextSet()
+        // Simulate a 60-second real-time gap (app paused, camera restarted) WITHOUT calling
+        // frame(), so lastTMs stays stale at t1.
         val hitsAfterSet1 = rec.playerHits.size
 
         // Now jump to 75 seconds later and deliver the first frame of set 2.
@@ -124,10 +121,6 @@ class GracePeriodStalenessTest {
         d.rep()
         d.engine.endSet()
         val hitsAfterSet1 = rec.playerHits.size
-
-        // Simulate a normal rest with periodic frames (no gap)
-        d.stand(1000)  // frames arrive during rest
-        d.engine.nextSet()
 
         // First frame of set 2 arrives at normal time
         d.stand((grace + 100).toLong())

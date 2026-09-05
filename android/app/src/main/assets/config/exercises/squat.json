@@ -23,11 +23,11 @@
       "b": "KNEE",
       "c": "ANKLE"
     },
-    "topEnter": 165,
-    "topExit": 155,
-    "bottomEnter": 100,
-    "bottomExit": 110,
-    "targetAngle": 85,
+    "topEnter": 160,
+    "topExit": 150,
+    "bottomEnter": 72,
+    "bottomExit": 85,
+    "targetAngle": 68,
     "minDescendMs": 200,
     "minBottomMs": 120,
     "minRepMs": 800,
@@ -37,20 +37,21 @@
       "KNEE",
       "ANKLE"
     ],
-    "_note": "Keypoints 23-25-27 / 24-26-28 (hip-knee-ankle), 3D world angle. Standing is 180 in theory; a locked knee reads 165-178 on the world landmarks, so TOP is >=165. The bottom is 100-70 (BOTTOM at <=100), 85 is full depth.",
+    "_note": "Keypoints 23-25-27 / 24-26-28 (hip-knee-ankle), 3D world angle, both knees. Standing is 150-160 on this app rather than the 180 geometry promises, for the same edge-on reason the arms read low. A correct squat turns at 65-72.",
     "counter": "STAGE",
     "stage": {
       "sides": "BOTH",
       "rest": [
         "<",
-        110
+        72
       ],
       "count": [
         ">",
-        160
+        150
       ],
       "debounceMs": 1000,
-      "_note": "fitmon countSquats: both knees <110 is down, both >160 counts on the way back up, 1000 ms."
+      "_note": "fitmon countSquats, retuned to the player's range 6 Sep 2026: HIP-KNEE-ANKLE, both knees. The bottom of a squat is 65-72 and the top is 150-160, so the counter arms below 72 and the rep lands crossing 150 on the way up. The reference animation agrees: it reaches 65.5 at the deepest and 168.6 standing, both measured off traces/reference-squat.jsonl. Ceiling 175 is above any real stand, so it only refuses a frame reporting a knee straighter than a knee goes. Counting stays at the CROSSING: a squat is at rest at the bottom, so judging the whole cycle would land each rep at the start of the next.",
+      "ceiling": 175
     }
   },
   "form": {

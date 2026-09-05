@@ -2,7 +2,7 @@
 
 What is built and verified, what is deliberately event-only, and what is genuinely still open.
 
-**Last updated:** 5 Sep 2026 · Android app shipping · 661 tests passing · 57 exercises · 16 modes · 72 screenshot baselines · 195 commits
+**Last updated:** 6 Sep 2026 · Android app shipping · 836 Kotlin tests + 165 prototype tests passing · 57 exercises · 16 modes · 82 screenshot baselines · 250 commits
 
 ---
 
@@ -52,7 +52,7 @@ What is built and verified, what is deliberately event-only, and what is genuine
 | **Character sheet** — seven health domains on a radar, two honestly marked unmeasured | ✅ | [22](22-HEALTH-DOMAINS.md) §1 |
 | **Charts** — trend, bar, stacked, heatmap, radar and donut, all drawn on a Canvas | ✅ | [03](03-UI-UX-SPEC.md) |
 | **About and How to play** — the vocabulary of a fight, explained for a stranger | ✅ | [03](03-UI-UX-SPEC.md) |
-| **Screenshot suite** — 72 baselines rendered on the JVM, no phone needed to review the UI | ✅ | [14](14-TEST-PLAN.md) |
+| **Screenshot suite** — 82 baselines rendered on the JVM, no phone needed to review the UI | ✅ | [14](14-TEST-PLAN.md) |
 | **Baseline profile** — the startup path, the component kit and the fight loop compiled ahead of time | ✅ | `app/src/main/baseline-prof.txt` |
 | **Permission lock file** — every permission the APK may hold, with its reason; the build fails on any drift in either direction | ✅ | `PERMISSION_ALLOW_LIST`, `checkPermissions<Variant>` |
 | **Opens with no network** — a third door on the welcome screen; an account buys the leaderboard and nothing else | ✅ | [34](34-ACCOUNTS-SOCIAL.md) |
@@ -155,7 +155,7 @@ The Android app:
 cd android
 ./gradlew :app:installDebug          # onto a connected phone
 ./gradlew :app:testDebugUnitTest     # 661 tests, no phone needed (JDK 21 for the screenshot classes)
-./gradlew :app:recordRoborazziDebug  # re-render the 72 screenshot baselines
+./gradlew :app:recordRoborazziDebug  # re-render the 82 screenshot baselines
 ```
 
 Firebase keys live in `android/local.properties`, which is git-ignored. `android/README.md`

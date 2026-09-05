@@ -29,15 +29,15 @@ object TemplateBank {
         CoachTemplate(FatigueBand.WORKING, "*", SetTelemetry.Trend.IMPROVING, "That got better as you went — {form_last3_pct} percent on the last three."),
         CoachTemplate(FatigueBand.WORKING, "*", SetTelemetry.Trend.FLAT, "{reps} reps at {form_mean_pct} percent. Velocity is down {velocity_loss_pct} percent."),
 
-        CoachTemplate(FatigueBand.FADING, "depth", SetTelemetry.Trend.IMPROVING, "Real fatigue now — {depth_drop_cm} centimetres of depth gone. {rest_sec} seconds."),
-        CoachTemplate(FatigueBand.FADING, "rom", SetTelemetry.Trend.IMPROVING, "Range is down {rom_loss_pct} percent since rep one. {rest_sec} seconds, then finish."),
-        CoachTemplate(FatigueBand.FADING, "tempo", SetTelemetry.Trend.IMPROVING, "You're dropping into the bottom instead of controlling it. Take {rest_sec} seconds."),
-        CoachTemplate(FatigueBand.FADING, "alignment", SetTelemetry.Trend.IMPROVING, "Form is going before your strength is. {rest_sec} seconds."),
-        CoachTemplate(FatigueBand.FADING, "*", SetTelemetry.Trend.FLAT, "Velocity is down {velocity_loss_pct} percent — that's the set talking. Take {rest_sec} seconds."),
+        CoachTemplate(FatigueBand.FADING, "depth", SetTelemetry.Trend.IMPROVING, "Real fatigue now — {depth_drop_cm} centimetres of depth gone."),
+        CoachTemplate(FatigueBand.FADING, "rom", SetTelemetry.Trend.IMPROVING, "Range is down {rom_loss_pct} percent since rep one. Finish it."),
+        CoachTemplate(FatigueBand.FADING, "tempo", SetTelemetry.Trend.IMPROVING, "You're dropping into the bottom instead of controlling it. Control the descent."),
+        CoachTemplate(FatigueBand.FADING, "alignment", SetTelemetry.Trend.IMPROVING, "Form is going before your strength is. Keep it honest."),
+        CoachTemplate(FatigueBand.FADING, "*", SetTelemetry.Trend.FLAT, "Velocity is down {velocity_loss_pct} percent — that's the set talking."),
 
-        CoachTemplate(FatigueBand.GASSED, "depth", SetTelemetry.Trend.IMPROVING, "You've lost {depth_drop_cm} centimetres and that's honest. Rest {rest_sec}, then finish it."),
-        CoachTemplate(FatigueBand.GASSED, "*", SetTelemetry.Trend.FLAT, "That's real fatigue, not weakness. {rest_sec} seconds — four more reps ends this."),
-        CoachTemplate(FatigueBand.GASSED, "*", SetTelemetry.Trend.DECLINING, "Velocity is down {velocity_loss_pct} percent and you've done the work. Rest {rest_sec} seconds."),
+        CoachTemplate(FatigueBand.GASSED, "depth", SetTelemetry.Trend.IMPROVING, "You've lost {depth_drop_cm} centimetres and that's honest. Finish it."),
+        CoachTemplate(FatigueBand.GASSED, "*", SetTelemetry.Trend.FLAT, "That's real fatigue, not weakness. Four more reps ends this."),
+        CoachTemplate(FatigueBand.GASSED, "*", SetTelemetry.Trend.DECLINING, "Velocity is down {velocity_loss_pct} percent and you've done the work."),
     )
 
     private val BOSS = listOf(
@@ -162,7 +162,6 @@ object TemplateBank {
             "depth_drop_cm" -> t.depthDropCm
             "velocity_loss_pct" -> t.velocityLossPct
             "rom_loss_pct" -> t.romLossPct
-            "rest_sec" -> t.restSec
             "combo_reps" -> t.comboReps
             "boss_hp_pct" -> t.bossHpPct
             "worst_index" -> t.worstRep?.index

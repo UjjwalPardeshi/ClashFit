@@ -45,7 +45,6 @@ object FactSheet {
         }
         add("longest clean streak: ${t.comboReps} reps, multiplier ${"%.1f".format(t.comboMax)}")
         add("boss health left: ${t.bossHpPct} percent")
-        add("rest prescribed: ${t.restSec} seconds")
         t.asymmetryPct?.let { pct ->
             val side = t.weakerSide?.lowercase()
             add("left-right difference: $pct percent" + (side?.let { ", weaker side $it" } ?: ""))

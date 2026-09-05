@@ -18,8 +18,17 @@ export function synthRep({ top, bottom, eccSec = 1.0, pauseSec = 0.3, conSec = 0
   return { samples: out, tEnd: t };
 }
 
-/** A whole set. `decay` shrinks range and slows the concentric, rep by rep — a fatiguing set. */
-export function synthSet({ reps, top, bottom, fps = 30, decay = 0, gapSec = 0.4, restGrowth = 0, eccSec = 1.0, pauseSec = 0.3 }) {
+/**
+ * A whole set. `decay` shrinks the range rep by rep and, unless `tempoDecay` says otherwise, slows
+ * the concentric by the same amount — a fatiguing set.
+ *
+ * The two are separable because they run into each other. Range loss is what eventually stops a rep
+ * counting, since the movement no longer reaches the threshold; concentric slow-down is what the
+ * fatigue estimator actually reads for a squat. Tied together, the only way to show real velocity
+ * loss was to collapse the range until the late reps stopped counting, and those are exactly the
+ * reps the evidence is about.
+ */
+export function synthSet({ reps, top, bottom, fps = 30, decay = 0, tempoDecay = null, gapSec = 0.4, restGrowth = 0, eccSec = 1.0, pauseSec = 0.3 }) {
   const all = [];
   let t = 0;
   // settle at the top so the machine starts in TOP
@@ -27,7 +36,8 @@ export function synthSet({ reps, top, bottom, fps = 30, decay = 0, gapSec = 0.4,
   for (let r = 0; r < reps; r++) {
     const k = decay * r;
     const b = bottom + (top - bottom) * Math.min(0.8, k);        // range collapses
-    const con = 0.8 * (1 + Math.min(3, k * 6));                // concentric slows
+    const kt = (tempoDecay === null ? decay : tempoDecay) * r;
+    const con = 0.8 * (1 + Math.min(3, kt * 6));                // concentric slows
     const rep = synthRep({ top, bottom: b, eccSec, pauseSec, conSec: con, fps, t0: t });
     all.push(...rep.samples);
     t = rep.tEnd;

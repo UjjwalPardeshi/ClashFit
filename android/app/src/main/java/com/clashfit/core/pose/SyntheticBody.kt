@@ -106,7 +106,9 @@ object SyntheticBody {
 
     /** One scripted squat: knee angle over time from `tStart`, as (tMs, kneeDeg) samples at `stepMs`. */
     fun squatRep(
-        tStart: Long, stepMs: Long = 33, top: Float = 170f, bottom: Float = 85f,
+        // A correct squat turns at 65-72, so the default is one. It used to stop at 85, which is
+        // a half squat under the shipped rule and counted nothing.
+        tStart: Long, stepMs: Long = 33, top: Float = 170f, bottom: Float = 68f,
         descendMs: Long = 1200, bottomMs: Long = 250, ascendMs: Long = 700,
     ): List<Pair<Long, Float>> {
         val out = ArrayList<Pair<Long, Float>>()

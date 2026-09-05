@@ -34,7 +34,6 @@ data class SessionState(
     val ghostFinished: Boolean?,
     val telemetry: SetTelemetry?,
     val coach: CoachOutput?,
-    val restSec: Int?,
     val ended: Boolean,
     val endReason: EndReason?,
 )
@@ -60,7 +59,6 @@ data class SetTelemetry(
     val comboReps: Int,
     val bossHpPct: Int,
     val sessionSetIndex: Int,
-    val restSec: Int,
     val trend: Trend,
     val asymmetryPct: Int? = null,
     val weakerSide: String? = null,

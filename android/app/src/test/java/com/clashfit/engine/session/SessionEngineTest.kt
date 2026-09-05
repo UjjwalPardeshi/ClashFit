@@ -41,11 +41,10 @@ class SessionEngineTest {
         val reps = ArrayList<RepRecord>()
         val bands = ArrayList<FatigueBand>()
         var telemetry: SetTelemetry? = null
-        var restSec: Int? = null
         var end: EndReason? = null
         override fun onRep(rec: RepRecord, combat: com.clashfit.core.model.CombatState) { reps += rec }
         override fun onBand(band: FatigueBand) { bands += band }
-        override fun onSetEnd(telemetry: SetTelemetry, restSec: Int) { this.telemetry = telemetry; this.restSec = restSec }
+        override fun onSetEnd(telemetry: SetTelemetry) { this.telemetry = telemetry }
         override fun onEnd(reason: EndReason, state: SessionState) { end = reason }
     }
 
@@ -115,24 +114,26 @@ class SessionEngineTest {
     }
 
     @Test
-    fun `twelve idle seconds end the set with telemetry and a fatigue-derived rest`() {
+    fun `idling never ends a set, and ending one rolls straight into the next`() {
         val rec = Recorder()
         val d = Driver(engine(rec = rec))
         d.stand(2500)
         repeat(5) { d.rep(); d.stand(900) }
+        // Twelve seconds of stillness used to end the set. Standing still is not a reason to stop.
         val s = d.stand(12_500)
-        assertEquals(Phase.REST, s.phase)
+        assertEquals(Phase.FIGHTING, s.phase, "idling must never end a set")
+        assertEquals(1, s.setIndex)
+        assertNull(rec.telemetry, "nothing was summarised, because no set ended")
+
+        // A set ends only because it was asked to, and set two has begun by the time it returns.
+        d.engine.endSet()
         val t = assertNotNull(rec.telemetry)
         assertEquals(5, t.reps)
         assertEquals("squat", t.exercise)
-        // Five clean reps still carry a sliver of fatigue, so the rest sits just above the fresh floor.
-        val fresh = combat.rest.freshSeconds
-        assertTrue(rec.restSec in fresh..(fresh + 5), "fresh rest is the short end of the range, got ${rec.restSec}")
-        assertNull(s.coach, "the coach is fetched outside the engine")
-
-        d.engine.nextSet()
-        assertEquals(Phase.FIGHTING, d.engine.state().phase)
-        assertEquals(2, d.engine.state().setIndex)
+        val after = d.engine.state()
+        assertEquals(Phase.FIGHTING, after.phase, "there is no rest phase to pass through")
+        assertEquals(2, after.setIndex)
+        assertNull(after.coach, "the coach is fetched outside the engine")
         d.rep(); d.stand(300)   // a rep completes on the first standing frame after the ascent
         assertEquals(6, d.engine.state().reps, "after the first rep of set 2: setReps=${d.engine.state().setReps}")
     }

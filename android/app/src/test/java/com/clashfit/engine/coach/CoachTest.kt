@@ -56,7 +56,7 @@ class CoachTest {
             staggered = false,
             mercyActive = false,
         )
-        val tel = TelemetrySummariser.summarise(reps, combatState, "squat", 1, 45)
+        val tel = TelemetrySummariser.summarise(reps, combatState, "squat", 1)
         assertEquals("squat", tel.exercise)
         assertEquals(8, tel.reps)
         assertTrue(tel.formMean > 0)
@@ -90,7 +90,7 @@ class CoachTest {
                 depthCm = 42f + i,
             )
         }
-        val tel = TelemetrySummariser.summarise(reps, null, "squat", 1, 45)
+        val tel = TelemetrySummariser.summarise(reps, null, "squat", 1)
         assertNotNull(tel.depthCm)
         assertTrue(tel.depthCm!! > 5 && tel.depthCm!! < 120)
     }
@@ -128,7 +128,6 @@ class CoachTest {
                             comboReps = 5,
                             bossHpPct = 55,
                             sessionSetIndex = 2,
-                            restSec = 45,
                             trend = trend,
                         )
                         val out = TemplateBank.templateFor(tel)
@@ -166,7 +165,6 @@ class CoachTest {
             comboReps = 5,
             bossHpPct = 55,
             sessionSetIndex = 2,
-            restSec = 45,
             trend = SetTelemetry.Trend.DECLINING,
         )
         val out = TemplateBank.templateFor(tel)
@@ -196,7 +194,6 @@ class CoachTest {
             comboReps = 0,
             bossHpPct = 100,
             sessionSetIndex = 1,
-            restSec = 45,
             trend = SetTelemetry.Trend.FLAT,
         )
         assertFalse(OutputValidator.validateOutput("You did 47 reps.", tel).ok, "hallucinated number allowed")
@@ -229,7 +226,6 @@ class CoachTest {
             comboReps = 0,
             bossHpPct = 100,
             sessionSetIndex = 1,
-            restSec = 45,
             trend = SetTelemetry.Trend.FLAT,
         )
         val slow = suspend { _: SetTelemetry -> null }
@@ -260,7 +256,6 @@ class CoachTest {
             comboReps = 0,
             bossHpPct = 100,
             sessionSetIndex = 1,
-            restSec = 45,
             trend = SetTelemetry.Trend.FLAT,
         )
         val liar = suspend { _: SetTelemetry -> CoachOutput("You did 9999 perfect reps.", "ok", CoachSource.LLM) }
@@ -290,7 +285,6 @@ class CoachTest {
             comboReps = 0,
             bossHpPct = 100,
             sessionSetIndex = 1,
-            restSec = 45,
             trend = SetTelemetry.Trend.FLAT,
         )
         val good = suspend { x: SetTelemetry -> CoachOutput("Solid set of ${x.reps}.", "Again.", CoachSource.LLM) }
@@ -309,7 +303,7 @@ class CoachTest {
             RepRecord(3, "squat", com.clashfit.core.model.Family.REP_CYCLE, 3000L, 4000L, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, "none", Verdict.OK, 0.8f, FatigueState(0f, FatigueBand.WORKING, emptyMap(), 3, true), 80, 1f),
             RepRecord(4, "squat", com.clashfit.core.model.Family.REP_CYCLE, 4000L, 5000L, 0.8f, 0.8f, 0.8f, 0.8f, 0.8f, "none", Verdict.OK, 0.8f, FatigueState(0f, FatigueBand.WORKING, emptyMap(), 3, true), 80, 1f),
         )
-        val tel = TelemetrySummariser.summarise(reps, null, "squat", 1, 45)
+        val tel = TelemetrySummariser.summarise(reps, null, "squat", 1)
         // Mean of first 3: (0.5 + 0.5 + 0.5) / 3 = 0.5
         // Mean of last 3: (0.5 + 0.8 + 0.8) / 3 = 0.7 (includes rep 2, the pivot)
         // Difference: 0.7 - 0.5 = 0.2 > 0.05 → IMPROVING
