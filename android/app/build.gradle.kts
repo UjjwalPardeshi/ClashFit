@@ -11,13 +11,59 @@ plugins {
     alias(libs.plugins.roborazzi)
 }
 
-// Cloud keys come from local.properties (git-ignored) or the environment, never from source.
-// With none present the app runs with on-device accounts and no network; see cloud/CloudConfig.kt.
+// Cloud keys come from local.properties (git-ignored), the environment, or google-services.json,
+// never from source. With none present the app runs with on-device accounts and no network; see
+// cloud/CloudConfig.kt.
 val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) f.inputStream().use { load(it) }
 }
-fun secret(key: String): String = "\"" + (localProps.getProperty(key) ?: System.getenv(key) ?: "") + "\""
+
+/**
+ * The three cloud keys read straight out of `app/google-services.json`, the file the Firebase
+ * console hands you. It is git-ignored, so dropping it in is the whole of Firebase setup: there is
+ * nothing to transcribe by hand and nothing that can drift out of step with the console. Absent, or
+ * malformed, the build carries on without cloud features rather than failing.
+ */
+val googleServices: Map<String, String> = run {
+    val f = project.file("google-services.json")
+    if (!f.exists()) return@run emptyMap()
+    try {
+        @Suppress("UNCHECKED_CAST")
+        val root = groovy.json.JsonSlurper().parse(f) as Map<String, Any?>
+        @Suppress("UNCHECKED_CAST")
+        val info = root["project_info"] as Map<String, Any?>
+        @Suppress("UNCHECKED_CAST")
+        val clients = root["client"] as List<Map<String, Any?>>
+        fun packageOf(c: Map<String, Any?>): String? {
+            @Suppress("UNCHECKED_CAST")
+            val ci = c["client_info"] as? Map<String, Any?> ?: return null
+            @Suppress("UNCHECKED_CAST")
+            val aci = ci["android_client_info"] as? Map<String, Any?> ?: return null
+            return aci["package_name"] as? String
+        }
+        // A Firebase project can hold several apps; take ours, and fall back to the only one there.
+        val client = clients.firstOrNull { packageOf(it) == "com.clashfit" } ?: clients.first()
+        @Suppress("UNCHECKED_CAST")
+        val clientInfo = client["client_info"] as Map<String, Any?>
+        @Suppress("UNCHECKED_CAST")
+        val apiKeys = client["api_key"] as? List<Map<String, Any?>>
+        mapOf(
+            "FIREBASE_PROJECT_ID" to (info["project_id"] as? String ?: ""),
+            "FIREBASE_APP_ID" to (clientInfo["mobilesdk_app_id"] as? String ?: ""),
+            "FIREBASE_API_KEY" to (apiKeys?.firstOrNull()?.get("current_key") as? String ?: ""),
+        ).filterValues { it.isNotEmpty() }
+    } catch (e: Exception) {
+        logger.warn("google-services.json is present but could not be read (${e.message}); " +
+            "falling back to local.properties and the environment")
+        emptyMap()
+    }
+}
+
+// An explicit local.properties entry or environment variable still wins, so one checkout can point
+// at a different project without editing the file the console gave you.
+fun secret(key: String): String =
+    "\"" + (localProps.getProperty(key) ?: System.getenv(key) ?: googleServices[key] ?: "") + "\""
 
 android {
     namespace = "com.clashfit"
@@ -207,6 +253,8 @@ val PERMISSION_ALLOW_LIST: Map<String, String> = mapOf(
     "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" to "the coach keeps speaking mid-set",
 
     // Two phones in a room, with no server between them.
+    "android.permission.BLUETOOTH" to "the same radio on Android 10 and 11, where it is one permission",
+    "android.permission.BLUETOOTH_ADMIN" to "and turning it on there",
     "android.permission.BLUETOOTH_SCAN" to "finding the other phone for a duel",
     "android.permission.BLUETOOTH_CONNECT" to "pairing it",
     "android.permission.BLUETOOTH_ADVERTISE" to "being found by it",
