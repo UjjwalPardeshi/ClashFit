@@ -61,6 +61,45 @@ class StageCounterTest {
         assertEquals(0, run(c, 30 * 33L, quick).size)
     }
 
+    private val eitherCfg = StageCounter.Config(
+        angle = Triple("SHOULDER", "ELBOW", "WRIST"), sides = StageCounter.Sides.EITHER,
+        rest = StageCounter.Condition(">", 135f), count = StageCounter.Condition("<", 80f), debounceMs = 800L,
+    )
+
+    @Test
+    fun `either arm counts, and both arms together are still one rep`() {
+        val together = StageCounter(eitherCfg)
+        assertEquals(
+            1,
+            run(together, 0, List(10) { curl(170f, 170f) } + ramp(170f, 20f, 20) { curl(it, it) } + ramp(20f, 170f, 20) { curl(it, it) }).size,
+            "both arms curling at once is one curl",
+        )
+        val alone = StageCounter(eitherCfg)
+        assertEquals(
+            1,
+            run(alone, 0, List(10) { curl(170f, 170f) } + ramp(170f, 20f, 20) { curl(it, 170f) } + ramp(20f, 170f, 20) { curl(it, 170f) }).size,
+            "one arm curling is also one curl",
+        )
+    }
+
+    @Test
+    fun `a curl held with the other arm hanging does not count again every debounce`() {
+        val c = StageCounter(eitherCfg)
+        // The hanging arm satisfies the rest condition for the whole set. Without the guard against
+        // re-arming while the count still holds, this re-armed under that arm and fired again every
+        // 800 ms for as long as the other arm stayed curled.
+        val held = List(10) { curl(170f, 170f) } + ramp(170f, 20f, 15) { curl(it, 170f) } + List(90) { curl(20f, 170f) }
+        assertEquals(1, run(c, 0, held).size, "three seconds of holding one curl is still one rep")
+    }
+
+    @Test
+    fun `a one-armed rep records the working arm's depth, not its average with the arm at rest`() {
+        val c = StageCounter(eitherCfg)
+        val reps = run(c, 0, List(10) { curl(170f, 170f) } + ramp(170f, 25f, 20) { curl(it, 170f) } + ramp(25f, 170f, 20) { curl(it, 170f) })
+        assertEquals(1, reps.size)
+        assertTrue(reps[0].thetaMin < 90f, "the working arm passed 80; averaged with the arm at rest it would read about 125: ${reps[0].thetaMin}")
+    }
+
     @Test
     fun `a lateral raise counts when both wrists pass the shoulders and not at sixty degrees`() {
         val cfg = StageCounter.Config(

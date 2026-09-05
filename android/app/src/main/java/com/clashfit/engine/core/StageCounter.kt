@@ -107,7 +107,8 @@ class StageCounter(val config: Config) {
                 step(right, config.rest.holds(sR), config.count.holds(sR), upR, aR, tMs, Side.RIGHT)?.let { out += it }
             }
             Sides.BOTH -> step(one, config.rest.holds(sL) && config.rest.holds(sR), config.count.holds(sL) && config.count.holds(sR), upL && upR, mean(aL, aR), tMs, null)?.let { out += it }
-            Sides.EITHER -> step(one, config.rest.holds(sL) || config.rest.holds(sR), config.count.holds(sL) || config.count.holds(sR), upL || upR, mean(aL, aR), tMs, null)?.let { out += it }
+            // One rep whichever arm does it, and both arms together are still one rep.
+            Sides.EITHER -> step(one, config.rest.holds(sL) || config.rest.holds(sR), config.count.holds(sL) || config.count.holds(sR), upL || upR, leading(aL, aR), tMs, null)?.let { out += it }
             Sides.BEST -> {
                 val s = if (best == Side.LEFT) sL else sR
                 val up = if (best == Side.LEFT) upL else upR
@@ -130,7 +131,12 @@ class StageCounter(val config: Config) {
             t.stage = Stage.NONE
             t.restAt = null
         }
-        if (restHolds && (config.wristAboveShoulderAt != Check.REST || above)) {
+        // Not while the rep is still being held. Under EITHER the two arms are read separately, so
+        // one arm hanging at your side satisfies rest for the whole set; without this the counter
+        // re-arms under that arm and fires again every debounce while the other is simply held
+        // curled. For the single-signal modes rest and count are opposite sides of one line and
+        // cannot both hold, so this costs them nothing.
+        if (restHolds && !countHolds && (config.wristAboveShoulderAt != Check.REST || above)) {
             // Resting: the rep starts from the last frame here, so a long pause is not part of it.
             t.stage = Stage.REST
             t.restAt = tMs
@@ -176,6 +182,18 @@ class StageCounter(val config: Config) {
     }
 
     private fun wristAbove(world: Landmarks, side: Side): Boolean = wristHeight(world, side).let { it.isFinite() && it > ABOVE_MARGIN_M }
+
+    /**
+     * The arm nearer the counting threshold, which is the one that did the work. Averaging a curled
+     * arm with a hanging one would record a one-armed rep as half as deep as it really was, and the
+     * form score would dock it for a depth the player actually reached.
+     */
+    private fun leading(a: Float, b: Float): Float = when {
+        !a.isFinite() -> b
+        !b.isFinite() -> a
+        config.count.op == "<" -> minOf(a, b)
+        else -> maxOf(a, b)
+    }
 
     private fun mean(a: Float, b: Float): Float = when {
         a.isFinite() && b.isFinite() -> (a + b) / 2f
