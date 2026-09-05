@@ -2,6 +2,9 @@ package com.clashfit.perception
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Matrix
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -37,7 +40,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import kotlin.math.abs
 import kotlinx.coroutines.CancellationException
 
 /**
@@ -54,7 +56,17 @@ class MediaPipePoseSource(
 ) : PoseSource, CameraPreviewSource {
 
     private val TAG = "ClashFit/perception"
-    private val frameChannel = Channel<PoseFrame>(capacity = 1)
+    /**
+     * Frames reach the engine newest-first and in order.
+     *
+     * They used to be handed to a coroutine on a multi-threaded dispatcher, which let two results
+     * race into a one-slot channel and arrive swapped. Every window in the engine is a
+     * `now - then > n` test, and a negative difference passes none of them, so a single swap could
+     * quietly switch off the rep counter, the cadence window and the hold timer at once. Conflating
+     * and sending straight from the detector's own callback thread keeps the detector's order,
+     * which is the order the frames were taken in.
+     */
+    private val frameChannel = Channel<PoseFrame>(Channel.CONFLATED)
     override val frames: Flow<PoseFrame> = frameChannel.receiveAsFlow()
 
     private val _fps = MutableStateFlow(0f)
@@ -72,7 +84,7 @@ class MediaPipePoseSource(
     }
 
     /**
-     * The analysis image's shape, as width over height, once it is on screen.
+     * The upright analysis image's shape, as width over height, once it is on screen.
      *
      * The overlay needs this. PreviewView scales the camera image to FILL the view and crops the
      * overflow, so a rig that maps landmarks onto the full view rect lands offset from the body by
@@ -93,10 +105,15 @@ class MediaPipePoseSource(
     private var lastFpsUpdateMs = 0L
     private var lastFrameTimeMs = 0L
 
-    // Bitmap pool for reuse (pre-allocated at init, reused every frame to avoid GC)
+    // Bitmaps are reused rather than allocated per frame: at 30 fps a fresh 720p ARGB bitmap every
+    // frame is 100 MB a second through the collector. `stage` holds the buffer exactly as the plane
+    // stores it, padding included; the pool holds the upright copies handed to the detector.
     private val bitmapPool = mutableListOf<Bitmap>()
     private var bitmapPoolIndex = 0
     private val BITMAP_POOL_SIZE = 3
+    private var stage: Bitmap? = null
+    private var lastGeometry: FrameGeometry? = null
+    private var lastEmittedMs = Long.MIN_VALUE
 
     private val lifecycleObserver = LifecycleEventObserver { _, event ->
         when (event) {
@@ -119,6 +136,9 @@ class MediaPipePoseSource(
         // Release bitmap pool
         bitmapPool.forEach { it.recycle() }
         bitmapPool.clear()
+        stage?.recycle()
+        stage = null
+        lastGeometry = null
         executor.shutdownNow()
         try {
             if (!executor.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)) {
@@ -224,17 +244,6 @@ class MediaPipePoseSource(
     private fun processImageProxy(imageProxy: ImageProxy) {
         val now = clock.nowMs()
 
-        if (_sourceAspect.value == null && imageProxy.height > 0) {
-            _sourceAspect.value = imageProxy.width.toFloat() / imageProxy.height
-            // Logged once, because the answer decides whether the overlay lines up at all and it
-            // cannot be read off anything but a real camera.
-            Log.i(
-                TAG,
-                "analysis frame ${imageProxy.width}x${imageProxy.height}, " +
-                    "rotation ${imageProxy.imageInfo.rotationDegrees}deg",
-            )
-        }
-
         // Low power mode: skip frames (5fps target)
         if (lowPowerEnabled && frameCount % 6 != 0L) {
             frameCount++
@@ -248,15 +257,26 @@ class MediaPipePoseSource(
                 return
             }
 
-            // Initialize bitmap pool on first frame
-            if (bitmapPool.isEmpty()) {
-                for (i in 0 until BITMAP_POOL_SIZE) {
-                    bitmapPool.add(createBitmap(imageProxy.width, imageProxy.height))
-                }
+            val plane = imageProxy.planes[0]
+            val geometry = FrameGeometry.of(
+                width = imageProxy.width,
+                height = imageProxy.height,
+                rowStride = plane.rowStride,
+                pixelStride = plane.pixelStride,
+                rotationDeg = imageProxy.imageInfo.rotationDegrees,
+            )
+            if (geometry != lastGeometry) {
+                // The shape of the frame decides whether the overlay lines up at all, and it cannot
+                // be read off anything but a real camera. Logged whenever it changes.
+                Log.i(TAG, "analysis frame $geometry")
+                lastGeometry = geometry
+                _sourceAspect.value = geometry.aspect
+                bitmapPool.forEach { it.recycle() }
+                bitmapPool.clear()
             }
 
-            // Convert ImageProxy to Bitmap (already RGBA_8888 from setOutputImageFormat)
-            val bitmap = imageProxyToBitmap(imageProxy)
+            // Turned upright and unpadded (already RGBA_8888 from setOutputImageFormat)
+            val bitmap = uprightBitmap(imageProxy, geometry)
             if (bitmap != null) {
                 // detectAsync copies the pixels into a packet before it returns, so the pooled
                 // bitmap can be reused on the next frame. Never call mpImage.close() here: the
@@ -273,28 +293,64 @@ class MediaPipePoseSource(
         }
     }
 
-    private fun imageProxyToBitmap(imageProxy: ImageProxy): Bitmap? {
+    /**
+     * The frame as an upright, unpadded bitmap, ready for the detector.
+     *
+     * Both steps here were missing, and together they are why the skeleton was drawn beside the
+     * player rather than on them. The plane's rows are padded out to its row stride, so copying the
+     * buffer into a bitmap of the image's width sheared every row after the first. And the camera's
+     * own rotation was read and logged and never applied, so the detector was shown a body lying on
+     * its side and returned landmarks in a frame turned a quarter turn from the preview.
+     */
+    private fun uprightBitmap(imageProxy: ImageProxy, g: FrameGeometry): Bitmap? {
         return try {
-            // Get a bitmap from the pool (pre-allocated to avoid allocation churn)
-            if (bitmapPool.isEmpty()) {
-                return null
-            }
-            val bitmap = bitmapPool[bitmapPoolIndex % bitmapPool.size]
-            bitmapPoolIndex++
-
-            val planes = imageProxy.planes
-            val buffer = planes[0].buffer
-            val pixelStride = planes[0].pixelStride
-            val rowPadding = planes[0].rowStride - pixelStride * imageProxy.width
-
-            // Copy pixel data into the reused bitmap
+            val src = stageBitmap(g)
+            val buffer = imageProxy.planes[0].buffer
             buffer.rewind()
-            bitmap.copyPixelsFromBuffer(buffer)
-            bitmap
+            src.copyPixelsFromBuffer(buffer)
+            if (g.readyAsIs) return src
+
+            val out = pooledUpright(g)
+            // Rotating about the origin puts the frame outside the rectangle; the translation
+            // brings its visible corner back to (0, 0), which also leaves the padding columns
+            // outside the destination, where they are clipped away.
+            val matrix = Matrix().apply {
+                postRotate(g.rotationDeg.toFloat())
+                postTranslate(g.translateX, g.translateY)
+            }
+            Canvas(out).apply {
+                drawColor(Color.BLACK)
+                drawBitmap(src, matrix, null)
+            }
+            out
         } catch (e: Exception) {
             Log.e(TAG, "Failed to convert ImageProxy to Bitmap", e)
             null
         }
+    }
+
+    /** The scratch bitmap the plane is copied into, sized to the buffer's real width. */
+    private fun stageBitmap(g: FrameGeometry): Bitmap {
+        val current = stage
+        if (current != null && !current.isRecycled &&
+            current.width == g.bufferWidth && current.height == g.sourceHeight
+        ) {
+            return current
+        }
+        current?.recycle()
+        return createBitmap(g.bufferWidth, g.sourceHeight).also { stage = it }
+    }
+
+    /**
+     * The next upright bitmap from the pool. detectAsync copies the pixels into a packet before it
+     * returns, so a small ring is enough to keep the one in flight from being drawn over.
+     */
+    private fun pooledUpright(g: FrameGeometry): Bitmap {
+        if (bitmapPool.isEmpty()) {
+            repeat(BITMAP_POOL_SIZE) { bitmapPool.add(createBitmap(g.width, g.height)) }
+        }
+        bitmapPoolIndex = (bitmapPoolIndex + 1) % bitmapPool.size
+        return bitmapPool[bitmapPoolIndex]
     }
 
     private fun onPoseLandmarkerResult(result: PoseLandmarkerResult, imageTimestampMs: Long) {
@@ -310,42 +366,37 @@ class MediaPipePoseSource(
                 }
             }
 
-            val worldLandmarks = if (result.landmarks().isNotEmpty()) {
-                val lms = result.landmarks()[0].map { lm ->
-                    Landmark(
-                        x = lm.x(),
-                        y = lm.y(),
-                        z = lm.z(),
-                        // visibility(), not presence(). MediaPipe's presence says the joint is in
-                        // frame; visibility says it is also not hidden behind something. These
-                        // world landmarks are what the scorer measures angles from, and the pose
-                        // spec gates a frame on visibility for exactly this reason: a wrist behind
-                        // your back is present and invisible, and using it computes an elbow angle
-                        // from a guess.
-                        visibility = lm.visibility().orElse(1f),
-                    )
-                }
-                if (lms.size == 33) lms else null
-            } else {
-                null
+            val normalized = result.landmarks().firstOrNull()?.takeIf { it.size == 33 }
+            val metric = result.worldLandmarks().firstOrNull()?.takeIf { it.size == 33 }
+
+            // visibility(), not presence(). MediaPipe's presence says the joint is in frame;
+            // visibility says it is also not hidden behind something. The engine gates a frame on
+            // visibility for exactly this reason: a wrist behind your back is present and
+            // invisible, and measuring an elbow angle through it is measuring a guess. It is read
+            // off the normalised landmarks, which always carry it, rather than defaulted to fully
+            // visible when the metric list happens to leave it out.
+            val seen = normalized?.map { it.visibility().orElse(1f) }
+
+            // worldLandmarks(), not landmarks(). The two are different things: landmarks() is
+            // normalised to the picture, so an angle read off it changes when you step nearer the
+            // camera, and a distance read off it is in fractions of a frame rather than metres.
+            // worldLandmarks() is metric and hip-centred, which is what every angle, every
+            // threshold and the jump-height scale are written against. Feeding the picture
+            // coordinates into this field made all of them meaningless.
+            val worldLandmarks = metric?.mapIndexed { i, lm ->
+                Landmark(x = lm.x(), y = lm.y(), z = lm.z(), visibility = seen?.getOrNull(i) ?: lm.visibility().orElse(1f))
             }
 
-            val imageLandmarks = if (result.landmarks().isNotEmpty()) {
-                val lms = result.landmarks()[0].map { lm ->
-                    // Image coordinates are normalized 0..1
-                    // Front camera: mirror X (left-right flip for display)
-                    // Back camera: use as-is
-                    val x = if (_facing.value == CameraFacing.FRONT) 1f - lm.x() else lm.x()
-                    Landmark(
-                        x = x,
-                        y = lm.y(),
-                        z = lm.z(),
-                        visibility = lm.visibility().orElse(1f)
-                    )
-                }
-                if (lms.size == 33) lms else null
-            } else {
-                null
+            val imageLandmarks = normalized?.mapIndexed { i, lm ->
+                // Normalised 0..1 against the upright frame. The front camera's preview is
+                // mirrored, so mirror x to match it; the metric landmarks above are left alone, so
+                // the model's left arm stays the player's left arm.
+                Landmark(
+                    x = if (_facing.value == CameraFacing.FRONT) 1f - lm.x() else lm.x(),
+                    y = lm.y(),
+                    z = lm.z(),
+                    visibility = seen?.getOrNull(i) ?: 1f,
+                )
             }
 
             val frame = PoseFrame(
@@ -354,8 +405,17 @@ class MediaPipePoseSource(
                 tMs = imageTimestampMs
             )
 
-            scope.launch {
-                frameChannel.send(frame)
+            // Straight from the detector's callback thread, in the detector's own order. See the
+            // note on frameChannel: a coroutine here could deliver two frames swapped.
+            //
+            // A frame no newer than the last one is dropped rather than delivered. Everything
+            // downstream measures time as `now - then > n`, and one frame out of order makes that
+            // difference negative, which passes no window and no dwell gate: a single swap can
+            // switch off the rep counter, the cadence window and the hold timer at once. Dropping
+            // here means no consumer has to defend itself.
+            if (imageTimestampMs > lastEmittedMs) {
+                lastEmittedMs = imageTimestampMs
+                frameChannel.trySend(frame)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error processing landmark result", e)
