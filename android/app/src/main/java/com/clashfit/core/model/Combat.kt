@@ -74,7 +74,7 @@ data class SigilState(
 /** Where a chase is in its own arc. */
 enum class ZombieRunPhase { HEAD_START, CHASE, ESCAPED, CAUGHT }
 
-/** One pursuer, in the local metric frame. Dead ones are kept so the map can show the kill. */
+/** One zombie, in the local metric frame. Dead ones are kept so the map can show the kill. */
 data class Zombie(
     val id: Int,
     val eastM: Float,
@@ -98,15 +98,15 @@ data class ZombieRunState(
     val secondsLeft: Float,
     val playerEastM: Float,
     val playerNorthM: Float,
-    val pursuers: List<Zombie>,
+    val zombies: List<Zombie>,
     val caches: List<AmmoCache>,
     val ammo: Int,
     val neutralised: Int,
     val cachesCollected: Int,
     val distanceM: Float,
-    /** Metres to the closest living pursuer, or null when the map is clear. */
+    /** Metres to the closest living zombie, or null when the map is clear. */
     val nearestZombieM: Float?,
     val progress: Float,
 ) {
-    val zombiesLeft: Int get() = pursuers.count { it.alive }
+    val zombiesLeft: Int get() = zombies.count { it.alive }
 }

@@ -26,18 +26,18 @@ import kotlin.math.sin
  *
  * ### The rules, in the order they matter
  *
- * 1. **A sixty-second head start.** Pursuers exist from the first frame but do not move until it
+ * 1. **A sixty-second head start.** Zombies exist from the first frame but do not move until it
  *    expires, so the player can read the map and choose a direction before anything closes.
- * 2. **Pursuers spawn on a ring**, not uniformly in a disc. Uniform-in-a-disc spawning clusters
+ * 2. **Zombies spawn on a ring**, not uniformly in a disc. Uniform-in-a-disc spawning clusters
  *    near the player (area grows with r²), which means a mode whose whole promise is a head start
  *    would routinely open with something already breathing down your neck. A ring between
  *    [ZombieRunConfig.spawnMinRadiusM] and the configured spawn radius keeps the opening honest.
  * 3. **Effort, not just position, decides the gap.** This is the point of the mode and the reason
- *    it belongs in this app rather than in a map toy: a pursuer speeds up when the player's
+ *    it belongs in this app rather than in a map toy: a zombie speeds up when the player's
  *    *cadence* falls, so standing still on a street corner is punished the moment the phone stops
  *    seeing footfalls — not thirty seconds later when the GPS finally agrees you have not moved.
  * 4. **Caches arm you.** Reaching one inside [ZombieRunConfig.pickupRadiusM] banks one round. A
- *    pursuer that closes to the capture radius is neutralised if you have a round to spend, and
+ *    zombie that closes to the capture radius is neutralised if you have a round to spend, and
  *    catches you if you do not.
  * 5. **Survive the clock and you are out.**
  *
@@ -57,26 +57,26 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
      * without reading it.
      */
     data class ZombieRunConfig(
-        /** Seconds before pursuers begin to move. */
+        /** Seconds before zombies begin to move. */
         val headStartSec: Int = 60,
         /** Outer radius of the spawn ring, in metres. */
         val spawnRadiusM: Int = 400,
-        /** A pursuer this close takes you, unless you can spend a round. */
+        /** A zombie this close takes you, unless you can spend a round. */
         val captureRadiusM: Int = 12,
         /** How many ammo caches are scattered at the start. */
         val ammoPickups: Int = 6,
 
         /** Inner radius of the spawn ring. Nothing may open the mode closer than this. */
         val spawnMinRadiusM: Int = 220,
-        /** How many pursuers spawn. */
-        val pursuers: Int = 4,
+        /** How many zombies spawn. */
+        val zombies: Int = 4,
         /** Survive this long and the chase is won. */
         val survivalSec: Int = 600,
-        /** A pursuer's ground speed at the player's target cadence, metres per second. */
+        /** A zombie's ground speed at the player's target cadence, metres per second. */
         val zombieBaseMps: Float = 2.35f,
         /**
          * The cadence a chase is priced against, in steps per minute. Roughly a steady jog: below
-         * it the pursuers gain, above it they lose ground.
+         * it the zombies gain, above it they lose ground.
          */
         val targetCadenceSpm: Int = 150,
         /** Speed multiplier at zero effort. Above 1, so stopping is always losing ground. */
@@ -95,7 +95,7 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
     private var playerNorthM: Float = 0f
     private var cadenceSpm: Int = 0
 
-    private var pursuers: MutableList<Zombie> = mutableListOf()
+    private var zombies: MutableList<Zombie> = mutableListOf()
     private var caches: MutableList<AmmoCache> = mutableListOf()
     private var ammo: Int = 0
     private var neutralised: Int = 0
@@ -123,11 +123,11 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
         outcome = GameOutcome.RUNNING
 
         val rng = Lcg(this.seed)
-        pursuers = MutableList(cfg.pursuers) { i ->
+        zombies = MutableList(cfg.zombies) { i ->
             val (e, n) = rng.onRing(cfg.spawnMinRadiusM.toFloat(), cfg.spawnRadiusM.toFloat())
             Zombie(id = i, eastM = e, northM = n, alive = true)
         }
-        // Caches sit inside the pursuer ring so that going to get one is a real decision: it is
+        // Caches sit inside the zombie ring so that going to get one is a real decision: it is
         // ground you cover away from your escape, not a freebie on the way out.
         caches = MutableList(cfg.ammoPickups) { i ->
             val (e, n) = rng.onRing(cfg.pickupRadiusM * 3f, cfg.spawnMinRadiusM.toFloat())
@@ -139,7 +139,7 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
      * Advances the chase to [tMs] with the player at ([eastM], [northM]) moving at [cadenceSpm].
      *
      * Safe to call at any rate. GPS delivers about one fix a second, which is far too coarse for a
-     * pursuer to look alive on screen, so the UI ticks this on the frame clock and only updates
+     * zombie to look alive on screen, so the UI ticks this on the frame clock and only updates
      * the position when a fix actually lands.
      */
     fun onTick(tMs: Long, eastM: Float, northM: Float, cadenceSpm: Int): ZombieRunState {
@@ -185,7 +185,7 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
     }
 
     /**
-     * Every living pursuer homes on the player at a speed set by the player's own effort.
+     * Every living zombie homes on the player at a speed set by the player's own effort.
      *
      * The chase closes on cadence, not on coordinates. A player who stops moving their legs is
      * caught even if the receiver has not yet noticed they stopped moving through space.
@@ -194,16 +194,16 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
         if (deltaMs <= 0L) return
         val speed = cfg.zombieBaseMps * effortMultiplier()
         val step = speed * (deltaMs / 1000f)
-        for (i in pursuers.indices) {
-            val p = pursuers[i]
+        for (i in zombies.indices) {
+            val p = zombies[i]
             if (!p.alive) continue
             val dE = playerEastM - p.eastM
             val dN = playerNorthM - p.northM
             val gap = hypot(dE, dN)
             if (gap <= 0.001f) continue
-            // Never overshoot the player: a pursuer that stepped past would read as a miss.
+            // Never overshoot the player: a zombie that stepped past would read as a miss.
             val advance = min(step, gap)
-            pursuers[i] = p.copy(
+            zombies[i] = p.copy(
                 eastM = p.eastM + dE / gap * advance,
                 northM = p.northM + dN / gap * advance,
             )
@@ -223,17 +223,17 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
         return cfg.slackestMultiplier + (cfg.keenestMultiplier - cfg.slackestMultiplier) * effort
     }
 
-    /** A pursuer inside the capture radius is spent against a round, or it takes you. */
+    /** A zombie inside the capture radius is spent against a round, or it takes you. */
     private fun resolveContact() {
-        for (i in pursuers.indices) {
-            val p = pursuers[i]
+        for (i in zombies.indices) {
+            val p = zombies[i]
             if (!p.alive) continue
             val gap = hypot(p.eastM - playerEastM, p.northM - playerNorthM)
             if (gap > cfg.captureRadiusM) continue
             if (ammo > 0) {
                 ammo -= 1
                 neutralised += 1
-                pursuers[i] = p.copy(alive = false)
+                zombies[i] = p.copy(alive = false)
             } else {
                 outcome = GameOutcome.LOST
                 return
@@ -241,11 +241,11 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
         }
         // Clearing the map is an escape in its own right; standing in an empty field for the rest
         // of the ten minutes is not gameplay, it is waiting.
-        if (pursuers.none { it.alive }) outcome = GameOutcome.WON
+        if (zombies.none { it.alive }) outcome = GameOutcome.WON
     }
 
-    /** Metres to the closest living pursuer, or null when none is left. */
-    fun nearestZombieM(): Float? = pursuers.filter { it.alive }
+    /** Metres to the closest living zombie, or null when none is left. */
+    fun nearestZombieM(): Float? = zombies.filter { it.alive }
         .minOfOrNull { hypot(it.eastM - playerEastM, it.northM - playerNorthM) }
 
     fun state(tMs: Long): ZombieRunState {
@@ -266,7 +266,7 @@ class ZombieRunGame(private val cfg: ZombieRunConfig = ZombieRunConfig()) {
             secondsLeft = max(0f, cfg.survivalSec - elapsedSec),
             playerEastM = playerEastM,
             playerNorthM = playerNorthM,
-            pursuers = pursuers.toList(),
+            zombies = zombies.toList(),
             caches = caches.toList(),
             ammo = ammo,
             neutralised = neutralised,

@@ -58,6 +58,8 @@ import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToInt
+import android.content.Context
+import com.clashfit.run.RunRepository
 
 /**
  * ZOMBIE RUN — the outdoor chase, on a real map. `docs/33-FEATURE-ZOMBIE-RUN.md`.
@@ -82,7 +84,11 @@ fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
     val runState by tracker.state.collectAsStateWithLifecycle()
     val settings by graph.prefs.settings.collectAsStateWithLifecycle(initialValue = com.clashfit.data.Prefs.Settings())
 
-    val cfg = graph.config.combat.value.modes.zombieRun
+    // Collected rather than read as .value: the config store hot-reloads, and a screen holding a
+    // snapshot would keep showing the numbers it was born with while the briefing beside it
+    // promised different ones.
+    val combat by graph.config.combat.collectAsStateWithLifecycle()
+    val cfg = combat.modes.zombieRun
     val game = remember {
         ZombieRunGame(
             ZombieRunGame.ZombieRunConfig(
@@ -109,7 +115,7 @@ fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
         PackageManager.PERMISSION_GRANTED
 
     // The chase runs on its own clock at 10 Hz. GPS delivers about one fix a second, which is far
-    // too coarse for a pursuer to look alive; between fixes the pack keeps closing on the last
+    // too coarse for a zombie to look alive; between fixes the pack keeps closing on the last
     // known position, which is also what it would really do.
     LaunchedEffect(started) {
         if (!started) return@LaunchedEffect
@@ -125,7 +131,16 @@ fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
             }
             // Tick every time, fix or no fix. Losing the signal must not pause the chase.
             state = game.onTick(graph.clock.nowMs(), lastEastM, lastNorthM, runState.cadenceSpm)
-            if (state.outcome != GameOutcome.RUNNING) break
+            if (state.outcome != GameOutcome.RUNNING) {
+                // Banked here because the chase knows about zombies and the tracking service does
+                // not. Guarded on the row existing: a chase abandoned before the first fix or the
+                // first step has no activity to attach a score to.
+                runState.runId?.let { id ->
+                    val repo = RunRepository(graph.db.runs(), graph.clock)
+                    runCatching { repo.setScore(id, game.score(graph.clock.nowMs())) }
+                }
+                break
+            }
             delay(100)
         }
     }
@@ -140,7 +155,7 @@ fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
                     cfg = cfg,
                     locationOk = locationOk,
                     onStart = {
-                        RunTrackingService.start(context, ActivityKind.RUN)
+                        RunTrackingService.start(context, ActivityKind.ZOMBIE_RUN)
                         // Seeded from the wall clock so two players never get the same layout, and
                         // so a chase could be replayed from its seed later.
                         game.start(graph.clock.nowMs(), graph.clock.nowMs())
@@ -150,7 +165,8 @@ fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
                 return@Column
             }
 
-            ChaseHud(state)
+            ChaseFeel(state, graph)
+            ChaseHud(state, if (state.outcome == GameOutcome.RUNNING) null else game.score(graph.clock.nowMs()))
             SectionGap(12)
 
             val o = origin
@@ -158,7 +174,7 @@ fun ZombieRunScreen(graph: AppGraph, nav: NavHostController) {
                 state.caches.filter { !it.taken }.forEach {
                     add(marker(o, it.eastM, it.northM, radiusM = 14.0, colour = Success, filled = false))
                 }
-                state.pursuers.filter { it.alive }.forEach {
+                state.zombies.filter { it.alive }.forEach {
                     add(marker(o, it.eastM, it.northM, radiusM = 18.0, colour = Gassed, filled = true))
                 }
             }
@@ -220,15 +236,23 @@ private fun Briefing(
     locationOk: Boolean,
     onStart: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val gpsOn = remember {
+        runCatching {
+            val lm = context.getSystemService(Context.LOCATION_SERVICE) as android.location.LocationManager
+            lm.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER)
+        }.getOrDefault(true)
+    }
+
     Column(Modifier.fillMaxWidth().safeDrawingPadding()) {
         SectionGap(8)
         Text("A real chase, on a real map", style = MaterialTheme.typography.headlineSmall, color = Ink)
         SectionGap(10)
         Text(
-            "You get ${cfg.headStartSec} seconds. Then pursuers spawn within ${cfg.spawnRadiusM} metres and " +
+            "You get ${cfg.headStartSec} seconds. Then zombies spawn within ${cfg.spawnRadiusM} metres and " +
                 "start closing. They move faster when your cadence drops, so stopping is what gets you " +
                 "caught — not standing in the wrong place. ${cfg.ammoPickups} caches are scattered around " +
-                "you; reaching one arms you, and a pursuer that gets within ${cfg.captureRadiusM} metres is " +
+                "you; reaching one arms you, and a zombie that gets within ${cfg.captureRadiusM} metres is " +
                 "spent against a round if you have one.",
             style = MaterialTheme.typography.bodyMedium, color = InkMuted,
         )
@@ -245,6 +269,32 @@ private fun Briefing(
                 )
             }
         }
+        SectionGap(14)
+        // Said before the head start rather than discovered during it. Indoors the chase runs on
+        // the step counter, which works and drifts; a player who knows that keeps moving and
+        // reads the map for what it is. It is a warning, not a gate: the mode still starts.
+        AppCard(Modifier.fillMaxWidth(), padding = 16) {
+            Column {
+                Text(
+                    if (gpsOn) "No signal? It keeps going." else "Location services are off",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = if (gpsOn) Ink else Gassed,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    if (gpsOn) {
+                        "Inside a building a satellite fix is wider than the building, so the chase " +
+                            "switches to your step counter and compass. It keeps working — it just " +
+                            "drifts, and standing still still gets you caught."
+                    } else {
+                        "Turn them on for a map that matches the street. Without them the chase runs " +
+                            "entirely on your step counter, so keep moving and expect the map to drift."
+                    },
+                    style = MaterialTheme.typography.bodySmall, color = InkMuted,
+                )
+            }
+        }
+
         SectionGap(18)
         if (locationOk) {
             PrimaryButton("Start the head start", Modifier.fillMaxWidth(), onClick = onStart)
@@ -258,7 +308,7 @@ private fun Briefing(
 }
 
 @Composable
-private fun ChaseHud(state: com.clashfit.core.model.ZombieRunState) {
+private fun ChaseHud(state: com.clashfit.core.model.ZombieRunState, score: Int?) {
     when (state.phase) {
         ZombieRunPhase.HEAD_START -> {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -308,6 +358,18 @@ private fun ChaseHud(state: com.clashfit.core.model.ZombieRunState) {
                     style = MaterialTheme.typography.bodyMedium, color = InkMuted,
                     textAlign = TextAlign.Center,
                 )
+                if (score != null) {
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        "$score points",
+                        style = MaterialTheme.typography.headlineSmall, color = Ember,
+                    )
+                    Text(
+                        "Surviving is most of it. The rest is ground covered and caches reached.",
+                        style = MaterialTheme.typography.labelSmall, color = InkFaint,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
     }
