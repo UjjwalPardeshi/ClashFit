@@ -26,7 +26,7 @@ import org.junit.Assert.assertTrue
  *
  * Every other engine test builds a config by hand and feeds it a handful of synthesised frames.
  * That proves each piece behaves; it does not prove the pieces are wired to each other, or that
- * the JSON we actually ship parses into something the engine can run. A recorded set of 2,648
+ * the JSON we actually ship parses into something the engine can run. A generated set of 2,387
  * frames does both, on the JVM, with no phone and no camera.
  *
  * The trace is a squat set taken to failure, which is the useful case: reps get slower and
@@ -88,7 +88,7 @@ class TraceReplayTest {
         assertTrue("the engine returned a state", lastState != null)
 
         // A set to failure. The exact count depends on thresholds that are allowed to move; what
-        // cannot move is that a two-and-a-half-thousand-frame squat set produces a real set.
+        // cannot move is that a two-thousand-frame squat set produces a real set.
         val reps = recorder.reps
         assertTrue("counted a plausible number of reps, got ${reps.size}", reps.size in 5..60)
 

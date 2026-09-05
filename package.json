@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node serve.js",
     "test": "node test/run.js",
-    "manifest": "node tools/manifest.js"
+    "manifest": "node tools/manifest.js",
+    "traces": "node tools/make-trace.js",
+    "traces:check": "node tools/make-trace.js --check"
   },
   "engines": { "node": ">=20" }
 }
