@@ -166,7 +166,12 @@ fun AppNavHost(
                 HelpScreen(graph, nav, onStart = { nav.navigate(ExercisePicker(GameMode.BOSS_FIGHT.name)) })
             }
             composable<Account> {
-                AccountScreen(graph, onBack = { nav.navigateUp() }, onSignedOut = { nav.navigate(Onboarding) { popUpTo(0) { inclusive = true } } })
+                AccountScreen(
+                    graph,
+                    onBack = { nav.navigateUp() },
+                    onSignedOut = { nav.navigate(Onboarding) { popUpTo(0) { inclusive = true } } },
+                    onSignIn = { nav.navigate(Onboarding) },
+                )
             }
 
             shellRoutes(graph, nav)      // modes · picker · library · character · streaks · history · settings · privacy · preflight · clinic · posture · desk
