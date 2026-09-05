@@ -12,3 +12,6 @@ img/_cand2/
 # Firebase keys. Never commit these; see firebase/README.md.
 google-services.json
 tools/.venv-hf/
+
+# On-device model weights: 3 GB, licensed, never committed.
+models/
