@@ -1,21 +1,42 @@
 # ClashFit Android CI. Lives in android/ci/ because the token that pushes this repo lacks the
 # `workflow` scope GitHub requires to add files under .github/workflows/. To enable it:
 #   git mv android/ci/android.yml .github/workflows/android.yml   (with a token that has `workflow` scope)
-# It runs the JVM tests, lint, builds the debug APK and proves the merged manifest has no INTERNET permission.
+# It runs the JVM tests, lint, builds the debug APK, and proves the merged manifest matches
+# PERMISSION_ALLOW_LIST exactly — in both directions. It used to say this job proved the manifest
+# had NO internet permission, which stopped being true the day accounts landed: INTERNET is
+# required now, and the check is that nothing is present or missing that the list does not name.
 name: android
 
 on:
   push:
     branches: [main]
-    paths: ["android/**", ".github/workflows/android.yml"]
   pull_request:
-    paths: ["android/**"]
 
 concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # The JavaScript prototype is the engine's specification and its landing page guards, and it is
+  # cheap to run. It went red for most of a day because a config change moved the ground under it
+  # and nobody ran it; that is exactly the kind of thing a minute of CI is for.
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Engine, coach and landing-page claim tests
+        run: node test/run.js
+      - name: The shipped traces still reproduce what is printed beside them
+        run: node tools/make-trace.js --check
+      - name: The exercise manifest matches what is on disk
+        run: |
+          node tools/manifest.js
+          git diff --exit-code config/exercises/index.json
+
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 40

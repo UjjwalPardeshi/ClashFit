@@ -3,26 +3,6 @@
   "count": 57,
   "exercises": [
     {
-      "id": "lateral_raise",
-      "name": "Lateral Raise",
-      "family": "REP_CYCLE",
-      "difficulty": 1,
-      "games": [
-        "BOSS_FIGHT",
-        "TIME_ATTACK",
-        "GHOST_RACE",
-        "SURVIVAL",
-        "BOSS_RUSH",
-        "DUEL"
-      ],
-      "tags": [
-        "strength",
-        "upper",
-        "shoulders",
-        "no-equipment"
-      ]
-    },
-    {
       "id": "bicep_curl",
       "name": "Bicep Curl",
       "family": "REP_CYCLE",
@@ -39,44 +19,6 @@
         "strength",
         "upper",
         "arms",
-        "no-equipment"
-      ]
-    },
-    {
-      "id": "shoulder_press",
-      "name": "Shoulder Press",
-      "family": "REP_CYCLE",
-      "difficulty": 2,
-      "games": [
-        "BOSS_FIGHT",
-        "TIME_ATTACK",
-        "GHOST_RACE",
-        "SURVIVAL",
-        "BOSS_RUSH",
-        "DUEL"
-      ],
-      "tags": [
-        "strength",
-        "upper",
-        "shoulders"
-      ]
-    },
-    {
-      "id": "squat",
-      "name": "Squat",
-      "family": "REP_CYCLE",
-      "difficulty": 1,
-      "games": [
-        "BOSS_FIGHT",
-        "TIME_ATTACK",
-        "GHOST_RACE",
-        "SURVIVAL",
-        "BOSS_RUSH",
-        "DUEL"
-      ],
-      "tags": [
-        "strength",
-        "lower",
         "no-equipment"
       ]
     },
@@ -153,6 +95,45 @@
       "tags": [
         "strength",
         "posterior"
+      ]
+    },
+    {
+      "id": "lateral_raise",
+      "name": "Lateral Raise",
+      "family": "REP_CYCLE",
+      "difficulty": 1,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "upper",
+        "shoulders",
+        "no-equipment"
+      ]
+    },
+    {
+      "id": "squat",
+      "name": "Squat",
+      "family": "REP_CYCLE",
+      "difficulty": 1,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "lower",
+        "no-equipment"
       ]
     },
     {
@@ -246,6 +227,25 @@
         "strength",
         "upper",
         "arms"
+      ]
+    },
+    {
+      "id": "shoulder_press",
+      "name": "Shoulder Press",
+      "family": "REP_CYCLE",
+      "difficulty": 2,
+      "games": [
+        "BOSS_FIGHT",
+        "TIME_ATTACK",
+        "GHOST_RACE",
+        "SURVIVAL",
+        "BOSS_RUSH",
+        "DUEL"
+      ],
+      "tags": [
+        "strength",
+        "upper",
+        "shoulders"
       ]
     },
     {
