@@ -39,6 +39,12 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlinx.coroutines.CancellationException
+import com.clashfit.perception.gesture.GestureReading
+import com.clashfit.perception.gesture.GestureSource
+import com.clashfit.perception.gesture.HandGesture
+import com.google.mediapipe.tasks.vision.gesturerecognizer.GestureRecognizer
+import com.google.mediapipe.tasks.vision.gesturerecognizer.GestureRecognizerResult
+import kotlinx.coroutines.channels.BufferOverflow
 
 /**
  * Live camera pose source using CameraX and MediaPipe Tasks Vision PoseLandmarker.
@@ -51,7 +57,7 @@ class MediaPipePoseSource(
     private val clock: Clock,
     private val lifecycleOwner: LifecycleOwner,
     private val scope: CoroutineScope,
-) : PoseSource, CameraPreviewSource {
+) : PoseSource, CameraPreviewSource, GestureSource {
 
     private val TAG = "ClashFit/perception"
     private val frameChannel = Channel<PoseFrame>(capacity = 1)
@@ -98,6 +104,14 @@ class MediaPipePoseSource(
     private var bitmapPoolIndex = 0
     private val BITMAP_POOL_SIZE = 3
 
+    // The hand, read off the same frames as the body. Created with the pose model, fed every third
+    // frame (about ten a second, which is plenty for a shape held for six hundred milliseconds),
+    // and only while the fight wants it — a raised palm during calibration or rest means nothing.
+    private var gestureRecognizer: GestureRecognizer? = null
+    @Volatile private var gesturesEnabled = false
+    private val gestureChannel = Channel<GestureReading>(capacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    override val gestures: Flow<GestureReading> = gestureChannel.receiveAsFlow()
+
     private val lifecycleObserver = LifecycleEventObserver { _, event ->
         when (event) {
             Lifecycle.Event.ON_RESUME -> startCamera()
@@ -116,6 +130,8 @@ class MediaPipePoseSource(
         lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
         stopCamera()
         poseLandmarker?.close()
+        gestureRecognizer?.close()
+        gestureRecognizer = null
         // Release bitmap pool
         bitmapPool.forEach { it.recycle() }
         bitmapPool.clear()
@@ -157,6 +173,7 @@ class MediaPipePoseSource(
                     }
                     .build()
             )
+            initGestureRecognizer()
             startCamera()
         } catch (cancelled: CancellationException) {
             // Cancellation is not a failure. CancellationException is an Exception,
@@ -263,6 +280,9 @@ class MediaPipePoseSource(
                 // bitmap container's close() recycles the Bitmap, which would poison the pool.
                 val mpImage: MPImage = BitmapImageBuilder(bitmap).build()
                 poseLandmarker?.detectAsync(mpImage, now)
+                // The hand, on every third frame. recognizeAsync copies its pixels the same way
+                // detectAsync does, so both tasks can read the one pooled bitmap.
+                if (gesturesEnabled && frameCount % 3 == 0L) gestureRecognizer?.recognizeAsync(mpImage, now)
             }
             frameCount++
             lastFrameTimeMs = now
@@ -360,5 +380,54 @@ class MediaPipePoseSource(
         } catch (e: Exception) {
             Log.e(TAG, "Error processing landmark result", e)
         }
+    }
+
+    // ── the hand ─────────────────────────────────────────────────────────────────────────────
+
+    /**
+     * The hand model. Eight megabytes in the APK, CPU delegate on purpose: the GPU is busy with
+     * the body at thirty frames a second, and a hand at ten frames a second is cheap on CPU. If
+     * the model fails to load the fight simply has no gestures — nothing else notices.
+     */
+    private fun initGestureRecognizer() {
+        try {
+            gestureRecognizer = GestureRecognizer.createFromOptions(
+                context,
+                GestureRecognizer.GestureRecognizerOptions.builder()
+                    .setBaseOptions(
+                        BaseOptions.builder()
+                            .setModelAssetPath("models/gesture_recognizer.task")
+                            .setDelegate(Delegate.CPU)
+                            .build(),
+                    )
+                    .setRunningMode(RunningMode.LIVE_STREAM)
+                    .setNumHands(1)
+                    .setMinHandDetectionConfidence(0.6f)
+                    .setMinHandPresenceConfidence(0.6f)
+                    .setMinTrackingConfidence(0.5f)
+                    .setResultListener { result, _ -> onGestureResult(result) }
+                    .setErrorListener { e -> Log.w(TAG, "gesture recogniser: ${e.message}") }
+                    .build(),
+            )
+            Log.i(TAG, "gesture recogniser ready")
+        } catch (e: Exception) {
+            Log.w(TAG, "gesture recogniser unavailable; the fight runs without hand control", e)
+            gestureRecognizer = null
+        }
+    }
+
+    private fun onGestureResult(result: GestureRecognizerResult) {
+        // No hand in frame is itself a reading: it is what breaks a hold.
+        val top = result.gestures().firstOrNull()?.firstOrNull()
+        val reading = if (top == null) {
+            GestureReading(HandGesture.NONE, 0f, result.timestampMs())
+        } else {
+            GestureReading(HandGesture.fromMediaPipe(top.categoryName()), top.score(), result.timestampMs())
+        }
+        gestureChannel.trySend(reading)
+    }
+
+    override fun setGesturesEnabled(enabled: Boolean) {
+        gesturesEnabled = enabled
     }
 }

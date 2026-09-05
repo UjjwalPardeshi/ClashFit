@@ -58,6 +58,21 @@ class Prefs(private val context: Context) {
          * venue's projector, nobody wants to be recompiling.
          */
         val boss3d: Boolean = true,
+        /**
+         * Read hand gestures from the camera during a fight: open palm pauses, thumb up ends the
+         * set, fist skips the rest. On by default because it is the one mid-set input that works
+         * in a loud room and needs no permission the fight does not already have.
+         */
+        val gestures: Boolean = true,
+        /**
+         * Let the coach use a cloud model when the on-device one is not installed.
+         *
+         * Off by default, and deliberately not "smart": when it is on, the 23-number summary of a
+         * set — and a typed question in the chat — may go to the model provider. Never a camera
+         * frame, never a landmark, never a rep timeline; those paths do not exist in the code.
+         * The privacy screen states what this switch changes in one sentence.
+         */
+        val cloudCoach: Boolean = false,
     )
 
     enum class Goal(val title: String, val blurb: String) {
@@ -89,10 +104,14 @@ class Prefs(private val context: Context) {
             goal = p[GOAL] ?: Goal.GET_STRONGER.name,
             avatarColor = p[AVATAR_COLOR] ?: 0,
             boss3d = p[BOSS_3D] ?: true,
+            gestures = p[GESTURES] ?: true,
+            cloudCoach = p[CLOUD_COACH] ?: false,
         )
     }
 
     suspend fun setGuest(v: Boolean) = context.dataStore.edit { it[GUEST] = v }
+    suspend fun setGestures(v: Boolean) = context.dataStore.edit { it[GESTURES] = v }
+    suspend fun setCloudCoach(v: Boolean) = context.dataStore.edit { it[CLOUD_COACH] = v }
     suspend fun setReduceMotion(v: Boolean) = context.dataStore.edit { it[REDUCE_MOTION] = v }
     suspend fun setBoss3d(v: Boolean) = context.dataStore.edit { it[BOSS_3D] = v }
     suspend fun setHaptics(v: Boolean) = context.dataStore.edit { it[HAPTICS] = v }
@@ -140,6 +159,8 @@ class Prefs(private val context: Context) {
         val DESK_SNOOZED_UNTIL_MS = longPreferencesKey("desk_snoozed_until_ms")
         val ONBOARDED = booleanPreferencesKey("onboarded")
         val GUEST = booleanPreferencesKey("guest")
+        val GESTURES = booleanPreferencesKey("gestures")
+        val CLOUD_COACH = booleanPreferencesKey("cloud_coach")
         val GOAL = stringPreferencesKey("goal")
         val AVATAR_COLOR = intPreferencesKey("avatar_color")
     }

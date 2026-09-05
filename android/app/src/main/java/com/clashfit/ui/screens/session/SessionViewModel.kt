@@ -26,6 +26,9 @@ import com.clashfit.data.SetEntity
 import com.clashfit.engine.session.SessionEngine
 import com.clashfit.engine.summary.Progression
 import com.clashfit.play.LinkHud
+import com.clashfit.perception.gesture.GestureIntent
+import com.clashfit.perception.gesture.GestureSource
+import com.clashfit.perception.gesture.HandGesture
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -60,6 +63,8 @@ sealed interface HudEvent {
     data object BossDown : HudEvent
     data object FramingLost : HudEvent
     data object Milestone : HudEvent
+    /** A hand shape the referee obeyed — named on screen for a moment so the player knows why. */
+    data class Gesture(val gesture: HandGesture, val label: String) : HudEvent
 }
 
 /**
@@ -105,6 +110,14 @@ class SessionViewModel(
     private var lastCue: String? = null
     private var restJob: Job? = null
     private var frameJob: Job? = null
+    private var gestureJob: Job? = null
+
+    /** Hold detection for hand gestures. Pure; the recogniser's noise stops here. */
+    private val gestureIntent = GestureIntent()
+
+    /** The gesture being held and how far along the hold is, for the ring the HUD fills. Null when no hand. */
+    private val _gestureHold = MutableStateFlow<Pair<HandGesture, Float>?>(null)
+    val gestureHold: StateFlow<Pair<HandGesture, Float>?> = _gestureHold.asStateFlow()
     private val completedSets = ArrayList<SetSnapshot>()
     private var setStartedAtMs = startedAtMs
     private var saved = false
@@ -182,6 +195,60 @@ class SessionViewModel(
                 }
             }
         }
+        startGestures()
+    }
+
+    /**
+     * Hand control. The player is two metres away and cannot reach the phone; in a loud room voice
+     * does not work either. A hand held up to the camera does.
+     *
+     * The recogniser only runs while a gesture could mean something — fighting, or resting — and
+     * only if the setting is on. A shape must be held (see [GestureIntent]) before it fires, so a
+     * hand passing the lens on the way up from a squat pauses nothing. The mapping is small on
+     * purpose: three shapes, each with one meaning per phase, and nothing that ends the whole
+     * session — that stays a deliberate tap on the screen.
+     */
+    private fun startGestures() {
+        val source = deps.pose as? GestureSource ?: return
+        gestureJob = viewModelScope.launch {
+            if (!graph.prefs.settings.first().gestures) return@launch
+            // Follow the phase: read the hand when it could mean something, ignore it otherwise.
+            launch {
+                _state.collect { s ->
+                    val wanted = s != null && !s.ended && (s.phase == Phase.FIGHTING || s.phase == Phase.REST)
+                    source.setGesturesEnabled(wanted)
+                    if (!wanted) { gestureIntent.reset(); _gestureHold.value = null }
+                }
+            }
+            source.gestures.collect { reading ->
+                val fired = gestureIntent.offer(reading)
+                _gestureHold.value = gestureIntent.holding?.let { it to gestureIntent.progress }
+                if (fired != null) onGesture(fired)
+            }
+        }
+    }
+
+    private fun onGesture(g: HandGesture) {
+        val s = _state.value ?: return
+        val resting = s.phase == Phase.REST
+        val label = when {
+            g == HandGesture.OPEN_PALM && !resting -> {
+                if (_paused.value) { resume(); "Resumed" } else { pause(); "Paused" }
+            }
+            g == HandGesture.THUMB_UP && !resting -> {
+                // End the set now, the way running out of reps would. Rest and the coach follow.
+                viewModelScope.launch(engineThread) {
+                    val cur = engine.state()
+                    if (cur.phase == Phase.FIGHTING && cur.setReps > 0) { engine.endSet(); _state.value = engine.state() }
+                }
+                "Set done"
+            }
+            (g == HandGesture.THUMB_UP || g == HandGesture.CLOSED_FIST) && resting -> { skipRest(); "Next set" }
+            else -> return
+        }
+        deps.haptics.milestone()
+        _events.tryEmit(HudEvent.Gesture(g, label))
+        _gestureHold.value = null
     }
 
     private fun afterFrame(before: Phase, s: SessionState) {

@@ -66,6 +66,7 @@ import com.clashfit.ui.theme.Heavy
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.BoxScope
+import com.clashfit.perception.gesture.HandGesture
 
 /**
  * One screen for the whole fight. The engine's phase decides what is drawn: calibration guide,
@@ -84,6 +85,9 @@ fun SessionScreen(
     val restLeft by vm.restRemainingSec.collectAsStateWithLifecycle()
     val paused by vm.paused.collectAsStateWithLifecycle()
     val landmarks by vm.skeleton.collectAsStateWithLifecycle()
+    // The hand being held up to the camera, and the last command it gave.
+    val gestureHold by vm.gestureHold.collectAsStateWithLifecycle()
+    var lastGesture by remember { mutableStateOf<HudEvent.Gesture?>(null) }
     val reduceMotion = LocalReduceMotion.current
     // Not every pose source has a camera: a recorded trace and the synthetic source do not, and
     // the fight has to work with either.
@@ -124,6 +128,7 @@ fun SessionScreen(
                     repeat(3) { shake.animateTo(Motion.shakePx, tween(Motion.shakeMs / 6)); shake.animateTo(-Motion.shakePx, tween(Motion.shakeMs / 6)) }
                     shake.animateTo(0f, tween(Motion.shakeMs / 6))
                 }
+                is HudEvent.Gesture -> lastGesture = e
                 else -> Unit
             }
         }
@@ -158,9 +163,9 @@ fun SessionScreen(
                 ExitCorner(onExit)
             }
             Phase.FIGHTING, Phase.FRAMING_LOST -> {
-                FightLayout(s, vm, lastHit, jolt.value, shake.value, paused, reduceMotion, camera, landmarks, meta, settings, sourceAspect)
+                FightLayout(s, vm, lastHit, jolt.value, shake.value, paused, reduceMotion, camera, landmarks, meta, settings, sourceAspect, gestureHold, lastGesture)
             }
-            Phase.REST -> RestPanel(s, restLeft, onSkip = vm::skipRest, onStop = vm::stop)
+            Phase.REST -> RestPanel(s, restLeft, onSkip = vm::skipRest, onStop = vm::stop, gestureHold = gestureHold, lastGesture = lastGesture)
             Phase.DEAD -> EndPanel(s, onSummary = { /* wait for persistence */ }, onExit = onExit)
         }
         if (s.ended && s.phase != Phase.DEAD) EndPanel(s, onSummary = {}, onExit = onExit)
@@ -198,6 +203,7 @@ private fun FightLayout(
     s: SessionState, vm: SessionViewModel, lastHit: HudEvent.Hit?, jolt: Float, shake: Float,
     paused: Boolean, reduceMotion: Boolean, camera: CameraPreviewSource?, landmarks: Landmarks?,
     meta: MetaState?, settings: Prefs.Settings, sourceAspect: Float?,
+    gestureHold: Pair<HandGesture, Float>? = null, lastGesture: HudEvent.Gesture? = null,
 ) {
     val prone = vm.isProne
     val link by vm.link.collectAsStateWithLifecycle()
@@ -252,6 +258,12 @@ private fun FightLayout(
         // Top right, where the corner skeleton inset used to sit before the camera took the frame.
         RankChip(meta, Modifier.align(Alignment.TopEnd).safeDrawingPadding().padding(top = 96.dp, end = 12.dp))
         if (paused) PausedOverlay(onResume = vm::resume, onStop = vm::stop)
+        // The hand: a ring that fills while a shape is held, then the word for what it did. Drawn
+        // over the pause overlay too, because an open palm is how you resume from two metres away.
+        // Mid-right, beside the boss: the one place on the HUD nothing else needs, so a held hand
+        // never hides the health bar or the rank while the ring fills.
+        GestureRing(gestureHold, resting = false, Modifier.align(Alignment.CenterEnd).padding(end = 16.dp, bottom = 120.dp))
+        GestureToast(lastGesture, Modifier.align(Alignment.Center).padding(bottom = 300.dp))
     }
 }
 
@@ -269,10 +281,18 @@ private fun PausedOverlay(onResume: () -> Unit, onStop: () -> Unit) {
 
 /** The moment the coach earns its place. The player is on the floor; the line is spoken too. */
 @Composable
-fun RestPanel(s: SessionState, restLeft: Int?, onSkip: () -> Unit, onStop: () -> Unit) {
+fun RestPanel(
+    s: SessionState, restLeft: Int?, onSkip: () -> Unit, onStop: () -> Unit,
+    gestureHold: Pair<HandGesture, Float>? = null, lastGesture: HudEvent.Gesture? = null,
+) {
     val t = s.telemetry
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Kicker("Rest · set ${s.setIndex}")
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+            Kicker("Rest · set ${s.setIndex}")
+            // A thumb up or a fist from the floor starts the next set without walking to the phone.
+            GestureRing(gestureHold, resting = true)
+        }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
             Text((restLeft ?: s.restSec ?: 0).toString(), style = MaterialTheme.typography.displayLarge, color = Ember)
             FatiguePips(s.fatigue.band)
@@ -299,6 +319,8 @@ fun RestPanel(s: SessionState, restLeft: Int?, onSkip: () -> Unit, onStop: () ->
         Text("Boss at ${(s.combat.hpPct * 100).toInt()}%${coach?.let { " · " + it.source.name.lowercase() + " coach" } ?: ""}", style = MaterialTheme.typography.labelSmall, color = InkFaint)
         PrimaryButton("Next set", Modifier.fillMaxWidth(), onClick = onSkip)
         SecondaryButton("Stop and save", Modifier.fillMaxWidth(), onClick = onStop)
+    }
+    GestureToast(lastGesture, Modifier.align(Alignment.Center))
     }
 }
 

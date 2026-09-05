@@ -80,6 +80,7 @@ fun PreflightScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier 
         checks = listOf(
             PreflightCheck("Camera", checkCamera(graph.app), "Required to measure movement"),
             PreflightCheck("Pose Model", checkPoseModel(graph.app), "MediaPipe landmarks detector"),
+            PreflightCheck("Hand Model", checkGestureModel(graph.app), "Palm, thumb and fist, read from the camera"),
             PreflightCheck("Config", checkConfig(configVersion), "Game balance and exercise data"),
             PreflightCheck("Text-to-Speech", checkTts(graph.app), "Coach audio and voice feedback"),
             PreflightCheck("Debug Overlay", if (settings.debugOverlay) PreflightStatus.WARN else PreflightStatus.PASS, "Turn off before playing"),
@@ -208,10 +209,19 @@ private fun checkCamera(context: Context): PreflightStatus {
     }
 }
 
-private fun checkPoseModel(context: Context): PreflightStatus {
-    val modelFile = File(context.filesDir, "models/pose_landmarker_full.task")
-    return if (modelFile.exists()) PreflightStatus.PASS else PreflightStatus.WARN
-}
+/**
+ * The models ship inside the APK, so the check opens the asset rather than looking in filesDir.
+ * The old check looked in filesDir, where the pose model has never lived, and reported WARN on
+ * every phone for a model that was loading fine.
+ */
+private fun assetPresent(context: Context, path: String): PreflightStatus =
+    runCatching { context.assets.openFd(path).use { it.length > 0 } }
+        .getOrDefault(false)
+        .let { if (it) PreflightStatus.PASS else PreflightStatus.FAIL }
+
+private fun checkPoseModel(context: Context): PreflightStatus = assetPresent(context, "models/pose_landmarker_full.task")
+
+private fun checkGestureModel(context: Context): PreflightStatus = assetPresent(context, "models/gesture_recognizer.task")
 
 private fun checkConfig(version: Int): PreflightStatus {
     return if (version > 0) PreflightStatus.PASS else PreflightStatus.WARN
