@@ -32,6 +32,7 @@ import com.clashfit.ui.theme.Ink
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.launch
+import com.clashfit.data.Prefs
 
 /**
  * Absorbs config load, then decides the first screen: a stranger sees the welcome, a signed-in
@@ -51,14 +52,8 @@ fun SplashScreen(graph: AppGraph, onReady: (Route) -> Unit) {
         val auth = withTimeoutOrNull(AUTH_WAIT_MS) {
             graph.auth.state.first { it !is AuthState.Loading }
         } ?: AuthState.SignedOut
-        val onboarded = graph.prefs.settings.first().onboarded
-        onReady(
-            when {
-                auth is AuthState.SignedOut -> Onboarding
-                !onboarded -> ProfileSetup
-                else -> Home
-            },
-        )
+        val settings = graph.prefs.settings.first()
+        onReady(firstRoute(auth, settings))
     }
     Box(Modifier.fillMaxSize().background(Ground), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(32.dp)) {
@@ -77,3 +72,23 @@ fun SplashScreen(graph: AppGraph, onReady: (Route) -> Unit) {
 
 /** Long enough for a real sign-in check, short enough that nobody watching notices. */
 private const val AUTH_WAIT_MS = 2_500L
+
+/**
+ * Which screen a launch lands on.
+ *
+ * A pure function because the rule it encodes is the one that decides whether the app can be
+ * opened at all, and it was wrong: a signed-out person went to the welcome carousel, whose only
+ * two doors were "create account" and "sign in". Both of those talk to Firebase. A fresh install
+ * with no signal — a venue's wifi, a plane, a phone handed over with data off — could not get
+ * past the first screen, and nothing on it said so.
+ *
+ * The third door sets [Prefs.Settings.guest]. A guest is signed out and has still been here
+ * before, so they go straight in; sending them back to the carousel every launch would make the
+ * door pointless. Signing in later does not clear the flag and does not need to — a signed-in
+ * person never reaches that branch.
+ */
+internal fun firstRoute(auth: AuthState, settings: Prefs.Settings): Route = when {
+    auth is AuthState.SignedOut && !settings.guest -> Onboarding
+    !settings.onboarded -> ProfileSetup
+    else -> Home
+}

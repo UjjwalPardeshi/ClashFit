@@ -35,6 +35,15 @@ class Prefs(private val context: Context) {
         val deskSnoozedUntilMs: Long = 0L,
         /** True once the first-run flow has been completed on this device. */
         val onboarded: Boolean = false,
+        /**
+         * True once somebody has chosen to train without an account.
+         *
+         * The welcome screen offered two doors and both of them needed the network, so a fresh
+         * install with no signal could not get past it at all. This is the third door. It is not
+         * an account and it grants nothing: the leaderboard still says sign in, because there is
+         * nobody to put on it. Signing in later makes it irrelevant rather than replacing it.
+         */
+        val guest: Boolean = false,
         /** What the player said they are here for. One of [Goal]. */
         val goal: String = Goal.GET_STRONGER.name,
         /** Index into the avatar palette on the profile. */
@@ -76,12 +85,14 @@ class Prefs(private val context: Context) {
             deskQuietToHour = p[DESK_QUIET_TO_HOUR] ?: 9,
             deskSnoozedUntilMs = p[DESK_SNOOZED_UNTIL_MS] ?: 0L,
             onboarded = p[ONBOARDED] ?: false,
+            guest = p[GUEST] ?: false,
             goal = p[GOAL] ?: Goal.GET_STRONGER.name,
             avatarColor = p[AVATAR_COLOR] ?: 0,
             boss3d = p[BOSS_3D] ?: true,
         )
     }
 
+    suspend fun setGuest(v: Boolean) = context.dataStore.edit { it[GUEST] = v }
     suspend fun setReduceMotion(v: Boolean) = context.dataStore.edit { it[REDUCE_MOTION] = v }
     suspend fun setBoss3d(v: Boolean) = context.dataStore.edit { it[BOSS_3D] = v }
     suspend fun setHaptics(v: Boolean) = context.dataStore.edit { it[HAPTICS] = v }
@@ -128,6 +139,7 @@ class Prefs(private val context: Context) {
         val DESK_QUIET_TO_HOUR = intPreferencesKey("desk_quiet_to_hour")
         val DESK_SNOOZED_UNTIL_MS = longPreferencesKey("desk_snoozed_until_ms")
         val ONBOARDED = booleanPreferencesKey("onboarded")
+        val GUEST = booleanPreferencesKey("guest")
         val GOAL = stringPreferencesKey("goal")
         val AVATAR_COLOR = intPreferencesKey("avatar_color")
     }

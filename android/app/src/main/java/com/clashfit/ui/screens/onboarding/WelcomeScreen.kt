@@ -48,7 +48,7 @@ private val PAGES = listOf(
 
 /** The first thing a new player sees. Three pages, two buttons, no wall of text. */
 @Composable
-fun WelcomeScreen(onCreateAccount: () -> Unit, onSignIn: () -> Unit) {
+fun WelcomeScreen(onCreateAccount: () -> Unit, onSignIn: () -> Unit, onSkip: () -> Unit) {
     val pager = rememberPagerState(pageCount = { PAGES.size })
     Column(Modifier.fillMaxSize().background(Ground).safeDrawingPadding()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -96,6 +96,12 @@ fun WelcomeScreen(onCreateAccount: () -> Unit, onSignIn: () -> Unit) {
             PrimaryButton("Create account", onClick = onCreateAccount)
             Spacer(Modifier.height(6.dp))
             LinkButton("I already have an account", onClick = onSignIn)
+            Spacer(Modifier.height(2.dp))
+            // Both doors above need the network. On a venue's wifi, or on a plane, or on a phone
+            // handed over with mobile data off, this is the only one that opens — and everything
+            // behind it works: the camera, the referee, the boss, the coach, every mode. An
+            // account buys the leaderboard and nothing else.
+            LinkButton("Train without an account", onClick = onSkip)
         }
     }
 }

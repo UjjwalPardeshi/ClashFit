@@ -46,6 +46,8 @@ import com.clashfit.ui.theme.Motion
 import kotlinx.coroutines.flow.Flow
 import com.clashfit.ui.screens.session.bossPreviewRoutes
 import com.clashfit.ui.screens.social.competeRoutes
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * The whole navigation graph, inside the app shell. The shell draws the bottom bar and hides it
@@ -100,7 +102,19 @@ fun AppNavHost(
             }
 
             // ── first run ──
-            composable<Onboarding> { WelcomeScreen(onCreateAccount = { nav.navigate(SignUp) }, onSignIn = { nav.navigate(SignIn) }) }
+            composable<Onboarding> {
+                val scope = rememberCoroutineScope()
+                WelcomeScreen(
+                    onCreateAccount = { nav.navigate(SignUp) },
+                    onSignIn = { nav.navigate(SignIn) },
+                    onSkip = {
+                        scope.launch {
+                            graph.prefs.setGuest(true)
+                            nav.navigate(ProfileSetup) { popUpTo<Onboarding> { inclusive = true } }
+                        }
+                    },
+                )
+            }
             composable<SignUp> {
                 SignUpScreen(
                     graph,

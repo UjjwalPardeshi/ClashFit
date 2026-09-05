@@ -105,7 +105,7 @@ class ScreenshotTest {
     private val none: () -> Unit = {}
 
     // first run
-    @Test fun welcome() = bare("00a-welcome") { WelcomeScreen(onCreateAccount = none, onSignIn = none) }
+    @Test fun welcome() = bare("00a-welcome") { WelcomeScreen(onCreateAccount = none, onSignIn = none, onSkip = none) }
     @Test fun signUp() = bare("00b-sign-up") { SignUpScreen(graph, onBack = none, onSignIn = none, onDone = none) }
     @Test fun signIn() = bare("00c-sign-in") { SignInScreen(graph, onBack = none, onSignUp = none, onForgot = none, onDone = none) }
     @Test fun reset() = bare("00d-reset") { ResetPasswordScreen(graph, onBack = none) }
