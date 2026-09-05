@@ -87,6 +87,21 @@ class StageCounter(val config: Config) {
          */
         val armLine: Condition? = null,
         /**
+         * How far the elbow may close, as a condition on the shoulder–elbow–wrist angle.
+         *
+         * Enforced at the rack, because the rack is the only place the joint can reach it: a press
+         * counts on the way up, and by the counting frame the elbow is nearly straight, so a check
+         * there would never fire. Racking deeper than this is dropping the hands past the start of
+         * the movement, and a rep pressed out of that position is longer than the exercise.
+         *
+         * Gating the rest position rather than accumulating over the rep is deliberate, and the
+         * curl's `armLine` note above is why: one noisy frame anywhere in a rep threw away four
+         * good reps in fourteen. A gate does not latch. A bad frame costs the arming of that one
+         * frame and the next good frame takes it back, while a rack genuinely held too deep never
+         * arms at all.
+         */
+        val elbow: Condition? = null,
+        /**
          * The least time the lift itself may take, rest to the top, in milliseconds.
          *
          * [debounceMs] does not do this: it spaces reps apart, so a flung rep counted as long as
@@ -125,6 +140,7 @@ class StageCounter(val config: Config) {
                     ceiling = st["ceiling"]?.jsonPrimitive?.floatOrNull,
                     plane = optCond("plane"),
                     armLine = optCond("armLine"),
+                    elbow = optCond("elbow"),
                     minConcentricMs = st["minConcentricMs"]?.jsonPrimitive?.longOrNull,
                     minHoldMs = st["minHoldMs"]?.jsonPrimitive?.longOrNull,
                     countAt = st["countAt"]?.jsonPrimitive?.content?.let { CountAt.valueOf(it) } ?: CountAt.CROSSING,
@@ -149,9 +165,13 @@ class StageCounter(val config: Config) {
         var lastPastAt: Long? = null       // last frame past `count`; with the above, the squeeze
         var liftMs = 0L                    // rest to the top, banked at the top (see step)
         var movingSince: Long? = null      // first frame the working limb left its rest zone
+        var repMinElbow = Float.NaN        // the most closed the elbow got anywhere in this rep
+        var wasResting = false             // so each visit to the rack starts the rep afresh
         fun reset() {
             stage = Stage.NONE; restAt = null; lastCountMs = null; min = Float.NaN; max = Float.NaN
-            reached = false; brokeCeiling = false; clearRep()
+            reached = false; brokeCeiling = false
+            repMinElbow = Float.NaN; wasResting = false
+            clearRep()
         }
         /** Everything one rep accumulates, cleared when the next one starts. */
         fun clearRep() { reachedAt = null; lastPastAt = null; liftMs = 0L; movingSince = null }
@@ -203,6 +223,8 @@ class StageCounter(val config: Config) {
         val tucked: Boolean,
         /** This movement is under way rather than parked at rest, so form is worth judging. */
         val moving: Boolean,
+        /** The shoulder-elbow-wrist angle, for [Config.elbow]. NaN when it cannot be read. */
+        val elbowDeg: Float,
         val angle: Float,
     )
 
@@ -215,6 +237,7 @@ class StageCounter(val config: Config) {
         val overL = overCeiling(sL); val overR = overCeiling(sR)
         val plL = inPlane(world, Side.LEFT); val plR = inPlane(world, Side.RIGHT)
         val tkL = tucked(world, Side.LEFT); val tkR = tucked(world, Side.RIGHT)
+        val ebL = elbowDeg(world, Side.LEFT); val ebR = elbowDeg(world, Side.RIGHT)
         // Under EITHER the arm that is resting always looks perfect: it hangs, so it satisfies
         // rest and is tucked by definition. Judging the tuck on "either arm" therefore excused
         // every swing of the arm actually doing the work. Form is read off the leading arm — the
@@ -229,8 +252,8 @@ class StageCounter(val config: Config) {
         val out = ArrayList<Rep>(2)
         when (config.sides) {
             Sides.EACH -> {
-                step(left, Read(config.rest.holds(sL), config.count.holds(sL), upL, overL, plL, tkL, !restL, aL), tMs, Side.LEFT)?.let { out += it }
-                step(right, Read(config.rest.holds(sR), config.count.holds(sR), upR, overR, plR, tkR, !restR, aR), tMs, Side.RIGHT)?.let { out += it }
+                step(left, Read(config.rest.holds(sL), config.count.holds(sL), upL, overL, plL, tkL, !restL, ebL, aL), tMs, Side.LEFT)?.let { out += it }
+                step(right, Read(config.rest.holds(sR), config.count.holds(sR), upR, overR, plR, tkR, !restR, ebR, aR), tMs, Side.RIGHT)?.let { out += it }
             }
             // Both arms have to be doing the movement, and how high it went is read off the two
             // of them together -- the same mean this mode already records as the rep's angle.
@@ -239,9 +262,9 @@ class StageCounter(val config: Config) {
             // refused eight raises in twenty-seven that were performed identically to the ones
             // it accepted. A genuine one-armed fling still fails it: one arm at 140 and one at
             // 95 is 117 to the mean.
-            Sides.BOTH -> step(one, Read(config.rest.holds(sL) && config.rest.holds(sR), config.count.holds(sL) && config.count.holds(sR), upL && upR, overCeiling(mean(sL, sR)), plL && plR, tkL && tkR, !(restL && restR), mean(aL, aR)), tMs, null)?.let { out += it }
+            Sides.BOTH -> step(one, Read(config.rest.holds(sL) && config.rest.holds(sR), config.count.holds(sL) && config.count.holds(sR), upL && upR, overCeiling(mean(sL, sR)), plL && plR, tkL && tkR, !(restL && restR), worseElbow(ebL, ebR), mean(aL, aR)), tMs, null)?.let { out += it }
             // One rep whichever arm does it, and both arms together are still one rep.
-            Sides.EITHER -> step(one, Read(config.rest.holds(sL) || config.rest.holds(sR), config.count.holds(sL) || config.count.holds(sR), upL || upR, overL || overR, plL || plR, if (leadLeft) tkL else tkR, !(if (leadLeft) restL else restR), leading(aL, aR)), tMs, null)?.let { out += it }
+            Sides.EITHER -> step(one, Read(config.rest.holds(sL) || config.rest.holds(sR), config.count.holds(sL) || config.count.holds(sR), upL || upR, overL || overR, plL || plR, if (leadLeft) tkL else tkR, !(if (leadLeft) restL else restR), if (leadLeft) ebL else ebR, leading(aL, aR)), tMs, null)?.let { out += it }
             Sides.BEST -> {
                 val s = if (best == Side.LEFT) sL else sR
                 val read = Read(
@@ -250,6 +273,7 @@ class StageCounter(val config: Config) {
                     if (best == Side.LEFT) plL else plR,
                     if (best == Side.LEFT) tkL else tkR,
                     !config.rest.holds(s),
+                    if (best == Side.LEFT) ebL else ebR,
                     if (best == Side.LEFT) aL else aR,
                 )
                 step(one, read, tMs, best)?.let { out += it }
@@ -300,6 +324,19 @@ class StageCounter(val config: Config) {
         // re-arms under that arm and fires again every debounce while the other is simply held
         // curled. For the single-signal modes rest and count are opposite sides of one line and
         // cannot both hold, so this costs them nothing.
+        // How far the elbow closed anywhere in this rep. Checked over the whole movement rather
+        // than at one frame: the rep is refused if the joint went past the floor at any point, and
+        // on a press that point is the rack, which the counting frame is far too late to see.
+        //
+        // Arriving at rest starts the reading over, so a rep dropped too low does not condemn the
+        // next one — the player lowers less far and the following press counts.
+        if (config.elbow != null) {
+            if (restHolds && !t.wasResting) t.repMinElbow = Float.NaN
+            if (r.elbowDeg.isFinite() && (!t.repMinElbow.isFinite() || r.elbowDeg < t.repMinElbow)) {
+                t.repMinElbow = r.elbowDeg
+            }
+            t.wasResting = restHolds
+        }
         if (restHolds && !countHolds && (config.wristAboveShoulderAt != Check.REST || above)) {
             // Resting: the rep starts from the last frame here, so a long pause is not part of it.
             t.stage = Stage.REST
@@ -344,7 +381,7 @@ class StageCounter(val config: Config) {
             if (over && t.stage == Stage.REST) t.brokeCeiling = true
             if (restHolds) {
                 var rep: Rep? = null
-                val clean = slowEnough && heldEnough
+                val clean = slowEnough && heldEnough && elbowFloorOk(t)
                 if (t.reached && !t.brokeCeiling && clean && debounced) {
                     t.lastCountMs = tMs
                     val deepest = if (config.count.op == "<") t.tMin else t.tMax
@@ -382,6 +419,8 @@ class StageCounter(val config: Config) {
             // Flung. `debounceMs` only spaces reps apart; this is the first thing that asks the
             // lift itself to have taken time.
             if (!slowEnough) { lastMissMs = tMs; return null }
+            // The elbow closed past the floor somewhere in this rep.
+            if (!elbowFloorOk(t)) { lastMissMs = tMs; return null }
             // The ceiling on a movement that ends where it counts: the reading at the counting
             // frame has to be one the joint can actually produce. It refuses a rep built on a bad
             // frame rather than a rep performed wrongly, which is the only sense a ceiling can have
@@ -436,6 +475,36 @@ class StageCounter(val config: Config) {
      * and when the model gave no reading: a landmark it failed to produce is not evidence of a
      * swung elbow, and a guard nobody asked for must refuse nothing.
      */
+    /**
+     * The shoulder–elbow–wrist angle, whatever the exercise measures as its primary angle. NaN
+     * when the joint cannot be read, which [rackElbowOk] treats as no evidence rather than a fault.
+     */
+    private fun elbowDeg(world: Landmarks, side: Side): Float {
+        if (config.elbow == null) return Float.NaN
+        val si = Geometry.idx("SHOULDER", side); val ei = Geometry.idx("ELBOW", side)
+        val wi = Geometry.idx("WRIST", side)
+        if (si < 0 || ei < 0 || wi < 0 || si >= world.size || ei >= world.size || wi >= world.size) return Float.NaN
+        return Geometry.angle3(world[si], world[ei], world[wi])
+    }
+
+    /** Of two elbows, the one nearer to breaking the floor — both arms have to clear it. */
+    private fun worseElbow(a: Float, b: Float): Float = when {
+        !a.isFinite() -> b
+        !b.isFinite() -> a
+        config.elbow?.op == "<" -> maxOf(a, b)
+        else -> minOf(a, b)
+    }
+
+    /**
+     * Whether the elbow stayed inside [Config.elbow] for the whole of this rep. A rep with no
+     * readable elbow at all passes: a joint that could not be measured must not refuse a rep the
+     * player actually performed.
+     */
+    private fun elbowFloorOk(t: Track): Boolean {
+        val c = config.elbow ?: return true
+        return !t.repMinElbow.isFinite() || c.holds(t.repMinElbow)
+    }
+
     private fun tucked(world: Landmarks, side: Side): Boolean {
         val c = config.armLine ?: return true
         val d = armLineDeg(world, side)

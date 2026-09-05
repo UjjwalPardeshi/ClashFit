@@ -279,6 +279,30 @@ class RepGateSessionTest {
     }
 
     @Test
+    fun `a shoulder press racked below the elbow floor does not count`() {
+        val rec = Recorder(); val d = Driver(engine("shoulder_press", rec = rec))
+        // Racked with the elbow closed to 50, past the 70 the movement starts from. The arm is
+        // still down by the torso, so `rest` holds on the angle the press is counted by: only the
+        // elbow floor separates this from a legal rack.
+        calibrate(d, press(50f, 40f))
+        repeat(2) {
+            d.ramp(700, 0f, 1f) { f -> press(50f + 128f * f, 40f + 135f * f) }
+            d.hold(300, press(178f, 175f))
+            d.ramp(600, 1f, 0f) { f -> press(50f + 128f * f, 40f + 135f * f) }
+            d.hold(400, press(50f, 40f))
+        }
+        assertEquals(0, rec.reps.size, "a press out of a rack below the elbow floor is not a rep")
+
+        // Form corrected: the same press racked at 80 instead of 50. The reading starts over on
+        // each return to the rack, so the earlier bad reps do not condemn this one.
+        d.ramp(600, 1f, 0f) { f -> press(80f + 98f * f, 40f + 135f * f) }
+        d.hold(400, press(80f, 40f))
+        d.ramp(700, 0f, 1f) { f -> press(80f + 98f * f, 40f + 135f * f) }
+        d.hold(300, press(178f, 175f))
+        assertEquals(1, rec.reps.size, "a press from a legal rack counts, so the refusal was the floor")
+    }
+
+    @Test
     fun `a squat counts on the way back up and a half squat does not`() {
         val rec = Recorder(); val d = Driver(engine("squat", rec = rec))
         calibrate(d, SyntheticBody.world(175f))
