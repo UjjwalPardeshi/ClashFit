@@ -73,6 +73,16 @@ class Prefs(private val context: Context) {
          * The privacy screen states what this switch changes in one sentence.
          */
         val cloudCoach: Boolean = false,
+        /**
+         * Draw the exo-suit instead of the measured points.
+         *
+         * The dots are the honest overlay and the default: they are the joints the referee is
+         * actually reading, with the angle it scored beside them, so what the phone sees is on
+         * screen. The suit is the same landmarks dressed as armour — better on a stage, and it is
+         * what the deck and the landing page describe. One switch, because which of those matters
+         * depends on who is holding the phone.
+         */
+        val exoSuit: Boolean = false,
     )
 
     enum class Goal(val title: String, val blurb: String) {
@@ -106,12 +116,14 @@ class Prefs(private val context: Context) {
             boss3d = p[BOSS_3D] ?: true,
             gestures = p[GESTURES] ?: true,
             cloudCoach = p[CLOUD_COACH] ?: false,
+            exoSuit = p[EXO_SUIT] ?: false,
         )
     }
 
     suspend fun setGuest(v: Boolean) = context.dataStore.edit { it[GUEST] = v }
     suspend fun setGestures(v: Boolean) = context.dataStore.edit { it[GESTURES] = v }
     suspend fun setCloudCoach(v: Boolean) = context.dataStore.edit { it[CLOUD_COACH] = v }
+    suspend fun setExoSuit(v: Boolean) = context.dataStore.edit { it[EXO_SUIT] = v }
     suspend fun setReduceMotion(v: Boolean) = context.dataStore.edit { it[REDUCE_MOTION] = v }
     suspend fun setBoss3d(v: Boolean) = context.dataStore.edit { it[BOSS_3D] = v }
     suspend fun setHaptics(v: Boolean) = context.dataStore.edit { it[HAPTICS] = v }
@@ -161,6 +173,7 @@ class Prefs(private val context: Context) {
         val GUEST = booleanPreferencesKey("guest")
         val GESTURES = booleanPreferencesKey("gestures")
         val CLOUD_COACH = booleanPreferencesKey("cloud_coach")
+        val EXO_SUIT = booleanPreferencesKey("exo_suit")
         val GOAL = stringPreferencesKey("goal")
         val AVATAR_COLOR = intPreferencesKey("avatar_color")
     }

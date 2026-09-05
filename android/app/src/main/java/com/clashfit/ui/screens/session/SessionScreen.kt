@@ -170,9 +170,11 @@ fun SessionScreen(
                 // calibration is asking for, and it is very hard to do against a corner inset.
                 CameraStage(camera, Modifier.fillMaxSize())
                 CameraScrims(top = 0f, bottom = 0.28f)
-                ExercisePoints(
+                BodyOverlay(
                     landmarks, exerciseNames[s.exerciseId], s.angleLeftDeg, s.angleRightDeg,
-                    Modifier.fillMaxSize(), sourceAspect = sourceAspect,
+                    band = s.fatigue.band, flash = 0f, verdict = null,
+                    level = meta?.progress?.level ?: 1, sourceAspect = sourceAspect,
+                    exoSuit = settings.exoSuit, modifier = Modifier.fillMaxSize(),
                 )
                 CalibrationOverlay(
                     cue = s.cue, progress = s.calibProgress,
@@ -238,9 +240,11 @@ private fun FightLayout(
         CameraScrims()
         // The BlazePose points the counter is reading, drawn as they are. No suit, no avatar: the
         // dots and the angle are the whole story of why a rep did or did not count.
-        ExercisePoints(
+        BodyOverlay(
             landmarks, spec, s.angleLeftDeg, s.angleRightDeg,
-            Modifier.fillMaxSize(), sourceAspect = sourceAspect,
+            band = s.fatigue.band, flash = jolt, verdict = lastHit?.verdict,
+            level = meta?.progress?.level ?: 1, sourceAspect = sourceAspect,
+            exoSuit = settings.exoSuit, modifier = Modifier.fillMaxSize(),
         )
 
         // The boss stands in the room with you, in the upper part of the frame so it never covers

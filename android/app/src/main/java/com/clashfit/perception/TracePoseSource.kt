@@ -123,6 +123,30 @@ class TracePoseSource(
                 return
             }
 
+            // A recorded trace stores WORLD landmarks: metres, centred on the hip, y running from
+            // about -0.45 at the head to +0.84 at the feet. Image landmarks are a different thing
+            // entirely — the fraction of the camera frame a joint sits at, always between 0 and 1.
+            //
+            // Feeding the world numbers in as if they were image ones made the framing check
+            // measure a body 1.29 frames tall, which is "too close" forever: calibration never
+            // completed and the replay sat on "step back" until somebody gave up. The demo script
+            // names this replay as the escape when the room's light beats the camera, so that was
+            // the escape hatch not opening.
+            //
+            // The fix is one affine transform, computed once from the whole trace so the body does
+            // not appear to change size as it squats, placing it upright and centred at three
+            // quarters of frame height — comfortably inside the 0.55 to 0.92 the framing check
+            // wants. Scoring is untouched: that reads world landmarks, which are passed through as
+            // they are.
+            val allFrames = frames.map { f ->
+                val full = MutableList(33) { Landmark(0f, 0f, 0f, 0f) }
+                keep.forEachIndexed { i, joint ->
+                    f.lm.getOrNull(i)?.let { v -> if (v.size >= 4) full[joint] = Landmark(v[0], v[1], v[2], v[3]) }
+                }
+                full.toList()
+            }
+            val toImage = TraceGeometry.imageTransform(allFrames)
+
             // Replay frames
             var lastFrameTime = 0L
             var frameCount = 0L
@@ -131,19 +155,11 @@ class TracePoseSource(
             for ((idx, frame) in frames.withIndex()) {
                 if (replayJob?.isCancelled == true) break
 
-                // Reconstruct full 33-landmark array from sparse representation
-                val fullLandmarks = Array(33) { Landmark(0f, 0f, 0f, 0f) }
-                keep.forEachIndexed { i, idx ->
-                    val lm = frame.lm.getOrNull(i)
-                    if (lm != null && lm.size >= 4) {
-                        fullLandmarks[idx] = Landmark(lm[0], lm[1], lm[2], lm[3])
-                    }
-                }
-
+                val world = allFrames[idx]
                 val poseFrame = PoseFrame(
-                    world = fullLandmarks.toList(),
-                    image = fullLandmarks.toList(),
-                    tMs = frame.t
+                    world = world,
+                    image = world.map(toImage),
+                    tMs = frame.t,
                 )
 
                 frameChannel.send(poseFrame)
@@ -178,4 +194,6 @@ class TracePoseSource(
             Log.e(TAG, "Error replaying trace", e)
         }
     }
+
 }
+

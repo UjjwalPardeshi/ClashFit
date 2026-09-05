@@ -65,6 +65,8 @@ fun SettingsScreen(graph: AppGraph, nav: NavHostController) {
                 supporting = "Landmarks and angles drawn over the camera")
             SwitchRow("3D boss", settings.boss3d, { v -> scope.launch { graph.prefs.setBoss3d(v) } },
                 supporting = "Off draws the boss in flat shapes instead. Same fight either way.")
+            SwitchRow("Exo-suit overlay", settings.exoSuit, { v -> scope.launch { graph.prefs.setExoSuit(v) } },
+                supporting = "Armour drawn on your body instead of the measured points and angles. The same landmarks either way.")
             NavRow("Boss preview", { nav.navigate(BossPreview) }, icon = AppIcons.Bolt,
                 supporting = "Every state, without starting a fight")
 

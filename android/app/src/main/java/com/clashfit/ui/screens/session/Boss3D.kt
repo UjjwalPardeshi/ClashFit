@@ -25,6 +25,7 @@ import com.google.android.filament.utils.Manipulator
 import com.google.android.filament.utils.ModelViewer
 import com.google.android.filament.utils.Utils
 import java.nio.ByteBuffer
+import com.google.android.filament.Engine
 
 private const val TAG = "ClashFit/boss3d"
 private const val MODEL = "models/pacemaker.glb"
@@ -130,8 +131,18 @@ private class BossHolder {
  */
 private class BossRig(view: TextureView, glb: ByteArray) {
 
+    /**
+     * Our engine, not ModelViewer's.
+     *
+     * ModelViewer will happily create its own, but then the only way to give the memory back is
+     * ModelViewer.destroy() — and on this device that path segfaults (see [destroy]). Owning the
+     * engine means we can free every byte with one call that does not go near it.
+     */
+    private val engine: Engine = Engine.create()
+
     private val viewer = ModelViewer(
         textureView = view,
+        engine = engine,
         // The swap chain has to be created transparent, and only the UiHelper can ask for that.
         // A transparent clear colour alone is not enough: without this the TextureView presents an
         // opaque black rectangle, which over a camera preview blacks out the room behind the boss.
@@ -149,6 +160,15 @@ private class BossRig(view: TextureView, glb: ByteArray) {
     private var lastJolt = 0f
     private val clips = mutableMapOf<String, Int>()
     private var sun = 0
+
+    /**
+     * Teardown happens once.
+     *
+     * Filament frees native memory that Kotlin cannot see, so a second destroy is a use-after-free
+     * rather than a no-op. Compose can release an AndroidView more than once across a
+     * configuration change, and the flag is cheaper than reasoning about when it will not.
+     */
+    private var destroyed = false
 
     init {
         viewer.loadModelGlb(ByteBuffer.wrap(glb))
@@ -268,8 +288,24 @@ private class BossRig(view: TextureView, glb: ByteArray) {
             runCatching { viewer.engine.destroyEntity(entity) }
             runCatching { EntityManager.get().destroy(entity) }
         }
-        runCatching { viewer.destroyModel() }
-        runCatching { viewer.destroy() }
+        // Neither viewer.destroyModel() nor viewer.destroy() is called here, and neither may be.
+        //
+        // Both roads lead to ResourceLoader.asyncCancelLoad(), which segfaults on this device:
+        // destroy() calls destroyModel() itself, and destroyModel() calls asyncCancelLoad()
+        // unconditionally, before it has even looked at whether there is an asset. The model is
+        // loaded synchronously by loadModelGlb, so there is no async load to cancel and the native
+        // side walks a pointer it never set. That is a SIGSEGV, not an exception: runCatching
+        // cannot hold it, no Java stack is written, and the crash log stays empty because the
+        // process is gone before the handler runs. It killed the app every single time a fight
+        // screen closed. Read out of the tombstone: destroy -> destroyModel -> asyncCancelLoad+20.
+        //
+        // So the engine is ours (see the field above) and we give it back directly. Engine.destroy
+        // frees the asset, the buffers, the textures and the swap chain in one call, on the native
+        // side, without going through the loader at all. What leaks is a ModelViewer wrapper of a
+        // few Kotlin objects; what would otherwise leak is the whole GPU allocation.
+        if (destroyed) return
+        destroyed = true
+        runCatching { engine.destroy() }
             .onFailure { Log.d(TAG, "The 3D boss was already torn down", it) }
     }
 }

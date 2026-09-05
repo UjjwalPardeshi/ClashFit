@@ -295,9 +295,17 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
     Column(Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(20.dp)) {
         // Outcome headline
         Kicker("Session · ${d.session.exerciseId.replace('_', ' ')} · ${d.session.mode.replace('_', ' ')}")
+        // Every way a session can end has its own headline. The engine can finish for seven
+        // reasons and this used to name three of them, so a family game you won, a timed mode that
+        // ran out, and a set you walked away from all read "Set saved" — which told the player
+        // nothing about the thing they had just done.
         Headline(when (d.session.outcome) {
-            "BOSS_DOWN", "GAME_WON" -> "Boss down"
+            "BOSS_DOWN" -> "Boss down"
+            "GAME_WON" -> "You won"
+            "GAME_LOST" -> "It caught you"
             "DEFEATED" -> "Defeated"
+            "TIME" -> "Time"
+            "WALKED_AWAY" -> "You left"
             else -> "Set saved"
         })
         SectionGap(16)
