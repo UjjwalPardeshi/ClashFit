@@ -117,7 +117,13 @@ class FirestoreFriends(
             ?: return FriendResult.Failed("Sign in to add friends.")
         val currentUid = currentAuth.user.uid
 
-        val normalizedCode = code.replace(" ", "").replace("-", "").uppercase()
+        // Folded the way Crockford base32 says to read a code in, and checked before it is sent.
+        // A code of any other length cannot match a stored one, so querying for it only ever
+        // reported "Friend code not found" for what was really a typo.
+        if (!FriendCodes.isValid(code)) {
+            return FriendResult.Failed("A friend code is ${FriendCodes.LENGTH} characters, like ABC123.")
+        }
+        val normalizedCode = FriendCodes.normalize(code)
 
         try {
             // Find user with this friend code
@@ -149,16 +155,22 @@ class FirestoreFriends(
                 return FriendResult.Failed("You are already friends.")
             }
 
-            // Add mutual friendship
-            firestore.collection("users").document(currentUid)
-                .collection("friends").document(targetUid)
-                .set(mapOf("addedAt" to FieldValue.serverTimestamp()))
-                .await()
-
-            firestore.collection("users").document(targetUid)
-                .collection("friends").document(currentUid)
-                .set(mapOf("addedAt" to FieldValue.serverTimestamp()))
-                .await()
+            // Both edges in one batch, because a friendship is mutual or it is nothing. Written
+            // one after the other, a connection lost in between left you holding a friend who did
+            // not have you, and the retry was refused as "You are already friends" by the check
+            // above. That state could not be reached again from the app, in either direction.
+            firestore.batch().apply {
+                set(
+                    firestore.collection("users").document(currentUid)
+                        .collection("friends").document(targetUid),
+                    mapOf("addedAt" to FieldValue.serverTimestamp()),
+                )
+                set(
+                    firestore.collection("users").document(targetUid)
+                        .collection("friends").document(currentUid),
+                    mapOf("addedAt" to FieldValue.serverTimestamp()),
+                )
+            }.commit().await()
 
             return FriendResult.Added(Friend(targetUid, targetDisplayName, targetLevel))
         } catch (cancelled: CancellationException) {
