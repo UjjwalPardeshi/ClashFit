@@ -191,7 +191,7 @@ fun HomeScreen(graph: AppGraph, nav: NavHostController) {
 private data class Tool(val title: String, val hook: String, val icon: ImageVector, val route: Route)
 
 private val HEALTH_TOOLS = listOf(
-    Tool("Run tracker", "Distance, pace, splits", AppIcons.Run, RunHome),
+    Tool("Outdoors", "Run, walk or be chased", AppIcons.Run, RunHome),
     Tool("Breathing", "Pull the band back", AppIcons.Heart, Breathing),
     Tool("Clinic", "The sit-to-stand test", AppIcons.Heart, Clinic),
     Tool("Desk timer", "A minute every fifty", AppIcons.Bolt, Desk),
