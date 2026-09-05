@@ -250,6 +250,8 @@ val PERMISSION_ALLOW_LIST: Map<String, String> = mapOf(
     "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" to "the coach keeps speaking mid-set",
 
     // Two phones in a room, with no server between them.
+    "android.permission.BLUETOOTH" to "the same radio on Android 10 and 11, where it is one permission",
+    "android.permission.BLUETOOTH_ADMIN" to "and turning it on there",
     "android.permission.BLUETOOTH_SCAN" to "finding the other phone for a duel",
     "android.permission.BLUETOOTH_CONNECT" to "pairing it",
     "android.permission.BLUETOOTH_ADVERTISE" to "being found by it",

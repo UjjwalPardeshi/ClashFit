@@ -44,9 +44,11 @@ fun NearbyPermissionGate(
                 add(Manifest.permission.BLUETOOTH_CONNECT)
                 add(Manifest.permission.BLUETOOTH_SCAN)
             } else {
-                // Pre-S, Nearby Connections runs on the legacy Bluetooth permission plus
-                // fine location (required for BLE scanning before Android 12).
-                add(Manifest.permission.BLUETOOTH)
+                // Before Android 12 the only thing to ASK for is fine location, which BLE scanning
+                // needs. BLUETOOTH and BLUETOOTH_ADMIN are install-time permissions there: they are
+                // granted by declaring them and can never be granted by a request, so asking for
+                // them left this gate waiting on an answer that was never coming, and the duel
+                // screen never opened on Android 10 or 11.
                 add(Manifest.permission.ACCESS_FINE_LOCATION)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
