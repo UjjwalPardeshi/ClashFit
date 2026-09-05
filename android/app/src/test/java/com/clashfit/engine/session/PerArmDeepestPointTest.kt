@@ -86,7 +86,7 @@ class PerArmDeepestPointTest {
         calibrate(d, curl(175f, 175f))
         // The right arm runs eight degrees deeper the whole way, so the two arms cross the
         // counting line on different frames.
-        d.ramp(700, 175f, 22f) { e -> curl(e, e - 8f) }
+        d.ramp(1800, 175f, 22f) { e -> curl(e, e - 8f) }
         d.hold(200, curl(22f, 14f))
         d.ramp(600, 22f, 175f) { e -> curl(e, e - 8f) }
         d.hold(400, curl(175f, 175f))
@@ -99,11 +99,11 @@ class PerArmDeepestPointTest {
         val rec = Recorder()
         val d = Driver(engine("bicep_curl", rec))
         calibrate(d, curl(175f, 175f))
-        d.ramp(700, 175f, 20f) { e -> curl(e, 175f) }
+        d.ramp(1800, 175f, 20f) { e -> curl(e, 175f) }
         d.hold(200, curl(20f, 175f))
         d.ramp(600, 20f, 175f) { e -> curl(e, 175f) }
         d.hold(400, curl(175f, 175f))
-        d.ramp(700, 175f, 15f) { e -> curl(175f, e) }
+        d.ramp(1800, 175f, 15f) { e -> curl(175f, e) }
         d.hold(200, curl(175f, 15f))
         d.ramp(600, 15f, 175f) { e -> curl(175f, e) }
         d.hold(400, curl(175f, 175f))
@@ -118,7 +118,7 @@ class PerArmDeepestPointTest {
         calibrate(d, curl(175f, 175f))
         // ramp hands the lambda its interpolated value, so sweep a plain 0..1 fraction and build
         // both arms from it: the left stops short at a hundred, the right closes to twenty.
-        d.ramp(700, 0f, 1f) { f -> curl(175f - (175f - 100f) * f, 175f - (175f - 20f) * f) }
+        d.ramp(1800, 0f, 1f) { f -> curl(175f - (175f - 100f) * f, 175f - (175f - 20f) * f) }
         d.hold(200, curl(100f, 20f))
         d.ramp(600, 0f, 1f) { f -> curl(100f + (175f - 100f) * f, 20f + (175f - 20f) * f) }
         d.hold(400, curl(175f, 175f))

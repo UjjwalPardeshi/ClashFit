@@ -87,7 +87,7 @@ class RepGateSessionTest {
     /** One curl on one arm, the other left hanging open. Open past 135, closed under 80. */
     private fun oneArmCurl(d: Driver, arm: String) {
         fun pose(e: Float) = if (arm == "left") curl(e, 175f) else curl(175f, e)
-        d.ramp(700, 175f, 20f, ::pose); d.hold(200, pose(20f))
+        d.ramp(1800, 175f, 20f, ::pose); d.hold(200, pose(20f))
         d.ramp(600, 20f, 175f, ::pose); d.hold(400, pose(175f))
     }
 
@@ -105,7 +105,7 @@ class RepGateSessionTest {
         val rec = Recorder(); val d = Driver(engine("bicep_curl", rec = rec))
         calibrate(d, curl(175f, 175f))
         repeat(3) {
-            d.ramp(700, 175f, 20f) { e -> curl(e, e) }; d.hold(200, curl(20f, 20f))
+            d.ramp(1800, 175f, 20f) { e -> curl(e, e) }; d.hold(200, curl(20f, 20f))
             d.ramp(600, 20f, 175f) { e -> curl(e, e) }; d.hold(400, curl(175f, 175f))
         }
         assertEquals(3, rec.reps.size, "one hand or both, a curl is a curl: three cycles are three reps")
@@ -123,10 +123,41 @@ class RepGateSessionTest {
     }
 
     @Test
+    fun `a curl flung up is not a rep`() {
+        val rec = Recorder(); val d = Driver(engine("bicep_curl", rec = rec))
+        calibrate(d, curl(175f, 175f))
+        // The full range of a counted rep, thrown up in a third of the time. The gate measures the
+        // 135-to-80 segment, about a third of the sweep, so 600 ms of travel is 213 ms of lift
+        // against the 500 ms the config asks for.
+        repeat(3) {
+            d.ramp(600, 175f, 20f) { e -> curl(e, e) }; d.hold(200, curl(20f, 20f))
+            d.ramp(600, 20f, 175f) { e -> curl(e, e) }; d.hold(400, curl(175f, 175f))
+        }
+        assertEquals(0, rec.reps.size, "a curl flung up in 600 ms is not a rep, however deep it goes")
+    }
+
+    @Test
+    fun `a curl swung with the elbow off the body is not a rep`() {
+        val rec = Recorder(); val d = Driver(engine("bicep_curl", rec = rec))
+        calibrate(d, curl(175f, 175f))
+        // Slow enough to pass the tempo gate, and it closes the elbow exactly as far as a counted
+        // rep does — but the upper arm is sixty degrees off the torso, driven up in front. This is
+        // the rep the elbow angle alone cannot tell from a real one.
+        fun swung(e: Float) = SyntheticBody.world(
+            170f, leftElbowDeg = e, rightElbowDeg = 175f, leftShoulderElevationDeg = 60f,
+        )
+        repeat(3) {
+            d.ramp(1800, 175f, 20f, ::swung); d.hold(200, swung(20f))
+            d.ramp(600, 20f, 175f, ::swung); d.hold(400, swung(175f))
+        }
+        assertEquals(0, rec.reps.size, "the angle closes, but the elbow left the torso: not a curl")
+    }
+
+    @Test
     fun `a rep needs the arm to open again first, so a bounce at the bottom counts once`() {
         val rec = Recorder(); val d = Driver(engine("bicep_curl", rec = rec))
         calibrate(d, curl(175f, 175f))
-        d.ramp(700, 175f, 20f) { e -> curl(e, e) }
+        d.ramp(1800, 175f, 20f) { e -> curl(e, e) }
         repeat(3) { d.ramp(200, 20f, 60f) { e -> curl(e, e) }; d.ramp(200, 60f, 20f) { e -> curl(e, e) } }
         d.ramp(600, 20f, 175f) { e -> curl(e, e) }; d.hold(400, curl(175f, 175f))
         assertEquals(1, rec.reps.size, "one rep, however much the bottom is bounced")
@@ -225,21 +256,24 @@ class RepGateSessionTest {
     @Test
     fun `a shoulder press counts overhead and is refused out in front`() {
         val rec = Recorder(); val d = Driver(engine("shoulder_press", rec = rec))
-        calibrate(d, press(80f, 90f))
-        // Up and overhead: the elbow locks out and the wrist clears the shoulder.
-        d.ramp(700, 0f, 1f) { f -> press(80f + 98f * f, 90f + 88f * f) }
-        d.hold(300, press(178f, 178f))
-        d.ramp(600, 1f, 0f) { f -> press(80f + 98f * f, 90f + 88f * f) }
-        d.hold(400, press(80f, 90f))
+        // The press is measured elbow-shoulder-hip (13-11-23 / 14-12-24): the angle the upper arm
+        // makes with the torso, not the bend of the elbow. Racked, that reads 48; overhead, 175.
+        calibrate(d, press(80f, 40f))
+        // Up and overhead: the arm swings away from the torso and the wrist clears the shoulder.
+        d.ramp(700, 0f, 1f) { f -> press(80f + 98f * f, 40f + 135f * f) }
+        d.hold(300, press(178f, 175f))
+        d.ramp(600, 1f, 0f) { f -> press(80f + 98f * f, 40f + 135f * f) }
+        d.hold(400, press(80f, 40f))
         assertEquals(1, rec.reps.size, "a press to lockout overhead is a rep")
-        // Pushed out in front: the elbow locks out at shoulder height, so the wrist never clears it.
+        // Pushed out in front: the elbow locks out, but the arm stays level with the shoulder, so
+        // the angle to the torso never leaves 90 and the press never reaches the counting line.
+        // Under the elbow angle this was a lockout the wrist check had to veto; measured against
+        // the torso the geometry refuses it outright, which is a stronger guard than a gate.
         d.ramp(700, 80f, 178f) { e -> press(e, 90f) }
         val atLockout = d.hold(300, press(178f, 90f))
         d.ramp(600, 178f, 80f) { e -> press(e, 90f) }
-        val after = d.hold(300, press(80f, 90f))
+        d.hold(300, press(80f, 40f))
         assertEquals(1, rec.reps.size, "a press pushed out in front is refused")
-        assertNotNull(after.cue, "the refusal is explained")
-        assertTrue(after.cue!!.contains("overhead", ignoreCase = true), "cue was: ${after.cue}")
         assertEquals(Phase.FIGHTING, atLockout.phase)
     }
 

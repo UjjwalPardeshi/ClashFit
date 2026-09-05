@@ -145,12 +145,40 @@ Widen that list to put them back; nothing else has to change.
 
 | Exercise | Keypoints | Rest | Counts at | Sides |
 |---|---|---|---|---|
-| Lateral raise | 23-11-13 / 24-12-14 | both arms < 20° | both arms 95-105°, out to the side | both, counted on the way down |
-| Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80° | either arm, one rep |
-| Shoulder press | 11-13-15 / 12-14-16 | elbow < 95° | elbow > 134°, wrist above the shoulder | better-seen side |
+| Lateral raise | 23-11-13 / 24-12-14 | both arms < 25° | both arms > 90°, out to the side, never past 110° | both, counted on the way down |
+| Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80°, elbow within 30° of the torso, lift ≥ 500 ms | either arm, one rep |
+| Shoulder press | 13-11-23 / 14-12-24 | arm-to-torso < 75° | arm-to-torso > 135°, wrist above the shoulder | better-seen side |
 | Squat | 23-25-27 / 24-26-28 | both knees < 72° | both knees > 150° | both together |
 
 Debounce is 800 ms for the curl and 1000 ms for the rest.
+
+**The curl has two guards the angle cannot supply**, added 6 Sep 2026 because the player asked for
+reps that only count when they are clean. `armLine` requires the upper arm to stay within 30° of the
+torso, measured on the shoulder and elbow the rep already uses against the hip-to-shoulder axis: an
+elbow driven forward and up closes through exactly the same angles as one pinned to the ribs, so
+without it a swung rep counted identically to a curled one. `minConcentricMs` requires the lift —
+the 135°-to-80° segment, about a third of the sweep — to take 500 ms, so a full curl runs about
+1.4 s; `debounceMs` never did this, it only spaces reps apart, so a flung rep counted as long as the
+previous one was far enough back.
+
+Both numbers are **provisional**, and they are the only thresholds here that were not measured on
+the player. There is no recorded trace of a real counting curl to measure against:
+`reference-bicep-curl.jsonl` is the picker animation and closes only to 84.8°, so it counts nothing
+by design. They are set generous on purpose — enough to refuse an obvious swing or fling without
+starving a real set — and should be tightened once measured with `tools/angles.html`.
+
+There is deliberately **no guard against hammer curls**, which the player also asked for. Telling a
+supinated curl from a neutral grip needs landmarks 17-22; the model reports those at 0.3-0.7
+confidence against 0.8-0.95 for the torso, and drops them exactly when the forearm occludes the
+hand, which is most of a curl. Worse, `Condition.holds` filters NaN, so a missing-hand frame passes
+silently: the guard would report strictness it was not delivering. It is better absent than
+pretended.
+
+Both guards are read off the **working** arm, not "either" arm. Under `EITHER` the arm left hanging
+satisfies rest on every frame and is tucked by definition, so judging form on either arm excused
+every swing of the arm doing the work, and the rest phase never ended — which made every one-armed
+curl measure as an instant lift. `StageCounter` picks the leading arm for both, the same one it
+already takes the rep's angle from.
 
 The lateral raise is the odd row, and it is worth understanding why. Its counting column has three
 numbers in it, not two: a floor at 95, a ceiling at 105, and a direction. **The hip–shoulder–elbow
@@ -165,6 +193,25 @@ the wrist over the shoulder too and the two exercises were counting each other i
 Measured on `traces/reference-lateral-raise.jsonl`: at the top of a correct raise the upper arm
 reads 0.62 to 1.00 sideways, median 0.84, and a raise out in front reads about zero. That gap is
 why 0.5 is safe. `StageCounter.lateralFraction` is the whole of it.
+
+**The rest threshold is the one that bites, and it bites silently.** Under `countAt: RETURN` a rep
+can only land on a frame where the movement is back at rest, so an unreachable rest threshold does
+not make counting strict — it makes it *silent*, and no amount of widening the counting band brings
+the reps back. `rest < 20` shipped for one build and looked perfectly reasonable. Captured off the
+player's own phone that night, 2710 frames with the arms hanging down: only **26%** of them read
+under 20 on both arms at once, and after a raise it took **up to twenty seconds** for a qualifying
+frame to appear. At `< 25` it is 58% and at most 1.8 seconds. An arm hanging straight down does not
+read zero at the shoulder — the shoulders are wider than the hips, so the shoulder-to-hip line
+slants inward and a hanging arm makes a real 20-25° angle with it.
+
+**And in `BOTH` mode the ceiling is judged on the two arms together, not on whichever reads higher.**
+The same capture: the player's left shoulder reads **6.3° higher than the right on every single
+rep**, so the per-arm maximum is dominated by whichever arm carries the larger measurement bias.
+Judging by the higher arm threw away 8 of 27 raises performed identically to the ones it accepted;
+judging on the mean — which is already the number this mode records as the rep's angle — accepted
+all 27. A genuine one-armed fling still fails, because one arm at 140 and one at 95 is 117 to the
+mean. If you ever wonder whether a threshold is reachable, do not reason about it: set
+`SessionEngine.diagnostics` and read what the model says while the person moves.
 
 **Three of these four rows are no longer fitmon's, and the reason is the single most important
 thing to know before tuning anything.** Angles come from the 3D world landmarks, whose depth axis is the
