@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -182,8 +183,25 @@ class GameArtScreenshotTest {
     fun chaseGlyphs() {
         compose.setContent {
             ClashFitTheme {
-                Row(
+                Column(
                     Modifier.fillMaxSize().background(Ground).padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                // One large, so the face can actually be judged, and four at map size, which is
+                // the size it has to survive.
+                Canvas(Modifier.size(260.dp)) {
+                    drawIntoCanvas { c ->
+                        ChaseGlyphs.zombie(
+                            c.nativeCanvas,
+                            size.width / 2f, size.height / 2f,
+                            radiusPx = size.minDimension * 0.30f,
+                            closeness = 0.15f, pulse = 0.25f,
+                        )
+                    }
+                }
+                Row(
+                    Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -209,6 +227,7 @@ class GameArtScreenshotTest {
                             )
                         }
                     }
+                }
                 }
             }
         }
