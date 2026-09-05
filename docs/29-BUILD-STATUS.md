@@ -2,7 +2,7 @@
 
 What is built and verified, what is deliberately event-only, and what is genuinely still open.
 
-**Last updated:** 5 Sep 2026 · Android app shipping · 587 tests passing · 51 exercises · 16 modes · 72 screenshot baselines · 195 commits
+**Last updated:** 5 Sep 2026 · Android app shipping · 643 tests passing · 57 exercises · 16 modes · 72 screenshot baselines · 195 commits
 
 ---
 
@@ -14,7 +14,7 @@ What is built and verified, what is deliberately event-only, and what is genuine
 | **Form scoring** — depth (superlinear) · ROM · tempo · alignment, worst sub-score names the fault | ✅ | [05](05-POSE-ENGINE-SPEC.md) §5 |
 | **Fatigue** — signal-driven, one model across all five families, latched bands | ✅ | [05](05-POSE-ENGINE-SPEC.md) §6 |
 | **Five detector families** — reps · holds · cardio · jumps · yoga | ✅ | [19](19-EXERCISE-LIBRARY.md) |
-| **51 exercises** as config records | ✅ | [19](19-EXERCISE-LIBRARY.md) §5 |
+| **57 exercises** as config records | ✅ | [19](19-EXERCISE-LIBRARY.md) §5 |
 | **Combat** — damage curve, combo with grace, boss phases, fatigue-adaptive mercy | ✅ | [04](04-GAME-DESIGN.md) |
 | **Family games** — Siege · Pursuit · Breaker · Sigil (non-combat) | ✅ | [19](19-EXERCISE-LIBRARY.md) §3 |
 | **Modes** — Boss Fight · Time Attack · Ghost Race · Survival · Boss Rush · Tempo Trial · Duel | ✅ | [17](17-GAME-MODES.md) |
@@ -145,7 +145,7 @@ The Android app:
 ```bash
 cd android
 ./gradlew :app:installDebug          # onto a connected phone
-./gradlew :app:testDebugUnitTest     # 587 tests, no phone needed
+./gradlew :app:testDebugUnitTest     # 643 tests, no phone needed (JDK 21 for the screenshot classes)
 ./gradlew :app:recordRoborazziDebug  # re-render the 72 screenshot baselines
 ```
 
