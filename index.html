@@ -1821,6 +1821,13 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
         zombie closes when your cadence drops</strong>, not only when your coordinate stops. The same
         cadence detector that runs Pursuit indoors decides whether you are actually still running &mdash;
         which is why walking it does not work.</p>
+      <p class="lede" style="margin-top:26px"><strong style="color:var(--ink);font-weight:600">It
+        works indoors, where GPS does not.</strong> A satellite fix inside a building is wider than
+        the building, so the app refuses it and tracks you from the phone&rsquo;s own step counter and
+        compass instead &mdash; and it learns your stride from GPS whenever both can be trusted over the
+        same stretch, so the indoor track describes your legs rather than a textbook&rsquo;s. The screen
+        says which of the two it is using. It never passes an estimate off as a measurement.</p>
+
       <div class="out__note">
         <b>This is the one mode that goes online.</b>
         A map is tiles fetched from a server, and a map centred on you carries where you are. Zombie Run
