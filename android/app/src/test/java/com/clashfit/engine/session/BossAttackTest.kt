@@ -38,11 +38,10 @@ class BossAttackTest {
         val bands = ArrayList<FatigueBand>()
         val playerHits = ArrayList<Pair<Int, Int>>()  // (damage, hp)
         var telemetry: SetTelemetry? = null
-        var restSec: Int? = null
         var end: EndReason? = null
         override fun onRep(rec: RepRecord, combatState: com.clashfit.core.model.CombatState) { reps += rec }
         override fun onBand(band: FatigueBand) { bands += band }
-        override fun onSetEnd(telemetry: SetTelemetry, restSec: Int) { this.telemetry = telemetry; this.restSec = restSec }
+        override fun onSetEnd(telemetry: SetTelemetry) { this.telemetry = telemetry }
         override fun onEnd(reason: EndReason, state: SessionState) { end = reason }
         override fun onPlayerHit(damage: Int, playerHp: Int) { playerHits += damage to playerHp }
     }

@@ -29,7 +29,7 @@ class FactSheetTest {
         bestRep = SetTelemetry.RepRef(index = 2, form = 0.94f),
         worstRep = SetTelemetry.RepRef(index = 11, form = 0.55f, reason = "depth"),
         comboMax = 1.6f, comboReps = 6,
-        bossHpPct = 41, sessionSetIndex = 2, restSec = 55,
+        bossHpPct = 41, sessionSetIndex = 2,
         trend = SetTelemetry.Trend.DECLINING,
         asymmetryPct = 12, weakerSide = "LEFT",
     )
@@ -45,7 +45,7 @@ class FactSheetTest {
     @Test
     fun `the numbers a player asks about are all there`() {
         val s = FactSheet.forSet(telemetry).joinToString("\n")
-        listOf("squat", "12", "78", "88", "64", "46 cm", "22 percent", "fading", "declining", "41 percent", "55 seconds")
+        listOf("squat", "12", "78", "88", "64", "46 cm", "22 percent", "fading", "declining", "41 percent")
             .forEach { assertTrue("missing '$it' from:\n$s", s.contains(it)) }
     }
 

@@ -105,7 +105,7 @@ class SessionEngine(
     interface Listener {
         fun onRep(rec: RepRecord, combat: CombatState) {}
         fun onBand(band: FatigueBand) {}
-        fun onSetEnd(telemetry: SetTelemetry, restSec: Int) {}
+        fun onSetEnd(telemetry: SetTelemetry) {}
         fun onEnd(reason: EndReason, state: SessionState) {}
         fun onPlayerHit(damage: Int, playerHp: Int) {}
         companion object { val NONE = object : Listener {} }
@@ -212,7 +212,6 @@ class SessionEngine(
     private var combatBand: FatigueBand = FatigueBand.FRESH
     private var telemetry: SetTelemetry? = null
     private var coach: CoachOutput? = null
-    private var restSec: Int? = null
 
     val reps: List<RepRecord> get() = allReps
     val currentSetReps: List<RepRecord> get() = setReps
@@ -375,7 +374,6 @@ class SessionEngine(
         lastRepEndMs = null
         coach = null
         telemetry = null
-        restSec = null
         combatBand = FatigueBand.FRESH
         ghost?.reset()
 
@@ -442,7 +440,7 @@ class SessionEngine(
             bothSides = result.both
             lastLeftDeg = result.left
             lastRightDeg = result.right
-            if (phase == Phase.FIGHTING || phase == Phase.REST) {
+            if (phase == Phase.FIGHTING) {
                 asymmetryTracker.onFrame(result.left, result.right, tMs)
             }
         } else {
@@ -471,19 +469,12 @@ class SessionEngine(
             if (gs.outcome != GameOutcome.RUNNING) { phase = Phase.DEAD; end(EndReason.GAME_LOST) }
         }
 
-        if (pa != null && (phase == Phase.FIGHTING || phase == Phase.REST)) {
+        if (pa != null && phase == Phase.FIGHTING) {
             val span = Geometry.spanMetres(lms, pa.first, pa.third, side)
             if (!span.isNaN()) {
                 spanSamples.addLast(tMs to span)
                 if (spanSamples.size > 900) spanSamples.removeFirst()     // ~30s at 30fps
             }
-        }
-
-        // A set ends when the player stops, not on a timer they have to beat.
-        val lastEnd = lastRepEndMs
-        if (phase == Phase.FIGHTING && setReps.isNotEmpty() && lastEnd != null) {
-            val idleSec = (tMs - lastEnd) / 1000f
-            if (idleSec >= combatCfg.setEnd.noRepTimeoutSec) endSet()
         }
 
         if (!ended) {
@@ -639,44 +630,31 @@ class SessionEngine(
 
     // ------------------------------------------------------------------ sets
 
-    /** Ends the current set and computes rest length and telemetry. The caller fetches the coach. */
+    /**
+     * Ends the current set and rolls straight into the next one. There is no rest: a set ends only
+     * because the player asked for it, and the fight never leaves the screen. The listener is called
+     * before the reset so it can still read [currentSetReps]; it fetches the coach, which is spoken
+     * over the top of the set that has already started.
+     */
     fun endSet() {
         if (phase != Phase.FIGHTING || setReps.isEmpty()) return
-        phase = Phase.REST
-        val rest = restSeconds()
-        restSec = rest
-        val t = TelemetrySummariser.summarise(setReps, combat.state(), exercise.id, setIndex, rest)
+        val t = TelemetrySummariser.summarise(setReps, combat.state(), exercise.id, setIndex)
         telemetry = t
         coach = null
-        listener.onSetEnd(t, rest)
+        listener.onSetEnd(t)
+        nextSet()
     }
 
     fun setCoach(output: CoachOutput) { coach = output }
 
-    /**
-     * How long to rest, scaled from fresh to gassed by how tired the last set left you.
-     *
-     * The divisor is the GASSED band threshold from config, not a hardcoded 0.5. It was written as
-     * a literal that happened to equal the default, so tuning the band in pose.json moved when the
-     * app calls you gassed without moving how long it then rests you — two numbers that are
-     * supposed to be the same number.
-     */
-    private fun restSeconds(): Int {
-        val r = combatCfg.rest
-        val v = fatigue.state().value
-        val gassedAt = poseCfg.fatigue.bands.gassed.coerceAtLeast(0.01f)
-        return (r.freshSeconds + (r.gassedSeconds - r.freshSeconds) * min(1f, v / gassedAt)).roundToInt()
-    }
-
     /** Begin the next set. Fatigue baselines reset; boss HP and combo carry. */
     fun nextSet() {
-        if (phase != Phase.REST) return
+        if (phase != Phase.FIGHTING) return
         setIndex += 1
         setReps.clear()
         lastRepEndMs = null
         coach = null
         telemetry = null
-        restSec = null
         fatigue.reset()
         fsm?.reset()
         fsmLeft?.reset()
@@ -1079,7 +1057,6 @@ class SessionEngine(
         ghostFinished = ghost?.finished,
         telemetry = telemetry,
         coach = coach,
-        restSec = restSec,
         ended = ended,
         endReason = endReason,
     )

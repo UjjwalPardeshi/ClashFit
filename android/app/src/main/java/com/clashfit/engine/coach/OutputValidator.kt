@@ -56,7 +56,7 @@ object OutputValidator {
             t.reps, t.formMeanPct, t.formFirst3Pct, t.formLast3Pct,
             t.depthCm, t.depthDropCm, t.velocityLossPct, t.romLossPct,
             t.bestRep?.index, t.worstRep?.index, t.comboReps, t.bossHpPct,
-            t.sessionSetIndex, t.restSec,
+            t.sessionSetIndex,
         ).forEach { v ->
             if (v != null) numbers.add(v)
         }

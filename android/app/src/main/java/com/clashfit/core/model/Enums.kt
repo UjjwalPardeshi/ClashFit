@@ -14,7 +14,7 @@ enum class Framing { OK, TOO_CLOSE, TOO_FAR, PARTIAL, NONE }
 
 enum class CalibState { SEARCHING, PARTIAL, TOO_CLOSE, TOO_FAR, HOLDING, READY }
 
-enum class Phase { CALIBRATING, FIGHTING, FRAMING_LOST, REST, DEAD }
+enum class Phase { CALIBRATING, FIGHTING, FRAMING_LOST, DEAD }
 
 enum class Side { LEFT, RIGHT }
 

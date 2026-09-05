@@ -14,7 +14,6 @@ object TelemetrySummariser {
         combatState: CombatState?,
         exerciseId: String,
         setIndex: Int = 1,
-        restSec: Int = 45,
     ): SetTelemetry {
         val asymmetrySummary = summariseAsymmetry(reps)
         val asymmetryPct = if (asymmetrySummary.enough && asymmetrySummary.consistent) {
@@ -49,7 +48,6 @@ object TelemetrySummariser {
                 comboReps = 0,
                 bossHpPct = round((combatState?.hpPct ?: 1f) * 100).toInt(),
                 sessionSetIndex = setIndex,
-                restSec = restSec,
                 trend = SetTelemetry.Trend.FLAT,
                 asymmetryPct = asymmetryPct,
                 weakerSide = weakerSide,
@@ -90,7 +88,6 @@ object TelemetrySummariser {
             comboReps = longestStreak(reps),
             bossHpPct = round((combatState?.hpPct ?: 1f) * 100).toInt(),
             sessionSetIndex = setIndex,
-            restSec = restSec,
             trend = trendOf(reps),
             asymmetryPct = asymmetryPct,
             weakerSide = weakerSide,

@@ -86,14 +86,12 @@ fun SessionScreen(
 ) {
     val vm: SessionViewModel = viewModel(key = "session-${args.hashCode()}", factory = SessionViewModel.factory(graph, deps, args))
     val state by vm.state.collectAsStateWithLifecycle()
-    val restLeft by vm.restRemainingSec.collectAsStateWithLifecycle()
     val paused by vm.paused.collectAsStateWithLifecycle()
     val landmarks by vm.skeleton.collectAsStateWithLifecycle()
     // The hand being held up to the camera, and the last command it gave.
     val gestureHold by vm.gestureHold.collectAsStateWithLifecycle()
     var lastGesture by remember { mutableStateOf<HudEvent.Gesture?>(null) }
     // What the on-device model saw in the worst rep. Arrives a few seconds into the rest, or never.
-    val refereeNote by vm.refereeNote.collectAsStateWithLifecycle()
     val reduceMotion = LocalReduceMotion.current
     // Not every pose source has a camera: a recorded trace and the synthetic source do not, and
     // the fight has to work with either.
@@ -187,10 +185,6 @@ fun SessionScreen(
             Phase.FIGHTING, Phase.FRAMING_LOST -> {
                 FightLayout(s, vm, lastHit, lastPlayerHit, jolt.value, shake.value, playerShake.value, paused, reduceMotion, camera, landmarks, meta, settings, sourceAspect, exerciseNames[s.exerciseId], gestureHold, lastGesture)
             }
-            Phase.REST -> RestPanel(
-                s, restLeft, onSkip = vm::skipRest, onStop = vm::stop,
-                gestureHold = gestureHold, lastGesture = lastGesture, refereeNote = refereeNote,
-            )
             Phase.DEAD -> EndPanel(s, onSummary = { /* wait for persistence */ }, onExit = onExit)
         }
         if (s.ended && s.phase != Phase.DEAD) EndPanel(s, onSummary = {}, onExit = onExit)
@@ -314,66 +308,6 @@ private fun PausedOverlay(onResume: () -> Unit, onStop: () -> Unit) {
         PrimaryButton("Resume", Modifier.fillMaxWidth(), onClick = onResume)
         Spacer(Modifier.height(10.dp))
         SecondaryButton("Stop and save", Modifier.fillMaxWidth(), onClick = onStop)
-    }
-}
-
-/** The moment the coach earns its place. The player is on the floor; the line is spoken too. */
-@Composable
-fun RestPanel(
-    s: SessionState, restLeft: Int?, onSkip: () -> Unit, onStop: () -> Unit,
-    gestureHold: Pair<HandGesture, Float>? = null, lastGesture: HudEvent.Gesture? = null,
-    refereeNote: String? = null,
-) {
-    val t = s.telemetry
-    Box(Modifier.fillMaxSize()) {
-    Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
-            Kicker("Rest · set ${s.setIndex}")
-            // A thumb up or a fist from the floor starts the next set without walking to the phone.
-            GestureRing(gestureHold, resting = true)
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-            Text((restLeft ?: s.restSec ?: 0).toString(), style = MaterialTheme.typography.displayLarge, color = Ember)
-            FatiguePips(s.fatigue.band)
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile("${t?.reps ?: s.setReps}", "reps", Modifier.weight(1f))
-            StatTile("${t?.formMeanPct ?: 0}%", "form", Modifier.weight(1f))
-            StatTile("${t?.velocityLossPct ?: 0}%", "velocity lost", Modifier.weight(1f), color = s.fatigue.band.color())
-        }
-        val coach = s.coach
-        AppCard(Modifier.fillMaxWidth(), padding = 20) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Coach", style = MaterialTheme.typography.labelMedium, color = Ember)
-                Text(coach?.coachLine ?: "…", fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.Medium, color = Ink)
-            }
-        }
-        // What the model saw in the photograph of your worst rep. It appears when it arrives and
-        // is simply absent when there is no on-device model — never a spinner, never an apology.
-        refereeNote?.let { note ->
-            AppCard(Modifier.fillMaxWidth(), padding = 20, container = PanelLift) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(AppIcons.Eye, contentDescription = null, tint = Fresh, modifier = Modifier.size(16.dp))
-                        Text("The referee looked at rep ${s.telemetry?.worstRep?.index ?: 0}", style = MaterialTheme.typography.labelMedium, color = Fresh)
-                    }
-                    Text(note, style = MaterialTheme.typography.titleMedium, color = Ink)
-                    Text("Seen on this phone. The picture was not saved.", style = MaterialTheme.typography.labelSmall, color = InkFaint)
-                }
-            }
-        }
-        AppCard(Modifier.fillMaxWidth(), padding = 20) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(s.combat.bossName, style = MaterialTheme.typography.labelMedium, color = InkFaint)
-                Text(coach?.bossLine ?: "…", style = MaterialTheme.typography.headlineSmall, color = Ember)
-            }
-        }
-        Spacer(Modifier.weight(1f))
-        Text("Boss at ${(s.combat.hpPct * 100).toInt()}%${coach?.let { " · " + it.source.name.lowercase() + " coach" } ?: ""}", style = MaterialTheme.typography.labelSmall, color = InkFaint)
-        PrimaryButton("Next set", Modifier.fillMaxWidth(), onClick = onSkip)
-        SecondaryButton("Stop and save", Modifier.fillMaxWidth(), onClick = onStop)
-    }
-    GestureToast(lastGesture, Modifier.align(Alignment.Center))
     }
 }
 

@@ -33,7 +33,6 @@ class CoachEngineTest {
             comboReps = 0,
             bossHpPct = 80,
             sessionSetIndex = 1,
-            restSec = 45,
             trend = SetTelemetry.Trend.DECLINING,
         )
 
@@ -69,7 +68,6 @@ class CoachEngineTest {
             comboReps = 0,
             bossHpPct = 100,
             sessionSetIndex = 1,
-            restSec = 45,
             trend = SetTelemetry.Trend.FLAT,
         )
 
@@ -105,7 +103,6 @@ class CoachEngineTest {
                 comboReps = 0,
                 bossHpPct = 60,
                 sessionSetIndex = 2,
-                restSec = 45,
                 trend = SetTelemetry.Trend.FLAT,
             )
 
@@ -142,7 +139,6 @@ class CoachEngineTest {
                 comboReps = i - 1,
                 bossHpPct = 70,
                 sessionSetIndex = i,
-                restSec = 45,
                 trend = SetTelemetry.Trend.FLAT,
             )
 

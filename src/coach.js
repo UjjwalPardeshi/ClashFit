@@ -13,9 +13,9 @@ import { summariseAsymmetry } from './asymmetry.js';
 /** Compact payload for the model — ~150 tokens. The model never sees raw landmarks.
  *  Note worst_rep.reason is computed by us: we do not ask the model to diagnose, we ask it
  *  to phrase a diagnosis we already made. That is what keeps the output truthful. */
-export function summarise(reps, combatState, exercise, setIndex = 1, restSec = 45) {
+export function summarise(reps, combatState, exercise, setIndex = 1) {
   if (!reps.length) {
-    return { exercise: exercise.id, reps: 0, fatigue_band: Band.FRESH, rest_sec: restSec,
+    return { exercise: exercise.id, reps: 0, fatigue_band: Band.FRESH,
              session_set_index: setIndex, boss_hp_pct: Math.round((combatState?.hpPct ?? 1) * 100) };
   }
   const mean = (arr, k) => arr.reduce((a, r) => a + r[k], 0) / arr.length;
@@ -50,7 +50,6 @@ export function summarise(reps, combatState, exercise, setIndex = 1, restSec = 4
     combo_reps: longestStreak(reps),
     boss_hp_pct: Math.round((combatState?.hpPct ?? 1) * 100),
     session_set_index: setIndex,
-    rest_sec: restSec,
     trend: trendOf(reps),
     // The model gets the ratio, never a verdict. It phrases an observation we measured.
     asymmetry_pct: (() => { const a = summariseAsymmetry(reps); return a.enough && a.consistent ? Math.round(a.deficitPct) : null; })(),
@@ -94,15 +93,15 @@ const COACH = [
   { band: 'WORKING', reason: '*',        trend: 'improving', line: "That got better as you went — {form_last3_pct} percent on the last three." },
   { band: 'WORKING', reason: '*',        trend: '*',         line: "{reps} reps at {form_mean_pct} percent. Velocity is down {velocity_loss_pct} percent." },
 
-  { band: 'FADING',  reason: 'depth',    trend: '*',         line: "Real fatigue now — {depth_drop_cm} centimetres of depth gone. {rest_sec} seconds." },
-  { band: 'FADING',  reason: 'rom',      trend: '*',         line: "Range is down {rom_loss_pct} percent since rep one. {rest_sec} seconds, then finish." },
-  { band: 'FADING',  reason: 'tempo',    trend: '*',         line: "You're dropping into the bottom instead of controlling it. Take {rest_sec} seconds." },
-  { band: 'FADING',  reason: 'alignment',trend: '*',         line: "Form is going before your strength is. {rest_sec} seconds." },
-  { band: 'FADING',  reason: '*',        trend: '*',         line: "Velocity is down {velocity_loss_pct} percent — that's the set talking. Take {rest_sec} seconds." },
+  { band: 'FADING',  reason: 'depth',    trend: '*',         line: "Real fatigue now — {depth_drop_cm} centimetres of depth gone." },
+  { band: 'FADING',  reason: 'rom',      trend: '*',         line: "Range is down {rom_loss_pct} percent since rep one. Finish it." },
+  { band: 'FADING',  reason: 'tempo',    trend: '*',         line: "You're dropping into the bottom instead of controlling it. Control the descent." },
+  { band: 'FADING',  reason: 'alignment',trend: '*',         line: "Form is going before your strength is. Keep it honest." },
+  { band: 'FADING',  reason: '*',        trend: '*',         line: "Velocity is down {velocity_loss_pct} percent — that's the set talking." },
 
-  { band: 'GASSED',  reason: 'depth',    trend: '*',         line: "You've lost {depth_drop_cm} centimetres and that's honest. Rest {rest_sec}, then finish it." },
-  { band: 'GASSED',  reason: '*',        trend: '*',         line: "That's real fatigue, not weakness. {rest_sec} seconds — four more reps ends this." },
-  { band: 'GASSED',  reason: '*',        trend: 'declining', line: "Velocity is down {velocity_loss_pct} percent and you've done the work. Rest {rest_sec} seconds." },
+  { band: 'GASSED',  reason: 'depth',    trend: '*',         line: "You've lost {depth_drop_cm} centimetres and that's honest. Finish it." },
+  { band: 'GASSED',  reason: '*',        trend: '*',         line: "That's real fatigue, not weakness. Four more reps ends this." },
+  { band: 'GASSED',  reason: '*',        trend: 'declining', line: "Velocity is down {velocity_loss_pct} percent and you've done the work." },
 ];
 
 const BOSS = [
@@ -180,7 +179,7 @@ function resolve(key, t) {
     form_mean_pct: t.form_mean_pct, form_last3_pct: t.form_last3_pct, form_first3_pct: t.form_first3_pct,
     depth_cm: t.depth_cm, depth_drop_cm: t.depth_drop_cm,
     velocity_loss_pct: t.velocity_loss_pct, rom_loss_pct: t.rom_loss_pct,
-    rest_sec: t.rest_sec, combo_reps: t.combo_reps, boss_hp_pct: t.boss_hp_pct,
+    combo_reps: t.combo_reps, boss_hp_pct: t.boss_hp_pct,
     worst_index: t.worst_rep?.index, best_index: t.best_rep?.index,
   };
   const v = map[key];

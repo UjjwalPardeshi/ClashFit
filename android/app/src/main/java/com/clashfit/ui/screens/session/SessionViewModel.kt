@@ -93,9 +93,6 @@ class SessionViewModel(
     private val _events = MutableSharedFlow<HudEvent>(extraBufferCapacity = 16, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     val events: SharedFlow<HudEvent> = _events.asSharedFlow()
 
-    private val _restRemainingSec = MutableStateFlow<Int?>(null)
-    val restRemainingSec: StateFlow<Int?> = _restRemainingSec.asStateFlow()
-
     private val _paused = MutableStateFlow(false)
     val paused: StateFlow<Boolean> = _paused.asStateFlow()
 
@@ -111,7 +108,6 @@ class SessionViewModel(
     private var hitCounter = 0L
     private var lastPhaseLabel = "phase1"
     private var lastCue: String? = null
-    private var restJob: Job? = null
     private var frameJob: Job? = null
     private var gestureJob: Job? = null
 
@@ -236,7 +232,7 @@ class SessionViewModel(
             // Follow the phase: read the hand when it could mean something, ignore it otherwise.
             launch {
                 _state.collect { s ->
-                    val wanted = s != null && !s.ended && (s.phase == Phase.FIGHTING || s.phase == Phase.REST)
+                    val wanted = s != null && !s.ended && s.phase == Phase.FIGHTING
                     source.setGesturesEnabled(wanted)
                     if (!wanted) { gestureIntent.reset(); _gestureHold.value = null }
                 }
@@ -279,21 +275,19 @@ class SessionViewModel(
     }
 
     private fun onGesture(g: HandGesture) {
-        val s = _state.value ?: return
-        val resting = s.phase == Phase.REST
+        _state.value ?: return
         val label = when {
-            g == HandGesture.OPEN_PALM && !resting -> {
+            g == HandGesture.OPEN_PALM -> {
                 if (_paused.value) { resume(); "Resumed" } else { pause(); "Paused" }
             }
-            g == HandGesture.THUMB_UP && !resting -> {
-                // End the set now, the way running out of reps would. Rest and the coach follow.
+            g == HandGesture.THUMB_UP -> {
+                // The only way a set ends. The next one starts underneath it; the coach talks over it.
                 viewModelScope.launch(engineThread) {
                     val cur = engine.state()
                     if (cur.phase == Phase.FIGHTING && cur.setReps > 0) { engine.endSet(); _state.value = engine.state() }
                 }
                 "Set done"
             }
-            (g == HandGesture.THUMB_UP || g == HandGesture.CLOSED_FIST) && resting -> { skipRest(); "Next set" }
             else -> return
         }
         deps.haptics.milestone()
@@ -309,8 +303,6 @@ class SessionViewModel(
             val cue = s.cue
             if (cue != null && cue != lastCue && !cue.startsWith("Hold")) { lastCue = cue; deps.speech.speak(cue) }
         }
-        if (before != Phase.REST && s.phase == Phase.REST) deps.pose.setLowPower(true)
-        if (before == Phase.REST && s.phase == Phase.FIGHTING) deps.pose.setLowPower(false)
         val label = s.combat.phaseLabel
         if (label != lastPhaseLabel) {
             lastPhaseLabel = label
@@ -342,7 +334,12 @@ class SessionViewModel(
             _events.tryEmit(HudEvent.PlayerHit(damage, s.combat.playerHpPct))
         }
 
-        override fun onSetEnd(telemetry: SetTelemetry, restSec: Int) {
+        /**
+         * Called by the engine before it resets the set, so [currentSetReps] is still the set that
+         * just finished. The next set has already begun by the time the coach answers, so the line
+         * is spoken over a fight that never left the screen.
+         */
+        override fun onSetEnd(telemetry: SetTelemetry) {
             val setReps = engine.currentSetReps.toList()
             val now = graph.clock.nowMs()
             lookAtWorstRep(setReps)
@@ -353,47 +350,18 @@ class SessionViewModel(
                 deps.speech.speak(coach.coachLine, flush = true)
                 completedSets += SetSnapshot(
                     index = telemetry.sessionSetIndex, reps = setReps, startedAtMs = setStartedAtMs, endedAtMs = now,
-                    telemetry = telemetry, restSec = restSec, coachLine = coach.coachLine, bossLine = coach.bossLine,
+                    telemetry = telemetry, restSec = 0, coachLine = coach.coachLine, bossLine = coach.bossLine,
                     coachSource = coach.source.name,
                 )
             }
-            startRest(restSec)
+            setStartedAtMs = now
         }
 
         override fun onEnd(reason: EndReason, state: SessionState) {
-            restJob?.cancel()
             if (reason == EndReason.BOSS_DOWN || reason == EndReason.GAME_WON) deps.sfx.bossDown()
             _events.tryEmit(HudEvent.BossDown)
             if (hub.active) hub.onLocalOut()
             viewModelScope.launch { persist(reason) }
-        }
-    }
-
-    /** Rest length is fatigue-derived, not fixed: 30s fresh → 75s gassed. Skippable. */
-    private fun startRest(restSec: Int) {
-        restJob?.cancel()
-        restJob = viewModelScope.launch {
-            var left = restSec
-            _restRemainingSec.value = left
-            while (left > 0) {
-                delay(1000)
-                left -= 1
-                _restRemainingSec.value = left
-                if (left in 1..3) deps.sfx.tick()
-            }
-            nextSet()
-        }
-    }
-
-    fun skipRest() { restJob?.cancel(); nextSet() }
-
-    private fun nextSet() {
-        _restRemainingSec.value = null
-        setStartedAtMs = graph.clock.nowMs()
-        deps.speech.stop()
-        viewModelScope.launch(engineThread) {
-            engine.nextSet()
-            _state.value = engine.state()
         }
     }
 
@@ -538,7 +506,6 @@ class SessionViewModel(
 
     override fun onCleared() {
         frameJob?.cancel()
-        restJob?.cancel()
         linkJob?.cancel()
         deps.pose.stop()
         deps.speech.stop()

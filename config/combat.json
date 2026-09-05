@@ -53,12 +53,7 @@
     "formFloor": 0.6,
     "bossHpMultiplier": 0.5
   },
-  "rest": {
-    "freshSeconds": 30,
-    "gassedSeconds": 75
-  },
   "setEnd": {
-    "noRepTimeoutSec": 12,
     "noFrameTimeoutSec": 30
   },
   "modes": {

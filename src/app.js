@@ -39,8 +39,6 @@ const el = {
   race: $('race'), raceYou: $('raceYou'), raceThem: $('raceThem'), raceFill: $('raceFill'),
   over: $('over'), overKicker: $('overKicker'), overTitle: $('overTitle'),
   overBody: $('overBody'), again: $('again'),
-  rest: $('rest'), restSet: $('restSet'), restBand: $('restBand'), restCoach: $('restCoach'),
-  restBoss: $('restBoss'), restStats: $('restStats'), nextSet: $('nextSet'),
   waveTile: $('waveTile'), wave: $('wave'),
   sum: $('sum'), sumCanvas: $('sumCanvas'), sumBtn: $('sumBtn'),
   tabSession: $('tabSession'), tabTrend: $('tabTrend'),
@@ -188,7 +186,7 @@ function makeEngine(id) {
       if (reason === 'BOSS_DOWN' || reason === 'GAME_WON') { audio.bossDeath(); haptics?.bossDown(); }
       showResult(reason, s);
     },
-    onSetEnd: (telemetry, coach) => { if (!roster) showRest(telemetry, coach); },
+    onSetEnd: (telemetry, coach) => { if (!roster) announceSet(telemetry, coach); },
     onBand: (band) => {
       // Fatigue is the referee. Every other fitness app would eliminate on rep count.
       if (roster?.mode === RosterMode.LAST_STANDING && band === 'GASSED') eliminateAndAdvance();
@@ -263,7 +261,6 @@ function makeEngine(id) {
     el.roster.classList.remove('show');
   }
   el.over.classList.remove('show');
-  el.rest.classList.remove('show');
 }
 
 /** Never a bare spinner. A judge watching an unexplained spinner assumes it is broken, and they
@@ -316,10 +313,9 @@ function showRosterResult() {
 }
 
 function onVoiceCommand(cmd) {
+  if (cmd === 'next' && !el.over.classList.contains('show')) { engine.endSet(); el.cue.textContent = 'Set done.'; }
   if (cmd === 'stop') { engine.reset(); el.cue.textContent = 'Stopped.'; }
-  if (cmd === 'next' && el.rest.classList.contains('show')) el.nextSet.click();
   if (cmd === 'next' && el.over.classList.contains('show')) el.again.click();
-  if (cmd === 'rest') { el.cue.textContent = 'Resting.'; }
   if (cmd === 'start' && !running) el.start.click();
 }
 
@@ -352,8 +348,6 @@ function finishBreathing() {
   const after = engine.recoverFatigue(frac);
   stopBreathing();
   const moved = after.band !== before.band;
-  el.restBand.textContent = after.band;
-  el.restBand.style.color = BAND_COLOR[after.band];
   el.cue.textContent = moved
     ? `Recovered to ${after.band}.`
     : `Fatigue down ${Math.round((before.value - after.value) * 100)} points.`;
@@ -367,21 +361,12 @@ function stopBreathing() {
   el.breathe.classList.remove('on');
 }
 
-function showRest(telemetry, coach) {
-  el.restSet.textContent = telemetry.session_set_index;
-  el.restBand.textContent = telemetry.fatigue_band;
-  el.restBand.style.color = BAND_COLOR[telemetry.fatigue_band];
-  el.restCoach.textContent = coach.coachLine;
-  el.restBoss.textContent = `"${coach.bossLine}"`;
-  el.restStats.innerHTML =
-    `${telemetry.reps} reps · mean form ${telemetry.form_mean_pct}% · ` +
-    `velocity −${telemetry.velocity_loss_pct}% · range −${telemetry.rom_loss_pct}%` +
-    (telemetry.depth_drop_cm ? ` · depth −${telemetry.depth_drop_cm}cm` : '') +
-    `<br>source: ${coach.source.toLowerCase()}`;
-  stopBreathing();
-  el.rest.classList.add('show');
+/** A set closed. The next one is already running, so the coach is spoken over the top of it and
+ *  the line goes to the cue rather than to a screen that would take the camera away. */
+function announceSet(telemetry, coach) {
+  el.cue.textContent = coach.coachLine;
   audio.duck(0.12, 4000);
-  speech.sayPair(coach.coachLine, coach.bossLine);      // the player is on the floor, not reading
+  speech.sayPair(coach.coachLine, coach.bossLine);      // the player is moving, not reading
 }
 
 /** A clinical assessment gets a result card, never a victory screen. No boss, no damage, no
@@ -586,11 +571,7 @@ function wire() {
     downloadGhost(ghostFromReps(engine.reps, { exercise: el.exercise.value, name: 'My run' }));
   };
   el.breathe.onclick = () => startBreathing();
-  el.nextSet.onclick = () => {
-    stopBreathing();
-    speech.flush(); el.rest.classList.remove('show'); engine.nextSet();
-  };
-  el.again.onclick = () => { speech.flush(); engine.reset(); el.over.classList.remove('show'); el.rest.classList.remove('show'); };
+  el.again.onclick = () => { speech.flush(); engine.reset(); el.over.classList.remove('show'); };
   el.reset.onclick = () => { engine.reset(); el.over.classList.remove('show'); };
   el.casual.onclick = () => {
     casual = !casual;

@@ -48,7 +48,6 @@ class CoachCancellationTest {
         comboReps = 3,
         bossHpPct = 41,
         sessionSetIndex = 2,
-        restSec = 45,
         trend = SetTelemetry.Trend.DECLINING,
     )
 

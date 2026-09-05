@@ -87,6 +87,7 @@ fun ExercisePickerScreen(modeStr: String, graph: AppGraph, nav: NavHostControlle
 
     val filtered = remember(exercises, mode, query) {
         exercises.values
+            .filter { it.id in FEATURED_EXERCISES }
             .filter { mode.family == null || it.familyEnum == mode.family }
             .filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
             .sortedWith(compareBy({ it.familyEnum.ordinal }, { featuredRank(it.id) }, { it.difficulty }, { it.name }))

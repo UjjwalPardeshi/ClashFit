@@ -1499,7 +1499,7 @@ t('templates · never leak an unresolved placeholder', () => {
             form_mean_pct:70, form_first3_pct:80, form_last3_pct:60,
             depth_cm: 42, depth_drop_cm: 4, velocity_loss_pct: 30, rom_loss_pct: 18,
             fatigue_band: band, best_rep:{index:2,form:0.9}, worst_rep:{index:8,form:0.4,reason},
-            combo_max:1.6, combo_reps:5, boss_hp_pct:55, session_set_index:2, rest_sec:45,
+            combo_max:1.6, combo_reps:5, boss_hp_pct:55, session_set_index:2,
             asymmetry_pct:14, weaker_side:'left', trend, ...holes };
           const out = templateFor(tel);
           ok(!/[{}]/.test(out.coachLine), `coach leaked: ${out.coachLine}`);
@@ -1528,7 +1528,7 @@ t('templates · every line in the bank passes our own validator', () => {
     form_mean_pct:70, form_first3_pct:80, form_last3_pct:60,
     depth_cm:42, depth_drop_cm:4, velocity_loss_pct:30, rom_loss_pct:18, fatigue_band:'FADING',
     best_rep:{index:2,form:0.9}, worst_rep:{index:8,form:0.4,reason:'depth'},
-    combo_max:1.6, combo_reps:5, boss_hp_pct:55, session_set_index:2, rest_sec:45, trend:'declining',
+    combo_max:1.6, combo_reps:5, boss_hp_pct:55, session_set_index:2, trend:'declining',
     asymmetry_pct:14, weaker_side:'left' };
   for (const raw of lines) {
     const filled = fill(raw.replace(/\\'/g, "'"), tel);
@@ -1570,25 +1570,32 @@ t('coachFor · uses the model when its output is clean', async () => {
 });
 
 // ---------- set flow ----------
-t('set ends after the idle timeout and produces a coach line', async () => {
+t('standing still never ends a set', async () => {
   const e = new SessionEngine(store, 'squat');
   drive(e, synthWorldSet({ reps: 5, bottom: 80 }));
   const last = e.lastRepEndMs;
   const still = synthWorldSet({ reps: 0 })[0][0];
+  // Sixteen seconds of stillness. This used to close the set and cut to a rest screen.
   for (let i = 0; i < 500; i++) e.frame(still, null, last + 1000 + i * 33);
-  eq(e.state().phase, Phase.REST);
-  await new Promise((r) => setTimeout(r, 10));
-  ok(e.coach && e.coach.coachLine.length > 0, 'no coach line on rest');
+  eq(e.state().phase, Phase.FIGHTING);
+  eq(e.setIndex, 1, 'idling must not advance the set');
+});
+
+t('ending a set produces a coach line and starts the next one immediately', async () => {
+  const e = new SessionEngine(store, 'squat');
+  drive(e, synthWorldSet({ reps: 5, bottom: 80 }));
+  await e.endSet();
+  eq(e.state().phase, Phase.FIGHTING, 'there is no rest phase to pass through');
+  eq(e.setIndex, 2);
+  ok(e.coach && e.coach.coachLine.length > 0, 'no coach line after the set');
   ok(!/[{}]/.test(e.coach.coachLine), `leaked placeholder: ${e.coach.coachLine}`);
 });
 
-t('nextSet resets fatigue but carries boss HP', async () => {
+t('ending a set resets fatigue but carries boss HP', async () => {
   const e = new SessionEngine(store, 'squat');
   drive(e, synthWorldSet({ reps: 5, bottom: 80 }));
-  const still = synthWorldSet({ reps: 0 })[0][0];
-  for (let i = 0; i < 500; i++) e.frame(still, null, e.lastRepEndMs + 1000 + i * 33);
   const hpBefore = e.combat.hp;
-  e.nextSet();
+  await e.endSet();
   eq(e.state().phase, Phase.FIGHTING);
   eq(e.setIndex, 2);
   eq(e.combat.hp, hpBefore, 'boss healed between sets');
@@ -1689,15 +1696,15 @@ t('page · every mode count it prints agrees with every other one', () => {
 });
 
 t('page · the telemetry field count it prints is the real one', () => {
-  // The page used to say "eleven numbers". summarise() returns 23 fields, and the
+  // The page used to say "eleven numbers". summarise() returns 22 fields, and the
   // claim had been wrong long enough that nobody was counting. Now it is counted.
   const src = readFileSync(join(HERE, '..', 'src', 'coach.js'), 'utf8');
   const start = src.indexOf('export function summarise');
   const body = src.slice(start, src.indexOf('\nfunction trendOf', start));
   const ret = body.slice(body.lastIndexOf('  return {'));
   const fields = (ret.match(/^ {4}([a-z_0-9]+):/gm) || []).length;
-  eq(fields, 23, 'summarise() field count:');
-  ok(/twenty[\u2011-]three[\u2011-]field|twenty-three-field/.test(page),
+  eq(fields, 22, 'summarise() field count:');
+  ok(/twenty[\u2011-]two[\u2011-]field|twenty-two-field/.test(page),
      'the page no longer states the telemetry field count');
   ok(!/eleven numbers/i.test(page), 'the page still says "eleven numbers"');
 });
