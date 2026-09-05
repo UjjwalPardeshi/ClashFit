@@ -65,6 +65,7 @@ class FixFilter(
     private val maxSpeedMps: Float = MAX_SPEED_MPS,
     private val restSpeedMps: Float = REST_SPEED_MPS,
     private val jitterDistanceM: Float = JITTER_DISTANCE_M,
+    private val noiseFraction: Float = NOISE_FRACTION,
 ) {
     private var startedAtMs: Long? = null
     private var lastAccepted: Fix? = null
@@ -123,12 +124,38 @@ class FixFilter(
         // At rest the provider's own speed reads ~0 while the position wanders by metres, so the
         // reported speed decides "standing still" and the derived one is only the fallback.
         val atRest = fix.reportedSpeedMps?.let { it < restSpeedMps } ?: (derivedSpeedMps < restSpeedMps)
-        if (atRest || distanceM < jitterDistanceM) {
+        if (atRest || distanceM < noiseFloorM(prev, fix)) {
             return FixResult.Rejected(FixResult.Reason.JITTER)
         }
 
         lastAccepted = fix
-        return FixResult.Accepted(fix, distanceM, derivedSpeedMps, deltaMs)
+        // The Doppler speed, when the receiver offers one, in preference to a speed derived by
+        // dividing two uncertain positions by the time between them. Every other running app does
+        // this, and it is why their pace settles within a few seconds while a difference-based one
+        // swings wildly: the Doppler shift is measured directly and does not inherit position
+        // error. The derived speed remains the fallback for receivers that report none.
+        val speedMps = fix.reportedSpeedMps?.takeIf { it.isFinite() && it >= 0f } ?: derivedSpeedMps
+        return FixResult.Accepted(fix, distanceM, speedMps, deltaMs)
+    }
+
+    /**
+     * How far the phone must have moved from the anchor before the movement is believed.
+     *
+     * A fixed two metres is right for a clear sky and badly wrong under one. Position error scales
+     * with the accuracy circle, so with a twenty-five-metre circle two consecutive fixes taken by a
+     * phone lying on a table can differ by ten metres of pure noise — and a fixed gate counts every
+     * one of those as distance covered. That is how a forty-metre walk around a lab came out as a
+     * run with a thirteen-minute pace.
+     *
+     * Scaling the floor with the reported accuracy does not lose slow movement, because a rejected
+     * fix never becomes the anchor: a walker adds up against a fixed point until they clear the
+     * floor, and then the whole displacement lands at once. Noise wanders around the anchor and
+     * never clears it.
+     */
+    private fun noiseFloorM(prev: Fix, fix: Fix): Float {
+        val circle = (prev.accuracyM + fix.accuracyM) / 2f
+        val scaled = circle * noiseFraction
+        return if (scaled > jitterDistanceM) scaled else jitterDistanceM
     }
 
     companion object {
@@ -146,5 +173,14 @@ class FixFilter(
 
         /** Steps shorter than this are inside the noise floor of a consumer receiver. */
         const val JITTER_DISTANCE_M = 2f
+
+        /**
+         * The share of the accuracy circle a movement must exceed to be believed.
+         *
+         * 0.35 leaves a good outdoor fix (five metres or better) behaving exactly as it did — the
+         * flat two-metre floor still wins there — and raises the bar to nearly nine metres at the
+         * edge of what the accuracy gate admits at all.
+         */
+        const val NOISE_FRACTION = 0.35f
     }
 }

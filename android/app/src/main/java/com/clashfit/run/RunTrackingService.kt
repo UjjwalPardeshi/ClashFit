@@ -94,6 +94,30 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
     private var originLon: Double? = null
     private var lastPointMs: Long? = null
 
+    /**
+     * How many of the route's points are already in the database.
+     *
+     * The route used to BE the write buffer: every ten fixes it was inserted and then emptied, so
+     * `RunState.points` never held more than ten seconds of running. That was invisible while the
+     * map was a thumbnail and fatal once it filled the screen — the live map showed ten seconds of
+     * route, then went empty, which took the map view down with it and rebuilt it from scratch
+     * roughly every ten seconds for the whole activity. Keeping the route whole and remembering
+     * how much of it has been written is the same number of database rows and none of that.
+     */
+    private var persistedPoints = 0
+
+    /** One batch write at a time, so two flushes cannot insert the same points twice. */
+    private var pointWriteInFlight = false
+    /**
+     * The last altitude a satellite actually reported.
+     *
+     * Dead-reckoned points have no altitude of their own, and writing zero for them would put sea
+     * level in the middle of a route recorded five hundred metres above it, so the elevation
+     * profile would draw a cliff at every doorway. Carrying the last real reading forward says the
+     * honest thing instead: while the sky was gone the height is unknown, and assumed unchanged.
+     */
+    private var lastAltM: Double? = null
+
     private val CHANNEL_ID = "run"
     private val NOTIFICATION_ID = 2
     private val BATCH_SIZE = 10
@@ -173,6 +197,9 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         originLat = null
         originLon = null
         lastPointMs = null
+        lastAltM = null
+        persistedPoints = 0
+        pointWriteInFlight = false
         lastKmMovingMs = 0L
         nextKmMarker = 1000f
         seedOriginFromLastKnown()
@@ -196,9 +223,17 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         // Register step counter, fallback to accelerometer
         registerMotionSensors()
 
-        // Don't insert run yet; wait for first valid GPS fix
-        // This prevents "ghost runs" with 0 distance if app crashes before first location
+        // The activity exists from the moment the thumb leaves the button.
+        //
+        // It used to wait for the first fix that cleared the accuracy gate and the ten-second
+        // settle window, which on a cold receiver is twenty or thirty seconds of a screen that
+        // says nothing is happening — and, worse, a Finish pressed during that window threw the
+        // whole activity away, because there was no row to finish. The fear that motivated the
+        // wait was ghost rows full of zeroes; those are now handled where they belong, at the
+        // finish line, by discarding an activity that recorded nothing. Opening the row early and
+        // closing it honestly beats not opening it at all.
         tracker.setState(currentState)
+        openRunRow()
         startForeground(NOTIFICATION_ID, buildNotification())
     }
 
@@ -239,11 +274,29 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
 
         lifecycleScope.launch {
             try {
-                // Persist remaining points synchronously
-                if (currentState.points.isNotEmpty()) {
+                // An activity where nothing happened is thrown away rather than saved. It is
+                // deleted here, at the only point that knows both numbers, so no later screen has
+                // to carry a rule about which rows to pretend are not there.
+                if (isTooShortToKeep(currentState.distanceM, currentState.movingMs)) {
+                    Log.d(TAG, "Discarding empty activity $rid")
                     withContext(Dispatchers.IO) {
-                        repo.insertPoints(rid, currentState.points)
+                        repo.dao.deletePoints(rid)
+                        repo.dao.deleteRun(rid)
                     }
+                    currentState = RunState()
+                    tracker.resetState()
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                    return@launch
+                }
+
+                // Persist whatever the last batch did not reach.
+                val tail = currentState.points.drop(persistedPoints)
+                if (tail.isNotEmpty()) {
+                    withContext(Dispatchers.IO) {
+                        repo.insertPoints(rid, tail)
+                    }
+                    persistedPoints = currentState.points.size
                 }
 
                 // The fastest kilometre is computed once, here, from every point the activity
@@ -297,10 +350,11 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
     private fun onAcceptedFix(accepted: FixResult.Accepted) {
         val fix = accepted.fix
 
-        // The first settled fix seeds the run row; tracking starts on the next one. The insert is
-        // asynchronous so a location callback never blocks the main thread on the database.
+        // Normally the row already exists, opened when the activity started. This is the retry
+        // path for the case where that insert failed; the fix is dropped rather than queued,
+        // because one second of a route is worth less than the complexity of holding it.
         if (currentState.runId == null) {
-            insertRunOnFirstFix()
+            openRunRow()
             return
         }
 
@@ -342,7 +396,7 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
                 tMs = tMs,
                 lat = lat + fuser.northM / mPerDegLat,
                 lon = lon + fuser.eastM / mPerDegLon,
-                altM = altM ?: 0.0,
+                altM = altM ?: lastAltM ?: 0.0,
                 accuracyM = accuracyM,
                 speedMps = speedMps,
             )
@@ -359,7 +413,10 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
 
         recordSplits()
 
-        altM?.let { currentState = currentState.copy(elevationGainM = elevation.onAltitude(it)) }
+        altM?.let {
+            lastAltM = it
+            currentState = currentState.copy(elevationGainM = elevation.onAltitude(it))
+        }
 
         if (currentState.distanceM > 0 && currentState.movingMs > 0) {
             currentState = currentState.copy(
@@ -367,11 +424,25 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
             )
         }
 
-        if (points.size >= BATCH_SIZE) {
+        // Write the tail that is not in the database yet, and keep the route itself intact.
+        //
+        // The count is advanced only after the insert returns, so a failed write is retried on the
+        // next batch rather than losing the points. Nothing is removed from the list, so whatever
+        // is drawing the route sees the whole of it at every moment.
+        val unwritten = points.size - persistedPoints
+        if (unwritten >= BATCH_SIZE && !pointWriteInFlight) {
+            pointWriteInFlight = true
+            val batch = points.subList(persistedPoints, points.size).toList()
+            val writtenUpTo = points.size
             lifecycleScope.launch {
-                // Use withContext to AWAIT the DB write before clearing buffer
-                withContext(Dispatchers.IO) { repo.insertPoints(rid, points) }
-                currentState = currentState.copy(points = emptyList())
+                try {
+                    withContext(Dispatchers.IO) { repo.insertPoints(rid, batch) }
+                    persistedPoints = writtenUpTo
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to persist a batch of route points", e)
+                } finally {
+                    pointWriteInFlight = false
+                }
             }
         }
 
@@ -431,8 +502,15 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         }
     }
 
-    private fun insertRunOnFirstFix() {
-
+    /**
+     * Creates the row this activity will be written into.
+     *
+     * Called at the start, and again from the fix and step paths only as a retry: if the first
+     * insert lost a race with the database there would otherwise be no row for the rest of the
+     * activity to attach itself to.
+     */
+    private fun openRunRow() {
+        if (currentState.runId != null) return
         if (runInsertInFlight) return
         runInsertInFlight = true
         lifecycleScope.launch {
@@ -444,14 +522,14 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
                     )
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to insert run on first valid GPS fix", e)
+                Log.e(TAG, "Failed to open the activity row", e)
                 runInsertInFlight = false
                 return@launch
             }
             currentState = currentState.copy(runId = rid)
             tracker.setState(currentState)
             runInsertInFlight = false
-            Log.d(TAG, "Run inserted on first valid GPS fix: runId=$rid")
+            Log.d(TAG, "Activity row opened: runId=$rid")
         }
     }
 
@@ -489,10 +567,9 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         val spm = cadence.cadenceSpm
         val steps = cadence.stepsTaken
 
-        // Indoors there may never be a fix to open the run row, so the first counted step does it.
-        // Without this an activity that starts in a building is never written down at all.
+        // Same retry as the fix path: without a row there is nowhere to put a step.
         if (currentState.runId == null && steps > 0) {
-            insertRunOnFirstFix()
+            openRunRow()
             return
         }
 

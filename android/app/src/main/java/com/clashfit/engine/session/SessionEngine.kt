@@ -168,6 +168,14 @@ class SessionEngine(
 
     // Rep detection options from the exercise's detector block. docs/19-EXERCISE-LIBRARY.md
     private var stageCounter: StageCounter? = null              // fitmon's counter, for the exercises configured for it
+
+    /**
+     * A place to watch the rep counter decide, one line per frame. Null in tests; the app points it
+     * at logcat on debug builds, which is how a threshold gets checked against a real shoulder
+     * instead of against a drawing.
+     */
+    var diagnostics: ((String) -> Unit)? = null
+        set(value) { field = value; stageCounter?.diagnostics = value }
     private var repCfg: RepDetectorConfig? = null               // kept for form scoring under stage counting
     private var lastLeftDeg = Float.NaN
     private var lastRightDeg = Float.NaN
@@ -283,7 +291,11 @@ class SessionEngine(
             repCfg = cfg
             // fitmon's stage counter, where the exercise asks for it: a rep is the move from the
             // rest position past the counting threshold, debounced, with no dwell or duration gate.
-            stageCounter = StageCounter.Config.from(det)?.let { StageCounter(it) }
+            stageCounter = StageCounter.Config.from(det)?.let { c ->
+                // Named, so a capture can never be read as the wrong exercise's numbers.
+                diagnostics?.invoke("counter armed for ${exercise.id}: $c")
+                StageCounter(c).apply { diagnostics = this@SessionEngine.diagnostics }
+            }
             dirSign = if (cfg.topEnter > cfg.bottomEnter) 1f else -1f
             sidesEach = det["sides"]?.jsonPrimitive?.content == "EACH"
             fsm = if (sidesEach) null else RepStateMachine(cfg)

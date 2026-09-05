@@ -73,6 +73,33 @@ class StageCounter(val config: Config) {
          * for out in front, which is the same guard read in the other direction.
          */
         val plane: Condition? = null,
+        /**
+         * How far the upper arm may stray from the torso, as a condition on [armLineDeg] — 0 is
+         * hanging straight down the side, 90 is straight out, 180 is overhead.
+         *
+         * This is "curl it, do not swing it" as a number. The elbow angle is blind to a swung rep:
+         * an elbow driven forward and up closes through exactly the same angles as one pinned to
+         * the ribs, and fitmon's rule counts both. Direction-blind on purpose — forward drift and
+         * sideways flare are both the arm leaving the torso, and one number refuses each.
+         *
+         * Read off the shoulder and elbow the rep already uses (11-13, 12-14) against the torso
+         * axis, so it needs no hand landmarks and survives a lean.
+         */
+        val armLine: Condition? = null,
+        /**
+         * The least time the lift itself may take, rest to the top, in milliseconds.
+         *
+         * [debounceMs] does not do this: it spaces reps apart, so a flung rep counted as long as
+         * the last one was long enough ago. Unlike every angle here this is safe to reason about
+         * rather than measure — a millisecond is not read off the noisy depth axis.
+         */
+        val minConcentricMs: Long? = null,
+        /**
+         * The least time the signal must stay past the counting threshold — the squeeze at the top.
+         * Only meaningful with [CountAt.RETURN]; under CROSSING the rep is over the instant the
+         * line is crossed, so there is no later moment at which a hold could be checked.
+         */
+        val minHoldMs: Long? = null,
         val countAt: CountAt = CountAt.CROSSING,
         val debounceMs: Long = 800L,
     ) {
@@ -97,6 +124,9 @@ class StageCounter(val config: Config) {
                     wristAboveShoulderAt = st["wristAboveShoulderAt"]?.jsonPrimitive?.content?.let { Check.valueOf(it) } ?: Check.NONE,
                     ceiling = st["ceiling"]?.jsonPrimitive?.floatOrNull,
                     plane = optCond("plane"),
+                    armLine = optCond("armLine"),
+                    minConcentricMs = st["minConcentricMs"]?.jsonPrimitive?.longOrNull,
+                    minHoldMs = st["minHoldMs"]?.jsonPrimitive?.longOrNull,
                     countAt = st["countAt"]?.jsonPrimitive?.content?.let { CountAt.valueOf(it) } ?: CountAt.CROSSING,
                     debounceMs = st["debounceMs"]?.jsonPrimitive?.longOrNull ?: 800L,
                 )
@@ -115,7 +145,23 @@ class StageCounter(val config: Config) {
         var tMin = 0L; var tMax = 0L
         var reached = false                // the signal has been past `count` since the last rest
         var brokeCeiling = false           // and it went past `ceiling` while it was there
-        fun reset() { stage = Stage.NONE; restAt = null; lastCountMs = null; min = Float.NaN; max = Float.NaN; reached = false; brokeCeiling = false }
+        var brokeLine = false              // the upper arm left the torso somewhere in this rep
+        var reachedAt: Long? = null        // first frame past `count` — the top of the lift
+        var lastPastAt: Long? = null       // last frame past `count`; with the above, the squeeze
+        var liftMs = 0L                    // rest to the top, banked at the top (see step)
+        var movingSince: Long? = null      // first frame the working limb left its rest zone
+        fun reset() {
+            stage = Stage.NONE; restAt = null; lastCountMs = null; min = Float.NaN; max = Float.NaN
+            reached = false; brokeCeiling = false; clearRep()
+        }
+        /** Everything one rep accumulates, cleared when the next one starts. */
+        fun clearRep() { brokeLine = false; reachedAt = null; lastPastAt = null; liftMs = 0L; movingSince = null }
+        /** The squeeze so far: how long the signal has stayed past the counting threshold. */
+        fun heldMs(): Long {
+            val from = reachedAt ?: return 0L
+            val to = lastPastAt ?: return 0L
+            return to - from
+        }
     }
 
     private val left = Track()
@@ -128,6 +174,17 @@ class StageCounter(val config: Config) {
     /** The frame at which a count was refused by the wrist-height check, for a cue. */
     var lastMissMs: Long? = null
         private set
+
+    /**
+     * A place to watch the counter decide, one line per frame.
+     *
+     * Every threshold here is a number about somebody's body, and the only way to know whether one
+     * is reachable is to read what the model says while that person moves. It is how the raise's
+     * rest band was caught: `rest < 20` looked strict and was in fact silent, because the player's
+     * arms hanging at their sides read 22. Null unless something sets it -- the tests do not, and
+     * in the app it is a debug build only.
+     */
+    var diagnostics: ((String) -> Unit)? = null
 
     fun stage(side: Side): Stage = when (config.sides) {
         Sides.EACH -> (if (side == Side.LEFT) left else right).stage
@@ -143,6 +200,10 @@ class StageCounter(val config: Config) {
         val above: Boolean,
         val over: Boolean,
         val inPlane: Boolean,
+        /** The upper arm is still along the torso — false is a swung elbow, not a bad angle. */
+        val tucked: Boolean,
+        /** This movement is under way rather than parked at rest, so form is worth judging. */
+        val moving: Boolean,
         val angle: Float,
     )
 
@@ -154,26 +215,60 @@ class StageCounter(val config: Config) {
         val upL = wristAbove(world, Side.LEFT); val upR = wristAbove(world, Side.RIGHT)
         val overL = overCeiling(sL); val overR = overCeiling(sR)
         val plL = inPlane(world, Side.LEFT); val plR = inPlane(world, Side.RIGHT)
+        val tkL = tucked(world, Side.LEFT); val tkR = tucked(world, Side.RIGHT)
+        // Under EITHER the arm that is resting always looks perfect: it hangs, so it satisfies
+        // rest and is tucked by definition. Judging the tuck on "either arm" therefore excused
+        // every swing of the arm actually doing the work. Form is read off the leading arm — the
+        // same one `leading` already picks the rep's angle from.
+        val leadLeft = when {
+            !sL.isFinite() -> false
+            !sR.isFinite() -> true
+            config.count.op == "<" -> sL <= sR
+            else -> sL >= sR
+        }
+        val restL = config.rest.holds(sL); val restR = config.rest.holds(sR)
         val out = ArrayList<Rep>(2)
         when (config.sides) {
             Sides.EACH -> {
-                step(left, Read(config.rest.holds(sL), config.count.holds(sL), upL, overL, plL, aL), tMs, Side.LEFT)?.let { out += it }
-                step(right, Read(config.rest.holds(sR), config.count.holds(sR), upR, overR, plR, aR), tMs, Side.RIGHT)?.let { out += it }
+                step(left, Read(config.rest.holds(sL), config.count.holds(sL), upL, overL, plL, tkL, !restL, aL), tMs, Side.LEFT)?.let { out += it }
+                step(right, Read(config.rest.holds(sR), config.count.holds(sR), upR, overR, plR, tkR, !restR, aR), tMs, Side.RIGHT)?.let { out += it }
             }
-            // Either arm going too far spoils the rep, and both have to be doing the same movement.
-            Sides.BOTH -> step(one, Read(config.rest.holds(sL) && config.rest.holds(sR), config.count.holds(sL) && config.count.holds(sR), upL && upR, overL || overR, plL && plR, mean(aL, aR)), tMs, null)?.let { out += it }
+            // Both arms have to be doing the movement, and how high it went is read off the two
+            // of them together -- the same mean this mode already records as the rep's angle.
+            // Measured on the player 6 Sep 2026: one shoulder reads 6.3 degrees higher than the
+            // other on every single rep, so judging the ceiling by whichever arm reads highest
+            // refused eight raises in twenty-seven that were performed identically to the ones
+            // it accepted. A genuine one-armed fling still fails it: one arm at 140 and one at
+            // 95 is 117 to the mean.
+            Sides.BOTH -> step(one, Read(config.rest.holds(sL) && config.rest.holds(sR), config.count.holds(sL) && config.count.holds(sR), upL && upR, overCeiling(mean(sL, sR)), plL && plR, tkL && tkR, !(restL && restR), mean(aL, aR)), tMs, null)?.let { out += it }
             // One rep whichever arm does it, and both arms together are still one rep.
-            Sides.EITHER -> step(one, Read(config.rest.holds(sL) || config.rest.holds(sR), config.count.holds(sL) || config.count.holds(sR), upL || upR, overL || overR, plL || plR, leading(aL, aR)), tMs, null)?.let { out += it }
+            Sides.EITHER -> step(one, Read(config.rest.holds(sL) || config.rest.holds(sR), config.count.holds(sL) || config.count.holds(sR), upL || upR, overL || overR, plL || plR, if (leadLeft) tkL else tkR, !(if (leadLeft) restL else restR), leading(aL, aR)), tMs, null)?.let { out += it }
             Sides.BEST -> {
                 val s = if (best == Side.LEFT) sL else sR
                 val read = Read(
                     config.rest.holds(s), config.count.holds(s),
                     if (best == Side.LEFT) upL else upR, overCeiling(s),
                     if (best == Side.LEFT) plL else plR,
+                    if (best == Side.LEFT) tkL else tkR,
+                    !config.rest.holds(s),
                     if (best == Side.LEFT) aL else aR,
                 )
                 step(one, read, tMs, best)?.let { out += it }
             }
+        }
+        diagnostics?.let { sink ->
+            fun n(v: Float, dp: Int = 1): String = if (v.isFinite()) String.format("%.${dp}f", v) else "--"
+            fun p(a: Boolean, b: Boolean) = (if (a) "T" else "f") + (if (b) "T" else "f")
+            val t = if (config.sides == Sides.EACH) left else one
+            sink(
+                "t=$tMs ang=${n(aL)}/${n(aR)} sig=${n(sL)}/${n(sR)}" +
+                    " lat=${n(lateralFraction(world, Side.LEFT), 2)}/${n(lateralFraction(world, Side.RIGHT), 2)}" +
+                    " rest=${p(config.rest.holds(sL), config.rest.holds(sR))}" +
+                    " cnt=${p(config.count.holds(sL), config.count.holds(sR))}" +
+                    " plane=${p(plL, plR)} over=${p(overL, overR)}" +
+                    " stage=${t.stage} reached=${if (t.reached) "T" else "f"} broke=${if (t.brokeCeiling) "T" else "f"}" +
+                    if (out.isNotEmpty()) "  <<< REP" else ""
+            )
         }
         return out
     }
@@ -208,8 +303,37 @@ class StageCounter(val config: Config) {
             t.stage = Stage.REST
             t.restAt = tMs
             t.min = angle; t.max = angle; t.tMin = tMs; t.tMax = tMs
+            // The next rep is judged on its own. Not under RETURN, where this block runs on the
+            // very frame the rep lands and would wipe the evidence before it is read — the same
+            // reason `reached` is not cleared here either.
+            // `restHolds` is the combined reading, and under EITHER the hanging arm keeps it true
+            // for the whole of the other arm's lift — so clearing on it alone wiped the rep's
+            // accumulated form and timing on every frame, and every one-armed curl measured as
+            // instant. Only the working limb being genuinely at rest ends a rep.
+            if (config.countAt == CountAt.CROSSING && !r.moving) t.clearRep()
+        }
+        // Only once the movement has left rest, so standing with the arms out does not latch a
+        // fault the player can no longer clear by getting into position.
+        if (!r.tucked && r.moving && t.stage == Stage.REST) t.brokeLine = true
+        // When the lift actually began. `restAt` cannot answer this under EITHER: the arm left
+        // hanging satisfies rest on every frame, so the combined rest never ends and `restAt`
+        // walks forward to the frame before the count, making every one-armed curl look instant.
+        if (r.moving) { if (t.movingSince == null) t.movingSince = tMs } else t.movingSince = null
+        // The squeeze, from the first frame past the line to the last one.
+        if (countHolds && t.stage == Stage.REST) {
+            if (t.reachedAt == null) {
+                t.reachedAt = tMs
+                // Banked at the top, not read at the end: under RETURN the rep lands on a frame
+                // that has already moved `restAt` forward to now, and the lift would measure
+                // backwards. How long it took is only knowable here.
+                t.liftMs = t.movingSince?.let { tMs - it } ?: 0L
+            }
+            t.lastPastAt = tMs
         }
         val debounced = t.lastCountMs?.let { tMs - it > config.debounceMs } ?: true
+        // Rest to the top, so dawdling at the top cannot pay for having flung the weight up.
+        val slowEnough = config.minConcentricMs?.let { t.liftMs >= it } ?: true
+        val heldEnough = config.minHoldMs?.let { t.heldMs() >= it } ?: true
 
         // Judged over the whole cycle: going too far is only visible at the turning point, so the
         // rep lands when the movement comes back to rest, which is also the moment the player has
@@ -219,15 +343,22 @@ class StageCounter(val config: Config) {
             if (over && t.stage == Stage.REST) t.brokeCeiling = true
             if (restHolds) {
                 var rep: Rep? = null
-                if (t.reached && !t.brokeCeiling && debounced) {
+                val clean = !t.brokeLine && slowEnough && heldEnough
+                if (t.reached && !t.brokeCeiling && clean && debounced) {
                     t.lastCountMs = tMs
                     val deepest = if (config.count.op == "<") t.tMin else t.tMax
                     rep = Rep(side, t.restAt ?: tMs, tMs, t.min, t.max, deepest)
                 }
                 t.stage = Stage.REST
                 t.restAt = tMs
+                if (t.reached && !t.brokeCeiling && !clean && debounced) {
+                    // Deep enough to have been a rep, refused on how it was done. Worth a cue:
+                    // silence reads as a broken counter rather than a bad rep.
+                    lastMissMs = tMs
+                }
                 t.reached = false
                 t.brokeCeiling = false
+                t.clearRep()
                 // Always, not only after a rep: a cycle refused for going too far must not leave
                 // its turning point behind to be reported as the next rep's depth.
                 t.min = angle; t.max = angle; t.tMin = tMs; t.tMax = tMs
@@ -240,6 +371,12 @@ class StageCounter(val config: Config) {
             if (config.wristAboveShoulderAt == Check.COUNT && !above) { lastMissMs = tMs; return null }
             // The right movement in the wrong plane is a different exercise, not a bad rep.
             if (!r.inPlane) { lastMissMs = tMs; return null }
+            // Swung, not curled: the elbow left the torso on the way up. The angle closed all the
+            // same, which is exactly why the angle alone cannot be trusted to have seen a rep.
+            if (t.brokeLine) { lastMissMs = tMs; return null }
+            // Flung. `debounceMs` only spaces reps apart; this is the first thing that asks the
+            // lift itself to have taken time.
+            if (!slowEnough) { lastMissMs = tMs; return null }
             // The ceiling on a movement that ends where it counts: the reading at the counting
             // frame has to be one the joint can actually produce. It refuses a rep built on a bad
             // frame rather than a rep performed wrongly, which is the only sense a ceiling can have
@@ -290,6 +427,17 @@ class StageCounter(val config: Config) {
     }
 
     /**
+     * Whether the upper arm is still along the torso. Always true when no armLine is configured,
+     * and when the model gave no reading: a landmark it failed to produce is not evidence of a
+     * swung elbow, and a guard nobody asked for must refuse nothing.
+     */
+    private fun tucked(world: Landmarks, side: Side): Boolean {
+        val c = config.armLine ?: return true
+        val d = armLineDeg(world, side)
+        return !d.isFinite() || c.holds(d)
+    }
+
+    /**
      * How much of the upper arm points straight out to the side, as a cosine: 1 is horizontally
      * abducted away from the body, 0 is straight forward (or straight up, or hanging), negative is
      * across the midline.
@@ -323,6 +471,34 @@ class StageCounter(val config: Config) {
         val an = sqrt(ax * ax + ay * ay + az * az)
         if (an < 1e-6f) return Float.NaN
         return ((ax * lx + ay * ly + az * lz) / (an * ln)).coerceIn(-1f, 1f)
+    }
+
+    /**
+     * How far the upper arm has left the torso, in degrees: 0 is hanging straight down the side,
+     * 90 is straight out, 180 is overhead.
+     *
+     * Degrees rather than the cosine fraction [lateralFraction] uses, for two reasons: every other
+     * threshold in the configs is an angle, and a fraction taken as sin() reads an overhead arm as
+     * perfectly tucked, which is the one answer this guard must never give.
+     */
+    private fun armLineDeg(world: Landmarks, side: Side): Float {
+        if (world.size < 25) return Float.NaN
+        val si = Geometry.idx("SHOULDER", side); val ei = Geometry.idx("ELBOW", side)
+        if (si < 0 || ei < 0) return Float.NaN
+        val shL = world[LM.LEFT_SHOULDER]; val shR = world[LM.RIGHT_SHOULDER]
+        val hpL = world[LM.LEFT_HIP]; val hpR = world[LM.RIGHT_HIP]
+        // Shoulders to hips: the way "down the body" points, whatever the player is doing.
+        val dx = (hpL.x + hpR.x - shL.x - shR.x) / 2f
+        val dy = (hpL.y + hpR.y - shL.y - shR.y) / 2f
+        val dz = (hpL.z + hpR.z - shL.z - shR.z) / 2f
+        val dn = sqrt(dx * dx + dy * dy + dz * dz)
+        if (dn < 1e-6f) return Float.NaN
+        val sh = world[si]; val el = world[ei]
+        val ax = el.x - sh.x; val ay = el.y - sh.y; val az = el.z - sh.z
+        val an = sqrt(ax * ax + ay * ay + az * az)
+        if (an < 1e-6f) return Float.NaN
+        val cos = ((ax * dx + ay * dy + az * dz) / (an * dn)).coerceIn(-1f, 1f)
+        return Math.toDegrees(kotlin.math.acos(cos).toDouble()).toFloat()
     }
 
     /**

@@ -167,6 +167,62 @@ fun elevationProfile(points: List<RunPointEntity>, buckets: Int = 60): List<Floa
     return out
 }
 
+/**
+ * Whether an activity recorded so little that keeping it would be noise.
+ *
+ * A tap on Start followed by a tap on Finish is not a run, but it used to become one: a row in the
+ * feed reading "0.00 km · 0:00", counted in "2 activities", dragging the month's average down and
+ * making a working tracker look broken. Both conditions must hold, so a genuine slow first minute
+ * is never thrown away — only the activity where nothing at all happened.
+ */
+fun isTooShortToKeep(distanceM: Float, movingMs: Long): Boolean =
+    distanceM < MIN_KEEPABLE_M && movingMs < MIN_KEEPABLE_MOVING_MS
+
+/** Ten metres: shorter than the width of the room this was written in. */
+const val MIN_KEEPABLE_M = 10f
+
+/** Ten seconds of actual movement. Below this there is no pace worth computing. */
+const val MIN_KEEPABLE_MOVING_MS = 10_000L
+
+/**
+ * A distance as a person would say it out loud.
+ *
+ * Under a kilometre it is said in metres. Thirty-five metres of walking a lab is a real activity,
+ * and rendering it as "0.00 km" made a working tracker look broken on its own summary screen. From
+ * a kilometre up it is said in kilometres to two places, the unit every running app agrees on.
+ */
+fun formatDistance(metres: Float): String =
+    if (metres < 1000f) "%.0f m".format(metres) else "%.2f km".format(metres / 1000f)
+
+/**
+ * The same distance split into the number and its unit, for the places that stack one above the
+ * other — a progress ring, a stat tile — and so cannot use a single string.
+ */
+fun distanceParts(metres: Float): Pair<String, String> =
+    if (metres < 1000f) "%.0f".format(metres) to "m" else "%.2f".format(metres / 1000f) to "km"
+
+/**
+ * The same profile scaled into the nought-to-one band a trend chart draws in.
+ *
+ * [elevationProfile] returns metres above sea level, which for Pune is around five hundred and
+ * fifty. A chart that clamps its input to nought-to-one would pin every one of those to the top of
+ * the canvas and draw a dead flat line, which is exactly what it did until this existed. The
+ * scaling has to happen before the numbers reach a canvas, and it belongs here where it can be
+ * tested rather than inside a composable.
+ *
+ * A route whose highest and lowest points are within [flatBandM] of each other has no shape worth
+ * stretching. Blowing a metre of satellite noise up to full height would draw a mountain range
+ * across a flat lap of a car park, so a profile that flat is drawn as a line down the middle.
+ */
+fun normaliseProfile(profile: List<Float>, flatBandM: Float = 2f): List<Float> {
+    if (profile.isEmpty()) return emptyList()
+    val lo = profile.min()
+    val hi = profile.max()
+    val span = hi - lo
+    if (span < flatBandM) return List(profile.size) { 0.5f }
+    return profile.map { ((it - lo) / span).coerceIn(0f, 1f) }
+}
+
 /** Running total of distance along a route, one entry per point, starting at zero. */
 fun cumulativeDistanceM(points: List<RunPointEntity>): FloatArray {
     val out = FloatArray(points.size)

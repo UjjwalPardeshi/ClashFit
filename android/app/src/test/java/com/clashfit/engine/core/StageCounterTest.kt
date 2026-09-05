@@ -100,11 +100,11 @@ class StageCounterTest {
         assertTrue(reps[0].thetaMin < 90f, "the working arm passed 80; averaged with the arm at rest it would read about 125: ${reps[0].thetaMin}")
     }
 
-    /** The shipped lateral raise: the 15-20 rest band, the 95-105 counting band, and out to the side. */
+    /** The shipped lateral raise: the 16-25 rest band, the 90-110 counting band, and out to the side. */
     private val raiseCfg = StageCounter.Config(
         angle = Triple("HIP", "SHOULDER", "ELBOW"), sides = StageCounter.Sides.BOTH,
-        rest = StageCounter.Condition("<", 20f), count = StageCounter.Condition(">", 95f),
-        ceiling = 105f, plane = StageCounter.Condition(">", 0.5f),
+        rest = StageCounter.Condition("<", 25f), count = StageCounter.Condition(">", 90f),
+        ceiling = 110f, plane = StageCounter.Condition(">", 0.5f),
         countAt = StageCounter.CountAt.RETURN, debounceMs = 1000L,
     )
 
@@ -120,6 +120,27 @@ class StageCounterTest {
 
         assertEquals(1, run(StageCounter(raiseCfg), 0, cycle(::side, 93f)).size, "out to the side is the exercise")
         assertEquals(0, run(StageCounter(raiseCfg), 0, cycle(::forward, 100f)).size, "the same angle out in front is not")
+    }
+
+    @Test
+    fun `one shoulder reading higher than the other does not spoil the rep`() {
+        // The player's left shoulder reads 6.3 degrees higher than the right on every single rep --
+        // measured on their own phone, 6 Sep 2026, across 27 raises. Judging the ceiling by whichever
+        // arm reads highest threw away eight of those 27, all performed identically to the ones it
+        // accepted. Both arms together is the honest reading, and it is the one this mode already
+        // records as the rep's angle.
+        fun lopsided(a: Float) = SyntheticBody.world(170f, leftShoulderAbductionDeg = a + 12f, rightShoulderAbductionDeg = a)
+        val c = StageCounter(raiseCfg)
+        val cycle = List(10) { lopsided(5f) } + ramp(5f, 93f, 25) { lopsided(it) } + List(8) { lopsided(93f) } +
+            ramp(93f, 5f, 25) { lopsided(it) } + List(10) { lopsided(5f) }
+        assertEquals(1, run(c, 0, cycle).size, "the higher arm is at 112 and the lower at 100; the raise is 106 and counts")
+
+        // But one arm genuinely flung overhead still fails: 157 and 100 average out to 129.
+        val fling = StageCounter(raiseCfg)
+        fun oneArm(a: Float) = SyntheticBody.world(170f, leftShoulderAbductionDeg = a * 1.6f, rightShoulderAbductionDeg = a)
+        val flung = List(10) { oneArm(5f) } + ramp(5f, 93f, 25) { oneArm(it) } + List(8) { oneArm(93f) } +
+            ramp(93f, 5f, 25) { oneArm(it) } + List(10) { oneArm(5f) }
+        assertEquals(0, run(fling, 0, flung).size, "one arm thrown overhead is not a lateral raise")
     }
 
     @Test

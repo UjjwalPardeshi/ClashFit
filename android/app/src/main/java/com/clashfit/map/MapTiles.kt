@@ -57,6 +57,22 @@ object MapTiles {
                 osmdroidTileCache = tiles
                 tileFileSystemCacheMaxBytes = CACHE_MAX_BYTES
                 tileFileSystemCacheTrimBytes = CACHE_TRIM_BYTES
+                // How quickly the first screenful arrives.
+                //
+                // osmdroid ships with two download threads, which on a phone opening a map for
+                // the first time means the twelve or so tiles of a screenful arrive six deep and
+                // the map is visibly grey for several seconds. Four is still well inside what any
+                // ordinary map client does, and halves that wait. The disk threads matter on a
+                // second look at the same place, where the tiles are already cached and the only
+                // cost is reading them.
+                tileDownloadThreads = 4
+                tileFileSystemThreads = 8
+                tileDownloadMaxQueueSize = 64
+                // A street does not move. Honouring a short cache header by re-fetching tiles the
+                // phone already has is a slow map and wasted traffic on someone else's servers;
+                // a week is the usage policy's own suggested minimum.
+                expirationExtendedDuration = 7L * 24 * 60 * 60 * 1000
+
                 // Nothing about a map belongs in logcat on a demo phone.
                 isDebugMode = false
                 isDebugTileProviders = false

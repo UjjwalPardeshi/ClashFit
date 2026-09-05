@@ -35,6 +35,48 @@ const combatCfg = cfg('combat.json');
 const squat = cfg('exercises/squat.json');
 const calf = cfg('exercises/calf_raise.json');
 
+// The squat's own angles, taken from the config instead of written out in every synthetic set.
+//
+// They used to be literals — a "clean" squat was bottom: 80 in forty places — and when the gate
+// was retuned on 6 Sep 2026 from a 100 degree bottom to a 72 degree one, every one of those
+// eighty-degree sets silently stopped producing a rep. The suite did not fail with a useful
+// message; it crashed at load, because a helper indexed [0] into an empty list of reps. Deriving
+// them means the next retune moves the tests with it.
+const SQUAT_TOP = 170;                                    // clear of topEnter, with margin
+const SQUAT_DEEP = squat.detector.targetAngle - 2;        // a squat to target and a little past
+const SQUAT_GATE = squat.detector.bottomEnter;            // the shallowest bottom that still counts
+const SQUAT_FAILURE_START = squat.detector.targetAngle - 6;  // deep enough that a decaying set has room to fade
+// Bottoms that stop short of the gate. Above bottomEnter so nothing counts, below topExit so the
+// machine still leaves the top and the rep is genuinely attempted rather than never begun.
+const SQUAT_SHORT = [SQUAT_GATE + 4, SQUAT_GATE + 13, SQUAT_GATE + 28];
+
+// A set that fades to failure, in two independent dials.
+//
+// The depth has to decay slowly enough that the last rep still clears the gate, because a rep
+// that stops counting produces no fatigue reading at all. The gate is now only four degrees off
+// a full squat, so the room to fade in is ten degrees rather than the thirty it used to be, and
+// one shared `decay` can no longer both keep the reps countable and slow the movement enough to
+// read as exhaustion. `tempoDecay` is the dial that actually drives the estimator, because the
+// squat's fatigue signal is VELOCITY_LOSS.
+const SQUAT_FADE_REPS = 14;
+// Derived against synthWorldSet's own top rather than SQUAT_TOP, because the engine tests drive
+// world poses from 172 and a wider range fades faster; three degrees of margin covers the
+// difference between the raw state machine and the calibrated engine.
+const SQUAT_WORLD_TOP = 172;
+const SQUAT_FADE_DECAY =
+  (SQUAT_GATE - 3 - SQUAT_FAILURE_START) / ((SQUAT_WORLD_TOP - SQUAT_FAILURE_START) * (SQUAT_FADE_REPS - 1));
+const SQUAT_FADE_TEMPO_DECAY = 0.040;
+
+// Deeper than any real squat, on purpose.
+//
+// A limb guarded by a third of the rep's travel misses a 72 degree gate entirely from a normal
+// depth, and the detector wants BOTH knees past it, so the set produces no reps and there is
+// nothing to measure. These sets are exercising the tracker's arithmetic, not what a camera would
+// see, so they start deep enough that the guarded side still counts. That the app cannot see a
+// heavily guarded leg at normal depth is a real consequence of the tuning, not a fact about the
+// tracker, and it belongs in a conversation rather than hidden inside a passing test.
+const SQUAT_ASYM_BOTTOM = 45;
+
 let pass = 0, fail = 0;
 const results = [];
 const pending = [];
@@ -60,6 +102,23 @@ function runFsm(samples, exercise, topRef) {
   return reps;
 }
 
+// ---------- the squat's tuning, pinned ----------
+t('the squat gate is where the config says it is', () => {
+  // A tripwire, not a preference. Every synthetic set below is derived from these three numbers,
+  // so if one moves this fails first and by name, instead of forty unrelated assertions failing
+  // for reasons that look like something else.
+  //
+  // Ujjwal retuned these on 6 Sep 2026. The bottom of a squat reads 65-72 on this app's geometry
+  // and standing reads 150-160 rather than the 180 that geometry promises, because the camera
+  // sees a knee edge-on. Changing them is fine; changing them silently is not.
+  eq(squat.detector.bottomEnter, 72, 'the squat gate moved:');
+  eq(squat.detector.targetAngle, 68, 'the squat target moved:');
+  eq(squat.detector.topEnter, 160, 'the squat standing angle moved:');
+  ok(SQUAT_DEEP < SQUAT_GATE, `a full squat (${SQUAT_DEEP}) must clear the gate (${SQUAT_GATE})`);
+  ok(SQUAT_SHORT.every(b => b > SQUAT_GATE), 'the short bottoms must all miss the gate');
+  ok(SQUAT_SHORT.every(b => b < squat.detector.topExit), 'a short bottom must still leave the top');
+});
+
 // ---------- geometry ----------
 t('angle3 right angle', () => near(angle3({x:1,y:0,z:0},{x:0,y:0,z:0},{x:0,y:1,z:0}), 90, 1e-6));
 t('angle3 straight',    () => near(angle3({x:1,y:0,z:0},{x:0,y:0,z:0},{x:-1,y:0,z:0}), 180, 1e-6));
@@ -67,7 +126,7 @@ t('angle3 degenerate is NaN', () => ok(Number.isNaN(angle3({x:0,y:0,z:0},{x:0,y:
 
 // ---------- rep FSM ----------
 t('F1 · 10 clean squats counts 10', () => {
-  const reps = runFsm(synthSet({ reps: 10, top: 170, bottom: 80 }), squat, 170);
+  const reps = runFsm(synthSet({ reps: 10, top: SQUAT_TOP, bottom: SQUAT_DEEP }), squat, SQUAT_TOP);
   eq(reps.length, 10);
 });
 
@@ -79,18 +138,18 @@ t('F4 · jitter at the threshold counts 0', () => {
 
 t('too-fast rep is rejected (minRepMs)', () => {
   const s = [[170,0],[170,33]];
-  const r = synthRep({ top: 170, bottom: 80, eccSec: 0.2, pauseSec: 0.05, conSec: 0.2, t0: 66 });
-  eq(runFsm([...s, ...r.samples, [170, r.tEnd + 33]], squat, 170).length, 0);
+  const r = synthRep({ top: SQUAT_TOP, bottom: SQUAT_DEEP, eccSec: 0.2, pauseSec: 0.05, conSec: 0.2, t0: 66 });
+  eq(runFsm([...s, ...r.samples, [170, r.tEnd + 33]], squat, SQUAT_TOP).length, 0);
 });
 
 t('too-slow rep is rejected (maxRepMs)', () => {
   const s = [[170,0]];
-  const r = synthRep({ top: 170, bottom: 80, eccSec: 6, pauseSec: 2, conSec: 6, t0: 33 });
-  eq(runFsm([...s, ...r.samples, [170, r.tEnd + 33]], squat, 170).length, 0);
+  const r = synthRep({ top: SQUAT_TOP, bottom: SQUAT_DEEP, eccSec: 6, pauseSec: 2, conSec: 6, t0: 33 });
+  eq(runFsm([...s, ...r.samples, [170, r.tEnd + 33]], squat, SQUAT_TOP).length, 0);
 });
 
 t('incomplete rep (never reaches depth) counts 0', () => {
-  const reps = runFsm(synthSet({ reps: 5, top: 170, bottom: 140 }), squat, 170);
+  const reps = runFsm(synthSet({ reps: 5, top: SQUAT_TOP, bottom: 140 }), squat, SQUAT_TOP);
   eq(reps.length, 0);
 });
 
@@ -101,16 +160,16 @@ t('INVERTED direction · calf raise counts 8', () => {
 });
 
 t('F5 · framing loss mid-set produces no phantom reps', () => {
-  const a = synthSet({ reps: 3, top: 170, bottom: 80 });
+  const a = synthSet({ reps: 3, top: SQUAT_TOP, bottom: SQUAT_DEEP });
   const last = a[a.length - 1][1];
   const gap = []; let ts = last + 33;
   for (let i = 0; i < 120; i++) { gap.push([NaN, ts]); ts += 33.3; }
-  const b = synthSet({ reps: 3, top: 170, bottom: 80 }).map(([v, ms]) => [v, ms + ts]);
-  eq(runFsm([...a, ...gap, ...b], squat, 170).length, 6);
+  const b = synthSet({ reps: 3, top: SQUAT_TOP, bottom: SQUAT_DEEP }).map(([v, ms]) => [v, ms + ts]);
+  eq(runFsm([...a, ...gap, ...b], squat, SQUAT_TOP).length, 6);
 });
 
 t('rep measurements are complete and finite', () => {
-  const r = runFsm(synthSet({ reps: 1, top: 170, bottom: 80 }), squat, 170)[0];
+  const r = runFsm(synthSet({ reps: 1, top: SQUAT_TOP, bottom: SQUAT_DEEP }), squat, SQUAT_TOP)[0];
   for (const k of ['thetaMin','thetaMax','tEccSec','tBottomSec','tConSec','concentricVelocity','validFrameRatio'])
     ok(Number.isFinite(r[k]), `${k} not finite: ${r[k]}`);
   ok(r.thetaMin < 90, `thetaMin should be deep, got ${r.thetaMin}`);
@@ -118,12 +177,12 @@ t('rep measurements are complete and finite', () => {
 
 // ---------- form scoring ----------
 const romBaseline = (() => {
-  const r = runFsm(synthSet({ reps: 1, top: 170, bottom: 80 }), squat, 170)[0];
+  const r = runFsm(synthSet({ reps: 1, top: SQUAT_TOP, bottom: SQUAT_DEEP }), squat, SQUAT_TOP)[0];
   return r.uMax - r.uMin;
 })();
 
 t('F1 · clean squats mean formScore > 0.80', () => {
-  const reps = runFsm(synthSet({ reps: 10, top: 170, bottom: 80 }), squat, 170);
+  const reps = runFsm(synthSet({ reps: 10, top: SQUAT_TOP, bottom: SQUAT_DEEP }), squat, SQUAT_TOP);
   const m = reps.map(r => scoreRep(r, squat, romBaseline, { kneeOffset: 0.10 }).formScore)
                .reduce((a,b)=>a+b,0) / reps.length;
   ok(m > 0.80, `mean ${m.toFixed(3)}`);
@@ -132,34 +191,43 @@ t('F1 · clean squats mean formScore > 0.80', () => {
 t('F2 · a squat that stops short of the gate is not counted at all', () => {
   // The sharpest edge in the config, pinned here so it stays visible.
   //
-  // bottomEnter is 100°, so a rep that only reaches 105-125° is not graded SHALLOW — it is not
-  // a rep. The athlete gets silence rather than a verdict, and `cues.tooHigh` can never fire,
-  // because no counted rep can score low enough to be SHALLOW. That is a deliberate choice
-  // about what this app is willing to call a squat; this test is what makes it a choice rather
-  // than a surprise, and it is the first thing that will fail if the gate is ever reopened.
-  for (const bottom of [125, 115, 105]) {
-    const reps = runFsm(synthSet({ reps: 10, top: 170, bottom }), squat, 170);
+  // A rep that stops short of bottomEnter is not graded SHALLOW — it is not a rep at all. The
+  // athlete gets silence rather than a verdict, and `cues.tooHigh` can never fire, because no
+  // counted rep can score low enough to be SHALLOW. That is a deliberate choice about what this
+  // app is willing to call a squat, and the retune on 6 Sep 2026 made it sharper rather than
+  // softer: the gate moved from 100° to 72°, so the range that now produces silence is wider.
+  for (const bottom of SQUAT_SHORT) {
+    const reps = runFsm(synthSet({ reps: 10, top: SQUAT_TOP, bottom }), squat, SQUAT_TOP);
     eq(reps.length, 0, `a ${bottom}° squat was counted despite bottomEnter ${squat.detector.bottomEnter}`);
   }
-  eq(runFsm(synthSet({ reps: 10, top: 170, bottom: 100 }), squat, 170).length, 10, 'the gate itself should count');
+  eq(runFsm(synthSet({ reps: 10, top: SQUAT_TOP, bottom: SQUAT_GATE }), squat, SQUAT_TOP).length, 10,
+     'a squat exactly to the gate should count');
 });
 
 t('F2 · the shallowest countable squat lands visibly less damage than a full one', () => {
   // Shallow AND rushed — which is how a bad rep actually looks. The requirement is a damage gap
   // a bystander notices, not an arbitrary score threshold, so that is what this asserts.
-  const reps = runFsm(synthSet({ reps: 10, top: 170, bottom: 100, eccSec: 0.30, pauseSec: 0.05 }), squat, 170);
+  //
+  // The gap narrowed on 6 Sep 2026 and this number moved with it, from 25 to 15. It is worth
+  // being plain about why. The gate and the target used to sit fifteen degrees apart — 100 and
+  // 85 — so the shallowest rep the app would count was visibly worse than a full one. They now
+  // sit four degrees apart, 72 and 68, which is a truer description of a squat but leaves almost
+  // nothing between "barely legal" and "good". A player who stops four degrees early loses
+  // sixteen damage instead of twenty-five. That is the tuning working as specified, not a bug,
+  // but it does mean depth is now judged almost entirely by the gate rather than by the score.
+  const reps = runFsm(synthSet({ reps: 10, top: SQUAT_TOP, bottom: SQUAT_GATE, eccSec: 0.30, pauseSec: 0.05 }), squat, SQUAT_TOP);
   ok(reps.length === 10, `expected 10 reps, got ${reps.length}`);
   const scores = reps.map(r => scoreRep(r, squat, romBaseline, { kneeOffset: 0.40 }).formScore);
   const m = scores.reduce((a,b)=>a+b,0) / scores.length;
 
-  const clean = runFsm(synthSet({ reps: 5, top: 170, bottom: 80 }), squat, 170)
+  const clean = runFsm(synthSet({ reps: 5, top: SQUAT_TOP, bottom: SQUAT_DEEP }), squat, SQUAT_TOP)
     .map(r => scoreRep(r, squat, romBaseline, { kneeOffset: 0.10 }).formScore);
   const cm = clean.reduce((a,b)=>a+b,0) / clean.length;
   ok(cm > m, `a full squat should outscore a barely-legal one (${cm.toFixed(3)} vs ${m.toFixed(3)})`);
 
   const e = new CombatEngine(combatCfg);
   const dShallow = e.damageFor(m, Band.WORKING), dClean = e.damageFor(cm, Band.WORKING);
-  ok(dClean - dShallow >= 25, `damage gap only ${dClean - dShallow} (${dShallow} vs ${dClean})`);
+  ok(dClean - dShallow >= 15, `damage gap only ${dClean - dShallow} (${dShallow} vs ${dClean})`);
 });
 
 t('CLINIC · a chair stand that stops short of the gate is not counted either', () => {
@@ -189,27 +257,27 @@ t('CLINIC · a chair stand that stops short of the gate is not counted either', 
 t('weights normalise when alignment is zeroed', () => {
   const noAlign = JSON.parse(JSON.stringify(squat));
   noAlign.form.weights = { depth: 0.47, rom: 0.29, tempo: 0.24, alignment: 0 };
-  const r = runFsm(synthSet({ reps: 1, top: 170, bottom: 80 }), squat, 170)[0];
+  const r = runFsm(synthSet({ reps: 1, top: SQUAT_TOP, bottom: SQUAT_DEEP }), squat, SQUAT_TOP)[0];
   const s = scoreRep(r, noAlign, romBaseline, null);
   ok(s.formScore >= 0 && s.formScore <= 1, `out of range ${s.formScore}`);
 });
 
 t('scores clamp to [0,1] on absurd input', () => {
-  const r = runFsm(synthSet({ reps: 1, top: 170, bottom: 20 }), squat, 170)[0];
+  const r = runFsm(synthSet({ reps: 1, top: SQUAT_TOP, bottom: 20 }), squat, SQUAT_TOP)[0];
   const s = scoreRep(r, squat, 1, { kneeOffset: -5 });
   ok(s.formScore <= 1 && s.depth <= 1 && s.rom <= 1, 'not clamped');
 });
 
 t('worst sub-score names the fault · shallow rep', () => {
-  const reps = runFsm(synthSet({ reps: 1, top: 170, bottom: 100 }), squat, 170);
+  const reps = runFsm(synthSet({ reps: 1, top: SQUAT_TOP, bottom: SQUAT_GATE }), squat, SQUAT_TOP);
   const r = scoreRep(reps[0], squat, romBaseline, { kneeOffset: 0.10 });
   ok(['depth', 'rom'].includes(r.reason), `got ${r.reason}`);
 });
 
 t('worst sub-score names the fault · bounced rep is tempo', () => {
   const s = [[170, 0]];
-  const rep = synthRep({ top: 170, bottom: 80, eccSec: 0.35, pauseSec: 0.02, conSec: 0.6, t0: 33 });
-  const reps = runFsm([...s, ...rep.samples, [170, rep.tEnd + 33]], squat, 170);
+  const rep = synthRep({ top: SQUAT_TOP, bottom: SQUAT_DEEP, eccSec: 0.35, pauseSec: 0.02, conSec: 0.6, t0: 33 });
+  const reps = runFsm([...s, ...rep.samples, [170, rep.tEnd + 33]], squat, SQUAT_TOP);
   ok(reps.length === 1, `expected 1 rep, got ${reps.length}`);
   eq(scoreRep(reps[0], squat, romBaseline, { kneeOffset: 0.10 }).reason, 'tempo');
 });
@@ -220,14 +288,15 @@ t('verdict bands', () => {
 
 // ---------- fatigue ----------
 t('flat set stays FRESH', () => {
-  const reps = runFsm(synthSet({ reps: 12, top: 170, bottom: 80 }), squat, 170);
+  const reps = runFsm(synthSet({ reps: 12, top: SQUAT_TOP, bottom: SQUAT_DEEP }), squat, SQUAT_TOP);
   const f = new FatigueEstimator(pose.fatigue);
   let st; for (const r of reps) st = f.onRep(r);
   eq(st.band, Band.FRESH, `value ${st.value.toFixed(3)}`);
 });
 
 t('F3 · set to failure reaches GASSED', () => {
-  const reps = runFsm(synthSet({ reps: 14, top: 170, bottom: 70, decay: 0.020, restGrowth: 0.55 }), squat, 170);
+  const reps = runFsm(synthSet({ reps: SQUAT_FADE_REPS, top: SQUAT_TOP, bottom: SQUAT_FAILURE_START, decay: SQUAT_FADE_DECAY,
+                            tempoDecay: SQUAT_FADE_TEMPO_DECAY, restGrowth: 0.55 }), squat, SQUAT_TOP);
   ok(reps.length >= 12, `only ${reps.length} reps detected`);
   const f = new FatigueEstimator(pose.fatigue);
   const seen = []; for (const r of reps) seen.push(f.onRep(r).band);
@@ -247,7 +316,7 @@ t('band latching does not flap on a boundary', () => {
 
 t('freeze prevents a pause being read as fatigue', () => {
   const f = new FatigueEstimator(pose.fatigue);
-  const reps = runFsm(synthSet({ reps: 6, top: 170, bottom: 80 }), squat, 170);
+  const reps = runFsm(synthSet({ reps: 6, top: SQUAT_TOP, bottom: SQUAT_DEEP }), squat, SQUAT_TOP);
   reps.forEach(r => f.onRep(r));
   const before = f.state().value;
   f.freeze();
@@ -341,7 +410,7 @@ const drive = (engine, frames) => { for (const [w, t] of frames) engine.frame(w,
 
 t('engine · calibrates then counts a clean set', () => {
   const e = new SessionEngine(store, 'squat');
-  const s = drive(e, synthWorldSet({ reps: 8, bottom: 80 }));
+  const s = drive(e, synthWorldSet({ reps: 8, bottom: SQUAT_DEEP }));
   eq(s.phase === Phase.DEAD ? Phase.DEAD : s.phase, s.phase);
   ok(e.reps.length >= 7, `only ${e.reps.length} reps`);
   ok(Number.isFinite(s.topRef), 'never calibrated');
@@ -349,7 +418,7 @@ t('engine · calibrates then counts a clean set', () => {
 
 t('engine · framing loss freezes the fatigue baseline', () => {
   const e = new SessionEngine(store, 'squat');
-  drive(e, synthWorldSet({ reps: 5, bottom: 80 }));
+  drive(e, synthWorldSet({ reps: 5, bottom: SQUAT_DEEP }));
   const before = e.fatigue.state().value;
   for (let i = 0; i < 60; i++) e.frame(null, null, 100000 + i * 33);
   eq(e.state().phase, Phase.FRAMING_LOST);
@@ -359,7 +428,7 @@ t('engine · framing loss freezes the fatigue baseline', () => {
 // ---------- game modes ----------
 t('TIME_ATTACK · ends on the clock, boss survives', () => {
   const e = new SessionEngine(store, 'squat', { mode: Mode.TIME_ATTACK });
-  const s = drive(e, synthWorldSet({ reps: 40, bottom: 80 }));
+  const s = drive(e, synthWorldSet({ reps: 40, bottom: SQUAT_DEEP }));
   ok(s.ended, 'never ended');
   eq(s.endReason, 'TIME');
   ok(!s.combat.dead, 'boss died in a scored-on-damage mode');
@@ -368,9 +437,9 @@ t('TIME_ATTACK · ends on the clock, boss survives', () => {
 
 t('TIME_ATTACK · no reps counted after the clock stops', () => {
   const e = new SessionEngine(store, 'squat', { mode: Mode.TIME_ATTACK });
-  drive(e, synthWorldSet({ reps: 40, bottom: 80 }));
+  drive(e, synthWorldSet({ reps: 40, bottom: SQUAT_DEEP }));
   const atEnd = e.reps.length;
-  drive(e, synthWorldSet({ reps: 5, bottom: 80 }).map(([w, ms]) => [w, ms + 200000]));
+  drive(e, synthWorldSet({ reps: 5, bottom: SQUAT_DEEP }).map(([w, ms]) => [w, ms + 200000]));
   eq(e.reps.length, atEnd, 'reps leaked past the buzzer');
 });
 
@@ -379,7 +448,7 @@ t('GHOST_RACE · ghost damage lands through the duel path', () => {
               events: Array.from({ length: 10 }, (_, i) => ({ t: (i + 1) * 1500, damage: 70 })) };
   const e = new SessionEngine(store, 'squat');
   e.loadGhost(g);
-  const s = drive(e, synthWorldSet({ reps: 6, bottom: 80 }));
+  const s = drive(e, synthWorldSet({ reps: 6, bottom: SQUAT_DEEP }));
   ok(s.ghostDamage > 0, 'ghost never fired');
   eq(s.combat.totalDamage, s.playerDamage + s.ghostDamage, 'player and ghost damage do not reconcile');
 });
@@ -398,7 +467,7 @@ t('GHOST_RACE · replaying the same ghost twice is idempotent', () => {
 
 t('ghost · round-trips a recorded set', () => {
   const e = new SessionEngine(store, 'squat');
-  drive(e, synthWorldSet({ reps: 6, bottom: 80 }));
+  drive(e, synthWorldSet({ reps: 6, bottom: SQUAT_DEEP }));
   const g = parseGhost(JSON.stringify(ghostFromReps(e.reps, { exercise: 'squat' })));
   eq(g.events.length, e.reps.length);
   eq(g.meta.totalDamage, e.reps.reduce((a, r) => a + r.damage, 0));
@@ -416,7 +485,7 @@ t('shipped pacer ghosts are valid and ordered', () => {
 
 t('SURVIVAL · boss respawns harder and mercy is disabled', () => {
   const e = new SessionEngine(store, 'squat', { mode: Mode.SURVIVAL });
-  drive(e, synthWorldSet({ reps: 40, bottom: 80 }));
+  drive(e, synthWorldSet({ reps: 40, bottom: SQUAT_DEEP }));
   ok(e.wave > 1, `never cleared a wave (wave ${e.wave})`);
   ok(!e.state().combat.dead, 'run ended on a boss death instead of continuing');
   ok(e.combat.mercyDisabled, 'mercy still enabled in Survival');
@@ -425,14 +494,14 @@ t('SURVIVAL · boss respawns harder and mercy is disabled', () => {
 
 t('SURVIVAL · the clean-rep bar rises each wave', () => {
   const e = new SessionEngine(store, 'squat', { mode: Mode.SURVIVAL });
-  drive(e, synthWorldSet({ reps: 40, bottom: 80 }));
+  drive(e, synthWorldSet({ reps: 40, bottom: SQUAT_DEEP }));
   ok(e.formThresholdBonus > 0, 'threshold never tightened');
   ok(e.combat.combo.cfg.threshold > combatCfg.combo.threshold, 'combo threshold unchanged');
 });
 
 t('BOSS_RUSH · advances the sequence then ends', () => {
   const e = new SessionEngine(store, 'squat', { mode: Mode.BOSS_RUSH });
-  drive(e, synthWorldSet({ reps: 120, bottom: 80 }));
+  drive(e, synthWorldSet({ reps: 120, bottom: SQUAT_DEEP }));
   const seq = combatCfg.modes.BOSS_RUSH.sequence.length;
   ok(e.rushIndex >= 1, 'never advanced past the first boss');
   if (e.state().ended) eq(e.rushIndex, seq, 'ended before finishing the sequence');
@@ -509,7 +578,7 @@ t('challenge · a ghost from a challenge is playable as a normal ghost', () => {
 
 t('challenge · built from a finished session, and described in one line', () => {
   const e = new SessionEngine(store, 'squat');
-  drive(e, synthWorldSet({ reps: 7, bottom: 80 }));
+  drive(e, synthWorldSet({ reps: 7, bottom: SQUAT_DEEP }));
   const c = challengeFromSession({ reps: e.reps, exerciseId: 'squat', name: 'Ujjwal' });
   ok(c, 'no challenge built from a real session');
   eq(c.ghost.events.length, e.reps.length);
@@ -534,7 +603,7 @@ t('challenge · needs no network, no account and no server', () => {
 // ---------- bilateral asymmetry ----------
 t('asymmetry · a symmetric set reports no lean', () => {
   const e = new SessionEngine(store, 'squat');
-  drive(e, synthWorldSet({ reps: 8, bottom: 80 }));
+  drive(e, synthWorldSet({ reps: 8, bottom: SQUAT_DEEP }));
   const a = summariseAsymmetry(e.reps);
   ok(a.enough, 'not enough usable reps');
   ok(a.deficitPct < 5, `saw a ${a.deficitPct.toFixed(1)}% deficit on a symmetric set`);
@@ -544,7 +613,7 @@ t('asymmetry · a symmetric set reports no lean', () => {
 t('asymmetry · a guarded limb is detected, and the correct side is named', () => {
   const e = new SessionEngine(store, 'squat');
   // right side travels through 30% less of the rep's depth — someone favouring one leg
-  drive(e, synthWorldSet({ reps: 8, bottom: 80, rightBias: 0.30 }));
+  drive(e, synthWorldSet({ reps: 8, bottom: SQUAT_ASYM_BOTTOM, rightBias: 0.30 }));
   const a = summariseAsymmetry(e.reps);
   ok(a.enough, 'not enough usable reps');
   ok(a.consistent, 'lean was not flagged as consistent across the set');
@@ -555,7 +624,7 @@ t('asymmetry · a guarded limb is detected, and the correct side is named', () =
 t('asymmetry · scales with how much the limb is guarded', () => {
   const run = (bias) => {
     const e = new SessionEngine(store, 'squat');
-    drive(e, synthWorldSet({ reps: 8, bottom: 80, rightBias: bias }));
+    drive(e, synthWorldSet({ reps: 8, bottom: SQUAT_ASYM_BOTTOM, rightBias: bias }));
     return summariseAsymmetry(e.reps).deficitPct ?? 0;
   };
   const light = run(0.12), heavy = run(0.35);
@@ -586,7 +655,7 @@ t('asymmetry · never diagnoses, never clears anyone', () => {
 
 t('asymmetry · reaches the coach as an observation, not a verdict', () => {
   const e = new SessionEngine(store, 'squat');
-  drive(e, synthWorldSet({ reps: 8, bottom: 80, rightBias: 0.30 }));
+  drive(e, synthWorldSet({ reps: 8, bottom: SQUAT_ASYM_BOTTOM, rightBias: 0.30 }));
   const tel = summarise(e.setReps, e.combat.state(), squat, 1, 45);
   ok(tel.asymmetry_pct >= 10, `telemetry carried ${tel.asymmetry_pct}`);
   eq(tel.weaker_side, 'right');
@@ -672,12 +741,16 @@ t('TEMPO_TRIAL · scores how closely you match the target, not how deep you went
 t('TEMPO_TRIAL · a well-paced set outscores a rushed one of identical depth', () => {
   const run = (eccSec) => {
     const e = new SessionEngine(store, 'squat', { mode: Mode.TEMPO_TRIAL });
-    drive(e, synthWorldSet({ reps: 8, bottom: 80, eccSec, pauseSec: 0.3 }));
+    drive(e, synthWorldSet({ reps: 8, bottom: SQUAT_DEEP, eccSec, pauseSec: 0.3 }));
     return e.reps.length ? e.reps.reduce((a, r) => a + r.formScore, 0) / e.reps.length : 0;
   };
-  const paced = run(0.9);          // measures near the 0.55s window target
-  const rushed = run(0.35);
-  ok(paced > rushed + 0.15, `paced ${paced.toFixed(2)} vs rushed ${rushed.toFixed(2)}`);
+  // The measured window is topExit crossing to bottomEnter crossing, so retuning the gate moved
+  // it: the same descent now spends longer inside the window than it used to, and the eccentric
+  // that lands on the 0.55s target fell from 0.9s to 0.5s. The gap between paced and rushed
+  // narrowed with it, because a rushed rep is no longer as far from the target as it was.
+  const paced = run(0.5);          // measures nearest the 0.55s window target
+  const rushed = run(0.3);
+  ok(paced > rushed + 0.10, `paced ${paced.toFixed(2)} vs rushed ${rushed.toFixed(2)}`);
 });
 
 t('TEMPO_TRIAL · the target is expressed in measured-window units', () => {
@@ -721,7 +794,8 @@ t('breathing · recovery is bounded so it cannot undo a set', () => {
 
 t('recovery · lowers the band without rewriting the baseline', () => {
   const e = new SessionEngine(store, 'squat');
-  drive(e, synthWorldSet({ reps: 14, bottom: 70, decay: 0.020, restGrowth: 0.55 }));
+  drive(e, synthWorldSet({ reps: SQUAT_FADE_REPS, bottom: SQUAT_FAILURE_START, decay: SQUAT_FADE_DECAY,
+                            tempoDecay: SQUAT_FADE_TEMPO_DECAY, restGrowth: 0.55 }));
   const before = e.fatigue.state();
   ok(before.value > 0.2, `fatigue only reached ${before.value.toFixed(2)}`);
   const baselineBefore = JSON.stringify(e.fatigue.baseline);
@@ -1006,7 +1080,7 @@ t('calibration · starts promptly and does not eat the first reps', () => {
   // never holds still, so calibration dragged on for 27 seconds on a real trace and the fatigue
   // baseline was then computed from an already-degraded part of the set.
   const e = new SessionEngine(store, 'squat');
-  const frames = synthWorldSet({ reps: 10, bottom: 80 });
+  const frames = synthWorldSet({ reps: 10, bottom: SQUAT_DEEP });
   let started = null;
   for (const [w, t2] of frames) {
     e.frame(w, null, t2);
@@ -1055,7 +1129,8 @@ t('calibration · a full fatiguing set reaches GASSED end to end', () => {
   // The regression this whole fix exists for: calibration must not consume the early reps, or
   // the fatigue baseline is taken from an already-degraded part of the set.
   const e = new SessionEngine(store, 'squat');
-  drive(e, synthWorldSet({ reps: 14, bottom: 70, decay: 0.020, restGrowth: 0.55 }));
+  drive(e, synthWorldSet({ reps: SQUAT_FADE_REPS, bottom: SQUAT_FAILURE_START, decay: SQUAT_FADE_DECAY,
+                            tempoDecay: SQUAT_FADE_TEMPO_DECAY, restGrowth: 0.55 }));
   const bands = [...new Set(e.reps.map((r) => r.fatigue.band))];
   ok(e.reps.length >= 12, `only ${e.reps.length} reps survived`);
   ok(e.reps[0].thetaMin < 90, `first rep already shallow at ${e.reps[0].thetaMin.toFixed(0)}deg — baseline is corrupt`);
@@ -1469,7 +1544,7 @@ t('every shipped exercise config is loadable and well formed', () => {
 // ---------- coaching ----------
 const setOf = (n, opts = {}) => {
   const e = new SessionEngine(store, 'squat');
-  drive(e, synthWorldSet({ reps: n, bottom: 80, ...opts }));
+  drive(e, synthWorldSet({ reps: n, bottom: SQUAT_DEEP, ...opts }));
   return e;
 };
 
@@ -1572,7 +1647,7 @@ t('coachFor · uses the model when its output is clean', async () => {
 // ---------- set flow ----------
 t('standing still never ends a set', async () => {
   const e = new SessionEngine(store, 'squat');
-  drive(e, synthWorldSet({ reps: 5, bottom: 80 }));
+  drive(e, synthWorldSet({ reps: 5, bottom: SQUAT_DEEP }));
   const last = e.lastRepEndMs;
   const still = synthWorldSet({ reps: 0 })[0][0];
   // Sixteen seconds of stillness. This used to close the set and cut to a rest screen.
@@ -1583,7 +1658,7 @@ t('standing still never ends a set', async () => {
 
 t('ending a set produces a coach line and starts the next one immediately', async () => {
   const e = new SessionEngine(store, 'squat');
-  drive(e, synthWorldSet({ reps: 5, bottom: 80 }));
+  drive(e, synthWorldSet({ reps: 5, bottom: SQUAT_DEEP }));
   await e.endSet();
   eq(e.state().phase, Phase.FIGHTING, 'there is no rest phase to pass through');
   eq(e.setIndex, 2);
@@ -1593,7 +1668,7 @@ t('ending a set produces a coach line and starts the next one immediately', asyn
 
 t('ending a set resets fatigue but carries boss HP', async () => {
   const e = new SessionEngine(store, 'squat');
-  drive(e, synthWorldSet({ reps: 5, bottom: 80 }));
+  drive(e, synthWorldSet({ reps: 5, bottom: SQUAT_DEEP }));
   const hpBefore = e.combat.hp;
   await e.endSet();
   eq(e.state().phase, Phase.FIGHTING);

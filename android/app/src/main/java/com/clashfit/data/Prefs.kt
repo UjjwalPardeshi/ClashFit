@@ -61,20 +61,32 @@ class Prefs(private val context: Context) {
         /**
          * Draw OpenStreetMap tiles under a route.
          *
-         * Off until the player says yes, and they are asked in words rather than by a permission
-         * dialog. A map centred on you is a request that carries roughly where you are to a tile
-         * server, and this app's whole argument is that it says so when something leaves the
-         * phone. `docs/33-FEATURE-ZOMBIE-RUN.md` § Rules this mode must follow, rule 4.
+         * On, and said in words the first time rather than buried in a permission dialog. A map
+         * centred on you is a request that carries roughly where you are to a tile server, and
+         * this app's whole argument is that it says so when something leaves the phone. The notice
+         * is shown once, before the first activity, and turning it off is one tap from there or
+         * from Settings at any time. `docs/33-FEATURE-ZOMBIE-RUN.md` § Rules this mode must
+         * follow, rule 4.
          *
          * With this off the route still draws — on the app's own grid, with no network at all.
          */
-        val mapTiles: Boolean = false,
+        val mapTiles: Boolean = true,
         /** True once the tile notice has been shown, so it is asked once and not every run. */
         val mapTilesAsked: Boolean = false,
         /** True once the share sheet's "this picture contains your route" notice was accepted. */
         val shareNoticeSeen: Boolean = false,
         /** Weekly distance goal for runs and walks, in metres. */
         val weeklyDistanceGoalM: Int = 15_000,
+        /**
+         * False until these values have actually come back from disk.
+         *
+         * Every screen collects this flow with a default instance as its initial value, so for the
+         * first frame of every screen the defaults are indistinguishable from the player's real
+         * choices. That is harmless for a colour and not harmless for a one-time notice, which
+         * flashed on screen every single visit because `mapTilesAsked` reads false in the default
+         * before the real `true` arrives a frame later.
+         */
+        val loaded: Boolean = false,
         /**
          * Read hand gestures from the camera during a fight: open palm pauses, thumb up ends the
          * set, fist skips the rest. On by default because it is the one mid-set input that works
@@ -131,8 +143,9 @@ class Prefs(private val context: Context) {
             goal = p[GOAL] ?: Goal.GET_STRONGER.name,
             avatarColor = p[AVATAR_COLOR] ?: 0,
             boss3d = p[BOSS_3D] ?: true,
-            mapTiles = p[MAP_TILES] ?: false,
+            mapTiles = p[MAP_TILES] ?: true,
             mapTilesAsked = p[MAP_TILES_ASKED] ?: false,
+            loaded = true,
             shareNoticeSeen = p[SHARE_NOTICE_SEEN] ?: false,
             weeklyDistanceGoalM = p[WEEKLY_DISTANCE_GOAL_M] ?: 15_000,
             gestures = p[GESTURES] ?: true,
