@@ -46,14 +46,14 @@
       "sides": "EITHER",
       "rest": [
         ">",
-        135
+        125
       ],
       "count": [
         "<",
-        80
+        93
       ],
       "debounceMs": 800,
-      "_note": "angle(11,13,15) and angle(12,14,16), per arm, 800 ms apart. Measured on the phone, 5 Sep 2026: an extended arm reads 150-159 on the 3D world landmarks, never 170, because the forearm is nearly edge-on to the camera and the depth axis is the noisiest one. Arming at >170 counted nothing at all. >135 clears the worst extended reading by fifteen degrees; <80 is the depth the user asked for and reaches on both arms."
+      "_note": "angle(11,13,15) and angle(12,14,16), per arm, 800 ms apart. Measured on the phone, 5 Sep 2026: an extended arm reads 150-159 on the 3D world landmarks, never 170, because the forearm is nearly edge-on to the camera and the depth axis is the noisiest one. Re-measured against the reference clip 6 Sep 2026, where a full curl closes to 84.8-85.3 and extends to 138.8-146.6: <80 was unreachable and >135 was marginal, so the pair moved out to <93 and >125."
     }
   },
   "form": {

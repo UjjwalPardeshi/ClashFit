@@ -46,14 +46,14 @@
       "sides": "BOTH",
       "rest": [
         "<",
-        0
+        -0.25
       ],
       "count": [
         ">",
-        0
+        -0.08
       ],
       "debounceMs": 1000,
-      "_note": "fitmon countLateralRaises: both wrists below the shoulders is down, both above counts, 1000 ms."
+      "_note": "Measured with pose_landmarker_full over the reference clip, 6 Sep 2026: WRIST_HEIGHT reaches -0.025 to +0.004 m at the top of a textbook raise and -0.42 to -0.46 m at the bottom. The old pair sat at 0 and 0 — adjacent, with no hysteresis, and demanding the wrist go ABOVE the shoulder when a lateral raise ends level with it. -0.08 counts a raise to shoulder height with 5 cm of margin; -0.25 rests well before the arms hang fully."
     }
   },
   "form": {

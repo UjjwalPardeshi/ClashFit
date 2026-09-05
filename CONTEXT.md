@@ -75,7 +75,7 @@ source ~/.clashfit-android-env.sh
 cd android
 ./gradlew :app:assembleDebug            # ~2 min warm, 150 MB APK
 ./gradlew :app:assembleRelease          # ~17 min cold, 70 MB APK
-JAVA_HOME=~/.jdks/jdk-21.0.12.1+1 ./gradlew :app:testDebugUnitTest   # 835 tests
+JAVA_HOME=~/.jdks/jdk-21.0.12.1+1 ./gradlew :app:testDebugUnitTest   # 836 tests
 ./gradlew :app:lintDebug                # fails the build on errors
 ./gradlew :app:recordRoborazziDebug     # re-render the 82 screenshot baselines
 ./install-to-phone.sh                   # build, install, launch, report
@@ -139,21 +139,28 @@ Widen that list to put them back; nothing else has to change.
 
 | Exercise | Keypoints | Rest | Counts at | Sides |
 |---|---|---|---|---|
-| Lateral raise | 23-11-13 / 24-12-14 | both wrists below the shoulders | both wrists above them | both together |
-| Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80° | either arm, one rep |
-| Shoulder press | 11-13-15 / 12-14-16 | elbow < 100° | elbow > 160°, wrist above the shoulder | better-seen side |
+| Lateral raise | 23-11-13 / 24-12-14 | both wrists 25 cm below the shoulders | both wrists within 8 cm of them | both together |
+| Bicep curl | 11-13-15 / 12-14-16 | elbow > 125° | elbow < 93° | either arm, one rep |
+| Shoulder press | 11-13-15 / 12-14-16 | elbow < 95° | elbow > 134°, wrist above the shoulder | better-seen side |
 | Squat | 23-25-27 / 24-26-28 | both knees < 110° | both knees > 160° | both together |
 
 The lateral raise is the odd row. Its keypoints are the angle the form score is built on, while the
-counter watches wrist height against the shoulder — which is what its rest and count columns
-describe. Debounce is 800 ms for the curl and 1000 ms for the rest.
+counter watches wrist height against the shoulder in metres — which is what its rest and count
+columns describe. Debounce is 800 ms for the curl and 1000 ms for the rest.
 
-The curl's two numbers are the only ones that are not fitmon's, and the reason is worth knowing
-before you tune anything else. Angles come from the 3D world landmarks, whose depth axis is the
-noisiest, and a forearm hanging at your side is nearly edge-on to the camera. So an arm the player
-believes is straight reads 150 to 159 on the phone, not the 170 to 180 the geometry says. Arming the
-counter at 170 counted nothing at all. Measure on the device before choosing a threshold; do not
-take the number off a diagram.
+**Three of these four rows are no longer fitmon's, and the reason is the single most important
+thing to know before tuning anything.** Angles come from the 3D world landmarks, whose depth axis is the
+noisiest, and a limb pointed toward or away from the camera is nearly edge-on to it. So an arm the
+player believes is straight reads 150 to 159 on the phone, not the 170 to 180 the geometry says,
+and a pressed-out arm overhead reads about 146. Every threshold taken off a diagram armed a counter
+the model can never reach, and the exercise silently counted nothing: the press asked for 160, the
+curl for 80, and the lateral raise asked for the wrist *above* the shoulder when a textbook lateral
+raise ends level with it. Measure before choosing a threshold; do not take the number off a diagram.
+
+`traces/reference-*.jsonl` are the shipped model's own reading of the four picker animations, and
+`ReferenceFormTest` replays them through the real engine and the real config. It asserts only that
+a correct rep counts at all — nothing about how many or how well scored — so a threshold that
+drifts out of human reach fails the build instead of failing the player.
 
 Two further rules were added on top of fitmon, because fitmon miscounts without them: a triceps
 extension needs the wrist above the shoulder to be at rest, and dropping the arm clears the stage,
