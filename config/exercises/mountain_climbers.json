@@ -15,7 +15,7 @@
   ],
   "detector": {
     "signalJoint": "KNEE",
-    "signalAxis": "x",
+    "signalAxis": "y",
     "minProminence": 0.03,
     "refractoryMs": 260,
     "targetCadence": {

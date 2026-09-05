@@ -21,29 +21,9 @@
           "KNEE",
           "ANKLE"
         ],
-        "value": 176,
-        "tolerance": 10,
+        "value": 170.0,
+        "tolerance": 10.0,
         "weight": 1.0
-      },
-      {
-        "angle": [
-          "SHOULDER",
-          "HIP",
-          "KNEE"
-        ],
-        "value": 172,
-        "tolerance": 14,
-        "weight": 1.0
-      },
-      {
-        "angle": [
-          "SHOULDER",
-          "ELBOW",
-          "WRIST"
-        ],
-        "value": 165,
-        "tolerance": 20,
-        "weight": 0.5
       }
     ],
     "enterAccuracy": 0.7,

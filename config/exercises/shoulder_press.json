@@ -38,17 +38,22 @@
       "ELBOW",
       "WRIST"
     ],
-    "gate": {
-      "angle": [
-        "HIP",
-        "SHOULDER",
-        "WRIST"
+    "_note": "Keypoints 11-13-15 / 12-14-16 (shoulder-elbow-wrist), 3D world angle. Start with the elbow at 90 or less (TOP at <=90), press to 170-180 (BOTTOM at >=170). The END gate (hip-shoulder-wrist >= 130 at lockout) refuses a press pushed out in front instead of overhead.",
+    "counter": "STAGE",
+    "stage": {
+      "sides": "BEST",
+      "rest": [
+        "<",
+        100
       ],
-      "min": 130,
-      "max": 180,
-      "at": "END"
-    },
-    "_note": "Keypoints 11-13-15 / 12-14-16 (shoulder-elbow-wrist), 3D world angle. Start with the elbow at 90 or less (TOP at <=90), press to 170-180 (BOTTOM at >=170). The END gate (hip-shoulder-wrist >= 130 at lockout) refuses a press pushed out in front instead of overhead."
+      "count": [
+        ">",
+        160
+      ],
+      "wristAboveShoulderAt": "COUNT",
+      "debounceMs": 1000,
+      "_note": "fitmon has no press; same shape as its triceps rule inverted — elbow <100 at the shoulders, >160 overhead counts."
+    }
   },
   "form": {
     "weights": {

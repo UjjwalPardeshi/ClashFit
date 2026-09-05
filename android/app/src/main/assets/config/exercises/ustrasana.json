@@ -17,22 +17,12 @@
     "reference": [
       {
         "angle": [
-          "SHOULDER",
-          "HIP",
-          "KNEE"
-        ],
-        "value": 200,
-        "tolerance": 18,
-        "weight": 1.0
-      },
-      {
-        "angle": [
           "HIP",
           "KNEE",
           "ANKLE"
         ],
-        "value": 90,
-        "tolerance": 16,
+        "value": 95.0,
+        "tolerance": 25.0,
         "weight": 1.0
       }
     ],

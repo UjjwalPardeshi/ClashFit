@@ -24,8 +24,8 @@
     },
     "topEnter": 160,
     "topExit": 152,
-    "bottomEnter": 120,
-    "bottomExit": 130,
+    "bottomEnter": 105,
+    "bottomExit": 120,
     "targetAngle": 90,
     "minDescendMs": 200,
     "minBottomMs": 120,
@@ -35,7 +35,21 @@
       "HIP",
       "KNEE",
       "ANKLE"
-    ]
+    ],
+    "counter": "STAGE",
+    "stage": {
+      "sides": "EITHER",
+      "rest": [
+        "<",
+        90
+      ],
+      "count": [
+        ">",
+        160
+      ],
+      "debounceMs": 1000,
+      "_note": "fitmon countLunges: either knee <90 is down, either >160 counts, 1000 ms."
+    }
   },
   "form": {
     "weights": {

@@ -22,8 +22,8 @@
           "HIP",
           "ANKLE"
         ],
-        "value": 176,
-        "tolerance": 8,
+        "value": 172.5,
+        "tolerance": 7.5,
         "weight": 1.0
       },
       {
@@ -32,8 +32,8 @@
           "ELBOW",
           "WRIST"
         ],
-        "value": 88,
-        "tolerance": 15,
+        "value": 165.0,
+        "tolerance": 15.0,
         "weight": 0.6
       }
     ],
@@ -46,6 +46,6 @@
   },
   "cues": {
     "enter": "Forearms down, body in a straight line.",
-    "break": "Your hips are dropping — lift them back up."
+    "break": "Your hips are dropping \u2014 lift them back up."
   }
 }
