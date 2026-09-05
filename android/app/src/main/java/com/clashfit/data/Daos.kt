@@ -191,6 +191,15 @@ interface AchievementDao {
 }
 
 @Dao
+interface VoucherDao {
+    @Query("SELECT * FROM vouchers ORDER BY earnedAtMs DESC") fun all(): Flow<List<VoucherEntity>>
+    @Query("SELECT id FROM vouchers") suspend fun allIds(): List<String>
+    @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insert(v: VoucherEntity)
+    @Query("UPDATE vouchers SET redeemedAtMs = :atMs WHERE id = :id") suspend fun markRedeemed(id: String, atMs: Long)
+    @Query("UPDATE vouchers SET redeemedAtMs = NULL WHERE id = :id") suspend fun markUnredeemed(id: String)
+}
+
+@Dao
 interface WeeklyDao {
     @Query("SELECT * FROM weekly WHERE weekKey = :weekKey") fun observe(weekKey: String): Flow<WeeklyEntity?>
     @Query("SELECT * FROM weekly WHERE weekKey = :weekKey") suspend fun get(weekKey: String): WeeklyEntity?

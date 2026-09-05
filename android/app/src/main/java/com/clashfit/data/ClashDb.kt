@@ -13,8 +13,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         RunEntity::class, RunPointEntity::class,
         AlarmEntity::class, GhostEntity::class, PostureSampleEntity::class,
         MetaEntity::class, AchievementEntity::class, WeeklyEntity::class, XpLedgerEntity::class,
+        VoucherEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class ClashDb : RoomDatabase() {
@@ -30,6 +31,7 @@ abstract class ClashDb : RoomDatabase() {
     abstract fun posture(): PostureDao
     abstract fun meta(): MetaDao
     abstract fun achievements(): AchievementDao
+    abstract fun vouchers(): VoucherDao
     abstract fun weekly(): WeeklyDao
     abstract fun xpLedger(): XpLedgerDao
 }
@@ -117,6 +119,29 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
 internal val MIGRATION_5_6_SQL: List<String> = listOf(
     "ALTER TABLE `runs` ADD COLUMN `score` INTEGER NOT NULL DEFAULT 0",
 )
+
+/**
+ * Vouchers, which did not exist before version 7.
+ *
+ * A new table rather than a column on achievements: a badge can only be earned, a voucher can also
+ * be spent, and the second state has no business living in the first table.
+ */
+internal val MIGRATION_6_7_SQL: List<String> = listOf(
+    """
+    CREATE TABLE IF NOT EXISTS `vouchers` (
+        `id` TEXT NOT NULL,
+        `earnedAtMs` INTEGER NOT NULL,
+        `redeemedAtMs` INTEGER,
+        PRIMARY KEY(`id`)
+    )
+    """.trimIndent(),
+)
+
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+        MIGRATION_6_7_SQL.forEach(db::execSQL)
+    }
+}
 
 val MIGRATION_5_6 = object : Migration(5, 6) {
     override fun migrate(db: SupportSQLiteDatabase) {

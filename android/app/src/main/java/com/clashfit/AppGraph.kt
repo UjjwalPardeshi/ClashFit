@@ -63,6 +63,7 @@ class AppGraph(val app: Context) {
                 com.clashfit.data.MIGRATION_3_4,
                 com.clashfit.data.MIGRATION_4_5,
                 com.clashfit.data.MIGRATION_5_6,
+                com.clashfit.data.MIGRATION_6_7,
             )
             .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
             .build()

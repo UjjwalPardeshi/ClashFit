@@ -77,6 +77,8 @@ data class SessionReward(
     val before: LevelProgress,
     val after: LevelProgress,
     val newAchievements: List<Achievement>,
+    /** Vouchers this session earned. Usually empty; that is the point of them. */
+    val newVouchers: List<Voucher> = emptyList(),
     val weekly: WeeklyProgress,
 ) {
     val leveledUp: Boolean get() = after.level > before.level

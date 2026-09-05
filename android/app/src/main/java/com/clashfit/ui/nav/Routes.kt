@@ -26,6 +26,8 @@ sealed interface Route
 @Serializable data object Leaderboard : Route
 @Serializable data object Friends : Route
 @Serializable data object Achievements : Route
+/** Vouchers partners put up for measured training. All samples; see meta/VoucherCatalog.kt. */
+@Serializable data object Rewards : Route
 @Serializable data object Account : Route
 @Serializable data object Weekly : Route
 

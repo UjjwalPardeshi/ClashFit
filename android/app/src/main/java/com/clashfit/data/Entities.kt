@@ -245,6 +245,21 @@ data class AchievementEntity(
     val unlockedAtMs: Long,
 )
 
+/**
+ * A voucher this player has earned, and whether they have marked it used.
+ *
+ * Separate from achievements because it is a different kind of thing: a badge is a record and can
+ * only be earned, a voucher is a thing you spend and therefore has a second state. Keeping the two
+ * tables apart means marking a voucher used can never touch a badge.
+ */
+@Entity(tableName = "vouchers")
+data class VoucherEntity(
+    @PrimaryKey val id: String,
+    val earnedAtMs: Long,
+    /** Null until the player says they have used it. Nothing enforces it; it is their record. */
+    val redeemedAtMs: Long? = null,
+)
+
 @Entity(tableName = "weekly")
 data class WeeklyEntity(
     @PrimaryKey val weekKey: String,

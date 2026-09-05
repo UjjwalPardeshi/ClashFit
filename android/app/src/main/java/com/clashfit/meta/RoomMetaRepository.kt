@@ -10,6 +10,7 @@ import com.clashfit.data.XpLedgerEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import java.time.ZoneId
+import com.clashfit.data.VoucherEntity
 
 /**
  * Meta-progression backed by Room. The rules in [XpRules], [Levels] and [AchievementRules] are
@@ -105,6 +106,13 @@ class RoomMetaRepository(private val db: ClashDb, private val clock: Clock) : Me
             val earned = AchievementRules.newlyUnlocked(countersBefore, countersAfter, facts, alreadyUnlocked)
             earned.forEach { db.achievements().insert(AchievementEntity(it.id, now)) }
 
+            // Vouchers cross the same way badges do, in the same transaction, off the same totals.
+            // Separate rules because they hang off different thresholds on purpose: a milestone
+            // gives you a badge or a voucher, never both at once.
+            val alreadyEarned = db.vouchers().allIds().toSet()
+            val vouchers = VoucherRules.newlyEarned(countersBefore, countersAfter, alreadyEarned)
+            vouchers.forEach { db.vouchers().insert(VoucherEntity(it.id, now)) }
+
             db.xpLedger().insert(XpLedgerEntity(facts.sessionId, totalXp, now))
 
             SessionReward(
@@ -113,6 +121,7 @@ class RoomMetaRepository(private val db: ClashDb, private val clock: Clock) : Me
                 before = beforeProgress,
                 after = afterProgress,
                 newAchievements = earned,
+                newVouchers = vouchers,
                 weekly = weeklyAfter,
             )
         }
