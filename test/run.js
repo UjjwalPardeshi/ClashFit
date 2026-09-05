@@ -417,7 +417,7 @@ t('BOSS_RUSH · advances the sequence then ends', () => {
 t('CLINIC_STS · runs the 30-second protocol and counts stands', () => {
   const e = new SessionEngine(store, 'chair_squat', { mode: Mode.CLINIC_STS });
   eq(e.durationMs, 30000);
-  const s = drive(e, synthWorldSet({ reps: 40, bottom: 118, eccSec: 0.5, pauseSec: 0.1, top: 165 }));
+  const s = drive(e, synthWorldSet({ reps: 40, bottom: 110, eccSec: 0.5, pauseSec: 0.3, top: 165 }));
   ok(s.ended, 'protocol never ended');
   eq(s.endReason, 'TIME');
   ok(e.reps.length > 0, 'no stands counted');
@@ -1151,7 +1151,7 @@ t('every family game is constructible from its mode name', () => {
 t('engine · SIGIL runs a yoga session without touching combat', () => {
   const yogaStore = { ...store, exercises: { ...store.exercises, utkatasana: cfg('exercises/utkatasana.json') } };
   const e = new SessionEngine(yogaStore, 'utkatasana', { mode: Mode.SIGIL });
-  for (const [lm, ms] of holdFrames({ knee: 120, hipTorso: 130, elbow: 170 }, 30)) e.frame(lm, null, ms);
+  for (const [lm, ms] of holdFrames({ knee: 95, hipTorso: 72.5, elbow: 170 }, 30)) e.frame(lm, null, ms);
   const s = e.state();
   ok(s.gameState, 'no game state');
   eq(s.gameState.game, 'SIGIL');
@@ -1269,7 +1269,7 @@ t('stick figure produces the angles it is asked for', () => {
 t('F2 ISOMETRIC · a held wall sit completes with high quality', () => {
   const d = new IsometricHoldDetector(spec('wall_sit'));
   let ev = null;
-  for (const [lm, ms] of holdFrames({ knee: 90, hipTorso: 90 }, 47)) ev = d.onFrame(lm, ms, SIDE_L) ?? ev;
+  for (const [lm, ms] of holdFrames({ knee: 95, hipTorso: 90 }, 47)) ev = d.onFrame(lm, ms, SIDE_L) ?? ev;
   ok(ev, 'no hold event');
   ok(ev.completed, 'hold not marked complete');
   ok(ev.quality > 0.9, `quality ${ev.quality.toFixed(2)}`);
@@ -1346,7 +1346,7 @@ t('F5 BALLISTIC · a stiff landing scores worse than a soft one', () => {
 t('F3 POSE_MATCH · a correct asana is recognised and held', () => {
   const d = new PoseMatchDetector(spec('utkatasana'));
   let ev = null;
-  for (const [lm, ms] of holdFrames({ knee: 110, hipTorso: 130, elbow: 170 }, 28))
+  for (const [lm, ms] of holdFrames({ knee: 95, hipTorso: 72.5, elbow: 170 }, 28))
     ev = d.onFrame(lm, ms, SIDE_L) ?? ev;
   ok(ev, 'asana never recognised');
   ok(ev.accuracy > 0.9, `accuracy ${ev.accuracy.toFixed(2)}`);
@@ -1409,6 +1409,17 @@ t('every REP_CYCLE config has its thresholds in order', () => {
   ok(checked >= 10, `only checked ${checked} rep-cycle exercises`);
 });
 
+// The games a config may name: whatever combat.json declares, plus the modes the engine itself
+// implements. Both are the same list read two ways, which is the point — a name that is in
+// neither is a reference to nothing.
+const JS_SOURCE = readdirSync(join(HERE, '..', 'src'))
+  .filter(f => f.endsWith('.js'))
+  .map(f => readFileSync(join(HERE, '..', 'src', f), 'utf8')).join(' ');
+const knownGame = (g) =>
+  Object.prototype.hasOwnProperty.call(combatCfg.modes ?? {}, g) ||
+  Object.prototype.hasOwnProperty.call(combatCfg.familyGames ?? {}, g) ||
+  JS_SOURCE.includes(`'${g}'`);
+
 t('every shipped exercise config is loadable and well formed', () => {
   const dir = readdirSync(join(HERE, '..', 'config/exercises')).filter(f => f.endsWith('.json') && f !== 'index.json');
   ok(dir.length >= 45, `only ${dir.length} exercises`);
@@ -1416,7 +1427,15 @@ t('every shipped exercise config is loadable and well formed', () => {
   for (const f of dir) {
     const e = JSON.parse(readFileSync(join(HERE, '..', 'config/exercises', f), 'utf8'));
     ok(e.id && e.name && e.family && e.detector, `${f} missing fields`);
-    ok(Array.isArray(e.games) && e.games.length, `${f} has no games`);
+    ok(Array.isArray(e.games), `${f} has no games array`);
+    // Breathing is the one movement that is not played as a game: it is a recovery tool reached
+    // from Train, and it has no boss, no score and no opponent. Everything else must be playable.
+    if (e.id === 'breathing') eq(e.games.length, 0, 'breathing is not a game and should name none');
+    else ok(e.games.length, `${f} has no games`);
+    // And every game a config names has to be a game that exists. Until this line, `breathing`
+    // named RECOVERY — a mode that has never existed in either the config or the code — and
+    // nothing anywhere noticed.
+    for (const g of e.games) ok(knownGame(g), `${f} names the game "${g}", which is not a mode`);
     fams[e.family] = (fams[e.family] ?? 0) + 1;
     if (e.family !== 'REP_CYCLE') ok(makeDetector(e), `${f} has no detector`);
   }

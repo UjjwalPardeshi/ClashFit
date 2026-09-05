@@ -75,146 +75,141 @@ class RepGateSessionTest {
         return s
     }
 
-    // ------------------------------------------------------------------ bicep curl, per arm
+    // ------------------------------------------------------------------ fitmon's counter, end to end
 
     private fun curl(left: Float, right: Float) = SyntheticBody.world(170f, leftElbowDeg = left, rightElbowDeg = right)
+    private fun raise(abduction: Float, elbow: Float = 170f) = SyntheticBody.world(170f, elbowDeg = elbow, shoulderAbductionDeg = abduction)
+    private fun overhead(elbow: Float) = SyntheticBody.world(170f, elbowDeg = elbow, shoulderAbductionDeg = 175f)
+    private fun press(elbow: Float, abduction: Float) = SyntheticBody.world(170f, elbowDeg = elbow, shoulderAbductionDeg = abduction)
 
+    /** One curl on one arm, the other left hanging open. Open past 135, closed under 80. */
     private fun oneArmCurl(d: Driver, arm: String) {
         fun pose(e: Float) = if (arm == "left") curl(e, 175f) else curl(175f, e)
-        // The engine smooths landmarks with a 1 Hz One Euro filter (~160 ms lag), so each end is
-        // held long enough for the filtered angle to settle past the threshold, as a real curl
-        // that pauses at the top and the bottom does.
-        d.ramp(700, 175f, 20f, ::pose)
-        d.hold(500, pose(20f))
-        d.ramp(600, 20f, 175f, ::pose)
-        d.hold(500, pose(175f))
+        d.ramp(700, 175f, 20f, ::pose); d.hold(200, pose(20f))
+        d.ramp(600, 20f, 175f, ::pose); d.hold(400, pose(175f))
     }
 
     @Test
-    fun `alternating curls credit each arm`() {
+    fun `either arm counts a curl, four in a row`() {
         val rec = Recorder(); val d = Driver(engine("bicep_curl", rec = rec))
         calibrate(d, curl(175f, 175f))
         oneArmCurl(d, "left"); oneArmCurl(d, "right"); oneArmCurl(d, "left"); oneArmCurl(d, "right")
-        assertEquals(4, rec.reps.size, "four arm-curls are four reps")
+        assertEquals(4, rec.reps.size, "four separate arm-curls are four reps, whichever arm did each one")
         assertEquals(listOf(1, 2, 3, 4), rec.reps.map { it.repIndex })
     }
 
     @Test
-    fun `simultaneous curls credit one rep per cycle`() {
+    fun `both arms curling together are one rep, not two`() {
         val rec = Recorder(); val d = Driver(engine("bicep_curl", rec = rec))
         calibrate(d, curl(175f, 175f))
         repeat(3) {
-            d.ramp(700, 175f, 20f) { e -> curl(e, e) }
-            d.hold(500, curl(20f, 20f))
-            d.ramp(600, 20f, 175f) { e -> curl(e, e) }
-            d.hold(500, curl(175f, 175f))
+            d.ramp(700, 175f, 20f) { e -> curl(e, e) }; d.hold(200, curl(20f, 20f))
+            d.ramp(600, 20f, 175f) { e -> curl(e, e) }; d.hold(400, curl(175f, 175f))
         }
-        assertEquals(3, rec.reps.size, "both arms moving together is one rep per cycle")
+        assertEquals(3, rec.reps.size, "one hand or both, a curl is a curl: three cycles are three reps")
     }
 
     @Test
     fun `a half curl is not a rep`() {
         val rec = Recorder(); val d = Driver(engine("bicep_curl", rec = rec))
         calibrate(d, curl(175f, 175f))
-        d.ramp(700, 175f, 90f) { e -> curl(e, e) }
-        d.hold(150, curl(90f, 90f))
-        d.ramp(600, 90f, 175f) { e -> curl(e, e) }
-        d.hold(500, curl(175f, 175f))
-        assertEquals(0, rec.reps.size)
-    }
-
-    // ------------------------------------------------------------------ lateral raise
-
-    private fun raise(abduction: Float, elbow: Float = 170f) = SyntheticBody.world(170f, elbowDeg = elbow, shoulderAbductionDeg = abduction)
-
-    /** Rest is abduction 5 (hip–shoulder–elbow reads ~13, inside the 10–20 rest band); `top` 95 reads ~103. */
-    private fun oneRaise(d: Driver, top: Float, elbow: Float = 170f) {
-        d.ramp(700, 5f, top) { a -> raise(a, elbow) }
-        d.hold(500, raise(top, elbow))
-        d.ramp(600, top, 5f) { a -> raise(a, elbow) }
-        d.hold(500, raise(5f, elbow))
+        repeat(2) {
+            d.ramp(700, 175f, 110f) { e -> curl(e, e) }; d.hold(200, curl(110f, 110f))
+            d.ramp(600, 110f, 175f) { e -> curl(e, e) }; d.hold(400, curl(175f, 175f))
+        }
+        assertEquals(0, rec.reps.size, "a hundred and ten degrees never closes past eighty")
     }
 
     @Test
-    fun `a lateral raise to shoulder height counts and a raise to sixty degrees does not`() {
+    fun `a rep needs the arm to open again first, so a bounce at the bottom counts once`() {
+        val rec = Recorder(); val d = Driver(engine("bicep_curl", rec = rec))
+        calibrate(d, curl(175f, 175f))
+        d.ramp(700, 175f, 20f) { e -> curl(e, e) }
+        repeat(3) { d.ramp(200, 20f, 60f) { e -> curl(e, e) }; d.ramp(200, 60f, 20f) { e -> curl(e, e) } }
+        d.ramp(600, 20f, 175f) { e -> curl(e, e) }; d.hold(400, curl(175f, 175f))
+        assertEquals(1, rec.reps.size, "one rep, however much the bottom is bounced")
+    }
+
+    /** One raise. fitmon watches the wrists cross the shoulders, not the angle. */
+    private fun oneRaise(d: Driver, top: Float, elbow: Float = 170f) {
+        d.ramp(700, 5f, top) { a -> raise(a, elbow) }; d.hold(300, raise(top, elbow))
+        d.ramp(600, top, 5f) { a -> raise(a, elbow) }; d.hold(400, raise(5f, elbow))
+    }
+
+    @Test
+    fun `a lateral raise counts when both wrists pass the shoulders and not at sixty degrees`() {
         val rec = Recorder(); val d = Driver(engine("lateral_raise", rec = rec))
         calibrate(d, raise(5f))
-        oneRaise(d, 95f)
-        assertEquals(1, rec.reps.size, "arms level with the shoulders is a rep")
+        oneRaise(d, 100f)
+        assertEquals(1, rec.reps.size, "wrists over the shoulders is a rep")
         oneRaise(d, 60f)
-        assertEquals(1, rec.reps.size, "sixty degrees stops short of bottomEnter (90)")
-        oneRaise(d, 95f)
+        assertEquals(1, rec.reps.size, "sixty degrees leaves the wrists below the shoulders")
+        oneRaise(d, 100f)
         assertEquals(2, rec.reps.size)
     }
 
     @Test
     fun `bent elbows score lower alignment on a lateral raise`() {
         val straight = Recorder(); val d1 = Driver(engine("lateral_raise", rec = straight))
-        calibrate(d1, raise(5f)); oneRaise(d1, 95f, elbow = 170f)
+        calibrate(d1, raise(5f)); oneRaise(d1, 100f, elbow = 170f)
         val bent = Recorder(); val d2 = Driver(engine("lateral_raise", rec = bent))
-        calibrate(d2, raise(5f, 105f)); oneRaise(d2, 95f, elbow = 105f)
+        calibrate(d2, raise(5f, 105f)); oneRaise(d2, 100f, elbow = 105f)
         assertEquals(1, straight.reps.size); assertEquals(1, bent.reps.size)
         assertTrue(bent.reps[0].alignment < straight.reps[0].alignment - 0.3f,
             "elbow at 105° should lose most alignment marks: ${bent.reps[0].alignment} vs ${straight.reps[0].alignment}")
     }
-
-    // ------------------------------------------------------------------ overhead gates
-
-    /** Arms overhead (abduction 175): the elbow angle bends behind the head. */
-    private fun overhead(elbow: Float) = SyntheticBody.world(170f, elbowDeg = elbow, shoulderAbductionDeg = 175f)
 
     @Test
     fun `a triceps extension counts overhead and never at the sides`() {
         val rec = Recorder(); val d = Driver(engine("triceps_extension", rec = rec))
         calibrate(d, overhead(170f))
         repeat(2) {
-            d.ramp(600, 170f, 80f, ::overhead); d.hold(150, overhead(80f)); d.ramp(500, 80f, 170f, ::overhead); d.hold(300, overhead(170f))
+            d.ramp(600, 175f, 80f, ::overhead); d.hold(200, overhead(80f))
+            d.ramp(500, 80f, 175f, ::overhead); d.hold(500, overhead(175f))
         }
         assertEquals(2, rec.reps.size, "overhead extensions count")
-        // The same elbow motion with the arms hanging is a curl: the ALWAYS gate blocks every frame.
+        // The same elbow motion with the arms hanging is a curl: the wrists never clear the
+        // shoulders, so the start position is never reached and nothing can count.
         repeat(2) {
-            d.ramp(600, 170f, 80f) { e -> curl(e, e) }; d.hold(150, curl(80f, 80f)); d.ramp(500, 80f, 170f) { e -> curl(e, e) }; d.hold(300, curl(170f, 170f))
+            d.ramp(600, 175f, 80f) { e -> curl(e, e) }; d.hold(200, curl(80f, 80f))
+            d.ramp(500, 80f, 175f) { e -> curl(e, e) }; d.hold(500, curl(175f, 175f))
         }
         assertEquals(2, rec.reps.size, "curls at the sides must not count as triceps extensions")
     }
 
     @Test
-    fun `a gate that flickers for a few frames does not sink a real overhead extension`() {
-        // Smoothing off, so each frame's angles are exactly the pose's: the flicker below is then a
-        // clean one-third of the frames outside the gate, which the old valid-frame ratio would refuse.
-        val sharp = pose.copy(filter = PoseConfig.FilterSpec(minCutoff = 10_000f, beta = 0f, dCutoff = 10_000f))
-        val rec = Recorder(); val d = Driver(engine("triceps_extension", rec = rec, poseCfg = sharp))
-        calibrate(d, overhead(170f))
-        // Four frames in every twelve the upper arm drops to abduction 100 (hip–shoulder–elbow ≈ 108,
-        // under the 120° gate): those frames are hidden from the machine and the rep is judged on the rest.
-        var n = 0
-        fun flicker(e: Float): Landmarks = SyntheticBody.world(170f, elbowDeg = e, shoulderAbductionDeg = if ((n++ % 12) < 4) 100f else 175f)
-        d.ramp(600, 170f, 80f, ::flicker); d.hold(200, flicker(80f)); d.ramp(500, 80f, 170f, ::flicker); d.hold(300, flicker(170f))
-        assertEquals(1, rec.reps.size, "frames outside the gate are skipped, not counted as invalid")
-    }
-
-    /** A press: elbows bent at the start, arm swung out to `abduction` as it extends. */
-    private fun press(elbow: Float, abduction: Float) = SyntheticBody.world(170f, elbowDeg = elbow, shoulderAbductionDeg = abduction)
-
-    @Test
     fun `a shoulder press counts overhead and is refused out in front`() {
         val rec = Recorder(); val d = Driver(engine("shoulder_press", rec = rec))
         calibrate(d, press(80f, 90f))
-        // Overhead: the arm extends while swinging to straight up, so at lockout hip-shoulder-wrist is near 175.
+        // Up and overhead: the elbow locks out and the wrist clears the shoulder.
         d.ramp(700, 0f, 1f) { f -> press(80f + 98f * f, 90f + 88f * f) }
-        d.hold(500, press(178f, 178f))
+        d.hold(300, press(178f, 178f))
         d.ramp(600, 1f, 0f) { f -> press(80f + 98f * f, 90f + 88f * f) }
-        d.hold(500, press(80f, 90f))
+        d.hold(400, press(80f, 90f))
         assertEquals(1, rec.reps.size, "a press to lockout overhead is a rep")
-        // Out in front: the elbow extends but the arm stays level, so the END gate (hip-shoulder-wrist ≥ 140) fails.
+        // Pushed out in front: the elbow locks out at shoulder height, so the wrist never clears it.
         d.ramp(700, 80f, 178f) { e -> press(e, 90f) }
-        val atLockout = d.hold(500, press(178f, 90f))
+        val atLockout = d.hold(300, press(178f, 90f))
         d.ramp(600, 178f, 80f) { e -> press(e, 90f) }
-        val after = d.hold(500, press(80f, 90f))
+        val after = d.hold(300, press(80f, 90f))
         assertEquals(1, rec.reps.size, "a press pushed out in front is refused")
         assertNotNull(after.cue, "the refusal is explained")
         assertTrue(after.cue!!.contains("overhead", ignoreCase = true), "cue was: ${after.cue}")
         assertEquals(Phase.FIGHTING, atLockout.phase)
+    }
+
+    @Test
+    fun `a squat counts on the way back up and a half squat does not`() {
+        val rec = Recorder(); val d = Driver(engine("squat", rec = rec))
+        calibrate(d, SyntheticBody.world(175f))
+        repeat(2) {
+            d.ramp(800, 175f, 90f) { k -> SyntheticBody.world(k) }; d.hold(300, SyntheticBody.world(90f))
+            d.ramp(700, 90f, 175f) { k -> SyntheticBody.world(k) }; d.hold(400, SyntheticBody.world(175f))
+        }
+        assertEquals(2, rec.reps.size, "down past 110 and back over 160 is a rep")
+        d.ramp(800, 175f, 130f) { k -> SyntheticBody.world(k) }; d.hold(300, SyntheticBody.world(130f))
+        d.ramp(700, 130f, 175f) { k -> SyntheticBody.world(k) }; d.hold(400, SyntheticBody.world(175f))
+        assertEquals(2, rec.reps.size, "a squat to 130 never reaches the bottom")
     }
 
     // ------------------------------------------------------------------ the boss's clock, as the HUD sees it

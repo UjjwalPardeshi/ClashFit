@@ -52,6 +52,9 @@ import com.clashfit.meta.WeeklyChallenge
 import com.clashfit.meta.WeeklyProgress
 import com.clashfit.ui.screens.session.RankChip
 import com.clashfit.ui.screens.session.LinkStripPreview
+import com.clashfit.perception.gesture.HandGesture
+import com.clashfit.ui.screens.session.GestureRing
+import com.clashfit.ui.screens.session.GestureToast
 
 /**
  * The fight, rendered without a camera.
@@ -113,6 +116,8 @@ class FightHudScreenshotTest {
         cue: String?,
         hit: HudEvent.Hit? = null,
         timeLeftMs: Long? = null,
+        gestureHold: Pair<HandGesture, Float>? = null,
+        gesture: HudEvent.Gesture? = null,
         lastPlayerHit: Int? = null,
         nextAttackInMs: Long? = null,
     ) {
@@ -150,6 +155,10 @@ class FightHudScreenshotTest {
                         PauseTarget(paused = false, onToggle = {})
                     }
                     RankChip(META, Modifier.align(Alignment.TopEnd).safeDrawingPadding().padding(top = 96.dp, end = 12.dp))
+                    // Same corner and centre as FightLayout: the ring that fills while a hand is
+                    // held, and the word for what it did.
+                    GestureRing(gestureHold, resting = false, Modifier.align(Alignment.CenterEnd).padding(end = 16.dp, bottom = 120.dp))
+                    GestureToast(gesture, Modifier.align(Alignment.Center).padding(bottom = 300.dp))
                 }
             }
         }
@@ -180,6 +189,14 @@ class FightHudScreenshotTest {
     @Test fun staggered() = shot(
         "53-fight-staggered", combat(hp = 180, phase = "desperation", combo = 2.4f, streak = 9, staggered = true, damage = 1020),
         FatigueBand.FADING, reps = 31, cue = "Staggered. Hit it now.",
+    )
+
+    /** A palm held up to the camera, two thirds of the way to pausing; the last command still fading. */
+    @Test fun gestureHeld() = shot(
+        "57-fight-gesture", combat(hp = 700, phase = "enrage", combo = 1.4f, streak = 3, damage = 500),
+        FatigueBand.WORKING, reps = 11, cue = "Depth held. Same tempo.",
+        gestureHold = HandGesture.OPEN_PALM to 0.66f,
+        gesture = HudEvent.Gesture(HandGesture.THUMB_UP, "Set done"),
     )
 
     /** A duel: the rope, with you ahead. */

@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.clashfit.AppGraph
 import com.clashfit.cloud.Friend
+import com.clashfit.cloud.FriendCodes
 import com.clashfit.cloud.FriendResult
 import com.clashfit.ui.components.AppCard
 import com.clashfit.ui.components.AppIcons
@@ -123,10 +124,10 @@ fun FriendsScreen(graph: AppGraph, onBack: () -> Unit) {
                 Text(text, style = MaterialTheme.typography.bodySmall, color = if (ok) Success else Gassed, modifier = Modifier.padding(top = 6.dp))
             }
             Spacer(Modifier.height(12.dp))
-            PrimaryButton(if (busy) "Adding…" else "Add friend", enabled = !busy && code.replace(" ", "").length >= 6) {
+            PrimaryButton(if (busy) "Adding…" else "Add friend", enabled = !busy && FriendCodes.isValid(code)) {
                 busy = true
                 scope.launch {
-                    message = when (val r = graph.friends.addByCode(code.replace(" ", ""))) {
+                    message = when (val r = graph.friends.addByCode(code)) {
                         is FriendResult.Added -> { code = ""; "${r.friend.displayName} added." to true }
                         is FriendResult.Failed -> r.message to false
                     }

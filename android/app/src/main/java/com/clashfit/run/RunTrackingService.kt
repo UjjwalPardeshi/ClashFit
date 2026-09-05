@@ -127,10 +127,27 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         return START_STICKY
     }
 
+    /**
+     * Release the wake lock, but only if it is actually held.
+     *
+     * Finishing a run releases it in stopRun, and Android then stops the service, which calls
+     * onDestroy, which released it a second time. PowerManager treats that as a programming error
+     * and throws "WakeLock under-locked" — out of onDestroy, where it becomes "Unable to stop
+     * service" and takes the whole app down with it. So every run ended by finishing it crashed
+     * the app at the moment the summary should have appeared.
+     */
+    private fun releaseWakeLock() {
+        val lock = wakeLock ?: return
+        if (lock.isHeld) {
+            runCatching { lock.release() }
+                .onFailure { Log.w(TAG, "releasing the run wake lock failed", it) }
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         // Clean up resources: release wake lock, remove location updates
-        wakeLock?.release()
+        releaseWakeLock()
         fusedClient.removeLocationUpdates(this)
         sensorManager.unregisterListener(this)
         backgroundLocationHandler?.looper?.quit()
@@ -215,7 +232,7 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
         Log.d(TAG, "Stopping run")
         fusedClient.removeLocationUpdates(this)
         sensorManager.unregisterListener(this)
-        wakeLock?.release()
+        releaseWakeLock()
 
         val rid = currentState.runId ?: return
         val endedAtMs = graph.clock.nowMs()

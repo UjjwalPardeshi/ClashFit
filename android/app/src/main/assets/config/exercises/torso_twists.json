@@ -14,7 +14,7 @@
     "DUEL"
   ],
   "detector": {
-    "signalJoint": "WRIST",
+    "signalJoint": "SHOULDER",
     "signalAxis": "x",
     "minProminence": 0.03,
     "refractoryMs": 260,

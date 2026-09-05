@@ -75,6 +75,8 @@ fun SettingsScreen(graph: AppGraph, nav: NavHostController) {
                 supporting = "Landmarks and angles drawn over the camera")
             SwitchRow("3D boss", settings.boss3d, { v -> scope.launch { graph.prefs.setBoss3d(v) } },
                 supporting = "Off draws the boss in flat shapes instead. Same fight either way.")
+            SwitchRow("Exo-suit overlay", settings.exoSuit, { v -> scope.launch { graph.prefs.setExoSuit(v) } },
+                supporting = "Armour drawn on your body instead of the measured points and angles. The same landmarks either way.")
             NavRow("Boss preview", { nav.navigate(BossPreview) }, icon = AppIcons.Bolt,
                 supporting = "Every state, without starting a fight")
 
@@ -95,6 +97,8 @@ fun SettingsScreen(graph: AppGraph, nav: NavHostController) {
                 supporting = "The boss cannot win. Sets still count.")
             SwitchRow("Arena mode", settings.arenaMode, { v -> scope.launch { graph.prefs.setArenaMode(v) } },
                 supporting = "Bigger numerals, for a phone on the floor")
+            SwitchRow("Hand gestures", settings.gestures, { v -> scope.launch { graph.prefs.setGestures(v) } },
+                supporting = "Open palm pauses. Thumb up ends the set. Fist skips the rest. Read from the camera, on the phone.")
 
             SectionGap(28)
             Kicker("Outdoors")
@@ -126,6 +130,8 @@ fun SettingsScreen(graph: AppGraph, nav: NavHostController) {
             SectionGap(4)
             RuleRow("Config version", "$configVersion")
             RuleRow("Coach model", if (modelInstalled) "Installed" else "Not installed · templates speak")
+            SwitchRow("Cloud coach", settings.cloudCoach, { v -> scope.launch { graph.prefs.setCloudCoach(v) } },
+                supporting = "When the on-device coach is not installed, send the set's numbers to a cloud model for its lines. Never a frame, never a landmark. Off keeps everything on the phone.")
             SectionGap(12)
             OutlineButton("Reload config", Modifier.fillMaxWidth()) { graph.config.reload() }
 

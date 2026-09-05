@@ -26,6 +26,9 @@ import com.clashfit.data.SetEntity
 import com.clashfit.engine.session.SessionEngine
 import com.clashfit.engine.summary.Progression
 import com.clashfit.play.LinkHud
+import com.clashfit.perception.gesture.GestureIntent
+import com.clashfit.perception.gesture.GestureSource
+import com.clashfit.perception.gesture.HandGesture
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -41,6 +44,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.room.withTransaction
+import com.clashfit.perception.vision.FrameSource
+import com.clashfit.perception.MediaPipePoseSource
 
 data class SessionArgs(
     val mode: GameMode,
@@ -61,6 +66,8 @@ sealed interface HudEvent {
     data object BossDown : HudEvent
     data object FramingLost : HudEvent
     data object Milestone : HudEvent
+    /** A hand shape the referee obeyed — named on screen for a moment so the player knows why. */
+    data class Gesture(val gesture: HandGesture, val label: String) : HudEvent
 }
 
 /**
@@ -106,6 +113,25 @@ class SessionViewModel(
     private var lastCue: String? = null
     private var restJob: Job? = null
     private var frameJob: Job? = null
+    private var gestureJob: Job? = null
+
+    /** Hold detection for hand gestures. Pure; the recogniser's noise stops here. */
+    private val gestureIntent = GestureIntent()
+
+    /** The gesture being held and how far along the hold is, for the ring the HUD fills. Null when no hand. */
+    private val _gestureHold = MutableStateFlow<Pair<HandGesture, Float>?>(null)
+    val gestureHold: StateFlow<Pair<HandGesture, Float>?> = _gestureHold.asStateFlow()
+
+    /**
+     * What the referee saw in the worst rep of the set just finished.
+     *
+     * Null while it is thinking, and null forever if there is no on-device model, no frame kept, or
+     * the model would not commit to an answer. The rest panel shows it when it arrives and shows
+     * the numbers regardless.
+     */
+    private val _refereeNote = MutableStateFlow<String?>(null)
+    val refereeNote: StateFlow<String?> = _refereeNote.asStateFlow()
+    private var refereeJob: Job? = null
     private val completedSets = ArrayList<SetSnapshot>()
     private var setStartedAtMs = startedAtMs
     private var saved = false
@@ -183,6 +209,96 @@ class SessionViewModel(
                 }
             }
         }
+        startGestures()
+        startFrameKeeping()
+    }
+
+    /**
+     * Hand control. The player is two metres away and cannot reach the phone; in a loud room voice
+     * does not work either. A hand held up to the camera does.
+     *
+     * The recogniser only runs while a gesture could mean something — fighting, or resting — and
+     * only if the setting is on. A shape must be held (see [GestureIntent]) before it fires, so a
+     * hand passing the lens on the way up from a squat pauses nothing. The mapping is small on
+     * purpose: three shapes, each with one meaning per phase, and nothing that ends the whole
+     * session — that stays a deliberate tap on the screen.
+     */
+    /** Keep recent frames only while there is a model that could look at one. */
+    private fun startFrameKeeping() {
+        val frames = deps.pose as? MediaPipePoseSource ?: return
+        if (graph.refereeEyes.available) frames.setKeepFrames(true)
+    }
+
+    private fun startGestures() {
+        val source = deps.pose as? GestureSource ?: return
+        gestureJob = viewModelScope.launch {
+            if (!graph.prefs.settings.first().gestures) return@launch
+            // Follow the phase: read the hand when it could mean something, ignore it otherwise.
+            launch {
+                _state.collect { s ->
+                    val wanted = s != null && !s.ended && (s.phase == Phase.FIGHTING || s.phase == Phase.REST)
+                    source.setGesturesEnabled(wanted)
+                    if (!wanted) { gestureIntent.reset(); _gestureHold.value = null }
+                }
+            }
+            source.gestures.collect { reading ->
+                val fired = gestureIntent.offer(reading)
+                _gestureHold.value = gestureIntent.holding?.let { it to gestureIntent.progress }
+                if (fired != null) onGesture(fired)
+            }
+        }
+    }
+
+    /**
+     * The referee looks at the worst rep of the set that just ended.
+     *
+     * Everything needed is already on the phone: the rep the scorer liked least, the moment it was
+     * deepest, and a few seconds of small camera frames the source kept for exactly this. The
+     * frame goes to the on-device model and is recycled the moment the answer comes back — it is
+     * never stored, and there is no path from here to the network.
+     *
+     * Silent about every failure. No model, no kept frame, a rep with no deepest moment, a refusal:
+     * the rest panel shows the numbers it always showed and nobody is told the AI declined.
+     */
+    private fun lookAtWorstRep(setReps: List<RepRecord>) {
+        _refereeNote.value = null
+        refereeJob?.cancel()
+        val eyes = graph.refereeEyes
+        if (!eyes.available) return
+        val frames = deps.pose as? FrameSource ?: return
+        val worst = setReps.filter { it.tDeepestMs > 0 }.minByOrNull { it.formScore } ?: return
+
+        refereeJob = viewModelScope.launch {
+            val frame = withContext(Dispatchers.Main) { frames.frameNear(worst.tDeepestMs) } ?: return@launch
+            try {
+                _refereeNote.value = eyes.critique(frame, worst, engine.exercise.name)
+            } finally {
+                frame.recycle()
+            }
+        }
+    }
+
+    private fun onGesture(g: HandGesture) {
+        val s = _state.value ?: return
+        val resting = s.phase == Phase.REST
+        val label = when {
+            g == HandGesture.OPEN_PALM && !resting -> {
+                if (_paused.value) { resume(); "Resumed" } else { pause(); "Paused" }
+            }
+            g == HandGesture.THUMB_UP && !resting -> {
+                // End the set now, the way running out of reps would. Rest and the coach follow.
+                viewModelScope.launch(engineThread) {
+                    val cur = engine.state()
+                    if (cur.phase == Phase.FIGHTING && cur.setReps > 0) { engine.endSet(); _state.value = engine.state() }
+                }
+                "Set done"
+            }
+            (g == HandGesture.THUMB_UP || g == HandGesture.CLOSED_FIST) && resting -> { skipRest(); "Next set" }
+            else -> return
+        }
+        deps.haptics.milestone()
+        _events.tryEmit(HudEvent.Gesture(g, label))
+        _gestureHold.value = null
     }
 
     private fun afterFrame(before: Phase, s: SessionState) {
@@ -229,6 +345,7 @@ class SessionViewModel(
         override fun onSetEnd(telemetry: SetTelemetry, restSec: Int) {
             val setReps = engine.currentSetReps.toList()
             val now = graph.clock.nowMs()
+            lookAtWorstRep(setReps)
             viewModelScope.launch {
                 val coach = deps.coach.speakFor(telemetry)
                 withContext(engineThread) { engine.setCoach(coach) }

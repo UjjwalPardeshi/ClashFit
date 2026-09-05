@@ -53,11 +53,12 @@ import kotlinx.coroutines.launch
 
 /** Who you are signed in as, the name others see, sign out, and the one irreversible button. */
 @Composable
-fun AccountScreen(graph: AppGraph, onBack: () -> Unit, onSignedOut: () -> Unit) {
+fun AccountScreen(graph: AppGraph, onBack: () -> Unit, onSignedOut: () -> Unit, onSignIn: () -> Unit) {
     val auth by graph.auth.state.collectAsStateWithLifecycle()
     val settings by graph.prefs.settings.collectAsStateWithLifecycle(initialValue = Prefs.Settings())
     val scope = rememberCoroutineScope()
     val user = (auth as? AuthState.SignedIn)?.user
+    val signedIn = user != null
 
     var name by rememberSaveable(user?.displayName) { mutableStateOf(user?.displayName ?: "") }
     var saving by remember { mutableStateOf(false) }
@@ -85,32 +86,36 @@ fun AccountScreen(graph: AppGraph, onBack: () -> Unit, onSignedOut: () -> Unit) 
                 }
             }
 
-            SectionGap(24)
-            SectionTitle("Display name")
-            Text("What friends and the leaderboard see.", style = MaterialTheme.typography.bodySmall, color = InkMuted)
-            SectionGap(10)
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it; nameError = null; saved = false },
-                singleLine = true,
-                isError = nameError != null,
-                supportingText = { nameError?.let { Text(it, color = Gassed) } ?: if (saved) Text("Saved", color = Success) else Unit },
-                shape = MaterialTheme.shapes.small,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Panel, unfocusedContainerColor = Panel, errorContainerColor = Panel,
-                    focusedBorderColor = Ember, unfocusedBorderColor = Rule, errorBorderColor = Gassed,
-                    focusedTextColor = Ink, unfocusedTextColor = Ink, cursorColor = Ember,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            SecondaryButton(if (saving) "Saving…" else "Save name", enabled = !saving && name.trim() != user?.displayName) {
-                if (!AuthRules.nameOk(name)) { nameError = "Two to twenty-four characters."; return@SecondaryButton }
-                saving = true
-                scope.launch {
-                    val err = graph.auth.updateDisplayName(name.trim())
-                    saving = false
-                    if (err == null) saved = true else nameError = err.message
+            // Nothing here belongs to anyone until somebody is signed in.
+            if (signedIn) {
+                SectionGap(24)
+                SectionTitle("Display name")
+                Text("What friends and the leaderboard see.", style = MaterialTheme.typography.bodySmall, color = InkMuted)
+                SectionGap(10)
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it; nameError = null; saved = false },
+                    singleLine = true,
+                    isError = nameError != null,
+                    supportingText = { nameError?.let { Text(it, color = Gassed) } ?: if (saved) Text("Saved", color = Success) else Unit },
+                    shape = MaterialTheme.shapes.small,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Panel, unfocusedContainerColor = Panel, errorContainerColor = Panel,
+                        focusedBorderColor = Ember, unfocusedBorderColor = Rule, errorBorderColor = Gassed,
+                        focusedTextColor = Ink, unfocusedTextColor = Ink, cursorColor = Ember,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                SecondaryButton(if (saving) "Saving…" else "Save name", enabled = !saving && name.trim() != user?.displayName) {
+                    if (!AuthRules.nameOk(name)) { nameError = "Two to twenty-four characters."; return@SecondaryButton }
+                    saving = true
+                    scope.launch {
+                        val err = graph.auth.updateDisplayName(name.trim())
+                        saving = false
+                        if (err == null) saved = true else nameError = err.message
+                    }
                 }
+
             }
 
             SectionGap(28)
@@ -125,16 +130,28 @@ fun AccountScreen(graph: AppGraph, onBack: () -> Unit, onSignedOut: () -> Unit) 
             }
 
             SectionGap(28)
-            PrimaryButton("Sign out") {
-                scope.launch { graph.auth.signOut(); onSignedOut() }
+            if (signedIn) {
+                PrimaryButton("Sign out") {
+                    scope.launch { graph.auth.signOut(); onSignedOut() }
+                }
+                Spacer(Modifier.height(28.dp))
+                Kicker("Danger zone", color = Gassed)
+                Text(
+                    "Deleting the account removes your name from every board and cannot be undone. Sessions on this phone stay until you clear data.",
+                    style = MaterialTheme.typography.bodySmall, color = InkMuted, modifier = Modifier.padding(top = 6.dp, bottom = 12.dp),
+                )
+                SecondaryButton("Delete account") { confirmDelete = true }
+            } else {
+                // This screen used to offer "Sign out" and "Delete account" to somebody who was
+                // signed into nothing, and no way at all to sign in. The friends board and the
+                // leaderboard both need an account, so the way in belongs here.
+                PrimaryButton("Sign in or create account", onClick = onSignIn)
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "Friends and the leaderboard need an account. Your sessions on this phone are yours either way.",
+                    style = MaterialTheme.typography.bodySmall, color = InkMuted,
+                )
             }
-            Spacer(Modifier.height(28.dp))
-            Kicker("Danger zone", color = Gassed)
-            Text(
-                "Deleting the account removes your name from every board and cannot be undone. Sessions on this phone stay until you clear data.",
-                style = MaterialTheme.typography.bodySmall, color = InkMuted, modifier = Modifier.padding(top = 6.dp, bottom = 12.dp),
-            )
-            SecondaryButton("Delete account") { confirmDelete = true }
         }
     }
 

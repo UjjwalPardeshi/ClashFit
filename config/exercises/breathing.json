@@ -9,9 +9,7 @@
   ],
   "framing": "front",
   "difficulty": 1,
-  "games": [
-    "RECOVERY"
-  ],
+  "games": [],
   "detector": {
     "signalJoint": "SHOULDER",
     "signalAxis": "y",
@@ -30,6 +28,6 @@
   "cues": {
     "enter": "Sit or stand still, shoulders visible.",
     "tooSmall": "Breathe a little deeper.",
-    "tooSlow": "That is a good pace — hold it."
+    "tooSlow": "That is a good pace \u2014 hold it."
   }
 }

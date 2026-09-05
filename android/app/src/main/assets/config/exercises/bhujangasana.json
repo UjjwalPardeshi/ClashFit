@@ -21,8 +21,8 @@
           "HIP",
           "KNEE"
         ],
-        "value": 200,
-        "tolerance": 16,
+        "value": 160.0,
+        "tolerance": 20.0,
         "weight": 1.0
       },
       {
@@ -31,9 +31,9 @@
           "ELBOW",
           "WRIST"
         ],
-        "value": 140,
-        "tolerance": 20,
-        "weight": 0.7
+        "value": 140.0,
+        "tolerance": 40.0,
+        "weight": 1.0
       }
     ],
     "enterAccuracy": 0.7,

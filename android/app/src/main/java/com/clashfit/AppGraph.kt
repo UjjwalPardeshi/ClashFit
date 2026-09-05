@@ -7,9 +7,12 @@ import com.clashfit.audio.Sfx
 import com.clashfit.auth.AuthService
 import com.clashfit.auth.FirebaseAuthService
 import com.clashfit.auth.LocalAuthService
+import com.clashfit.coach.CloudCoach
 import com.clashfit.coach.CoachConfig
 import com.clashfit.coach.CoachEngine
+import kotlinx.coroutines.flow.first
 import com.clashfit.coach.LlmEngine
+import com.clashfit.coach.RefereeEyes
 import com.clashfit.coach.SpeechOut
 import com.clashfit.cloud.CloudConfig
 import com.clashfit.cloud.ScoreSync
@@ -72,7 +75,13 @@ class AppGraph(val app: Context) {
 
     // The coach and the villain are the same model; the template bank always ships beneath it.
     val llmEngine: LlmEngine by lazy { LlmEngine(app, CoachConfig(), clock, scope, json) }
-    val coachEngine: CoachEngine by lazy { CoachEngine(llmEngine) }
+    // The cloud rung sits between them, and only speaks when the player has switched it on.
+    val cloudCoach: CloudCoach by lazy { CloudCoach() }
+    val coachEngine: CoachEngine by lazy {
+        CoachEngine(llmEngine, cloudCoach, cloudAllowed = { prefs.settings.first().cloudCoach }, json = json)
+    }
+    /** The referee's eyes: the on-device model looking at the worst rep. On-device only, always. */
+    val refereeEyes: RefereeEyes by lazy { RefereeEyes(llmEngine) }
     val speechOut: SpeechOut by lazy { SpeechOut(app, mainScope) }
 
     // Audio fires first. Everything is synthesised; there are no sound assets.

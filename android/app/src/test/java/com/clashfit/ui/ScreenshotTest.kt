@@ -124,7 +124,7 @@ class ScreenshotTest {
     @Test fun friends() = shot("05b-friends", Friends) { FriendsScreen(graph, onBack = none) }
     @Test fun achievements() = shot("05c-badges", Achievements) { AchievementsScreen(graph, onBack = none) }
     @Test fun weekly() = shot("05d-weekly", Weekly) { WeeklyScreen(graph, onBack = none, onFight = none, onLeaderboard = none) }
-    @Test fun account() = shot("05e-account", Account) { AccountScreen(graph, onBack = none, onSignedOut = none) }
+    @Test fun account() = shot("05e-account", Account) { AccountScreen(graph, onBack = none, onSignedOut = none, onSignIn = none) }
 
     // sub-screens
     @Test fun settings() = shot("06-settings", Settings) { SettingsScreen(graph, it) }

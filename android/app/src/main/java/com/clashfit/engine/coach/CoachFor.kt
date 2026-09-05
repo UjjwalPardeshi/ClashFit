@@ -29,7 +29,7 @@ class CoachFor(
                 val coachValid = OutputValidator.validateOutput(result.coachLine, telemetry).ok
                 val bossValid = OutputValidator.validateOutput(result.bossLine, telemetry).ok
                 if (coachValid && bossValid) {
-                    return result.copy(source = CoachSource.LLM)
+                    return result
                 }
             }
             // Fall through to template on timeout or validation failure

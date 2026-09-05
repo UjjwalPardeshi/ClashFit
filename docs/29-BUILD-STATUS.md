@@ -2,7 +2,7 @@
 
 What is built and verified, what is deliberately event-only, and what is genuinely still open.
 
-**Last updated:** 5 Sep 2026 · Android app shipping · 643 tests passing · 57 exercises · 16 modes · 72 screenshot baselines · 195 commits
+**Last updated:** 5 Sep 2026 · Android app shipping · 661 tests passing · 57 exercises · 16 modes · 72 screenshot baselines · 195 commits
 
 ---
 
@@ -154,7 +154,7 @@ The Android app:
 ```bash
 cd android
 ./gradlew :app:installDebug          # onto a connected phone
-./gradlew :app:testDebugUnitTest     # 643 tests, no phone needed (JDK 21 for the screenshot classes)
+./gradlew :app:testDebugUnitTest     # 661 tests, no phone needed (JDK 21 for the screenshot classes)
 ./gradlew :app:recordRoborazziDebug  # re-render the 72 screenshot baselines
 ```
 

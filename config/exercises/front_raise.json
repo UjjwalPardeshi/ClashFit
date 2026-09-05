@@ -39,7 +39,22 @@
       "ELBOW",
       "WRIST"
     ],
-    "_note": "Keypoints 23-11-13 / 24-12-14 (hip-shoulder-elbow), 3D world angle. Rest is 10-20 (TOP at <=20), the top of the raise is 90 or more (BOTTOM at >=90); wrist only feeds the straight-elbow alignment score."
+    "_note": "Keypoints 23-11-13 / 24-12-14 (hip-shoulder-elbow), 3D world angle. Rest is 10-20 (TOP at <=20), the top of the raise is 90 or more (BOTTOM at >=90); wrist only feeds the straight-elbow alignment score.",
+    "counter": "STAGE",
+    "stage": {
+      "signal": "WRIST_HEIGHT",
+      "sides": "BOTH",
+      "rest": [
+        "<",
+        0
+      ],
+      "count": [
+        ">",
+        0
+      ],
+      "debounceMs": 1000,
+      "_note": "fitmon front raise (Python backend): same wrist-over-shoulder rule as the lateral raise."
+    }
   },
   "form": {
     "weights": {

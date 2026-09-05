@@ -71,6 +71,21 @@ fun HelpScreen(graph: AppGraph, nav: NavHostController, onStart: () -> Unit) {
             }
 
             SectionGap(24)
+            SectionTitle("Control it from where you stand")
+            SectionGap(10)
+            AppCard(Modifier.fillMaxWidth(), padding = 6) {
+                Column {
+                    Meaning(AppIcons.Person, Ember, "Open palm — pause", "Hold your hand up flat to the camera for half a second. Again to resume.")
+                    Meaning(AppIcons.Check, Success, "Thumb up — set done", "Ends the set early and starts your rest. From the floor, it starts the next set.")
+                    Meaning(AppIcons.Bolt, Brass, "Fist — next set", "While resting, a fist skips what is left of the rest.")
+                    Text(
+                        "The camera reads your hand the same way it reads your body — on the phone. A ring fills while you hold, so you can let go if it is the wrong shape.",
+                        style = MaterialTheme.typography.bodySmall, color = InkFaint, modifier = Modifier.padding(12.dp),
+                    )
+                }
+            }
+
+            SectionGap(24)
             SectionTitle("What the numbers mean")
             SectionGap(10)
             AppCard(Modifier.fillMaxWidth(), padding = 6) {

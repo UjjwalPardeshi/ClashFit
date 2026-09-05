@@ -232,19 +232,25 @@ Burpee · Squat thrust · Jump squat · Tuck jump · Star jump · Lateral bound 
 
 **Total: 67 exercises across 5 detectors.**
 
-> **Measured thresholds (5 Sep 2026).** Four exercises were tuned by hand against the BlazePose
-> keypoints with the angle page and are pinned to the top of every exercise list, in this order:
+> **How reps are counted (5 Sep 2026).** Two counters, chosen per exercise by config. A record with
+> `"counter": "STAGE"` uses the rule ported from fitmon: a stage flips to *rest* when the joint
+> passes one threshold and a rep counts the moment it passes the other, debounced, on unfiltered
+> landmarks so it registers the instant the angle is reached. Everything else uses the hysteresis
+> state machine over the One Euro filtered angle. The four core exercises are stage-counted and lead
+> every list:
 >
-> | Exercise | Keypoints | Rest (TOP) | Turn (BOTTOM) | Full depth |
-> |---|---|---|---|---|
-> | Lateral raise | 23-11-13 / 24-12-14 | ≤ 20° (10–20 hanging) | ≥ 90° | 90° |
-> | Bicep curl | 11-13-15 / 12-14-16 | ≥ 170° (170–180 open) | ≤ 30° (20–30 closed) | 25° |
-> | Shoulder press | 11-13-15 / 12-14-16 | ≤ 90° (hands at the shoulders) | ≥ 170° (170–180 locked out) | 175° |
-> | Squat | 23-25-27 / 24-26-28 | ≥ 165° (a locked knee reads 165–178) | ≤ 100° (100–70) | 85° |
+> | Exercise | Keypoints | Rest | Counts at | Sides | Debounce |
+> |---|---|---|---|---|---|
+> | Lateral raise | 23-11-13 / 24-12-14 | wrists below the shoulders | wrists above them | both | 1000 ms |
+> | Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80° | either arm | 800 ms |
+> | Shoulder press | 11-13-15 / 12-14-16 | elbow < 100° | elbow > 160° overhead | better side | 1000 ms |
+> | Squat | 23-25-27 / 24-26-28 | both knees < 110° | both knees > 160° | both | 1000 ms |
 >
-> Each threshold has a 10° hysteresis exit inside it (`topExit`, `bottomExit`), and the landmarks
-> are smoothed by a 1 Hz One Euro filter before the angle is taken, so the ends of a rep must be
-> reached, not brushed.
+> Lunge, front raise, overhead triceps extension and floor press are stage-counted too. Two rules go
+> beyond fitmon, because fitmon miscounts without them: an overhead exercise needs the wrist above
+> the shoulder to be at rest, and dropping the arm clears the stage, so curling at your sides after
+> an overhead set cannot count. Every other exercise follows
+> `ClashFit_Exercise_Detection_Source_of_Truth.md`.
 
 > **Shipped, as of 5 Sep 2026: 57 of these 67.** Six additional upper-body strength exercises
 > were added to the catalogue: Bicep Curl, Lateral Raise, Front Raise, Shoulder Press, Overhead

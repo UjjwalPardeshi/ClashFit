@@ -22,8 +22,8 @@
           "KNEE",
           "ANKLE"
         ],
-        "value": 90,
-        "tolerance": 12,
+        "value": 95.0,
+        "tolerance": 15.0,
         "weight": 1.0
       },
       {
@@ -32,8 +32,8 @@
           "HIP",
           "KNEE"
         ],
-        "value": 90,
-        "tolerance": 15,
+        "value": 90.0,
+        "tolerance": 20.0,
         "weight": 0.6
       }
     ],
@@ -46,6 +46,6 @@
   },
   "cues": {
     "enter": "Slide down until your knees are at ninety.",
-    "break": "Your hips are rising — slide back down."
+    "break": "Your hips are rising \u2014 slide back down."
   }
 }

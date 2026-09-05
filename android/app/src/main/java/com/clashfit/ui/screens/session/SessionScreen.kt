@@ -57,8 +57,8 @@ import com.clashfit.ui.theme.Motion
 import com.clashfit.ui.theme.Panel
 import com.clashfit.core.model.Landmarks
 import com.clashfit.perception.CameraPreviewSource
+import com.clashfit.perception.ExercisePoints
 import com.clashfit.perception.CameraStage
-import com.clashfit.perception.ExoRig
 import androidx.compose.foundation.layout.fillMaxHeight
 import kotlinx.coroutines.launch
 import com.clashfit.meta.MetaState
@@ -68,6 +68,9 @@ import com.clashfit.ui.theme.Heavy
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.BoxScope
+import com.clashfit.perception.gesture.HandGesture
+import com.clashfit.ui.theme.PanelLift
+import com.clashfit.ui.theme.Fresh
 
 /**
  * One screen for the whole fight. The engine's phase decides what is drawn: calibration guide,
@@ -86,6 +89,11 @@ fun SessionScreen(
     val restLeft by vm.restRemainingSec.collectAsStateWithLifecycle()
     val paused by vm.paused.collectAsStateWithLifecycle()
     val landmarks by vm.skeleton.collectAsStateWithLifecycle()
+    // The hand being held up to the camera, and the last command it gave.
+    val gestureHold by vm.gestureHold.collectAsStateWithLifecycle()
+    var lastGesture by remember { mutableStateOf<HudEvent.Gesture?>(null) }
+    // What the on-device model saw in the worst rep. Arrives a few seconds into the rest, or never.
+    val refereeNote by vm.refereeNote.collectAsStateWithLifecycle()
     val reduceMotion = LocalReduceMotion.current
     // Not every pose source has a camera: a recorded trace and the synthetic source do not, and
     // the fight has to work with either.
@@ -138,6 +146,7 @@ fun SessionScreen(
                     repeat(3) { shake.animateTo(Motion.shakePx, tween(Motion.shakeMs / 6)); shake.animateTo(-Motion.shakePx, tween(Motion.shakeMs / 6)) }
                     shake.animateTo(0f, tween(Motion.shakeMs / 6))
                 }
+                is HudEvent.Gesture -> lastGesture = e
                 else -> Unit
             }
         }
@@ -150,6 +159,8 @@ fun SessionScreen(
     // whether you fit. The engine calibrates underneath: calibration needs you in shot too, so the
     // two want the same five seconds.
     var readying by remember { mutableStateOf(true) }
+    // The catalogue: the fight needs the whole record, not just the name, to know which joints the
+    // counter is reading and draw them.
     val exerciseNames by graph.config.exercises.collectAsStateWithLifecycle()
 
     Box(Modifier.fillMaxSize().background(Ground)) {
@@ -159,9 +170,11 @@ fun SessionScreen(
                 // calibration is asking for, and it is very hard to do against a corner inset.
                 CameraStage(camera, Modifier.fillMaxSize())
                 CameraScrims(top = 0f, bottom = 0.28f)
-                ExoRig(
-                    landmarks, s.fatigue.band, 0f, null, Modifier.fillMaxSize(),
+                BodyOverlay(
+                    landmarks, exerciseNames[s.exerciseId], s.angleLeftDeg, s.angleRightDeg,
+                    band = s.fatigue.band, flash = 0f, verdict = null,
                     level = meta?.progress?.level ?: 1, sourceAspect = sourceAspect,
+                    exoSuit = settings.exoSuit, modifier = Modifier.fillMaxSize(),
                 )
                 CalibrationOverlay(
                     cue = s.cue, progress = s.calibProgress,
@@ -172,9 +185,12 @@ fun SessionScreen(
                 ExitCorner(onExit)
             }
             Phase.FIGHTING, Phase.FRAMING_LOST -> {
-                FightLayout(s, vm, lastHit, lastPlayerHit, jolt.value, shake.value, playerShake.value, paused, reduceMotion, camera, landmarks, meta, settings, sourceAspect)
+                FightLayout(s, vm, lastHit, lastPlayerHit, jolt.value, shake.value, playerShake.value, paused, reduceMotion, camera, landmarks, meta, settings, sourceAspect, exerciseNames[s.exerciseId], gestureHold, lastGesture)
             }
-            Phase.REST -> RestPanel(s, restLeft, onSkip = vm::skipRest, onStop = vm::stop)
+            Phase.REST -> RestPanel(
+                s, restLeft, onSkip = vm::skipRest, onStop = vm::stop,
+                gestureHold = gestureHold, lastGesture = lastGesture, refereeNote = refereeNote,
+            )
             Phase.DEAD -> EndPanel(s, onSummary = { /* wait for persistence */ }, onExit = onExit)
         }
         if (s.ended && s.phase != Phase.DEAD) EndPanel(s, onSummary = {}, onExit = onExit)
@@ -211,7 +227,8 @@ fun SessionScreen(
 private fun FightLayout(
     s: SessionState, vm: SessionViewModel, lastHit: HudEvent.Hit?, lastPlayerHit: HudEvent.PlayerHit?, jolt: Float, shake: Float, playerShake: Float,
     paused: Boolean, reduceMotion: Boolean, camera: CameraPreviewSource?, landmarks: Landmarks?,
-    meta: MetaState?, settings: Prefs.Settings, sourceAspect: Float?,
+    meta: MetaState?, settings: Prefs.Settings, sourceAspect: Float?, spec: com.clashfit.core.config.ExerciseSpec?,
+    gestureHold: Pair<HandGesture, Float>? = null, lastGesture: HudEvent.Gesture? = null,
 ) {
     val prone = vm.isProne
     val link by vm.link.collectAsStateWithLifecycle()
@@ -221,9 +238,13 @@ private fun FightLayout(
         // when a rep lands clean and changes colour as you tire.
         CameraStage(camera, Modifier.fillMaxSize())
         CameraScrims()
-        ExoRig(
-            landmarks, s.fatigue.band, jolt, lastHit?.verdict, Modifier.fillMaxSize(),
+        // The BlazePose points the counter is reading, drawn as they are. No suit, no avatar: the
+        // dots and the angle are the whole story of why a rep did or did not count.
+        BodyOverlay(
+            landmarks, spec, s.angleLeftDeg, s.angleRightDeg,
+            band = s.fatigue.band, flash = jolt, verdict = lastHit?.verdict,
             level = meta?.progress?.level ?: 1, sourceAspect = sourceAspect,
+            exoSuit = settings.exoSuit, modifier = Modifier.fillMaxSize(),
         )
 
         // The boss stands in the room with you, in the upper part of the frame so it never covers
@@ -275,6 +296,12 @@ private fun FightLayout(
         // Top right, where the corner skeleton inset used to sit before the camera took the frame.
         RankChip(meta, Modifier.align(Alignment.TopEnd).safeDrawingPadding().padding(top = 96.dp, end = 12.dp))
         if (paused) PausedOverlay(onResume = vm::resume, onStop = vm::stop)
+        // The hand: a ring that fills while a shape is held, then the word for what it did. Drawn
+        // over the pause overlay too, because an open palm is how you resume from two metres away.
+        // Mid-right, beside the boss: the one place on the HUD nothing else needs, so a held hand
+        // never hides the health bar or the rank while the ring fills.
+        GestureRing(gestureHold, resting = false, Modifier.align(Alignment.CenterEnd).padding(end = 16.dp, bottom = 120.dp))
+        GestureToast(lastGesture, Modifier.align(Alignment.Center).padding(bottom = 300.dp))
     }
 }
 
@@ -292,10 +319,19 @@ private fun PausedOverlay(onResume: () -> Unit, onStop: () -> Unit) {
 
 /** The moment the coach earns its place. The player is on the floor; the line is spoken too. */
 @Composable
-fun RestPanel(s: SessionState, restLeft: Int?, onSkip: () -> Unit, onStop: () -> Unit) {
+fun RestPanel(
+    s: SessionState, restLeft: Int?, onSkip: () -> Unit, onStop: () -> Unit,
+    gestureHold: Pair<HandGesture, Float>? = null, lastGesture: HudEvent.Gesture? = null,
+    refereeNote: String? = null,
+) {
     val t = s.telemetry
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Kicker("Rest · set ${s.setIndex}")
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+            Kicker("Rest · set ${s.setIndex}")
+            // A thumb up or a fist from the floor starts the next set without walking to the phone.
+            GestureRing(gestureHold, resting = true)
+        }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
             Text((restLeft ?: s.restSec ?: 0).toString(), style = MaterialTheme.typography.displayLarge, color = Ember)
             FatiguePips(s.fatigue.band)
@@ -312,6 +348,20 @@ fun RestPanel(s: SessionState, restLeft: Int?, onSkip: () -> Unit, onStop: () ->
                 Text(coach?.coachLine ?: "…", fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.Medium, color = Ink)
             }
         }
+        // What the model saw in the photograph of your worst rep. It appears when it arrives and
+        // is simply absent when there is no on-device model — never a spinner, never an apology.
+        refereeNote?.let { note ->
+            AppCard(Modifier.fillMaxWidth(), padding = 20, container = PanelLift) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(AppIcons.Eye, contentDescription = null, tint = Fresh, modifier = Modifier.size(16.dp))
+                        Text("The referee looked at rep ${s.telemetry?.worstRep?.index ?: 0}", style = MaterialTheme.typography.labelMedium, color = Fresh)
+                    }
+                    Text(note, style = MaterialTheme.typography.titleMedium, color = Ink)
+                    Text("Seen on this phone. The picture was not saved.", style = MaterialTheme.typography.labelSmall, color = InkFaint)
+                }
+            }
+        }
         AppCard(Modifier.fillMaxWidth(), padding = 20) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(s.combat.bossName, style = MaterialTheme.typography.labelMedium, color = InkFaint)
@@ -322,6 +372,8 @@ fun RestPanel(s: SessionState, restLeft: Int?, onSkip: () -> Unit, onStop: () ->
         Text("Boss at ${(s.combat.hpPct * 100).toInt()}%${coach?.let { " · " + it.source.name.lowercase() + " coach" } ?: ""}", style = MaterialTheme.typography.labelSmall, color = InkFaint)
         PrimaryButton("Next set", Modifier.fillMaxWidth(), onClick = onSkip)
         SecondaryButton("Stop and save", Modifier.fillMaxWidth(), onClick = onStop)
+    }
+    GestureToast(lastGesture, Modifier.align(Alignment.Center))
     }
 }
 

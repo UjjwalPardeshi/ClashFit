@@ -75,6 +75,31 @@ class Prefs(private val context: Context) {
         val shareNoticeSeen: Boolean = false,
         /** Weekly distance goal for runs and walks, in metres. */
         val weeklyDistanceGoalM: Int = 15_000,
+        /**
+         * Read hand gestures from the camera during a fight: open palm pauses, thumb up ends the
+         * set, fist skips the rest. On by default because it is the one mid-set input that works
+         * in a loud room and needs no permission the fight does not already have.
+         */
+        val gestures: Boolean = true,
+        /**
+         * Let the coach use a cloud model when the on-device one is not installed.
+         *
+         * Off by default, and deliberately not "smart": when it is on, the 23-number summary of a
+         * set — and a typed question in the chat — may go to the model provider. Never a camera
+         * frame, never a landmark, never a rep timeline; those paths do not exist in the code.
+         * The privacy screen states what this switch changes in one sentence.
+         */
+        val cloudCoach: Boolean = false,
+        /**
+         * Draw the exo-suit instead of the measured points.
+         *
+         * The dots are the honest overlay and the default: they are the joints the referee is
+         * actually reading, with the angle it scored beside them, so what the phone sees is on
+         * screen. The suit is the same landmarks dressed as armour — better on a stage, and it is
+         * what the deck and the landing page describe. One switch, because which of those matters
+         * depends on who is holding the phone.
+         */
+        val exoSuit: Boolean = false,
     )
 
     enum class Goal(val title: String, val blurb: String) {
@@ -110,10 +135,16 @@ class Prefs(private val context: Context) {
             mapTilesAsked = p[MAP_TILES_ASKED] ?: false,
             shareNoticeSeen = p[SHARE_NOTICE_SEEN] ?: false,
             weeklyDistanceGoalM = p[WEEKLY_DISTANCE_GOAL_M] ?: 15_000,
+            gestures = p[GESTURES] ?: true,
+            cloudCoach = p[CLOUD_COACH] ?: false,
+            exoSuit = p[EXO_SUIT] ?: false,
         )
     }
 
     suspend fun setGuest(v: Boolean) = context.dataStore.edit { it[GUEST] = v }
+    suspend fun setGestures(v: Boolean) = context.dataStore.edit { it[GESTURES] = v }
+    suspend fun setCloudCoach(v: Boolean) = context.dataStore.edit { it[CLOUD_COACH] = v }
+    suspend fun setExoSuit(v: Boolean) = context.dataStore.edit { it[EXO_SUIT] = v }
     suspend fun setReduceMotion(v: Boolean) = context.dataStore.edit { it[REDUCE_MOTION] = v }
     suspend fun setBoss3d(v: Boolean) = context.dataStore.edit { it[BOSS_3D] = v }
     suspend fun setHaptics(v: Boolean) = context.dataStore.edit { it[HAPTICS] = v }
@@ -175,6 +206,9 @@ class Prefs(private val context: Context) {
         val DESK_SNOOZED_UNTIL_MS = longPreferencesKey("desk_snoozed_until_ms")
         val ONBOARDED = booleanPreferencesKey("onboarded")
         val GUEST = booleanPreferencesKey("guest")
+        val GESTURES = booleanPreferencesKey("gestures")
+        val CLOUD_COACH = booleanPreferencesKey("cloud_coach")
+        val EXO_SUIT = booleanPreferencesKey("exo_suit")
         val GOAL = stringPreferencesKey("goal")
         val AVATAR_COLOR = intPreferencesKey("avatar_color")
         val MAP_TILES = booleanPreferencesKey("map_tiles")

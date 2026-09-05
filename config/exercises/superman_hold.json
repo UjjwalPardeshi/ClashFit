@@ -21,8 +21,8 @@
           "HIP",
           "KNEE"
         ],
-        "value": 190,
-        "tolerance": 14,
+        "value": 162.5,
+        "tolerance": 17.5,
         "weight": 1.0
       }
     ],

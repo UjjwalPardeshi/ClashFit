@@ -47,6 +47,7 @@ import com.clashfit.engine.core.GhostSource
 import com.clashfit.engine.core.LandmarkFilter
 import com.clashfit.engine.core.RepDetectorConfig
 import com.clashfit.engine.core.RepStateMachine
+import com.clashfit.engine.core.StageCounter
 import com.clashfit.engine.core.SignalTables
 import com.clashfit.engine.core.AsymmetryTracker
 import com.clashfit.engine.core.summariseAsymmetry
@@ -143,19 +144,33 @@ class SessionEngine(
     private var deepestLms: Landmarks? = null
     private var deepestU: Float? = null
     private var deepestSide: Side = Side.LEFT
+    /**
+     * Frame time at the deepest point, alongside the landmarks from it. -1 until the first descent.
+     *
+     * The referee's eyes want the camera frame from this moment: a rep completes on the way back
+     * up, so by then the picture worth looking at is a second old. The landmarks here were already
+     * being kept for alignment; this is the timestamp of the same frame.
+     */
+    private var deepestTMs: Long = -1L
 
     // Per-arm deepest tracking for sidesEach=true (when arms move independently)
     private var deepestLmsLeft: Landmarks? = null
     private var deepestULeft: Float? = null
     private var deepestGateLeft = Float.NaN
+    private var deepestTMsLeft: Long = -1L
     private var deepestLmsRight: Landmarks? = null
     private var deepestURight: Float? = null
     private var deepestGateRight = Float.NaN
+    private var deepestTMsRight: Long = -1L
 
     private val topRefSamples = ArrayList<Float>(128)
     private var topRef: Float? = null
 
     // Rep detection options from the exercise's detector block. docs/19-EXERCISE-LIBRARY.md
+    private var stageCounter: StageCounter? = null              // fitmon's counter, for the exercises configured for it
+    private var repCfg: RepDetectorConfig? = null               // kept for form scoring under stage counting
+    private var lastLeftDeg = Float.NaN
+    private var lastRightDeg = Float.NaN
     private var sidesEach = false                              // one machine per arm, merged when they move together
     private var dirSign = 1f                                   // +1 the movement lowers the angle (squat); -1 it raises it (raises, calf raise)
     private var gateAngleName: Triple<String, String, String>? = null
@@ -266,6 +281,10 @@ class SessionEngine(
 
         if (family == Family.REP_CYCLE) {
             val cfg = repConfig(det)
+            repCfg = cfg
+            // fitmon's stage counter, where the exercise asks for it: a rep is the move from the
+            // rest position past the counting threshold, debounced, with no dwell or duration gate.
+            stageCounter = StageCounter.Config.from(det)?.let { StageCounter(it) }
             dirSign = if (cfg.topEnter > cfg.bottomEnter) 1f else -1f
             sidesEach = det["sides"]?.jsonPrimitive?.content == "EACH"
             fsm = if (sidesEach) null else RepStateMachine(cfg)
@@ -280,6 +299,7 @@ class SessionEngine(
             mergeWindowMs = det["mergeWindowMs"]?.jsonPrimitive?.longOrNull ?: 500L
         } else {
             fsm = null; fsmLeft = null; fsmRight = null
+            stageCounter = null; repCfg = null
             sidesEach = false; gateAngleName = null
         }
         filter = LandmarkFilter(poseCfg.filter.minCutoff, poseCfg.filter.beta, poseCfg.filter.dCutoff)
@@ -323,6 +343,7 @@ class SessionEngine(
         fsm?.reset()
         fsmLeft?.reset()
         fsmRight?.reset()
+        stageCounter?.reset()
         detector?.reset()
         fatigue.reset()
         combat.reset(bossConfig)
@@ -419,6 +440,8 @@ class SessionEngine(
             leftAngle = result.left
             rightAngle = result.right
             bothSides = result.both
+            lastLeftDeg = result.left
+            lastRightDeg = result.right
             if (phase == Phase.FIGHTING || phase == Phase.REST) {
                 asymmetryTracker.onFrame(result.left, result.right, tMs)
             }
@@ -488,6 +511,15 @@ class SessionEngine(
                 val gateOk = gate.isNaN() || (gate >= gateMinDeg && gate <= gateMaxDeg)
                 val blocked = gateAngleName != null && !gateAtEnd && !gateOk
 
+                val sc = stageCounter
+                if (sc != null) {
+                    // fitmon reads raw landmarks, so the counter does too: no filter between the
+                    // model and the threshold, which is what makes its counts feel immediate.
+                    for (r in sc.onFrame(world, tMs, side)) completeStageRep(r, lms)
+                    sc.angles[Side.LEFT]?.let { lastLeftDeg = it }
+                    sc.angles[Side.RIGHT]?.let { lastRightDeg = it }
+                    return state()
+                }
                 // A blocked frame is skipped, not fed as invalid: the machine never sees a curl at
                 // the sides as a triceps extension, and a gate that flickers for a few frames of a
                 // real overhead extension cannot sink that rep's valid-frame ratio. Per-arm machines
@@ -498,15 +530,15 @@ class SessionEngine(
                     val leftOk = gateLeft.isNaN() || (gateLeft >= gateMinDeg && gateLeft <= gateMaxDeg)
                     val rightOk = gateRight.isNaN() || (gateRight >= gateMinDeg && gateRight <= gateMaxDeg)
                     if (gateAtEnd || leftOk) {
-                        trackDeepest(leftAngle, lms, Side.LEFT, gateLeft, Side.LEFT)
+                        trackDeepest(leftAngle, lms, Side.LEFT, gateLeft, tMs, Side.LEFT)
                         fsmLeft?.onFrame(leftAngle, tMs)?.let { creditSide(it, Side.LEFT, tMs, lms) }
                     }
                     if (gateAtEnd || rightOk) {
-                        trackDeepest(rightAngle, lms, Side.RIGHT, gateRight, Side.RIGHT)
+                        trackDeepest(rightAngle, lms, Side.RIGHT, gateRight, tMs, Side.RIGHT)
                         fsmRight?.onFrame(rightAngle, tMs)?.let { creditSide(it, Side.RIGHT, tMs, lms) }
                     }
                 } else if (!blocked) {
-                    trackDeepest(angle, lms, side, gate)
+                    trackDeepest(angle, lms, side, gate, tMs)
                     fsm?.onFrame(angle, tMs)?.let { completeRep(it, lms) }
                 }
             }
@@ -561,7 +593,7 @@ class SessionEngine(
      * When sidesEach=true (per-arm machines), tracks the deepest point separately for each arm,
      * so completeRep can use the correct arm's deepest frame.
      */
-    private fun trackDeepest(a: Float, lms: Landmarks, s: Side, gate: Float, side: Side = s) {
+    private fun trackDeepest(a: Float, lms: Landmarks, s: Side, gate: Float, tMs: Long, side: Side = s) {
         if (a.isNaN()) return
         val u = dirSign * a
 
@@ -569,15 +601,15 @@ class SessionEngine(
         if (sidesEach) {
             if (side == Side.LEFT) {
                 val d = deepestULeft
-                if (d == null || u < d) { deepestULeft = u; deepestLmsLeft = lms; deepestGateLeft = gate }
+                if (d == null || u < d) { deepestULeft = u; deepestLmsLeft = lms; deepestGateLeft = gate; deepestTMsLeft = tMs }
             } else {
                 val d = deepestURight
-                if (d == null || u < d) { deepestURight = u; deepestLmsRight = lms; deepestGateRight = gate }
+                if (d == null || u < d) { deepestURight = u; deepestLmsRight = lms; deepestGateRight = gate; deepestTMsRight = tMs }
             }
         } else {
             // Shared tracking for non-per-arm machines
             val d = deepestU
-            if (d == null || u < d) { deepestU = u; deepestLms = lms; deepestSide = s; deepestGate = gate }
+            if (d == null || u < d) { deepestU = u; deepestLms = lms; deepestSide = s; deepestGate = gate; deepestTMs = tMs }
         }
     }
 
@@ -649,6 +681,7 @@ class SessionEngine(
         fsm?.reset()
         fsmLeft?.reset()
         fsmRight?.reset()
+        stageCounter?.reset()
         topRef?.let { ref ->
             fsm?.setTopRef(ref)
             fsmLeft?.setTopRef(ref)
@@ -656,9 +689,9 @@ class SessionEngine(
         }
         detector?.reset()
         asymmetryTracker.reset()
-        deepestLms = null; deepestU = null; deepestGate = Float.NaN; gateFailedAtMs = null
-        deepestULeft = null; deepestLmsLeft = null; deepestGateLeft = Float.NaN
-        deepestURight = null; deepestLmsRight = null; deepestGateRight = Float.NaN
+        deepestLms = null; deepestU = null; deepestGate = Float.NaN; gateFailedAtMs = null; deepestTMs = -1L
+        deepestULeft = null; deepestLmsLeft = null; deepestGateLeft = Float.NaN; deepestTMsLeft = -1L
+        deepestURight = null; deepestLmsRight = null; deepestGateRight = Float.NaN; deepestTMsRight = -1L
         lastLeftRepEndMs = null; lastRightRepEndMs = null
         nextRepIndex = 1
         // The filter too. Everything else that carries state across a rep was reset above, and
@@ -730,6 +763,42 @@ class SessionEngine(
         return FormScore(d, r, t, a, total, reason)
     }
 
+    /**
+     * A rep the stage counter found, scored by the same form model as every other rep. The counter
+     * measures no pause at the bottom, so the tempo score is given the target pause and grades the
+     * eccentric alone rather than punishing something nobody measured.
+     */
+    private fun completeStageRep(r: StageCounter.Rep, lms: Landmarks) {
+        val cfg = repCfg ?: return
+        val lo = minOf(dirSign * r.thetaMin, dirSign * r.thetaMax)
+        val hi = maxOf(dirSign * r.thetaMin, dirSign * r.thetaMax)
+        val ecc = ((r.tDeepestMs - r.tStartMs).coerceAtLeast(0L)) / 1000f
+        val con = ((r.tEndMs - r.tDeepestMs).coerceAtLeast(0L)) / 1000f
+        val pause = exercise.form?.tempo?.bottomPauseSec ?: 0.12f
+        completeRep(
+            RepEvent(
+                repIndex = nextRepIndex++,
+                exerciseId = exercise.id,
+                tStartMs = r.tStartMs,
+                tEndMs = r.tEndMs,
+                thetaMin = minOf(r.thetaMin, r.thetaMax),
+                thetaMax = maxOf(r.thetaMin, r.thetaMax),
+                uMin = lo,
+                uMax = hi,
+                uTopRef = dirSign * cfg.topEnter,
+                uTarget = dirSign * cfg.targetAngle,
+                tEccSec = ecc,
+                tBottomSec = pause,
+                tConSec = con,
+                concentricVelocity = if (con > 0f) abs(hi - lo) / con else 0f,
+                gapSec = lastRepEndMs?.let { (r.tStartMs - it) / 1000f } ?: 0f,
+                validFrameRatio = 1f,
+            ),
+            lms,
+            r.side ?: side,
+        )
+    }
+
     private fun completeRep(raw: RepEvent, lms: Landmarks, repSide: Side = side) {
         // The bottom of this rep, falling back to the current frame if nothing was recorded.
         // When sidesEach=true, use the completing side's deepest data to ensure alignment
@@ -741,14 +810,20 @@ class SessionEngine(
         } else {
             Triple(deepestLms ?: lms, if (deepestLms != null) deepestSide else repSide, deepestGate)
         }
+        // The frame time from the same branch, so a per-arm rep points at that arm's own moment.
+        val deepestAt = when {
+            sidesEach && repSide == Side.LEFT -> deepestTMsLeft
+            sidesEach && repSide == Side.RIGHT -> deepestTMsRight
+            else -> deepestTMs
+        }
 
         // Clear the deepest state for this side
         if (sidesEach && repSide == Side.LEFT) {
-            deepestLmsLeft = null; deepestULeft = null; deepestGateLeft = Float.NaN
+            deepestLmsLeft = null; deepestULeft = null; deepestGateLeft = Float.NaN; deepestTMsLeft = -1L
         } else if (sidesEach && repSide == Side.RIGHT) {
-            deepestLmsRight = null; deepestURight = null; deepestGateRight = Float.NaN
+            deepestLmsRight = null; deepestURight = null; deepestGateRight = Float.NaN; deepestTMsRight = -1L
         } else {
-            deepestLms = null; deepestU = null; deepestGate = Float.NaN
+            deepestLms = null; deepestU = null; deepestGate = Float.NaN; deepestTMs = -1L
         }
         // An END gate refuses a rep whose deepest point was in the wrong place: a shoulder press
         // pushed out in front instead of overhead. The cue says so for a moment.
@@ -791,6 +866,7 @@ class SessionEngine(
             damage = dmg, combo = c.comboMultiplier,
             validFrameRatio = raw.validFrameRatio, depthCm = depthCm(raw),
             asymmetry = asymmetry,
+            tDeepestMs = deepestAt,
         )
         record(rec, c)
     }
@@ -984,6 +1060,8 @@ class SessionEngine(
         framing = framing,
         cue = cue(),
         angleDeg = angle,
+        angleLeftDeg = lastLeftDeg,
+        angleRightDeg = lastRightDeg,
         topRefDeg = topRef,
         setIndex = setIndex,
         setReps = setReps.size,
@@ -1025,6 +1103,7 @@ class SessionEngine(
         }
         detector?.last?.cue?.let { return it }               // pose-match names the joint
         gateFailedAtMs?.let { if (lastTMs - it < 2500) return c["gate"] ?: c["tooHigh"] ?: "Finish the movement." }
+        stageCounter?.lastMissMs?.let { if (lastTMs - it < 2500) return c["gate"] ?: c["tooHigh"] ?: "Finish the movement." }
         if (framing == Framing.TOO_FAR) return "Come closer."
         if (framing == Framing.TOO_CLOSE) return "Step back."
         val r = lastRep

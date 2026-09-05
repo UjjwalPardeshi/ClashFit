@@ -15,6 +15,8 @@ data class SessionState(
     val framing: Framing,
     val cue: String?,
     val angleDeg: Float,
+    val angleLeftDeg: Float,
+    val angleRightDeg: Float,
     val topRefDeg: Float?,
     val setIndex: Int,
     val setReps: Int,

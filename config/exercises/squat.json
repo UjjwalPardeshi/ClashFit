@@ -37,7 +37,21 @@
       "KNEE",
       "ANKLE"
     ],
-    "_note": "Keypoints 23-25-27 / 24-26-28 (hip-knee-ankle), 3D world angle. Standing is 180 in theory; a locked knee reads 165-178 on the world landmarks, so TOP is >=165. The bottom is 100-70 (BOTTOM at <=100), 85 is full depth."
+    "_note": "Keypoints 23-25-27 / 24-26-28 (hip-knee-ankle), 3D world angle. Standing is 180 in theory; a locked knee reads 165-178 on the world landmarks, so TOP is >=165. The bottom is 100-70 (BOTTOM at <=100), 85 is full depth.",
+    "counter": "STAGE",
+    "stage": {
+      "sides": "BOTH",
+      "rest": [
+        "<",
+        110
+      ],
+      "count": [
+        ">",
+        160
+      ],
+      "debounceMs": 1000,
+      "_note": "fitmon countSquats: both knees <110 is down, both >160 counts on the way back up, 1000 ms."
+    }
   },
   "form": {
     "weights": {

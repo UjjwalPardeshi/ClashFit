@@ -23,11 +23,11 @@
       "b": "ELBOW",
       "c": "WRIST"
     },
-    "topEnter": 168,
-    "topExit": 162,
-    "bottomEnter": 140,
-    "bottomExit": 148,
-    "targetAngle": 125,
+    "topEnter": 155,
+    "topExit": 148,
+    "bottomEnter": 95,
+    "bottomExit": 112,
+    "targetAngle": 80,
     "minDescendMs": 200,
     "minBottomMs": 120,
     "minRepMs": 800,
@@ -36,7 +36,8 @@
       "SHOULDER",
       "ELBOW",
       "WRIST"
-    ]
+    ],
+    "_note": "Section 9.1: start >=150, phase 1 <140, bottom <=95, return >=150."
   },
   "form": {
     "weights": {

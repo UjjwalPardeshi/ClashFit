@@ -46,6 +46,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
     <!-- Duel / raid: phone-to-phone over Nearby Connections. Local radios only. -->
+    <!-- minSdk is 29, so the two phones can be on Android 10 or 11, where Bluetooth is one
+         install-time permission rather than the three runtime ones that replaced it in 12. -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" tools:targetApi="s" />

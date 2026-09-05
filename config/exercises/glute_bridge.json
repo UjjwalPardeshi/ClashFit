@@ -22,10 +22,10 @@
       "b": "HIP",
       "c": "KNEE"
     },
-    "topEnter": 120,
-    "topExit": 128,
-    "bottomEnter": 150,
-    "bottomExit": 143,
+    "topEnter": 130,
+    "topExit": 138,
+    "bottomEnter": 155,
+    "bottomExit": 147,
     "targetAngle": 170,
     "minDescendMs": 200,
     "minBottomMs": 120,
@@ -35,7 +35,8 @@
       "SHOULDER",
       "HIP",
       "KNEE"
-    ]
+    ],
+    "_note": "Section 9.1: start 90-130, phase 2 hip >=155. Inverted — rest is the low angle, full extension is 170."
   },
   "form": {
     "weights": {
