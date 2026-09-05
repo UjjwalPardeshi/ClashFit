@@ -123,7 +123,45 @@ Every other exercise follows `ClashFit_Exercise_Detection_Source_of_Truth.md`.
 
 ---
 
-## 6. What is on screen during a fight
+## 6. The camera pipeline, and the four ways it can lie
+
+Everything above depends on the landmarks being right, and four things between the sensor and the
+engine can quietly make them wrong. All four were wrong at once on 5 Sep 2026, which drew the
+skeleton in a wide box beside the player and held the cue at "Come closer." for a whole session.
+They live in `perception/MediaPipePoseSource.kt` and `perception/FrameGeometry.kt`.
+
+1. **The frame arrives on its side.** The sensor is mounted at an angle to the phone, and CameraX
+   reports the clockwise turn needed to stand the frame up. Reading that number and not applying it
+   shows the detector a body lying down. Everything downstream then fails together: the framing
+   check measures the body's height as a fraction of image height, which on a sideways frame is its
+   width, so it reads TOO_FAR forever.
+2. **The buffer is wider than the image.** A plane's rows are padded out to its row stride. Copying
+   that buffer into a bitmap of the image's width slides every row after the first sideways, and
+   the picture shears into diagonal stripes. Size the copy to `rowStride / pixelStride`.
+3. **`landmarks()` is not `worldLandmarks()`.** `landmarks()` is normalised to the picture, so an
+   angle read off it changes when you step nearer the camera, and a distance read off it is in
+   fractions of a frame rather than metres. `worldLandmarks()` is metric and hip-centred, and it is
+   what every threshold, every angle and the jump-height scale are written against. Feeding the
+   picture coordinates into `PoseFrame.world` makes all of them meaningless while still looking
+   plausible.
+4. **Frames must arrive in order.** Every window in the engine is a `now - then > n` test, and a
+   negative difference passes none of them, so one swapped pair can switch off the rep counter, the
+   cadence window and the hold timer at once. Frames go into a conflated channel with `trySend`
+   from the detector's own callback thread, and one no newer than the last is dropped. Never hand
+   a frame to a coroutine on a multi-threaded dispatcher on the way in.
+
+`FrameGeometry` holds the arithmetic for the first two and carries no Android types, so
+`FrameGeometryTest` pins it without a device. **The aspect ratio the overlay is given must be the
+upright one.** `PreviewView` fills the view and crops the overflow, and `ExercisePoints` reproduces
+that crop from `sourceAspect`; give it the sensor's landscape shape and the dots land in a wide box
+beside the body even when everything else is right.
+
+The front camera is mirrored in the preview, so image landmarks have their x mirrored to match.
+World landmarks are deliberately left alone, which keeps the model's left arm the player's left arm.
+
+---
+
+## 7. What is on screen during a fight
 
 The camera fills the frame. On top of it are the BlazePose dots exactly as fitmon draws them: a red
 dot on every confident landmark, blue lines along the twelve body connections, and the measured
@@ -137,7 +175,7 @@ Your health bar sits under the boss's, with a strip that fills as the next attac
 
 ---
 
-## 7. Measuring new thresholds
+## 8. Measuring new thresholds
 
 ```bash
 node serve.js          # then open http://localhost:8080/tools/angles.html
@@ -151,7 +189,7 @@ and update the table in `docs/19-EXERCISE-LIBRARY.md`.
 
 ---
 
-## 8. Where things live in the app
+## 9. Where things live in the app
 
 `android/app/src/main/java/com/clashfit/`
 
@@ -163,7 +201,7 @@ and update the table in `docs/19-EXERCISE-LIBRARY.md`.
 | `engine/core` | `Geometry`, `RepStateMachine`, `StageCounter`, `FormScorer`, `CombatEngine`, the One Euro filter. |
 | `engine/session` | `SessionEngine`, the frame loop that ties all of the above together. |
 | `engine/detect` | The four non-rep detector families: holds, cadence, ballistic, pose match. |
-| `perception` | Camera, MediaPipe, and the on-screen landmark overlay. |
+| `perception` | Camera, MediaPipe, frame geometry, and the on-screen landmark overlay. |
 | `ui/screens/*` | Compose screens, one package per area. `session/` is the fight. |
 | `data` | Room database and preferences. |
 | `auth`, `duel`, `meta`, `alarm`, `audio` | Accounts, live play, progression, alarms, sound. |
@@ -173,7 +211,7 @@ set through the shipped configuration and is the closest thing to an integration
 
 ---
 
-## 9. Things worth knowing before you change something
+## 10. Things worth knowing before you change something
 
 - **`SessionEngine` is the one place that owns a session.** Adding a counting rule means adding it
   there and in a config record, not in a screen.
