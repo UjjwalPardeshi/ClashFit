@@ -259,12 +259,14 @@ class RepGateSessionTest {
         val rec = Recorder(); val d = Driver(engine("shoulder_press", rec = rec))
         // The press is measured elbow-shoulder-hip (13-11-23 / 14-12-24): the angle the upper arm
         // makes with the torso, not the bend of the elbow. Racked, that reads 48; overhead, 175.
-        calibrate(d, press(80f, 40f))
+        // Racked at the shoulders: 82.6 degrees to the torso, inside the 70..95 band the player
+        // racks in. Below 70 is the weight put down rather than racked, and refused.
+        calibrate(d, press(80f, 75f))
         // Up and overhead: the arm swings away from the torso and the wrist clears the shoulder.
-        d.ramp(700, 0f, 1f) { f -> press(80f + 98f * f, 40f + 135f * f) }
+        d.ramp(700, 0f, 1f) { f -> press(80f + 98f * f, 75f + 100f * f) }
         d.hold(300, press(178f, 175f))
-        d.ramp(600, 1f, 0f) { f -> press(80f + 98f * f, 40f + 135f * f) }
-        d.hold(400, press(80f, 40f))
+        d.ramp(600, 1f, 0f) { f -> press(80f + 98f * f, 75f + 100f * f) }
+        d.hold(400, press(80f, 75f))
         assertEquals(1, rec.reps.size, "a press to lockout overhead is a rep")
         // Pushed out in front: the elbow locks out, but the arm stays level with the shoulder, so
         // the angle to the torso never leaves 90 and the press never reaches the counting line.
@@ -284,22 +286,45 @@ class RepGateSessionTest {
         // Racked with the elbow closed to 50, past the 70 the movement starts from. The arm is
         // still down by the torso, so `rest` holds on the angle the press is counted by: only the
         // elbow floor separates this from a legal rack.
-        calibrate(d, press(50f, 40f))
+        calibrate(d, press(50f, 75f))
         repeat(2) {
-            d.ramp(700, 0f, 1f) { f -> press(50f + 128f * f, 40f + 135f * f) }
+            d.ramp(700, 0f, 1f) { f -> press(50f + 128f * f, 75f + 100f * f) }
             d.hold(300, press(178f, 175f))
-            d.ramp(600, 1f, 0f) { f -> press(50f + 128f * f, 40f + 135f * f) }
-            d.hold(400, press(50f, 40f))
+            d.ramp(600, 1f, 0f) { f -> press(50f + 128f * f, 75f + 100f * f) }
+            d.hold(400, press(50f, 75f))
         }
         assertEquals(0, rec.reps.size, "a press out of a rack below the elbow floor is not a rep")
 
-        // Form corrected: the same press racked at 80 instead of 50. The reading starts over on
-        // each return to the rack, so the earlier bad reps do not condemn this one.
-        d.ramp(600, 1f, 0f) { f -> press(80f + 98f * f, 40f + 135f * f) }
-        d.hold(400, press(80f, 40f))
-        d.ramp(700, 0f, 1f) { f -> press(80f + 98f * f, 40f + 135f * f) }
+        // Form corrected: the same press racked with the elbow at 80 instead of 50, the arm in
+        // the same place. The reading starts over on each return to the rack, so the earlier bad
+        // reps do not condemn this one.
+        d.ramp(600, 1f, 0f) { f -> press(80f + 98f * f, 75f + 100f * f) }
+        d.hold(400, press(80f, 75f))
+        d.ramp(700, 0f, 1f) { f -> press(80f + 98f * f, 75f + 100f * f) }
         d.hold(300, press(178f, 175f))
         assertEquals(1, rec.reps.size, "a press from a legal rack counts, so the refusal was the floor")
+    }
+
+    @Test
+    fun `a shoulder press racked below the rest floor does not count`() {
+        val rec = Recorder(); val d = Driver(engine("shoulder_press", rec = rec))
+        // Arms brought right down the sides between reps -- 47.7 degrees to the torso, under the
+        // 70 the rack starts at. The elbow is legal at 83.8, so only the rest floor can refuse it.
+        calibrate(d, press(80f, 40f))
+        repeat(2) {
+            d.ramp(700, 0f, 1f) { f -> press(80f + 98f * f, 40f + 135f * f) }
+            d.hold(300, press(178f, 175f))
+            d.ramp(600, 1f, 0f) { f -> press(80f + 98f * f, 40f + 135f * f) }
+            d.hold(400, press(80f, 40f))
+        }
+        assertEquals(0, rec.reps.size, "an arm brought down past the rack has put the weight down")
+
+        // Racked at the shoulders instead, same press: it counts.
+        d.ramp(600, 1f, 0f) { f -> press(80f + 98f * f, 75f + 100f * f) }
+        d.hold(400, press(80f, 75f))
+        d.ramp(700, 0f, 1f) { f -> press(80f + 98f * f, 75f + 100f * f) }
+        d.hold(300, press(178f, 175f))
+        assertEquals(1, rec.reps.size, "racking at the shoulders counts, so the refusal was the floor")
     }
 
     @Test

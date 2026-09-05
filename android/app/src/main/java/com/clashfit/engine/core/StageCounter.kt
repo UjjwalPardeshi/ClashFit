@@ -102,6 +102,18 @@ class StageCounter(val config: Config) {
          */
         val elbow: Condition? = null,
         /**
+         * How far the movement may come back down, as a condition on the primary angle itself.
+         *
+         * [rest] says how high the bottom may be before the counter will not re-arm; this says how
+         * low it may be before the rep stops being the exercise. A press racks at the shoulders,
+         * and an arm that keeps travelling to the side of the body has put the weight down rather
+         * than racked it. The two together make rest a band instead of a half-line.
+         *
+         * Judged over the whole rep like [elbow], not at one frame, because the fault is at the
+         * bottom and the rep counts on the way up.
+         */
+        val restFloor: Condition? = null,
+        /**
          * The least time the lift itself may take, rest to the top, in milliseconds.
          *
          * [debounceMs] does not do this: it spaces reps apart, so a flung rep counted as long as
@@ -141,6 +153,7 @@ class StageCounter(val config: Config) {
                     plane = optCond("plane"),
                     armLine = optCond("armLine"),
                     elbow = optCond("elbow"),
+                    restFloor = optCond("restFloor"),
                     minConcentricMs = st["minConcentricMs"]?.jsonPrimitive?.longOrNull,
                     minHoldMs = st["minHoldMs"]?.jsonPrimitive?.longOrNull,
                     countAt = st["countAt"]?.jsonPrimitive?.content?.let { CountAt.valueOf(it) } ?: CountAt.CROSSING,
@@ -166,11 +179,12 @@ class StageCounter(val config: Config) {
         var liftMs = 0L                    // rest to the top, banked at the top (see step)
         var movingSince: Long? = null      // first frame the working limb left its rest zone
         var repMinElbow = Float.NaN        // the most closed the elbow got anywhere in this rep
+        var repMinAngle = Float.NaN        // and the lowest the primary angle got, for restFloor
         var wasResting = false             // so each visit to the rack starts the rep afresh
         fun reset() {
             stage = Stage.NONE; restAt = null; lastCountMs = null; min = Float.NaN; max = Float.NaN
             reached = false; brokeCeiling = false
-            repMinElbow = Float.NaN; wasResting = false
+            repMinElbow = Float.NaN; repMinAngle = Float.NaN; wasResting = false
             clearRep()
         }
         /** Everything one rep accumulates, cleared when the next one starts. */
@@ -291,7 +305,7 @@ class StageCounter(val config: Config) {
                     " plane=${p(plL, plR)} over=${p(overL, overR)}" +
                     " line=${n(armLineDeg(world, Side.LEFT))}/${n(armLineDeg(world, Side.RIGHT))}" +
                     " elb=${n(elbowDeg(world, Side.LEFT))}/${n(elbowDeg(world, Side.RIGHT))}" +
-                    " repMinElb=${n(t.repMinElbow)}" +
+                    " repMinElb=${n(t.repMinElbow)} repMinAng=${n(t.repMinAngle)}" +
                     " tuck=${p(tkL, tkR)} lead=${if (leadLeft) "L" else "R"}" +
                     " lift=${t.liftMs} held=${t.heldMs()}" +
                     " stage=${t.stage} reached=${if (t.reached) "T" else "f"} broke=${if (t.brokeCeiling) "T" else "f"}" +
@@ -332,10 +346,13 @@ class StageCounter(val config: Config) {
         //
         // Arriving at rest starts the reading over, so a rep dropped too low does not condemn the
         // next one — the player lowers less far and the following press counts.
-        if (config.elbow != null) {
-            if (restHolds && !t.wasResting) t.repMinElbow = Float.NaN
+        if (config.elbow != null || config.restFloor != null) {
+            if (restHolds && !t.wasResting) { t.repMinElbow = Float.NaN; t.repMinAngle = Float.NaN }
             if (r.elbowDeg.isFinite() && (!t.repMinElbow.isFinite() || r.elbowDeg < t.repMinElbow)) {
                 t.repMinElbow = r.elbowDeg
+            }
+            if (angle.isFinite() && (!t.repMinAngle.isFinite() || angle < t.repMinAngle)) {
+                t.repMinAngle = angle
             }
             t.wasResting = restHolds
         }
@@ -383,7 +400,7 @@ class StageCounter(val config: Config) {
             if (over && t.stage == Stage.REST) t.brokeCeiling = true
             if (restHolds) {
                 var rep: Rep? = null
-                val clean = slowEnough && heldEnough && elbowFloorOk(t)
+                val clean = slowEnough && heldEnough && elbowFloorOk(t) && restFloorOk(t)
                 if (t.reached && !t.brokeCeiling && clean && debounced) {
                     t.lastCountMs = tMs
                     val deepest = if (config.count.op == "<") t.tMin else t.tMax
@@ -423,6 +440,8 @@ class StageCounter(val config: Config) {
             if (!slowEnough) { lastMissMs = tMs; return null }
             // The elbow closed past the floor somewhere in this rep.
             if (!elbowFloorOk(t)) { lastMissMs = tMs; return null }
+            // The arm came down past the rack: the weight was put down, not racked.
+            if (!restFloorOk(t)) { lastMissMs = tMs; return null }
             // The ceiling on a movement that ends where it counts: the reading at the counting
             // frame has to be one the joint can actually produce. It refuses a rep built on a bad
             // frame rather than a rep performed wrongly, which is the only sense a ceiling can have
@@ -505,6 +524,12 @@ class StageCounter(val config: Config) {
     private fun elbowFloorOk(t: Track): Boolean {
         val c = config.elbow ?: return true
         return !t.repMinElbow.isFinite() || c.holds(t.repMinElbow)
+    }
+
+    /** Whether the bottom of this rep stayed inside [Config.restFloor]. */
+    private fun restFloorOk(t: Track): Boolean {
+        val c = config.restFloor ?: return true
+        return !t.repMinAngle.isFinite() || c.holds(t.repMinAngle)
     }
 
     private fun tucked(world: Landmarks, side: Side): Boolean {

@@ -147,7 +147,7 @@ Widen that list to put them back; nothing else has to change.
 |---|---|---|---|---|
 | Lateral raise | 23-11-13 / 24-12-14 | both arms < 25° | both arms > 90°, out to the side, never past 110° | both, counted on the way down |
 | Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80°, elbow within 35° of the torso, lift ≥ 120 ms | either arm, one rep |
-| Shoulder press | 13-11-23 / 14-12-24 | arm-to-torso < 95° | arm-to-torso > 135°, wrist above the shoulder, elbow never under 70° | better-seen side |
+| Shoulder press | 13-11-23 / 14-12-24 | arm-to-torso 70–95° | arm-to-torso > 135°, wrist above the shoulder, elbow never under 70° | better-seen side |
 | Squat | 23-25-27 / 24-26-28 | both knees < 72° | both knees > 150° | both together |
 
 Debounce is 800 ms for the curl and 1000 ms for the rest.
