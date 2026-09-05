@@ -44,7 +44,7 @@ const TRACES = [
     file: 'traces/synthetic-f3-to-failure.jsonl',
     exercise: 'squat',
     note: 'synthetic F3 — set to failure',
-    opts: { reps: 14, top: 172, bottom: 70, decay: 0.02, fps: 30, eccSec: 1.0, pauseSec: 0.3, gapSec: 0.5, restGrowth: 0.35 },
+    opts: { reps: 18, top: 172, bottom: 40, decay: 0.012, tempoDecay: 0.05, fps: 30, eccSec: 1.0, pauseSec: 0.3, gapSec: 0.5, restGrowth: 0.6 },
     // What this trace exists to demonstrate. Checked on every run.
     expect: { minReps: 12, band: 'GASSED' },
     // The chart that quotes this replay. Rewritten from the same run, so the picture a judge is

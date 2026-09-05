@@ -203,13 +203,13 @@ class RepGateSessionTest {
         val rec = Recorder(); val d = Driver(engine("squat", rec = rec))
         calibrate(d, SyntheticBody.world(175f))
         repeat(2) {
-            d.ramp(800, 175f, 90f) { k -> SyntheticBody.world(k) }; d.hold(300, SyntheticBody.world(90f))
-            d.ramp(700, 90f, 175f) { k -> SyntheticBody.world(k) }; d.hold(400, SyntheticBody.world(175f))
+            d.ramp(800, 175f, 68f) { k -> SyntheticBody.world(k) }; d.hold(300, SyntheticBody.world(68f))
+            d.ramp(700, 68f, 175f) { k -> SyntheticBody.world(k) }; d.hold(400, SyntheticBody.world(175f))
         }
-        assertEquals(2, rec.reps.size, "down past 110 and back over 160 is a rep")
-        d.ramp(800, 175f, 130f) { k -> SyntheticBody.world(k) }; d.hold(300, SyntheticBody.world(130f))
-        d.ramp(700, 130f, 175f) { k -> SyntheticBody.world(k) }; d.hold(400, SyntheticBody.world(175f))
-        assertEquals(2, rec.reps.size, "a squat to 130 never reaches the bottom")
+        assertEquals(2, rec.reps.size, "down past 72 and back over 150 is a rep")
+        d.ramp(800, 175f, 100f) { k -> SyntheticBody.world(k) }; d.hold(300, SyntheticBody.world(100f))
+        d.ramp(700, 100f, 175f) { k -> SyntheticBody.world(k) }; d.hold(400, SyntheticBody.world(175f))
+        assertEquals(2, rec.reps.size, "a squat to 100 never reaches the bottom")
     }
 
     // ------------------------------------------------------------------ the boss's clock, as the HUD sees it

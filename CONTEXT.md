@@ -145,10 +145,10 @@ Widen that list to put them back; nothing else has to change.
 
 | Exercise | Keypoints | Rest | Counts at | Sides |
 |---|---|---|---|---|
-| Lateral raise | 23-11-13 / 24-12-14 | both wrists 25 cm below the shoulders | both wrists no more than 8 cm below them | both together |
+| Lateral raise | 23-11-13 / 24-12-14 | both arms < 30° | both arms > 100°, never past 110° | both, counted on the way down |
 | Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80° | either arm, one rep |
 | Shoulder press | 11-13-15 / 12-14-16 | elbow < 95° | elbow > 134°, wrist above the shoulder | better-seen side |
-| Squat | 23-25-27 / 24-26-28 | both knees < 110° | both knees > 160° | both together |
+| Squat | 23-25-27 / 24-26-28 | both knees < 72° | both knees > 150° | both together |
 
 The lateral raise is the odd row. Its keypoints are the angle the form score is built on, while the
 counter watches wrist height against the shoulder in metres — which is what its rest and count
