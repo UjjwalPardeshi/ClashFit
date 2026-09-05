@@ -23,8 +23,8 @@
       "b": "SHOULDER",
       "c": "HIP"
     },
-    "topEnter": 75,
-    "topExit": 85,
+    "topEnter": 95,
+    "topExit": 105,
     "bottomEnter": 145,
     "bottomExit": 135,
     "targetAngle": 155,
@@ -44,7 +44,7 @@
       "sides": "BEST",
       "rest": [
         "<",
-        75
+        95
       ],
       "count": [
         ">",
@@ -56,7 +56,7 @@
       ],
       "wristAboveShoulderAt": "COUNT",
       "debounceMs": 1000,
-      "_note": "Keypoints 13-11-23 / 14-12-24 (elbow-shoulder-hip), 3D world angle, better-seen side. Measured on the reference clip 6 Sep 2026: the rack sits at 53.6-55.1 and the weakest lockout at 149.7. Rest at <75 clears the highest rack by 20 degrees; count at >135 sits 14.7 degrees under the weakest lockout, so a press that falls short of a real lockout still counts, and 30 degrees above the lateral raise's 105 ceiling, so a raise on the same joint triple can never register as a press. The wrist-above-shoulder check is what separates a press overhead from an arm swung out behind: the angle alone cannot tell them apart, and at the counting frames the wrist measures 0.29-0.47 m above the shoulder along the torso. Ceiling 180: the arm does not go past straight in line with the torso, so a reading beyond it is a bad frame, not a bad press. The elbow floor (>70, shoulder-elbow-wrist) is enforced at the rack, the only place the joint can reach it: by the counting frame the elbow is nearly straight. On this clip the counting side's elbow never closes past 77.6, so the floor refuses none of its three reps, and the 7.6 degrees between the two is the margin. It gates the rest position rather than latching over the rep, so a single bad frame costs one frame of arming instead of a rep.",
+      "_note": "Keypoints 13-11-23 / 14-12-24 (elbow-shoulder-hip), 3D world angle, better-seen side. Rest measured on the player 6 Sep 2026, off 2226 logged frames of a real set: they rack with the upper arms roughly level, and the bottom between reps read 51-91 depending on the rep. At rest<75, taken from the reference animation whose rack sits at 55, three of seven full lockouts were refused for never re-arming - every one of them peaked above 159, so they were good presses thrown away by a threshold measured on a drawing. At <95 all seven count, and replaying those frames with gaussian angle noise it still counts seven at every level up to 6 degrees. The reference clip counts three either way. Count at >135 sits 14.7 degrees under the weakest lockout and 30 above the lateral raise's 105 ceiling, so a raise on the same joint triple can never register as a press. The wrist-above-shoulder check separates a press overhead from an arm swung out behind. Ceiling 180: the arm does not go past straight in line with the torso. The elbow floor (>70, shoulder-elbow-wrist) refuses a rep that drops the hands below the rack; on the logged set it refused none.",
       "ceiling": 180
     }
   },

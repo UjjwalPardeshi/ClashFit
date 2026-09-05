@@ -290,6 +290,8 @@ class StageCounter(val config: Config) {
                     " cnt=${p(config.count.holds(sL), config.count.holds(sR))}" +
                     " plane=${p(plL, plR)} over=${p(overL, overR)}" +
                     " line=${n(armLineDeg(world, Side.LEFT))}/${n(armLineDeg(world, Side.RIGHT))}" +
+                    " elb=${n(elbowDeg(world, Side.LEFT))}/${n(elbowDeg(world, Side.RIGHT))}" +
+                    " repMinElb=${n(t.repMinElbow)}" +
                     " tuck=${p(tkL, tkR)} lead=${if (leadLeft) "L" else "R"}" +
                     " lift=${t.liftMs} held=${t.heldMs()}" +
                     " stage=${t.stage} reached=${if (t.reached) "T" else "f"} broke=${if (t.brokeCeiling) "T" else "f"}" +
