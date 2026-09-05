@@ -53,8 +53,12 @@
         0
       ],
       "debounceMs": 1000,
-      "_note": "fitmon front raise (Python backend): same wrist-over-shoulder rule as the lateral raise. Ceiling 0.15: Fifteen centimetres above the shoulder is no longer a front raise, it is the start of a press. A ceiling makes the rep a whole cycle: it lands when the movement returns to rest, not when it first crosses the line, so a half rep cannot count.",
-      "ceiling": 0.15
+      "_note": "fitmon front raise (Python backend): same wrist-over-shoulder rule as the lateral raise. Ceiling 0.15: Fifteen centimetres above the shoulder is no longer a front raise, it is the start of a press. The rep still lands the moment it crosses the counting line; the ceiling only refuses a reading the joint cannot actually produce, which is the only sense a ceiling can have when the rep is over at the crossing. plane < 0.5 is the other half of the lateral-raise fix, 6 Sep 2026: a lateral raise puts the wrist level with the shoulder too, so without this the two exercises counted each other. This asks the upper arm to be more than 60 degrees away from straight out to the side, which a raise out in front always is and a raise out to the side never is.",
+      "ceiling": 0.15,
+      "plane": [
+        "<",
+        0.5
+      ]
     }
   },
   "form": {
@@ -81,9 +85,9 @@
     "baselineReps": 3
   },
   "cues": {
-    "enter": "Face the camera, arms hanging at your sides (10–20°).",
-    "tooHigh": "Raise the arms straight out in front to shoulder height — 90° at the shoulder.",
+    "enter": "Face the camera, arms hanging at your sides (10\u201320\u00b0).",
+    "tooHigh": "Raise the arms straight out in front to shoulder height \u2014 90\u00b0 at the shoulder.",
     "tooFast": "Lower under control.",
-    "framing": "I can't see your hips — step back."
+    "framing": "I can't see your hips \u2014 step back."
   }
 }

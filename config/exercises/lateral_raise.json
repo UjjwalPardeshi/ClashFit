@@ -25,8 +25,8 @@
       "c": "ELBOW"
     },
     "topEnter": 20,
-    "topExit": 30,
-    "bottomEnter": 100,
+    "topExit": 25,
+    "bottomEnter": 95,
     "bottomExit": 90,
     "targetAngle": 100,
     "minDescendMs": 200,
@@ -39,23 +39,27 @@
       "ELBOW",
       "WRIST"
     ],
-    "_note": "Keypoints 23-11-13 / 24-12-14 (hip-shoulder-elbow), 3D world angle. Arms hang at 20-25 and a correct raise turns at about 100. Past 110 the shoulder stops abducting and starts pressing, which is a different movement and is not counted.",
+    "_note": "Keypoints 23-11-13 / 24-12-14 (hip-shoulder-elbow), 3D world angle. Arms hang at 15-20 and a correct raise turns at 95-105. Past 105 the shoulder stops abducting and starts pressing, which is a different movement and is not counted.",
     "counter": "STAGE",
     "stage": {
       "signal": "ANGLE",
       "sides": "BOTH",
       "rest": [
         "<",
-        30
+        20
       ],
       "count": [
         ">",
-        100
+        95
       ],
-      "ceiling": 110,
+      "ceiling": 105,
       "debounceMs": 1000,
-      "_note": "Specified by the player, 6 Sep 2026: arms down at 20-25, the raise turns at 100, more than 110 is not a lateral raise and does not count, and the arms must come back into 20-30 for the rep to land. countAt RETURN makes this a whole-cycle rule, so the rep counts on the way down rather than on the way up. Replaces a wrist-height pair in metres that was measured off a drawing, not a body. Ceiling 110: Past 110 the shoulder stops abducting and starts pressing. The player's own number, 6 Sep 2026. A ceiling makes the rep a whole cycle: it lands when the movement returns to rest, not when it first crosses the line, so a half rep cannot count.",
-      "countAt": "RETURN"
+      "_note": "Specified by the player, 6 Sep 2026: arms down in the 15-20 band, the raise turns in the 95-105 band, and the arms must come back down for the rep to land. countAt RETURN makes this a whole-cycle rule, so the rep counts on the way down rather than on the way up, which is also the only way the 105 ceiling can mean anything: how far you went is not known until you turn around. plane > 0.5 is the fix for front raises counting as lateral ones. The hip-shoulder-elbow angle is the same 100 degrees whether the arm goes out to the side or straight out in front, so the angle alone cannot tell the two apart; this asks the upper arm to be within 60 degrees of straight out to the side. Measured on traces/reference-lateral-raise.jsonl: at the top of a correct raise the upper arm reads 0.62 to 1.00 sideways (median 0.84), and a front raise reads about 0.",
+      "countAt": "RETURN",
+      "plane": [
+        ">",
+        0.5
+      ]
     }
   },
   "form": {
@@ -82,9 +86,9 @@
     "baselineReps": 3
   },
   "cues": {
-    "enter": "Face the camera, arms hanging at your sides (10–20°).",
-    "tooHigh": "Raise the arms out to the sides to shoulder height — 90° at the shoulder.",
+    "enter": "Face the camera, arms hanging at your sides (15-20 degrees).",
+    "tooHigh": "Raise the arms out to the sides, not out in front, to about 100 degrees.",
     "tooFast": "Lower under control.",
-    "framing": "I can't see your hips — step back."
+    "framing": "I can't see your hips \u2014 step back."
   }
 }

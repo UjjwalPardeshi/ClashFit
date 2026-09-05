@@ -100,6 +100,40 @@ class StageCounterTest {
         assertTrue(reps[0].thetaMin < 90f, "the working arm passed 80; averaged with the arm at rest it would read about 125: ${reps[0].thetaMin}")
     }
 
+    /** The shipped lateral raise: the 15-20 rest band, the 95-105 counting band, and out to the side. */
+    private val raiseCfg = StageCounter.Config(
+        angle = Triple("HIP", "SHOULDER", "ELBOW"), sides = StageCounter.Sides.BOTH,
+        rest = StageCounter.Condition("<", 20f), count = StageCounter.Condition(">", 95f),
+        ceiling = 105f, plane = StageCounter.Condition(">", 0.5f),
+        countAt = StageCounter.CountAt.RETURN, debounceMs = 1000L,
+    )
+
+    @Test
+    fun `the plane is what separates a lateral raise from a front raise`() {
+        // Out to the side and straight out in front reach the same hip-shoulder-elbow angle -- that
+        // is the whole problem. On this body 93 degrees of abduction and 100 of forward elevation
+        // both read about 100 at the joint, so only the direction of the upper arm tells them apart.
+        fun side(a: Float) = SyntheticBody.world(170f, shoulderAbductionDeg = a)
+        fun forward(a: Float) = SyntheticBody.world(170f, shoulderElevationDeg = a)
+        fun cycle(pose: (Float) -> Landmarks, top: Float) =
+            List(10) { pose(5f) } + ramp(5f, top, 25, pose) + List(8) { pose(top) } + ramp(top, 5f, 25, pose) + List(10) { pose(5f) }
+
+        assertEquals(1, run(StageCounter(raiseCfg), 0, cycle(::side, 93f)).size, "out to the side is the exercise")
+        assertEquals(0, run(StageCounter(raiseCfg), 0, cycle(::forward, 100f)).size, "the same angle out in front is not")
+    }
+
+    @Test
+    fun `a raise past the ceiling counts nothing, and does not poison the next rep`() {
+        fun side(a: Float) = SyntheticBody.world(170f, shoulderAbductionDeg = a)
+        val c = StageCounter(raiseCfg)
+        val over = List(10) { side(5f) } + ramp(5f, 130f, 25) { side(it) } + ramp(130f, 5f, 25) { side(it) } + List(10) { side(5f) }
+        assertEquals(0, run(c, 0, over).size, "a raise carried up into a press is not a raise")
+        val good = ramp(5f, 93f, 25) { side(it) } + List(8) { side(93f) } + ramp(93f, 5f, 25) { side(it) } + List(10) { side(5f) }
+        val reps = run(c, 5000, good)
+        assertEquals(1, reps.size, "the counter re-arms after a refusal")
+        assertTrue(reps[0].thetaMax < 105f, "the refused cycle's turning point is not reported as this rep's depth: ${reps[0].thetaMax}")
+    }
+
     @Test
     fun `a lateral raise counts when both wrists pass the shoulders and not at sixty degrees`() {
         val cfg = StageCounter.Config(

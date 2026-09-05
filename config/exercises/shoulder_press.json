@@ -52,7 +52,7 @@
       ],
       "wristAboveShoulderAt": "COUNT",
       "debounceMs": 1000,
-      "_note": "Keypoints 11-13-15 / 12-14-16 (shoulder-elbow-wrist), 3D world angle, better-seen side. Measured against the reference clip 6 Sep 2026: a locked-out press reads 142.3-146.1, never 160, for the same reason the curl never reads 170 — the forearm is edge-on and the depth axis is the noisiest. Arming at >160 counted nothing at all. >134 keeps 8 degrees of margin under the weakest lockout; <95 rests 17 degrees above the racked position. Ceiling 180: An elbow does not lock past straight. Counting happens overhead, so this refuses an impossible reading rather than a bad press. A ceiling makes the rep a whole cycle: it lands when the movement returns to rest, not when it first crosses the line, so a half rep cannot count.",
+      "_note": "Keypoints 11-13-15 / 12-14-16 (shoulder-elbow-wrist), 3D world angle, better-seen side. Measured against the reference clip 6 Sep 2026: a locked-out press reads 142.3-146.1, never 160, for the same reason the curl never reads 170 \u2014 the forearm is edge-on and the depth axis is the noisiest. Arming at >160 counted nothing at all. >134 keeps 8 degrees of margin under the weakest lockout; <95 rests 17 degrees above the racked position. Ceiling 180: An elbow does not lock past straight. Counting happens overhead, so this refuses an impossible reading rather than a bad press. The rep still lands the moment it crosses the counting line; the ceiling only refuses a reading the joint cannot actually produce, which is the only sense a ceiling can have when the rep is over at the crossing.",
       "ceiling": 180
     }
   },
@@ -75,10 +75,10 @@
     "baselineReps": 3
   },
   "cues": {
-    "enter": "Face the camera, hands at shoulder height, elbows bent to 90°.",
-    "tooHigh": "Press all the way up — elbows locked to 170° or more overhead.",
+    "enter": "Face the camera, hands at shoulder height, elbows bent to 90\u00b0.",
+    "tooHigh": "Press all the way up \u2014 elbows locked to 170\u00b0 or more overhead.",
     "tooFast": "Lower the hands back to the shoulders under control.",
     "gate": "Press straight up overhead, not out in front.",
-    "framing": "I can't see your hands — step back."
+    "framing": "I can't see your hands \u2014 step back."
   }
 }

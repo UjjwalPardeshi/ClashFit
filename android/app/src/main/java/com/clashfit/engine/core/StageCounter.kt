@@ -63,6 +63,16 @@ class StageCounter(val config: Config) {
          * stayed inside the band.
          */
         val ceiling: Float? = null,
+        /**
+         * Which way the arm has to be pointing, as a condition on [lateralFraction] — 1 is
+         * straight out to the side, 0 is straight forward, negative is across the body.
+         *
+         * The hip–shoulder–elbow angle cannot tell a lateral raise from a front raise: the arm is
+         * a hundred degrees away from the torso either way, and until this existed every front
+         * raise was counted as a lateral one. `[">", 0.5]` asks for out to the side and `["<", 0.5]`
+         * for out in front, which is the same guard read in the other direction.
+         */
+        val plane: Condition? = null,
         val countAt: CountAt = CountAt.CROSSING,
         val debounceMs: Long = 800L,
     ) {
@@ -77,6 +87,7 @@ class StageCounter(val config: Config) {
                     val arr = st.getValue(key).jsonArray
                     return Condition(arr[0].jsonPrimitive.content, arr[1].jsonPrimitive.floatOrNull ?: 0f)
                 }
+                fun optCond(key: String): Condition? = if (st[key] == null) null else cond(key)
                 return Config(
                     angle = angle,
                     signal = st["signal"]?.jsonPrimitive?.content?.let { Signal.valueOf(it) } ?: Signal.ANGLE,
@@ -85,6 +96,7 @@ class StageCounter(val config: Config) {
                     count = cond("count"),
                     wristAboveShoulderAt = st["wristAboveShoulderAt"]?.jsonPrimitive?.content?.let { Check.valueOf(it) } ?: Check.NONE,
                     ceiling = st["ceiling"]?.jsonPrimitive?.floatOrNull,
+                    plane = optCond("plane"),
                     countAt = st["countAt"]?.jsonPrimitive?.content?.let { CountAt.valueOf(it) } ?: CountAt.CROSSING,
                     debounceMs = st["debounceMs"]?.jsonPrimitive?.longOrNull ?: 800L,
                 )
@@ -124,6 +136,16 @@ class StageCounter(val config: Config) {
 
     fun reset() { left.reset(); right.reset(); one.reset(); lastMissMs = null; angles[Side.LEFT] = Float.NaN; angles[Side.RIGHT] = Float.NaN }
 
+    /** What one frame says about one movement: the four tests a rep has to pass, and the angle to record. */
+    private data class Read(
+        val restHolds: Boolean,
+        val countHolds: Boolean,
+        val above: Boolean,
+        val over: Boolean,
+        val inPlane: Boolean,
+        val angle: Float,
+    )
+
     /** Feed one frame of raw world landmarks. `best` is the better-seen side, used by BEST. Returns the reps counted on this frame. */
     fun onFrame(world: Landmarks, tMs: Long, best: Side): List<Rep> {
         val aL = jointAngle(world, Side.LEFT); val aR = jointAngle(world, Side.RIGHT)
@@ -131,21 +153,26 @@ class StageCounter(val config: Config) {
         val sL = signal(world, Side.LEFT, aL); val sR = signal(world, Side.RIGHT, aR)
         val upL = wristAbove(world, Side.LEFT); val upR = wristAbove(world, Side.RIGHT)
         val overL = overCeiling(sL); val overR = overCeiling(sR)
+        val plL = inPlane(world, Side.LEFT); val plR = inPlane(world, Side.RIGHT)
         val out = ArrayList<Rep>(2)
         when (config.sides) {
             Sides.EACH -> {
-                step(left, config.rest.holds(sL), config.count.holds(sL), upL, overL, aL, tMs, Side.LEFT)?.let { out += it }
-                step(right, config.rest.holds(sR), config.count.holds(sR), upR, overR, aR, tMs, Side.RIGHT)?.let { out += it }
+                step(left, Read(config.rest.holds(sL), config.count.holds(sL), upL, overL, plL, aL), tMs, Side.LEFT)?.let { out += it }
+                step(right, Read(config.rest.holds(sR), config.count.holds(sR), upR, overR, plR, aR), tMs, Side.RIGHT)?.let { out += it }
             }
-            // Either arm going too far spoils the rep: both are doing the movement.
-            Sides.BOTH -> step(one, config.rest.holds(sL) && config.rest.holds(sR), config.count.holds(sL) && config.count.holds(sR), upL && upR, overL || overR, mean(aL, aR), tMs, null)?.let { out += it }
+            // Either arm going too far spoils the rep, and both have to be doing the same movement.
+            Sides.BOTH -> step(one, Read(config.rest.holds(sL) && config.rest.holds(sR), config.count.holds(sL) && config.count.holds(sR), upL && upR, overL || overR, plL && plR, mean(aL, aR)), tMs, null)?.let { out += it }
             // One rep whichever arm does it, and both arms together are still one rep.
-            Sides.EITHER -> step(one, config.rest.holds(sL) || config.rest.holds(sR), config.count.holds(sL) || config.count.holds(sR), upL || upR, overL || overR, leading(aL, aR), tMs, null)?.let { out += it }
+            Sides.EITHER -> step(one, Read(config.rest.holds(sL) || config.rest.holds(sR), config.count.holds(sL) || config.count.holds(sR), upL || upR, overL || overR, plL || plR, leading(aL, aR)), tMs, null)?.let { out += it }
             Sides.BEST -> {
                 val s = if (best == Side.LEFT) sL else sR
-                val up = if (best == Side.LEFT) upL else upR
-                val a = if (best == Side.LEFT) aL else aR
-                step(one, config.rest.holds(s), config.count.holds(s), up, overCeiling(s), a, tMs, best)?.let { out += it }
+                val read = Read(
+                    config.rest.holds(s), config.count.holds(s),
+                    if (best == Side.LEFT) upL else upR, overCeiling(s),
+                    if (best == Side.LEFT) plL else plR,
+                    if (best == Side.LEFT) aL else aR,
+                )
+                step(one, read, tMs, best)?.let { out += it }
             }
         }
         return out
@@ -158,7 +185,8 @@ class StageCounter(val config: Config) {
         return if (config.count.op == "<") signal < c else signal > c
     }
 
-    private fun step(t: Track, restHolds: Boolean, countHolds: Boolean, above: Boolean, over: Boolean, angle: Float, tMs: Long, side: Side?): Rep? {
+    private fun step(t: Track, r: Read, tMs: Long, side: Side?): Rep? {
+        val restHolds = r.restHolds; val countHolds = r.countHolds; val above = r.above; val over = r.over; val angle = r.angle
         if (angle.isFinite() && t.restAt != null) {
             if (angle < t.min) { t.min = angle; t.tMin = tMs }
             if (angle > t.max) { t.max = angle; t.tMax = tMs }
@@ -187,7 +215,7 @@ class StageCounter(val config: Config) {
         // rep lands when the movement comes back to rest, which is also the moment the player has
         // actually finished it.
         if (config.countAt == CountAt.RETURN) {
-            if (countHolds && t.stage == Stage.REST) t.reached = true
+            if (countHolds && r.inPlane && t.stage == Stage.REST) t.reached = true
             if (over && t.stage == Stage.REST) t.brokeCeiling = true
             if (restHolds) {
                 var rep: Rep? = null
@@ -210,6 +238,8 @@ class StageCounter(val config: Config) {
 
         if (countHolds && t.stage == Stage.REST && debounced) {
             if (config.wristAboveShoulderAt == Check.COUNT && !above) { lastMissMs = tMs; return null }
+            // The right movement in the wrong plane is a different exercise, not a bad rep.
+            if (!r.inPlane) { lastMissMs = tMs; return null }
             // The ceiling on a movement that ends where it counts: the reading at the counting
             // frame has to be one the joint can actually produce. It refuses a rep built on a bad
             // frame rather than a rep performed wrongly, which is the only sense a ceiling can have
@@ -252,6 +282,48 @@ class StageCounter(val config: Config) {
     }
 
     private fun wristAbove(world: Landmarks, side: Side): Boolean = wristHeight(world, side).let { it.isFinite() && it > ABOVE_MARGIN_M }
+
+    /** Whether the arm is pointing the way this exercise requires. Always true when no plane is configured. */
+    private fun inPlane(world: Landmarks, side: Side): Boolean {
+        val c = config.plane ?: return true
+        return c.holds(lateralFraction(world, side))
+    }
+
+    /**
+     * How much of the upper arm points straight out to the side, as a cosine: 1 is horizontally
+     * abducted away from the body, 0 is straight forward (or straight up, or hanging), negative is
+     * across the midline.
+     *
+     * Sideways is the line between the shoulders with the torso's own lean taken out of it, so it
+     * still means sideways when the player leans, turns a little, or holds the phone crooked. The
+     * upper arm is used rather than the wrist because it is the segment the exercise's angle is
+     * measured on, and it does not move when the elbow bends.
+     */
+    private fun lateralFraction(world: Landmarks, side: Side): Float {
+        if (world.size < 25) return Float.NaN
+        val si = Geometry.idx("SHOULDER", side); val ei = Geometry.idx("ELBOW", side)
+        if (si < 0 || ei < 0) return Float.NaN
+        val shL = world[LM.LEFT_SHOULDER]; val shR = world[LM.RIGHT_SHOULDER]
+        val hpL = world[LM.LEFT_HIP]; val hpR = world[LM.RIGHT_HIP]
+        var ux = (shL.x + shR.x - hpL.x - hpR.x) / 2f
+        var uy = (shL.y + shR.y - hpL.y - hpR.y) / 2f
+        var uz = (shL.z + shR.z - hpL.z - hpR.z) / 2f
+        val un = sqrt(ux * ux + uy * uy + uz * uz)
+        if (un < 1e-6f) return Float.NaN
+        ux /= un; uy /= un; uz /= un
+        // Shoulder to shoulder, pointing away from the midline on this side, made perpendicular to the torso.
+        val sgn = if (side == Side.LEFT) 1f else -1f
+        var lx = sgn * (shL.x - shR.x); var ly = sgn * (shL.y - shR.y); var lz = sgn * (shL.z - shR.z)
+        val d = lx * ux + ly * uy + lz * uz
+        lx -= d * ux; ly -= d * uy; lz -= d * uz
+        val ln = sqrt(lx * lx + ly * ly + lz * lz)
+        if (ln < 1e-6f) return Float.NaN
+        val sh = world[si]; val el = world[ei]
+        val ax = el.x - sh.x; val ay = el.y - sh.y; val az = el.z - sh.z
+        val an = sqrt(ax * ax + ay * ay + az * az)
+        if (an < 1e-6f) return Float.NaN
+        return ((ax * lx + ay * ly + az * lz) / (an * ln)).coerceIn(-1f, 1f)
+    }
 
     /**
      * The arm nearer the counting threshold, which is the one that did the work. Averaging a curled

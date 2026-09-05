@@ -145,14 +145,26 @@ Widen that list to put them back; nothing else has to change.
 
 | Exercise | Keypoints | Rest | Counts at | Sides |
 |---|---|---|---|---|
-| Lateral raise | 23-11-13 / 24-12-14 | both arms < 30° | both arms > 100°, never past 110° | both, counted on the way down |
+| Lateral raise | 23-11-13 / 24-12-14 | both arms < 20° | both arms 95-105°, out to the side | both, counted on the way down |
 | Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80° | either arm, one rep |
 | Shoulder press | 11-13-15 / 12-14-16 | elbow < 95° | elbow > 134°, wrist above the shoulder | better-seen side |
 | Squat | 23-25-27 / 24-26-28 | both knees < 72° | both knees > 150° | both together |
 
-The lateral raise is the odd row. Its keypoints are the angle the form score is built on, while the
-counter watches wrist height against the shoulder in metres — which is what its rest and count
-columns describe. Debounce is 800 ms for the curl and 1000 ms for the rest.
+Debounce is 800 ms for the curl and 1000 ms for the rest.
+
+The lateral raise is the odd row, and it is worth understanding why. Its counting column has three
+numbers in it, not two: a floor at 95, a ceiling at 105, and a direction. **The hip–shoulder–elbow
+angle cannot tell a lateral raise from a front raise** — the arm is a hundred degrees away from the
+torso whether you take it out to the side or straight out in front — so on the angle alone every
+front raise counted as a lateral one, which is what the player reported on 6 Sep 2026. The fix is a
+third axis: `"plane": [">", 0.5]` in the stage block asks for the upper arm to lie within sixty
+degrees of straight out to the side, measured as a cosine against the line between the shoulders
+with the torso's own lean projected out of it, so it survives leaning, turning and a crooked phone.
+The front raise carries the same guard read backwards, `["<", 0.5]`, because a lateral raise puts
+the wrist over the shoulder too and the two exercises were counting each other in both directions.
+Measured on `traces/reference-lateral-raise.jsonl`: at the top of a correct raise the upper arm
+reads 0.62 to 1.00 sideways, median 0.84, and a raise out in front reads about zero. That gap is
+why 0.5 is safe. `StageCounter.lateralFraction` is the whole of it.
 
 **Three of these four rows are no longer fitmon's, and the reason is the single most important
 thing to know before tuning anything.** Angles come from the 3D world landmarks, whose depth axis is the

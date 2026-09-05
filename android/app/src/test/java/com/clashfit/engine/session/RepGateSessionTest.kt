@@ -79,6 +79,8 @@ class RepGateSessionTest {
 
     private fun curl(left: Float, right: Float) = SyntheticBody.world(170f, leftElbowDeg = left, rightElbowDeg = right)
     private fun raise(abduction: Float, elbow: Float = 170f) = SyntheticBody.world(170f, elbowDeg = elbow, shoulderAbductionDeg = abduction)
+    /** The same movement swung forward instead of out to the side: a front raise. */
+    private fun front(elevation: Float, elbow: Float = 170f) = SyntheticBody.world(170f, elbowDeg = elbow, shoulderElevationDeg = elevation)
     private fun overhead(elbow: Float) = SyntheticBody.world(170f, elbowDeg = elbow, shoulderAbductionDeg = 175f)
     private fun press(elbow: Float, abduction: Float) = SyntheticBody.world(170f, elbowDeg = elbow, shoulderAbductionDeg = abduction)
 
@@ -140,23 +142,66 @@ class RepGateSessionTest {
     fun `a lateral raise counts when both wrists pass the shoulders and not at sixty degrees`() {
         val rec = Recorder(); val d = Driver(engine("lateral_raise", rec = rec))
         calibrate(d, raise(5f))
-        oneRaise(d, 100f)
-        assertEquals(1, rec.reps.size, "wrists over the shoulders is a rep")
+        oneRaise(d, 93f)
+        assertEquals(1, rec.reps.size, "a raise into the 95-105 band is a rep")
         oneRaise(d, 60f)
-        assertEquals(1, rec.reps.size, "sixty degrees leaves the wrists below the shoulders")
-        oneRaise(d, 100f)
+        assertEquals(1, rec.reps.size, "a raise that turns at sixty-eight never reaches the band")
+        oneRaise(d, 93f)
         assertEquals(2, rec.reps.size)
     }
 
     @Test
     fun `bent elbows score lower alignment on a lateral raise`() {
         val straight = Recorder(); val d1 = Driver(engine("lateral_raise", rec = straight))
-        calibrate(d1, raise(5f)); oneRaise(d1, 100f, elbow = 170f)
+        calibrate(d1, raise(5f)); oneRaise(d1, 93f, elbow = 170f)
         val bent = Recorder(); val d2 = Driver(engine("lateral_raise", rec = bent))
-        calibrate(d2, raise(5f, 105f)); oneRaise(d2, 100f, elbow = 105f)
+        calibrate(d2, raise(5f, 105f)); oneRaise(d2, 93f, elbow = 105f)
         assertEquals(1, straight.reps.size); assertEquals(1, bent.reps.size)
         assertTrue(bent.reps[0].alignment < straight.reps[0].alignment - 0.3f,
             "elbow at 105° should lose most alignment marks: ${bent.reps[0].alignment} vs ${straight.reps[0].alignment}")
+    }
+
+    @Test
+    fun `a raise out in front is not a lateral raise, however high it goes`() {
+        val rec = Recorder(); val d = Driver(engine("lateral_raise", rec = rec))
+        calibrate(d, front(5f))
+        // Hip-shoulder-elbow reads 99.9 degrees here, squarely inside the counting band and under
+        // the ceiling: the angle alone cannot tell this from a correct lateral raise, and until the
+        // plane check existed every one of these counted. The player reported exactly that.
+        repeat(3) {
+            d.ramp(700, 5f, 100f) { a -> front(a) }; d.hold(300, front(100f))
+            d.ramp(600, 100f, 5f) { a -> front(a) }; d.hold(400, front(5f))
+        }
+        assertEquals(0, rec.reps.size, "front raises must not count as lateral raises")
+    }
+
+    @Test
+    fun `and a raise out to the side is not a front raise`() {
+        val rec = Recorder(); val d = Driver(engine("front_raise", rec = rec))
+        calibrate(d, raise(5f))
+        // The mirror image of the bug: a lateral raise puts the wrist over the shoulder too, so the
+        // wrist-height rule on its own counts it as a front raise.
+        repeat(3) {
+            d.ramp(700, 5f, 95f) { a -> raise(a) }; d.hold(300, raise(95f))
+            d.ramp(600, 95f, 5f) { a -> raise(a) }; d.hold(400, raise(5f))
+        }
+        assertEquals(0, rec.reps.size, "lateral raises must not count as front raises")
+        // And the exercise still works when it is actually performed.
+        repeat(2) {
+            d.ramp(700, 5f, 95f) { a -> front(a) }; d.hold(300, front(95f))
+            d.ramp(600, 95f, 5f) { a -> front(a) }; d.hold(400, front(5f))
+        }
+        assertEquals(2, rec.reps.size, "front raises still count")
+    }
+
+    @Test
+    fun `a lateral raise past the ceiling is a press, and does not count`() {
+        val rec = Recorder(); val d = Driver(engine("lateral_raise", rec = rec))
+        calibrate(d, raise(5f))
+        oneRaise(d, 120f)
+        assertEquals(0, rec.reps.size, "past 105 degrees the shoulder is pressing, not raising")
+        oneRaise(d, 93f)
+        assertEquals(1, rec.reps.size, "and the counter is not left stuck by the refusal")
     }
 
     @Test
