@@ -22,7 +22,8 @@ frames and landmarks never leave it. Built for the iQOO Hackathon 2026, Pune Cit
 | `docs/` | Thirty-plus pre-event design documents. `docs/README.md` is the index. |
 | `ClashFit_Exercise_Detection_Source_of_Truth.md` | The authoritative spec for landmarks, angles and per-exercise detection. Newer than most of `docs/`. |
 | `tools/angles.html` | The angle-measuring page. Same model and filter as the phone, in a browser. |
-| `traces/` | Recorded landmark traces, replayed by `TraceReplayTest`. |
+| `traces/` | Recorded landmark traces, replayed by `TraceReplayTest`. `tools/make-trace.js` writes new ones. |
+| `firebase/` | Firestore rules, indexes and the data model. Deployed with the Firebase CLI, not by the app. |
 | `android/ci/android.yml` | CI, parked outside `.github/` on purpose. See rule 4. |
 
 ---
@@ -45,7 +46,14 @@ frames and landmarks never leave it. Built for the iQOO Hackathon 2026, Pune Cit
    refuses Java 17. Point `JAVA_HOME` at `~/.jdks/jdk-21.0.12.1+1` for `testDebugUnitTest`. The app
    itself still compiles to JVM 17.
 7. **Debug and release APKs are signed differently.** Switching between them needs an uninstall
-   first, which wipes the app's local data.
+   first, which wipes the app's local data. If `adb install` says
+   `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, somebody sideloaded the other kind; check
+   `adb shell dumpsys package com.clashfit | grep installerPackageName` before you wipe anything.
+8. **Keys are never in git.** Firebase configures itself from `android/app/google-services.json`,
+   the file the console gives you, which is git-ignored at both levels. The build reads the three
+   cloud keys straight out of it, and `local.properties` or an environment variable still overrides.
+   The cloud coach's `OPENROUTER_API_KEY` comes from `local.properties` only; without it the coach
+   falls back down its ladder and nothing breaks.
 
 ---
 
@@ -56,7 +64,7 @@ source ~/.clashfit-android-env.sh
 cd android
 ./gradlew :app:assembleDebug            # ~2 min warm, 150 MB APK
 ./gradlew :app:assembleRelease          # ~17 min cold, 70 MB APK
-JAVA_HOME=~/.jdks/jdk-21.0.12.1+1 ./gradlew :app:testDebugUnitTest   # 661 tests
+JAVA_HOME=~/.jdks/jdk-21.0.12.1+1 ./gradlew :app:testDebugUnitTest   # 835 tests
 ./gradlew :app:lintDebug                # fails the build on errors
 ./gradlew :app:recordRoborazziDebug     # re-render the 72 screenshot baselines
 ./install-to-phone.sh                   # build, install, launch, report
@@ -180,7 +188,23 @@ Your health bar sits under the boss's, with a strip that fills as the next attac
 
 ---
 
-## 8. Measuring new thresholds
+## 8. What the app does besides fight
+
+The boss fight is the spine, but it is no longer the whole app. Each of these is self-contained and
+tested on the JVM, so you can work on one without a phone.
+
+| Area | Package | What it is |
+|---|---|---|
+| Zombie Run | `engine/games/ZombieRunGame.kt`, `ui/screens/zombierun/` | The outdoor chase. Pure Kotlin in a local metric frame, so the rules are tested indoors. Layered over the run tracker, so a chase is also a recorded activity. Its config key is still `OUTBREAK`, because that string is persisted in saved sessions; only what a person reads was renamed. |
+| The outdoors | `run/`, `map/` | GPS fixes, filtering and dead reckoning, moving time, elevation, cadence, route maths, map tiles. The only part of the app that asks for location. |
+| Sharing | `share/` | The share card. The one thing that deliberately leaves the phone, so it has its own rendered test. |
+| The coach | `coach/` | Three rungs, in order: Gemma on the phone if its weights are installed, then the cloud model but only if the player switched Cloud coach on, then a template bank that always has a line and needs nothing. `coach/chat/` answers questions, and `FactSheet` is what bounds it: the coach can only say what was measured. |
+| The referee's eyes | `coach/RefereeEyes.kt`, `perception/vision/FrameRing.kt` | A rep finishes a second or two after its deepest moment, by which time that frame has gone. The ring keeps twenty quarter-scale frames, about four seconds and roughly 3 MB, so the referee can look back at the bottom of the rep. |
+| Hand control | `perception/gesture/` | Seven MediaPipe gestures read off the same frames as the body, on every third frame, and only while the fight wants them. A raised palm during calibration means nothing. |
+
+---
+
+## 9. Measuring new thresholds
 
 ```bash
 node serve.js          # then open http://localhost:8080/tools/angles.html
@@ -194,7 +218,7 @@ and update the table in `docs/19-EXERCISE-LIBRARY.md`.
 
 ---
 
-## 9. Where things live in the app
+## 10. Where things live in the app
 
 `android/app/src/main/java/com/clashfit/`
 
@@ -206,7 +230,11 @@ and update the table in `docs/19-EXERCISE-LIBRARY.md`.
 | `engine/core` | `Geometry`, `RepStateMachine`, `StageCounter`, `FormScorer`, `CombatEngine`, the One Euro filter. |
 | `engine/session` | `SessionEngine`, the frame loop that ties all of the above together. |
 | `engine/detect` | The four non-rep detector families: holds, cadence, ballistic, pose match. |
+| `engine/games` | Per-mode rules: the breaker, the siege, the sigil, the pursuit, the Zombie Run. |
 | `perception` | Camera, MediaPipe, frame geometry, and the on-screen landmark overlay. |
+| `perception/gesture`, `perception/vision` | The hand, and the ring of recent frames the referee looks back at. |
+| `coach` | The three-rung coach, its chat, and the fact sheet that bounds what it may say. |
+| `run`, `map`, `share` | The outdoors: tracking, tiles, and the share card. |
 | `ui/screens/*` | Compose screens, one package per area. `session/` is the fight. |
 | `data` | Room database and preferences. |
 | `auth`, `duel`, `meta`, `alarm`, `audio` | Accounts, live play, progression, alarms, sound. |
@@ -216,7 +244,7 @@ set through the shipped configuration and is the closest thing to an integration
 
 ---
 
-## 10. Things worth knowing before you change something
+## 11. Things worth knowing before you change something
 
 - **`SessionEngine` is the one place that owns a session.** Adding a counting rule means adding it
   there and in a config record, not in a screen.
