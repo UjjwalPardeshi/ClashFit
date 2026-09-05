@@ -1,6 +1,10 @@
 # 33 · Outbreak — the outdoor chase
 
-Decided 30 Aug 2026. Declared in `config/combat.json` as `modes.OUTBREAK`, `enabled: false`.
+Decided 30 Aug 2026. **Built 5 Sep 2026** and declared in `config/combat.json` as
+`modes.OUTBREAK`, `enabled: true`. The rules live in `engine/games/OutbreakGame.kt` — pure
+Kotlin in a local metric frame, so the chase is tested on the JVM without going outside — and
+the screen is `ui/screens/outbreak/OutbreakScreen.kt`, layered over the ordinary run tracker so
+an Outbreak is also a recorded activity.
 
 > **Update (3 Sep 2026):** The app now declares `INTERNET` and `ACCESS_NETWORK_STATE` permissions
 > for Firebase Auth, Firestore profiles, and cloud leaderboards. The tradeoff this document weighs —
@@ -44,7 +48,7 @@ pursuer closes when your cadence drops rather than only when your coordinate sto
 
 ```jsonc
 "OUTBREAK": {
-  "enabled": false,          // not in the current build
+  "enabled": true,           // shipped
   "requiresNetwork": true,   // map tiles
   "requiresLocation": true,  // GPS
   "headStartSec": 60,

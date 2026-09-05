@@ -55,7 +55,7 @@ leaderboard reads and all multiplayer sync.
 | [`app.html`](app.html) | The **runnable prototype**, served at `/app`. |
 | [`src/`](src/) | The engine — 31 modules, 5 032 lines, **zero runtime dependencies**. |
 | [`config/`](config/) | Exercises, detectors, combat and pose tuning. The page's numbers are read from here. |
-| [`test/`](test/) | 161 tests, including ones that fail the build if the site out-claims the config. |
+| [`test/`](test/) | 163 tests, including ones that fail the build if the site out-claims the config. |
 | [`deck-phase1/`](deck-phase1/) | The Phase-1 pitch deck — animated HTML, plus PDF and PPTX. |
 | [`deck/`](deck/) | The event-day deck for 5–6 September. Different audience, different content. |
 | [`docs/`](docs/) | The design set — 40 documents. Start at [`docs/README.md`](docs/README.md). |
@@ -84,7 +84,7 @@ python3 -m http.server 8080          # then open http://127.0.0.1:8080
 node test/run.js
 ```
 
-161 assertions over the rep state machine, the form scorer, the fatigue estimator, the duel sync,
+163 assertions over the rep state machine, the form scorer, the fatigue estimator, the duel sync,
 the coach's output validator, and the landing page's own claims. That last group is the unusual one:
 **the build fails if the site prints a number `config/` does not hold.** It has caught a wrong
 exercise count, a wrong telemetry field count, and five stale mode counts.
@@ -99,10 +99,15 @@ Pushes a recorded trace through the exact shipping engine — no camera, no huma
 thresholds get tuned without doing four hundred squats, and it is where the fatigue curve in the
 deck comes from.
 
+The synthetic traces are generated rather than hand-recorded, by `node tools/make-trace.js`, which
+also rewrites the fatigue chart from the same replay. `node tools/make-trace.js --check` fails if a
+trace no longer reproduces what is printed beside it — which is how this one went stale once
+already when the squat thresholds moved underneath it.
+
 ```
-reps 13   mean form 0.772   depth 0.84  rom 0.78  tempo 0.98  align 0.30
-fatigue 0.634 (GASSED)   bands seen: FRESH -> WORKING -> FADING -> GASSED
-boss 192/3000   damage 1544   MERCY FIRED
+reps 14   mean form 0.890   depth 0.94  rom 0.86  tempo 1.00  align 0.67
+fatigue 0.530 (GASSED)   bands seen: FRESH -> WORKING -> FADING -> GASSED
+boss 384/3000   damage 2293   MERCY FIRED
 ```
 
 ---
@@ -199,8 +204,8 @@ defeated (25 XP), a new personal best (30 XP), streak days (5–35 XP per day, u
 and weekly challenge completion (100 XP). Casual sessions earn half XP. Cumulative XP determines
 level (100 × (L−1)^1.5 for level L ≥ 2) and rank title (Recruit → Legend, 9 titles total).
 
-**Achievements**: 18 badges in bronze/silver/gold tiers across fights, wins, streaks, form quality,
-damage, versatility, personal bests, weekly challenges, game modes and levels.
+**Achievements**: 22 badges in bronze/silver/gold tiers across fights, wins, streaks, form quality,
+damage, versatility, personal bests, weekly challenges, game modes, levels and ground covered outdoors.
 
 **Weekly challenges**: Same challenge for all players each ISO week (e.g. "2026-W36"). One of 11
 possible challenges rotating deterministically (damage, clean reps, sessions or streak days, each

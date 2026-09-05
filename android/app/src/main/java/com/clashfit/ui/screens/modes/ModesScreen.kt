@@ -22,6 +22,7 @@ import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SectionTitle
 import com.clashfit.ui.components.label
 import com.clashfit.ui.nav.ExercisePicker
+import com.clashfit.ui.nav.Outbreak
 
 /**
  * The full catalogue: every mode of every kind, including the ones the home carousel does not
@@ -45,7 +46,15 @@ fun ModesScreen(nav: NavHostController) {
                     SectionTitle(kind.label(), Modifier.padding(top = 12.dp, bottom = 2.dp))
                 }
                 items(modes, key = { it.name }) { mode ->
-                    ModeCard(mode, onClick = { nav.navigate(ExercisePicker(mode.name)) })
+                    ModeCard(
+                        mode,
+                        onClick = {
+                            // Outbreak picks no exercise: it is a chase, and the picker
+                            // would ask a question the mode has no answer to.
+                            if (mode == GameMode.OUTBREAK) nav.navigate(Outbreak)
+                            else nav.navigate(ExercisePicker(mode.name))
+                        },
+                    )
                 }
             }
         }

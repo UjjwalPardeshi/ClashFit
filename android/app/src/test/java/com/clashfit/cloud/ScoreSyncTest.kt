@@ -76,6 +76,12 @@ class FakeMetaRepository : MetaRepository {
     override suspend fun onSessionFinished(facts: com.clashfit.meta.SessionFacts): com.clashfit.meta.SessionReward {
         throw NotImplementedError()
     }
+
+    override suspend fun onActivityFinished(
+        facts: com.clashfit.meta.OutdoorRules.ActivityFacts,
+    ): com.clashfit.meta.ActivityReward {
+        throw NotImplementedError()
+    }
 }
 
 class FakeAuthService : AuthService {

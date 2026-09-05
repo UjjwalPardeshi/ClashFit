@@ -102,6 +102,17 @@ interface RunDao {
     )
     @Query("SELECT * FROM runs WHERE id = :id") suspend fun run(id: Long): RunEntity?
     @Query("SELECT * FROM run_points WHERE runId = :runId ORDER BY tMs") suspend fun points(runId: Long): List<RunPointEntity>
+
+    /**
+     * Every eighth point of several activities at once, for the list thumbnails.
+     *
+     * A feed of ten runs is tens of thousands of rows at full resolution, to draw shapes 120 dp
+     * wide where most of those points land on the same pixel. Sampling in SQL rather than after
+     * the fact is the difference between a scroll that stutters and one that does not; the shape
+     * survives because the simplifier throws away most of the rest anyway.
+     */
+    @Query("SELECT * FROM run_points WHERE runId IN (:runIds) AND id % 8 = 0 ORDER BY runId, tMs")
+    suspend fun sampledPoints(runIds: List<Long>): List<RunPointEntity>
     @Query("SELECT * FROM runs WHERE endedAtMs IS NOT NULL ORDER BY startedAtMs DESC LIMIT :limit") fun recent(limit: Int = 50): Flow<List<RunEntity>>
     @Query("SELECT * FROM runs WHERE endedAtMs IS NOT NULL AND kind = :kind ORDER BY startedAtMs DESC LIMIT :limit")
     fun recentOfKind(kind: String, limit: Int = 50): Flow<List<RunEntity>>
@@ -120,6 +131,13 @@ interface RunDao {
     suspend fun bestFastestKmSec(exceptId: Long): Float?
     @Query("SELECT MAX(steps) FROM runs WHERE endedAtMs IS NOT NULL AND id != :exceptId")
     suspend fun bestSteps(exceptId: Long): Int?
+
+    // Lifetime outdoor totals, read from the activities themselves rather than from a counter
+    // column, so what the badges are awarded on is always what the history shows.
+    @Query("SELECT COALESCE(SUM(distanceM), 0) FROM runs WHERE endedAtMs IS NOT NULL")
+    suspend fun totalDistanceM(): Float
+    @Query("SELECT COUNT(*) FROM runs WHERE endedAtMs IS NOT NULL")
+    suspend fun totalCount(): Int
 }
 
 @Dao

@@ -25,7 +25,7 @@ bonus XP. Cumulative XP determines level via `100 × (L − 1)^1.5` for level L 
 | 30 | 24,975 | Titan |
 | 40 | 59,129 | Legend |
 
-### Achievements (18 badges)
+### Achievements (22 badges)
 
 Bronze, Silver and Gold tiers across four categories:
 

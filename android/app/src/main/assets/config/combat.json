@@ -97,17 +97,17 @@
       "targetEccSec": 0.55,
       "tolerance": 0.35,
       "floor": 0.3,
-      "_note": "targetEccSec is in MEASURED-WINDOW terms (topExit -> bottomEnter), same units as form.tempo. A 1.6s full descent measures around 0.55s."
+      "_note": "targetEccSec is in MEASURED-WINDOW terms (topExit -> bottomEnter), same units as form.tempo. With squat's topExit 155 and bottomEnter 100 that window is about 61% of the descent, so a 0.9s full descent measures around 0.55s."
     },
     "OUTBREAK": {
-      "enabled": false,
+      "enabled": true,
       "requiresNetwork": true,
       "requiresLocation": true,
       "headStartSec": 60,
       "spawnRadiusM": 400,
       "captureRadiusM": 12,
       "ammoPickups": 6,
-      "note": "The one mode that leaves the device. See docs/33-FEATURE-OUTBREAK.md."
+      "note": "The one mode that leaves the device: GPS and map tiles. The camera never opens. See docs/33-FEATURE-OUTBREAK.md."
     }
   },
   "bossAttack": {
@@ -116,7 +116,11 @@
     "damage": 8,
     "healPerRep": 3,
     "graceSec": 4.0,
-    "modes": ["BOSS_FIGHT", "BOSS_RUSH", "SURVIVAL"]
+    "modes": [
+      "BOSS_FIGHT",
+      "BOSS_RUSH",
+      "SURVIVAL"
+    ]
   },
   "familyGames": {
     "SIEGE": {

@@ -66,7 +66,7 @@ enum class GameMode(
         "A published protocol. A count, and your own trend over time.", "A published protocol"),
 
     OUTBREAK("Outbreak", ModeKind.SOLO, Family.CADENCE, false,
-        "The outdoor chase, on a real map. The one mode that goes online — not in this build.", "On a real map", enabled = false);
+        "The outdoor chase, on a real map. The one mode that goes online.", "On a real map");
 
     /** Which family game a family's movements are naturally shaped for. */
     val isFamilyGame: Boolean get() = kind == ModeKind.FAMILY

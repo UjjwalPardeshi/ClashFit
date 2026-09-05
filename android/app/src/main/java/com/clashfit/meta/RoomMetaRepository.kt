@@ -117,6 +117,71 @@ class RoomMetaRepository(private val db: ClashDb, private val clock: Clock) : Me
             )
         }
     }
+
+    /**
+     * Banks a finished run or walk.
+     *
+     * Shares the level curve with fighting and nothing else. The `meta` row's fighting counters —
+     * sessions, wins, reps, damage, the family mask — are written back untouched, so a walk moves
+     * the player up the ladder without ever claiming to have been a set in front of a camera.
+     *
+     * The XP ledger is keyed by session id, and an activity is not a session. Activities bank
+     * under the negation of their own id: run ids start at 1, so `-id` is always negative and can
+     * never collide with a session's key. That keeps the double-bank guard for free, which matters
+     * because a summary screen is re-entered every time the player rotates the phone.
+     */
+    override suspend fun onActivityFinished(facts: OutdoorRules.ActivityFacts): ActivityReward {
+        val now = clock.nowMs()
+        val ledgerKey = -facts.activityId
+
+        db.xpLedger().get(ledgerKey)?.let { ledger ->
+            val state = current()
+            return ActivityReward(
+                xp = ledger.xp,
+                lines = emptyList(),
+                before = state.progress,
+                after = state.progress,
+                newAchievements = emptyList(),
+            )
+        }
+
+        return db.withTransaction {
+            val meta = db.meta().get() ?: MetaEntity()
+            val beforeProgress = Levels.forXp(meta.xp)
+            val lines = OutdoorRules.reward(facts)
+            val totalXp = lines.sumOf { it.xp }
+            val afterProgress = Levels.forXp(meta.xp + totalXp)
+
+            // Lifetime outdoor totals come from the activity table itself rather than a counter
+            // column, so they cannot fall out of step with the activities the player can see.
+            val runs = db.runs()
+            val distanceAfter = runs.totalDistanceM()
+            val countAfter = runs.totalCount()
+            val bestStepsAfter = runs.bestSteps(exceptId = -1L) ?: 0
+            val outdoorAfter = OutdoorRules.OutdoorCounters(countAfter, distanceAfter, bestStepsAfter)
+            val outdoorBefore = OutdoorRules.OutdoorCounters(
+                activities = (countAfter - 1).coerceAtLeast(0),
+                distanceM = (distanceAfter - facts.distanceM).coerceAtLeast(0f),
+                bestSteps = if (facts.steps >= bestStepsAfter) 0 else bestStepsAfter,
+            )
+
+            db.meta().upsert(meta.copy(xp = meta.xp + totalXp, level = afterProgress.level))
+
+            val alreadyUnlocked = db.achievements().allIds().toSet()
+            val earned = OutdoorRules.newlyUnlocked(outdoorBefore, outdoorAfter, alreadyUnlocked)
+            earned.forEach { db.achievements().insert(AchievementEntity(it.id, now)) }
+
+            db.xpLedger().insert(XpLedgerEntity(ledgerKey, totalXp, now))
+
+            ActivityReward(
+                xp = totalXp,
+                lines = lines,
+                before = beforeProgress,
+                after = afterProgress,
+                newAchievements = earned,
+            )
+        }
+    }
 }
 
 private fun MetaEntity.toCounters() = AchievementRules.MetaCounters(

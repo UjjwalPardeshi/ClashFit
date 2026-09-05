@@ -86,4 +86,17 @@ interface MetaRepository {
     val state: Flow<MetaState>
     suspend fun current(): MetaState
     suspend fun onSessionFinished(facts: SessionFacts): SessionReward
+
+    /**
+     * Banks what a finished run or walk earned.
+     *
+     * Deliberately not routed through [onSessionFinished]. An activity outdoors is measured by
+     * GPS, not by the camera, so it has no form score, no damage and no movement family — and
+     * feeding it in as a session would inflate the session count, the family mask and the weekly
+     * damage target with something the camera never graded. Levels are shared; the counters that
+     * describe fighting are not.
+     *
+     * Idempotent: banking the same activity twice returns what it earned the first time.
+     */
+    suspend fun onActivityFinished(facts: OutdoorRules.ActivityFacts): ActivityReward
 }

@@ -106,6 +106,9 @@ class RunRepositoryTest {
 
         override suspend fun points(runId: Long) = points.filter { it.runId == runId }
 
+        override suspend fun sampledPoints(runIds: List<Long>) =
+            points.filter { it.runId in runIds && it.id % 8 == 0L }.sortedWith(compareBy({ it.runId }, { it.tMs }))
+
         override fun recent(limit: Int) = flowOf(runs.values.sortedByDescending { it.startedAtMs }.take(limit))
 
         override fun recentOfKind(kind: String, limit: Int) =
@@ -133,5 +136,10 @@ class RunRepositoryTest {
             others(exceptId).mapNotNull { it.fastestKmSec }.minOrNull()
 
         override suspend fun bestSteps(exceptId: Long) = others(exceptId).maxOfOrNull { it.steps }
+
+        override suspend fun totalDistanceM() =
+            runs.values.filter { it.endedAtMs != null }.sumOf { it.distanceM.toDouble() }.toFloat()
+
+        override suspend fun totalCount() = runs.values.count { it.endedAtMs != null }
     }
 }

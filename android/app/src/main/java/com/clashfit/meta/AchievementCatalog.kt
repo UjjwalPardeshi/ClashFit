@@ -123,6 +123,33 @@ object AchievementCatalog {
             tier = Tier.BRONZE
         ),
 
+        // Outdoors. A run and a walk are measured by GPS rather than by the camera, so these
+        // sit apart from the rep-based badges above and are awarded on their own path.
+        Achievement(
+            id = "outdoor_first",
+            title = "Outside",
+            description = "Finish your first run or walk",
+            tier = Tier.BRONZE
+        ),
+        Achievement(
+            id = "distance_25k",
+            title = "Road Work",
+            description = "Cover 25 km outdoors",
+            tier = Tier.SILVER
+        ),
+        Achievement(
+            id = "distance_100k",
+            title = "Long Hauler",
+            description = "Cover 100 km outdoors",
+            tier = Tier.GOLD
+        ),
+        Achievement(
+            id = "steps_10k",
+            title = "Ten Thousand",
+            description = "Take 10,000 steps in one activity",
+            tier = Tier.SILVER
+        ),
+
         // Levels
         Achievement(
             id = "level_10",

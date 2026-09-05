@@ -24,6 +24,12 @@ class RunRepository(
 
     suspend fun getRunPoints(runId: Long) = dao.points(runId)
 
+    /** Thumbnail-resolution routes for a page of activities, keyed by activity id. */
+    suspend fun thumbnailRoutes(runIds: List<Long>): Map<Long, List<com.clashfit.data.RunPointEntity>> {
+        if (runIds.isEmpty()) return emptyMap()
+        return dao.sampledPoints(runIds).groupBy { it.runId }
+    }
+
     /** Distance in metres over the last seven days, runs and walks together. */
     suspend fun weeklyDistanceM(): Float = dao.distanceSince(clock.nowMs() - WEEK_MS)
 

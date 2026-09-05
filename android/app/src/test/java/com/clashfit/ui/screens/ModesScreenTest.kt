@@ -103,12 +103,18 @@ class ModesScreenTest {
     }
 
     @Test
-    fun `outbreak is disabled`() {
-        assertFalse(GameMode.OUTBREAK.enabled)
+    fun `outbreak ships`() {
+        // It was `enabled = false` while the mode was a specification. It is a screen now, so this
+        // asserts the opposite: a disabled mode draws a "Coming online" tag and refuses the tap,
+        // which would hide a mode that works.
+        assertTrue(GameMode.OUTBREAK.enabled)
     }
 
     @Test
     fun `outbreak is absent from game mode grid`() {
+        // Shipping the mode does not put it on the site's fixed sixteen-tile grid. That grid is a
+        // promise the landing page makes, and Outbreak is reached from All modes and from the
+        // Outdoors screen instead.
         assertFalse(GameMode.grid.contains(GameMode.OUTBREAK))
     }
 

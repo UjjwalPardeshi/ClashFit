@@ -73,5 +73,5 @@ One thing to know: the board requires being signed in. Signed out it still says
 ## Deliberately not doing
 
 rPPG heart rate, hydration, meal timing, AR, NFC pairing, crew objectives,
-Outbreak, extra clinic protocols, home-screen widget. Every one is roadmap in
+extra clinic protocols, home-screen widget. Every one is roadmap in
 the docs, and saying so is worth more than a rushed stub.
