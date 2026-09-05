@@ -57,8 +57,8 @@ import com.clashfit.ui.theme.Motion
 import com.clashfit.ui.theme.Panel
 import com.clashfit.core.model.Landmarks
 import com.clashfit.perception.CameraPreviewSource
+import com.clashfit.perception.ExercisePoints
 import com.clashfit.perception.CameraStage
-import com.clashfit.perception.ExoRig
 import androidx.compose.foundation.layout.fillMaxHeight
 import kotlinx.coroutines.launch
 import com.clashfit.meta.MetaState
@@ -150,6 +150,8 @@ fun SessionScreen(
     // whether you fit. The engine calibrates underneath: calibration needs you in shot too, so the
     // two want the same five seconds.
     var readying by remember { mutableStateOf(true) }
+    // The catalogue: the fight needs the whole record, not just the name, to know which joints the
+    // counter is reading and draw them.
     val exerciseNames by graph.config.exercises.collectAsStateWithLifecycle()
 
     Box(Modifier.fillMaxSize().background(Ground)) {
@@ -159,9 +161,9 @@ fun SessionScreen(
                 // calibration is asking for, and it is very hard to do against a corner inset.
                 CameraStage(camera, Modifier.fillMaxSize())
                 CameraScrims(top = 0f, bottom = 0.28f)
-                ExoRig(
-                    landmarks, s.fatigue.band, 0f, null, Modifier.fillMaxSize(),
-                    level = meta?.progress?.level ?: 1, sourceAspect = sourceAspect,
+                ExercisePoints(
+                    landmarks, exerciseNames[s.exerciseId], s.angleLeftDeg, s.angleRightDeg,
+                    Modifier.fillMaxSize(), sourceAspect = sourceAspect,
                 )
                 CalibrationOverlay(
                     cue = s.cue, progress = s.calibProgress,
@@ -172,7 +174,7 @@ fun SessionScreen(
                 ExitCorner(onExit)
             }
             Phase.FIGHTING, Phase.FRAMING_LOST -> {
-                FightLayout(s, vm, lastHit, lastPlayerHit, jolt.value, shake.value, playerShake.value, paused, reduceMotion, camera, landmarks, meta, settings, sourceAspect)
+                FightLayout(s, vm, lastHit, lastPlayerHit, jolt.value, shake.value, playerShake.value, paused, reduceMotion, camera, landmarks, meta, settings, sourceAspect, exerciseNames[s.exerciseId])
             }
             Phase.REST -> RestPanel(s, restLeft, onSkip = vm::skipRest, onStop = vm::stop)
             Phase.DEAD -> EndPanel(s, onSummary = { /* wait for persistence */ }, onExit = onExit)
@@ -211,7 +213,7 @@ fun SessionScreen(
 private fun FightLayout(
     s: SessionState, vm: SessionViewModel, lastHit: HudEvent.Hit?, lastPlayerHit: HudEvent.PlayerHit?, jolt: Float, shake: Float, playerShake: Float,
     paused: Boolean, reduceMotion: Boolean, camera: CameraPreviewSource?, landmarks: Landmarks?,
-    meta: MetaState?, settings: Prefs.Settings, sourceAspect: Float?,
+    meta: MetaState?, settings: Prefs.Settings, sourceAspect: Float?, spec: com.clashfit.core.config.ExerciseSpec?,
 ) {
     val prone = vm.isProne
     val link by vm.link.collectAsStateWithLifecycle()
@@ -221,9 +223,11 @@ private fun FightLayout(
         // when a rep lands clean and changes colour as you tire.
         CameraStage(camera, Modifier.fillMaxSize())
         CameraScrims()
-        ExoRig(
-            landmarks, s.fatigue.band, jolt, lastHit?.verdict, Modifier.fillMaxSize(),
-            level = meta?.progress?.level ?: 1, sourceAspect = sourceAspect,
+        // The BlazePose points the counter is reading, drawn as they are. No suit, no avatar: the
+        // dots and the angle are the whole story of why a rep did or did not count.
+        ExercisePoints(
+            landmarks, spec, s.angleLeftDeg, s.angleRightDeg,
+            Modifier.fillMaxSize(), sourceAspect = sourceAspect,
         )
 
         // The boss stands in the room with you, in the upper part of the frame so it never covers
