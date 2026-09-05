@@ -1,0 +1,77 @@
+{
+  "id": "triceps_extension",
+  "family": "REP_CYCLE",
+  "name": "Overhead Triceps Extension",
+  "tags": [
+    "strength",
+    "upper",
+    "arms"
+  ],
+  "framing": "front",
+  "difficulty": 2,
+  "games": [
+    "BOSS_FIGHT",
+    "TIME_ATTACK",
+    "GHOST_RACE",
+    "SURVIVAL",
+    "BOSS_RUSH",
+    "DUEL"
+  ],
+  "detector": {
+    "primaryAngle": {
+      "a": "SHOULDER",
+      "b": "ELBOW",
+      "c": "WRIST"
+    },
+    "topEnter": 155,
+    "topExit": 145,
+    "bottomEnter": 95,
+    "bottomExit": 110,
+    "targetAngle": 80,
+    "minDescendMs": 200,
+    "minBottomMs": 80,
+    "minRepMs": 1000,
+    "maxRepMs": 8000,
+    "requiredJoints": [
+      "HIP",
+      "SHOULDER",
+      "ELBOW",
+      "WRIST"
+    ],
+    "gate": {
+      "angle": [
+        "HIP",
+        "SHOULDER",
+        "ELBOW"
+      ],
+      "min": 120,
+      "max": 180,
+      "at": "ALWAYS"
+    }
+  },
+  "form": {
+    "weights": {
+      "depth": 0.45,
+      "rom": 0.25,
+      "tempo": 0.30,
+      "alignment": 0.0
+    },
+    "tempo": {
+      "eccentricTargetSec": 0.35,
+      "bottomPauseSec": 0.10,
+      "_note": "measured window: topExit crossing -> bottomEnter crossing, not the full descent"
+    },
+    "depthExponent": 1.5
+  },
+  "fatigue": {
+    "signal": "VELOCITY_LOSS",
+    "baselineReps": 3
+  },
+  "cues": {
+    "enter": "Face the camera, both arms straight up overhead, hands together.",
+    "tooHigh": "Bend the elbows further — lower the hands behind your head.",
+    "tooFast": "Control the lowering.",
+    "gate": "Keep the elbows up by your ears.",
+    "framing": "I can't see your elbows — step back."
+  }
+}

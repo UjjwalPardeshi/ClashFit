@@ -23,11 +23,11 @@
       "b": "KNEE",
       "c": "ANKLE"
     },
-    "topEnter": 158,
-    "topExit": 150,
-    "bottomEnter": 120,
-    "bottomExit": 130,
-    "targetAngle": 90,
+    "topEnter": 165,
+    "topExit": 155,
+    "bottomEnter": 100,
+    "bottomExit": 110,
+    "targetAngle": 85,
     "minDescendMs": 200,
     "minBottomMs": 120,
     "minRepMs": 800,
@@ -36,7 +36,8 @@
       "HIP",
       "KNEE",
       "ANKLE"
-    ]
+    ],
+    "_note": "Keypoints 23-25-27 / 24-26-28 (hip-knee-ankle), 3D world angle. Standing is 180 in theory; a locked knee reads 165-178 on the world landmarks, so TOP is >=165. The bottom is 100-70 (BOTTOM at <=100), 85 is full depth."
   },
   "form": {
     "weights": {
@@ -63,7 +64,7 @@
   },
   "cues": {
     "enter": "Stand side-on, feet shoulder width.",
-    "tooHigh": "Go lower — you're stopping short of your first reps.",
+    "tooHigh": "Sit deeper — knees to 100° or less.",
     "tooFast": "Control the way down.",
     "framing": "I can't see your knees — step back."
   }

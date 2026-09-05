@@ -1,0 +1,73 @@
+{
+  "id": "lateral_raise",
+  "family": "REP_CYCLE",
+  "name": "Lateral Raise",
+  "tags": [
+    "strength",
+    "upper",
+    "shoulders",
+    "no-equipment"
+  ],
+  "framing": "front",
+  "difficulty": 1,
+  "games": [
+    "BOSS_FIGHT",
+    "TIME_ATTACK",
+    "GHOST_RACE",
+    "SURVIVAL",
+    "BOSS_RUSH",
+    "DUEL"
+  ],
+  "detector": {
+    "primaryAngle": {
+      "a": "HIP",
+      "b": "SHOULDER",
+      "c": "ELBOW"
+    },
+    "topEnter": 20,
+    "topExit": 30,
+    "bottomEnter": 90,
+    "bottomExit": 80,
+    "targetAngle": 90,
+    "minDescendMs": 200,
+    "minBottomMs": 80,
+    "minRepMs": 1000,
+    "maxRepMs": 8000,
+    "requiredJoints": [
+      "HIP",
+      "SHOULDER",
+      "ELBOW",
+      "WRIST"
+    ],
+    "_note": "Keypoints 23-11-13 / 24-12-14 (hip-shoulder-elbow), 3D world angle. Rest is 10-20 (TOP at <=20), the top of the raise is 90 or more (BOTTOM at >=90); wrist only feeds the straight-elbow alignment score."
+  },
+  "form": {
+    "weights": {
+      "depth": 0.4,
+      "rom": 0.2,
+      "tempo": 0.2,
+      "alignment": 0.2
+    },
+    "alignment": {
+      "type": "ELBOW_EXTENSION",
+      "fullMarksDeg": 150,
+      "zeroMarksDeg": 100
+    },
+    "tempo": {
+      "eccentricTargetSec": 0.35,
+      "bottomPauseSec": 0.1,
+      "_note": "measured window: topExit crossing -> bottomEnter crossing, not the full descent"
+    },
+    "depthExponent": 1.5
+  },
+  "fatigue": {
+    "signal": "VELOCITY_LOSS",
+    "baselineReps": 3
+  },
+  "cues": {
+    "enter": "Face the camera, arms hanging at your sides (10–20°).",
+    "tooHigh": "Raise the arms out to the sides to shoulder height — 90° at the shoulder.",
+    "tooFast": "Lower under control.",
+    "framing": "I can't see your hips — step back."
+  }
+}
