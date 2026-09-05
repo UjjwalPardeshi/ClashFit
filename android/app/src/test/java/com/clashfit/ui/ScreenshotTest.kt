@@ -58,6 +58,7 @@ import com.clashfit.alarm.AlarmsScreen
 import com.clashfit.ui.screens.posture.PostureScreen
 import com.clashfit.ui.screens.breathing.BreathingScreen
 import com.clashfit.run.RunHomeScreen
+import com.clashfit.ui.screens.zombierun.ZombieRunScreen
 
 /**
  * Renders every non-camera screen on the JVM and writes a PNG under app/screenshots. This is how
@@ -147,6 +148,7 @@ class ScreenshotTest {
     // The health tools. Four of the six never involve a boss at all, which is the whole argument
     // that this is more than a game — and not one of them had ever been rendered.
     @Test fun runHome() = shot("28-run", RunHome) { RunHomeScreen(graph, it) }
+    @Test fun zombieRun() = shot("2e-zombie-run", ZombieRun) { ZombieRunScreen(graph, it) }
     @Test fun breathing() = shot("29-breathing", Breathing) { BreathingScreen(graph, it) }
     @Test fun posture() = shot("2a-posture", Posture) { PostureScreen(graph, it) }
     @Test fun alarms() = shot("2b-alarms", Alarms) { AlarmsScreen(graph, it) }

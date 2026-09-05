@@ -128,6 +128,7 @@ The single most common way fitness apps lose users is a punitive streak.
 ## 7. Social retention
 
 - **Leaderboards** (shipped, Firestore-backed): global (this week's damage, this week's clean reps,
+  this week's Zombie Run points,
   all-time XP, longest streak) plus friends leaderboards. Built with friend codes.
 - **Weekly Challenge** (shipped): same for every player that ISO week, rotates deterministically.
 - **Friend codes** (shipped): 6-character codes to add friends without email.

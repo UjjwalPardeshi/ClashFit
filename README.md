@@ -218,7 +218,7 @@ damage, versatility, personal bests, weekly challenges, game modes, levels and g
 possible challenges rotating deterministically (damage, clean reps, sessions or streak days, each
 with three difficulty tiers). Completing a challenge grants 100 XP.
 
-**Leaderboards**: Global (this week's damage, this week's clean reps, all-time XP, longest streak)
+**Leaderboards**: Global (this week's damage, this week's clean reps, this week's Zombie Run points, all-time XP, longest streak)
 and friends leaderboards. Friend codes (6 chars, derived from player UID) enable adding friends
 without sharing email. Your standing is published whenever it changes, debounced so one finished
 session is one upload; all multiplayer sync still happens locally via Nearby Connections.

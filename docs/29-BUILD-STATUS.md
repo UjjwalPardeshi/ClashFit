@@ -59,6 +59,8 @@ What is built and verified, what is deliberately event-only, and what is genuine
 | **Maps** — OpenStreetMap tiles under a route, off until asked for in words, cached app-private | ✅ | [33](33-FEATURE-ZOMBIE-RUN.md) |
 | **Walking** — a walk is a first-class activity with its own XP rate, steps and badges | ✅ | [23](23-META-PROGRESSION.md) |
 | **Zombie Run** — the outdoor chase, on a real map; the horde closes when your cadence drops | ✅ | [33](33-FEATURE-ZOMBIE-RUN.md) |
+| **Chase feel** — a heartbeat that quickens with the gap, pulses at 30 m and 15 m, all synthesised | ✅ | [33](33-FEATURE-ZOMBIE-RUN.md) |
+| **Zombie Run leaderboard** — a fifth weekly board, summed from the chase score | ✅ | [34](34-ACCOUNTS-SOCIAL.md) |
 | **Indoor tracking** — steps and heading carry the route where GPS cannot, stride learned from GPS | ✅ | [33](33-FEATURE-ZOMBIE-RUN.md) |
 | **Shareable card** — a run as a 1080×1920 picture in three looks, straight to a story or a chat | ✅ | [15](15-ASSET-BRIEF.md) |
 | **Personal records** — fastest kilometre by sliding window, longest activity, biggest climb | ✅ | [23](23-META-PROGRESSION.md) |

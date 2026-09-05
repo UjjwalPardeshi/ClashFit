@@ -46,6 +46,10 @@ import kotlin.random.Random
 import com.clashfit.ui.nav.Compete
 import com.clashfit.ui.screens.social.CompeteScreen
 import com.clashfit.ui.screens.session.SummaryScreen
+import com.clashfit.run.RunHomeScreen
+import com.clashfit.run.RunSummaryScreen
+import com.clashfit.ui.nav.RunHome
+import com.clashfit.ui.nav.RunSummary
 
 /**
  * The data screens, with a database that has something in it.
@@ -62,6 +66,9 @@ class SeededScreenshotTest {
 
     /** The most recent seeded session, so the summary has a real one to open. */
     private var lastSessionId: Long = 0
+
+    /** A finished outdoor activity, so the map, the records and the splits have something. */
+    private var lastRunId: Long = 0
 
     private val graph: AppGraph get() = AppGraph.of(ApplicationProvider.getApplicationContext())
 
@@ -132,6 +139,59 @@ class SeededScreenshotTest {
             sessionIndex++
         }
         db.streak().upsert(StreakEntity(id = 1, current = 9, best = 21, lastDayKey = today.toString(), freezes = 2, restDaysUsedThisWeek = 1, weekKey = "2026-W36"))
+        seedOutdoor(db, today, zone)
+    }
+
+    /**
+     * Two runs and a walk, the most recent with a full route.
+     *
+     * The outdoor screens are the ones most likely to look wrong with data in them — a goal ring
+     * that has to fill, a route that has to fit its box, a records card that only exists once
+     * something has been beaten — and none of that is visible on a fresh install.
+     */
+    private suspend fun seedOutdoor(db: com.clashfit.data.ClashDb, today: LocalDate, zone: ZoneId) {
+        val mPerDegLat = 111_320.0
+        val mPerDegLon = mPerDegLat * kotlin.math.cos(Math.toRadians(18.5308))
+
+        suspend fun activity(daysBack: Long, kind: String, distanceM: Float, withRoute: Boolean): Long {
+            val started = today.minusDays(daysBack).atTime(7, 15).atZone(zone).toInstant().toEpochMilli()
+            val movingMs = (distanceM / 3.1f * 1000).toLong()
+            val id = db.runs().insertRun(
+                com.clashfit.data.RunEntity(
+                    startedAtMs = started,
+                    endedAtMs = started + movingMs,
+                    distanceM = distanceM,
+                    movingMs = movingMs,
+                    avgPaceSecPerKm = (movingMs / 1000f) / (distanceM / 1000f),
+                    cadenceSpm = 168,
+                    elevationGainM = 62f,
+                    splitsJson = "318,326,331",
+                    kind = kind,
+                    steps = (distanceM / 0.78f).toInt(),
+                    fastestKmSec = 302f,
+                ),
+            )
+            if (withRoute) {
+                val points = (0 until 180).map { i ->
+                    val u = i / 180.0 * 2 * Math.PI
+                    com.clashfit.data.RunPointEntity(
+                        runId = id,
+                        tMs = started + i * 6000L,
+                        lat = 18.5308 + (310 * kotlin.math.sin(2 * u)) / mPerDegLat,
+                        lon = 73.8470 + (470 * kotlin.math.sin(u)) / mPerDegLon,
+                        altM = 560.0 + 22 * kotlin.math.sin(u * 1.5),
+                        accuracyM = 4.5f,
+                        speedMps = (2.6 + 1.5 * kotlin.math.abs(kotlin.math.cos(u * 2))).toFloat(),
+                    )
+                }
+                db.runs().insertPoints(points)
+            }
+            return id
+        }
+
+        activity(daysBack = 5, kind = com.clashfit.data.ActivityKind.WALK, distanceM = 2100f, withRoute = false)
+        activity(daysBack = 3, kind = com.clashfit.data.ActivityKind.RUN, distanceM = 4200f, withRoute = false)
+        lastRunId = activity(daysBack = 1, kind = com.clashfit.data.ActivityKind.RUN, distanceM = 3332f, withRoute = true)
     }
 
     private fun shot(name: String, route: Route, content: @Composable (NavHostController) -> Unit) {
@@ -155,6 +215,15 @@ class SeededScreenshotTest {
     @Test fun characterWithData() = shot("33-seeded-character", Character) { CharacterScreen(graph, it) }
     @Test fun youWithData() = shot("34-seeded-you", You) { YouScreen(graph, it) }
     @Test fun competeWithData() = shot("35-seeded-compete", Compete) { CompeteScreen(graph, it) }
+
+    // Outdoors, with something in it. The goal ring has to fill, the feed rows have to draw their
+    // own routes, and the summary has to fit a map, records, an elevation profile and splits on
+    // one scrolling page without any of them crowding the others.
+    @Test fun outdoorsWithData() = shot("36-seeded-outdoors", RunHome) { RunHomeScreen(graph, it) }
+
+    @Test fun activitySummary() = shot("37-seeded-activity", RunSummary(lastRunId)) {
+        RunSummaryScreen(graph, it, lastRunId)
+    }
 
     /**
      * The summary, which is seen after every single fight and had never been rendered once.

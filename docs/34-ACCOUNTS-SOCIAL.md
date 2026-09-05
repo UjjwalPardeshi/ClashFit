@@ -70,14 +70,20 @@ to remember to accept.
 
 ## 4. Boards
 
-Four boards, all read-only to everyone and writable only by the person the row belongs to.
+Five boards, all read-only to everyone and writable only by the person the row belongs to.
 
 | Board | Ranked by | Window |
 |---|---|---|
 | This week · damage | `weeklyDamage` | ISO week, resets Monday |
 | This week · clean reps | `weeklyCleanReps` | ISO week, resets Monday |
+| This week · Zombie Run | `weeklyChaseScore` | ISO week, resets Monday |
 | All time · XP | `xp` | Forever |
 | Best streak | `bestStreak` | Forever |
+
+`weeklyChaseScore` is summed from the `score` column on finished Zombie Run activities. The rule
+that validates it is deliberately *optional* rather than required: a phone still running an older
+build does not send the field, and making it mandatory would start refusing every score those
+phones publish the moment the rules were deployed.
 
 Each board has an **Everyone** and a **Friends** view over the same data.
 
