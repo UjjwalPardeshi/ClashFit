@@ -26,7 +26,7 @@ import kotlin.math.sin
 object ChaseGlyphs {
 
     /**
-     * A pursuer: a hunched figure with its arms out, facing the runner.
+     * A pursuer: a horned, hunched thing with its claws out, facing the runner.
      *
      * @param closeness 0 when it is as far away as the chase ever spawns them, 1 when it is on
      *   top of you. Drives size, brightness and how hard the threat ring pulses, so the danger is
@@ -70,51 +70,87 @@ object ChaseGlyphs {
             style = Paint.Style.FILL
             color = body.toArgb()
         }
-        val stroke = paint().apply {
-            style = Paint.Style.STROKE
-            strokeWidth = max(1.6f, s * 0.16f)
-            strokeCap = Paint.Cap.ROUND
-            strokeJoin = Paint.Join.ROUND
-            color = body.toArgb()
-        }
 
-        // The figure, built around the centre. Proportions are deliberately not human: the head is
-        // large and the stance is low and wide, because at map size a correct silhouette reads as
-        // a smudge and a caricature reads as a monster.
-        val headR = s * 0.40f
-        val headY = cy - s * 0.52f
-        val hipY = cy + s * 0.42f
-
-        // Shoulders and torso, leaning towards the runner.
-        val torso = Path().apply {
-            moveTo(cx - s * 0.34f, headY + headR * 0.85f)
-            lineTo(cx + s * 0.34f, headY + headR * 0.85f)
-            lineTo(cx + s * 0.22f, hipY)
-            lineTo(cx - s * 0.22f, hipY)
+        // The silhouette is the whole design.
+        //
+        // At map size nobody resolves a face, so what has to read from the corner of an eye at
+        // running pace is an outline: horns, hunched shoulders, and hands splayed into claws. An
+        // upright figure with a round head and straight arms reads as the pictogram on a toilet
+        // door, which is what the first version of this looked like. It is drawn as one closed
+        // path so the shape stays solid at any size instead of coming apart into strokes.
+        val figure = Path().apply {
+            // Left horn, over the brow.
+            moveTo(cx - s * 0.62f, cy - s * 1.22f)
+            lineTo(cx - s * 0.30f, cy - s * 0.72f)
+            // Skull, low and wide.
+            cubicTo(
+                cx - s * 0.16f, cy - s * 0.98f,
+                cx + s * 0.16f, cy - s * 0.98f,
+                cx + s * 0.30f, cy - s * 0.72f,
+            )
+            // Right horn.
+            lineTo(cx + s * 0.62f, cy - s * 1.22f)
+            lineTo(cx + s * 0.42f, cy - s * 0.52f)
+            // Right shoulder, dropping into the reaching arm.
+            lineTo(cx + s * 0.52f, cy - s * 0.30f)
+            lineTo(cx + s * 1.02f, cy + s * 0.16f)
+            // Three claws on the right hand.
+            lineTo(cx + s * 0.84f, cy + s * 0.20f)
+            lineTo(cx + s * 1.00f, cy + s * 0.40f)
+            lineTo(cx + s * 0.76f, cy + s * 0.34f)
+            lineTo(cx + s * 0.84f, cy + s * 0.56f)
+            lineTo(cx + s * 0.60f, cy + s * 0.30f)
+            // Down the right flank into the trailing leg.
+            lineTo(cx + s * 0.30f, cy + s * 0.34f)
+            lineTo(cx + s * 0.44f, cy + s * 1.10f)
+            lineTo(cx + s * 0.16f, cy + s * 1.12f)
+            lineTo(cx + s * 0.06f, cy + s * 0.52f)
+            // Leading leg, mid-stride, so it never looks like it is standing still.
+            lineTo(cx - s * 0.22f, cy + s * 1.16f)
+            lineTo(cx - s * 0.50f, cy + s * 1.06f)
+            lineTo(cx - s * 0.22f, cy + s * 0.30f)
+            // Left arm and claws, mirrored.
+            lineTo(cx - s * 0.58f, cy + s * 0.28f)
+            lineTo(cx - s * 0.82f, cy + s * 0.54f)
+            lineTo(cx - s * 0.74f, cy + s * 0.32f)
+            lineTo(cx - s * 0.98f, cy + s * 0.38f)
+            lineTo(cx - s * 0.82f, cy + s * 0.18f)
+            lineTo(cx - s * 1.00f, cy + s * 0.14f)
+            lineTo(cx - s * 0.52f, cy - s * 0.32f)
+            lineTo(cx - s * 0.42f, cy - s * 0.52f)
             close()
         }
-        canvas.drawPath(torso, fill)
 
-        // Arms reaching forward, the pose everybody reads as "coming for you".
-        canvas.drawLine(cx - s * 0.30f, headY + headR, cx - s * 0.86f, cy + s * 0.10f, stroke)
-        canvas.drawLine(cx + s * 0.30f, headY + headR, cx + s * 0.86f, cy + s * 0.10f, stroke)
+        // A dark outline first, so the figure holds its shape over a pale building or a road label.
+        canvas.drawPath(
+            figure,
+            paint().apply {
+                style = Paint.Style.STROKE
+                strokeWidth = max(2f, s * 0.22f)
+                strokeJoin = Paint.Join.ROUND
+                color = OUTLINE.toArgb()
+            },
+        )
+        canvas.drawPath(figure, fill)
 
-        // Legs, mid-stride so it never looks like it is standing still.
-        canvas.drawLine(cx - s * 0.14f, hipY, cx - s * 0.42f, cy + s * 1.12f, stroke)
-        canvas.drawLine(cx + s * 0.14f, hipY, cx + s * 0.36f, cy + s * 1.05f, stroke)
-
-        canvas.drawCircle(cx, headY, headR, fill)
-
-        // Eyes. The only bright thing on the figure, so they are what the eye locks onto, and they
-        // brighten as it closes. Two dots at map scale is enough to make a shape feel like it is
-        // looking back.
-        val eyePaint = paint().apply {
+        // Eyes. The only bright thing on it, with a bloom behind them, so what the eye locks onto
+        // is a thing looking back rather than a shape. They brighten as it closes.
+        val eyeR = max(1.4f, s * 0.11f)
+        val eyeY = cy - s * 0.62f
+        val bloom = paint().apply {
+            style = Paint.Style.FILL
+            color = glow.toArgb()
+            alpha = (70 + 120 * near).toInt().coerceIn(0, 255)
+        }
+        val core = paint().apply {
             style = Paint.Style.FILL
             color = glow.toArgb()
         }
-        val eyeR = max(1.2f, headR * 0.26f)
-        canvas.drawCircle(cx - headR * 0.40f, headY - headR * 0.08f, eyeR, eyePaint)
-        canvas.drawCircle(cx + headR * 0.40f, headY - headR * 0.08f, eyeR, eyePaint)
+        listOf(-1f, 1f).forEach { side ->
+            val ex = cx + side * s * 0.17f
+            canvas.drawCircle(ex, eyeY, eyeR * 2.3f, bloom)
+            canvas.drawCircle(ex, eyeY, eyeR, core)
+        }
     }
 
     /**
@@ -169,7 +205,10 @@ object ChaseGlyphs {
 
     /** Far away: drained of colour, so distance is felt before the number is read. */
     private val DISTANT = Color(0xFF6B7280)
-    private val EYE = Color(0xFFFFE8B0)
+    private val EYE = Color(0xFFFFF1C4)
+
+    /** Nearly black, for the outline that keeps the silhouette readable over any basemap. */
+    private val OUTLINE = Color(0xFF120A08)
 
     private fun paint() = Paint(Paint.ANTI_ALIAS_FLAG)
 
