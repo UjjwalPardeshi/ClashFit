@@ -182,7 +182,7 @@ ALARM
   android.permission.USE_EXACT_ALARM
 ```
 
-**`INTERNET` is conditional on having Firebase keys.** Camera frames and pose data never use it.
+**`INTERNET` is declared unconditionally; its *use* is conditional on having Firebase keys.** Without the keys the app keeps a local account and never opens a socket. Camera frames and pose data never use it either way.
 Only scores, names and levels are transmitted, and only to Firestore for leaderboards. Voice
 commands and the on-device coach both run offline.
 

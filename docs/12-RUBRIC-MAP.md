@@ -38,7 +38,7 @@ Two additional targets: **special honours** and a **Most iQOO Usage** award.
 | Earns it | Where |
 |---|---|
 | **Fatigue-adaptive difficulty** from measured velocity loss and ROM collapse | `05-POSE-ENGINE-SPEC.md` §6, `04-GAME-DESIGN.md` §5 |
-| **Fully offline** pose + LLM — a checkable privacy claim, no `INTERNET` permission | `01-TRD.md` §7 |
+| **On-device** pose + LLM — a checkable privacy claim: the permission set is locked by the build (`checkPermissions<Variant>`), and only a score, a name and a level ever use the network | `01-TRD.md` §7, `30-ANDROID-APP.md` §1 |
 | Coach and boss as the same on-device model | `06-AI-COACH-SPEC.md` §4 |
 | Accessibility ladders as first-class exercises | `03-UI-UX-SPEC.md` §9 |
 

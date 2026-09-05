@@ -1,7 +1,7 @@
 # 01 · Technical Requirements Document
 
 **Target device:** iQOO 15 loaner · Snapdragon 8 Elite Gen 5 · up to 16GB LPDDR5X · OriginOS 6 (Android 16 base)
-**Delivery:** signed debug APK, installed and demoed on the loaner. No cloud dependency of any kind.
+**Delivery:** signed debug APK, installed and demoed on the loaner. No cloud dependency for the demo: the app opens and trains fully without an account or a signal. The leaderboard is the one thing that needs the network, and it says so rather than failing.
 
 ---
 
