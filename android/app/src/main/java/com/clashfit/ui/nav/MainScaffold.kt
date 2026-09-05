@@ -25,6 +25,7 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.clashfit.ui.components.AppIcons
+import com.clashfit.ui.theme.LocalUiHaptics
 import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Ground2
 import com.clashfit.ui.theme.InkMuted
@@ -60,7 +61,7 @@ enum class Tab(val label: String, val icon: ImageVector, val root: Route, val ow
     LEADERBOARD(
         "Leaderboard", AppIcons.Trophy, Compete,
         setOf(Compete::class, Leaderboard::class, Friends::class, Achievements::class,
-            Weekly::class, Challenge::class),
+            Rewards::class, Weekly::class, Challenge::class),
     ),
     PROGRESS(
         "Progress", AppIcons.Chart, Progress,
@@ -114,6 +115,7 @@ fun NavHostController.switchTo(tab: Tab) {
 @Composable
 fun MainScaffold(nav: NavHostController, content: @Composable (PaddingValues) -> Unit) {
     val entry by nav.currentBackStackEntryAsState()
+    val haptics = LocalUiHaptics.current
     val destination = entry?.destination
     val current = Tab.owning(destination)
     val showBar = destination != null && !destination.isImmersive()
@@ -141,7 +143,7 @@ fun MainScaffold(nav: NavHostController, content: @Composable (PaddingValues) ->
                     Tab.entries.forEach { tab ->
                         NavigationRailItem(
                             selected = tab == current,
-                            onClick = { nav.switchTo(tab) },
+                            onClick = { haptics.select(); nav.switchTo(tab) },
                             icon = { Icon(tab.icon, contentDescription = tab.label) },
                             label = { TabLabel(tab.label) },
                             alwaysShowLabel = true,
@@ -164,7 +166,7 @@ fun MainScaffold(nav: NavHostController, content: @Composable (PaddingValues) ->
                         Tab.entries.forEach { tab ->
                             NavigationBarItem(
                                 selected = tab == current,
-                                onClick = { nav.switchTo(tab) },
+                                onClick = { haptics.select(); nav.switchTo(tab) },
                                 icon = { Icon(tab.icon, contentDescription = tab.label) },
                                 label = { TabLabel(tab.label) },
                                 alwaysShowLabel = true,

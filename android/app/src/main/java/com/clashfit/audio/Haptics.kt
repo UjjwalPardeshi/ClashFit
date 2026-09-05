@@ -51,6 +51,17 @@ class Haptics(
         }
     }
 
+    // ── the interface, as opposed to the fight ───────────────────────────────────────────
+
+    /** A deliberate press. The lightest thing this class can do. */
+    fun tap() = tempoPulse()
+
+    /** Changing where you are: a tab, a filter. Firmer than [tap], so the two are tellable apart. */
+    fun select() = repTick()
+
+    /** Something was earned. The only pattern the interface gets, so it stays worth feeling. */
+    fun reward() = milestone()
+
     /**
      * Rep tick — short pulse confirming a rep was counted.
      */

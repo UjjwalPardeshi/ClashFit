@@ -1,11 +1,13 @@
 package com.clashfit.ui.nav
 
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.CompositionLocalProvider
+import com.clashfit.ui.theme.LocalUiHaptics
+import com.clashfit.ui.theme.UiHaptics
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -49,6 +51,7 @@ import com.clashfit.ui.screens.social.competeRoutes
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import com.clashfit.ui.screens.zombierun.ZombieRunScreen
+import com.clashfit.ui.screens.social.RewardsScreen
 
 /**
  * The whole navigation graph, inside the app shell. The shell draws the bottom bar and hides it
@@ -88,15 +91,26 @@ fun AppNavHost(
     fun enterApp() = nav.navigate(Home) { popUpTo(0) { inclusive = true }; launchSingleTop = true }
     fun afterSignIn() = if (settings.onboarded) enterApp() else nav.navigate(ProfileSetup) { popUpTo<Onboarding> { inclusive = true } }
 
+    // One provider around every routed screen, so a button in any of them can speak through the
+    // same motor the fight uses — and obey the same Haptics switch.
+    val uiHaptics = remember(graph) {
+        object : UiHaptics {
+            override fun tap() = graph.haptics.tap()
+            override fun select() = graph.haptics.select()
+            override fun reward() = graph.haptics.reward()
+        }
+    }
+    CompositionLocalProvider(LocalUiHaptics provides uiHaptics) {
+    // (the scaffold body keeps its original indentation; the provider wraps it whole)
     MainScaffold(nav) { padding ->
         NavHost(
             navController = nav,
             startDestination = Splash,
             modifier = Modifier.padding(padding).consumeWindowInsets(padding),
-            enterTransition = { fadeIn(Motion.screen) },
-            exitTransition = { fadeOut(Motion.screen) },
-            popEnterTransition = { fadeIn(Motion.screen) },
-            popExitTransition = { fadeOut(Motion.screen) },
+            enterTransition = ScreenMotion.enter(settings.reduceMotion),
+            exitTransition = ScreenMotion.exit(settings.reduceMotion),
+            popEnterTransition = ScreenMotion.popEnter(settings.reduceMotion),
+            popExitTransition = ScreenMotion.popExit(settings.reduceMotion),
         ) {
             composable<Splash> {
                 SplashScreen(graph) { first -> nav.navigate(first) { popUpTo<Splash> { inclusive = true } } }
@@ -149,6 +163,7 @@ fun AppNavHost(
             }
             composable<Friends> { FriendsScreen(graph, onBack = { nav.navigateUp() }) }
             composable<Achievements> { AchievementsScreen(graph, onBack = { nav.navigateUp() }) }
+            composable<Rewards> { RewardsScreen(graph, onBack = { nav.navigateUp() }) }
             composable<Weekly> {
                 WeeklyScreen(
                     graph, onBack = { nav.navigateUp() },
@@ -189,5 +204,6 @@ fun AppNavHost(
             challengeRoutes(graph, nav)  // dare codes, shared without a server
             breathingRoutes(graph, nav)  // recovery between rounds
         }
+    }
     }
 }

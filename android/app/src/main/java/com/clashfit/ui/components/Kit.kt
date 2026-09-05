@@ -49,6 +49,7 @@ import com.clashfit.ui.theme.Gassed
 import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.Heavy
 import com.clashfit.ui.theme.Ink
+import com.clashfit.ui.theme.LocalUiHaptics
 import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Motion
@@ -86,6 +87,24 @@ fun FatigueBand.color(): Color = when (this) {
     FatigueBand.WORKING -> Working
     FatigueBand.FADING -> Heavy
     FatigueBand.GASSED -> Gassed
+}
+
+/**
+ * A count, grouped for the eye: 11016 becomes 11,016.
+ *
+ * Four digits run together read as a serial number, and damage totals cross four digits in a
+ * single week. The fight HUD keeps its raw numerals — a comma at 96sp mid-rep is noise — so this
+ * is for the pages you read standing still.
+ */
+fun Int.grouped(): String = java.text.NumberFormat.getIntegerInstance().format(this)
+
+fun Long.grouped(): String = java.text.NumberFormat.getIntegerInstance().format(this)
+
+/** What a rep is called on screen. The enum names are for the engine; these are for the player. */
+fun Verdict.label(): String = when (this) {
+    Verdict.CLEAN -> "Clean"
+    Verdict.OK -> "Good"
+    Verdict.SHALLOW -> "Shallow"
 }
 
 fun Verdict.color(): Color = when (this) {
@@ -139,8 +158,9 @@ fun PrimaryButton(
     icon: ImageVector? = null,
     onClick: () -> Unit,
 ) {
+    val haptics = LocalUiHaptics.current
     Button(
-        onClick = onClick,
+        onClick = { haptics.tap(); onClick() },
         enabled = enabled,
         modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
         shape = CircleShape,
@@ -167,8 +187,9 @@ fun SecondaryButton(
     icon: ImageVector? = null,
     onClick: () -> Unit,
 ) {
+    val haptics = LocalUiHaptics.current
     FilledTonalButton(
-        onClick = onClick,
+        onClick = { haptics.tap(); onClick() },
         enabled = enabled,
         modifier = modifier.fillMaxWidth().heightIn(min = 52.dp),
         shape = CircleShape,
@@ -214,6 +235,7 @@ fun AppCard(
 ) {
     val shape = MaterialTheme.shapes.medium
     val interaction = remember { MutableInteractionSource() }
+    val cardHaptics = LocalUiHaptics.current
     val pressed by interaction.collectIsPressedAsState()
 
     // A surface lit from above, not a rectangle of one colour.
@@ -245,7 +267,7 @@ fun AppCard(
                     // card in the app had silently stopped being reachable as a control.
                     Modifier
                         .semantics { role = Role.Button }
-                        .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+                        .clickable(interactionSource = interaction, indication = null) { cardHaptics.tap(); onClick() }
                 } else {
                     Modifier
                 },
@@ -396,9 +418,10 @@ fun RuleRow(
     onClick: (() -> Unit)? = null,
     trailing: (@Composable RowScope.() -> Unit)? = null,
 ) {
+    val rowHaptics = LocalUiHaptics.current
     Row(
         modifier.fillMaxWidth()
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(if (onClick != null) Modifier.clickable { rowHaptics.tap(); onClick() } else Modifier)
             .heightIn(min = 56.dp)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -451,9 +474,10 @@ fun Modifier.outlined(): Modifier = this.border(1.dp, Rule, androidx.compose.fou
  */
 @Composable
 fun FilterPill(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val haptics = LocalUiHaptics.current
     FilterChip(
         selected = selected,
-        onClick = onClick,
+        onClick = { haptics.select(); onClick() },
         modifier = modifier,
         label = { Text(label, style = MaterialTheme.typography.labelLarge) },
         shape = CircleShape,
