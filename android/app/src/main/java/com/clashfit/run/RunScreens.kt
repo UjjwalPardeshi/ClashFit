@@ -695,9 +695,19 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
                 // tapping it opens a real one that owns the whole display and every gesture.
                 AppCard(Modifier.fillMaxWidth(), padding = 0) {
                     Box {
+                        // Drawn on the app's own grid, never on street tiles.
+                        //
+                        // An osmdroid MapView builds a SQLite-backed tile cache when it is
+                        // constructed, and it does it on whatever thread constructs it — which
+                        // here is the main thread, mid-composition, on the frame that opened the
+                        // screen. On this phone that was long enough for Android to put up "isn't
+                        // responding" and take the app down, every single time an activity was
+                        // opened. The route itself needs no tiles to be worth looking at, so the
+                        // card is the trace and the street map lives one tap away, where the wait
+                        // is something the player asked for and can see happening.
                         ActivityMap(
                             points = points,
-                            tilesAllowed = tilesOn,
+                            tilesAllowed = false,
                             // Tall enough to be a map rather than a stamp. Two thirds of a phone
                             // screen is roughly what every other running app gives a finished route.
                             modifier = Modifier.fillMaxWidth().height(380.dp),
@@ -718,7 +728,7 @@ fun RunSummaryScreen(graph: AppGraph, nav: NavHostController, runId: Long) {
                                 ),
                         )
                         MapCaption(
-                            "Tap to open the map",
+                            if (tilesOn) "Tap for the street map" else "Tap to open the map",
                             Modifier.align(Alignment.BottomEnd).padding(10.dp),
                         )
                     }
@@ -936,11 +946,27 @@ private fun ShareDialog(stats: ShareCard.Stats, onDismiss: () -> Unit) {
     val text = "${formatDistance(stats.distanceM)} with ClashFit — every rep graded by the camera. " +
         "clash-fit.vercel.app"
 
+    val scope = rememberCoroutineScope()
+    var writing by remember { mutableStateOf(false) }
+
+    // Encoding the card is disk work, and it was being done on the main thread.
+    //
+    // The card is 1080x1920 and it is written as a lossless PNG, which is hundreds of milliseconds
+    // on a good phone and seconds on a busy one — long enough that Android puts up "isn't
+    // responding" over the share sheet. It goes to the IO dispatcher; the intent still starts on
+    // the main thread, because that is the only thread allowed to.
     fun send(action: (android.net.Uri) -> Unit) {
         val bmp = bitmap ?: return
-        val uri = Sharing.writeCard(context, bmp)
-        action(uri)
-        onDismiss()
+        if (writing) return
+        writing = true
+        scope.launch {
+            val uri = withContext(Dispatchers.IO) { runCatching { Sharing.writeCard(context, bmp) }.getOrNull() }
+            writing = false
+            if (uri != null) {
+                action(uri)
+                onDismiss()
+            }
+        }
     }
 
     AlertDialog(
@@ -976,18 +1002,18 @@ private fun ShareDialog(stats: ShareCard.Stats, onDismiss: () -> Unit) {
                 // Only offer a direct button for an app that is actually installed; a button that
                 // silently does nothing is worse than no button.
                 if (Sharing.hasInstagram(context)) {
-                    PrimaryButton("Instagram story", Modifier.fillMaxWidth(), enabled = bitmap != null) {
+                    PrimaryButton(if (writing) "Preparing…" else "Instagram story", Modifier.fillMaxWidth(), enabled = bitmap != null && !writing) {
                         send { uri -> if (!Sharing.shareToInstagramStory(context, uri)) Sharing.shareSheet(context, uri, text) }
                     }
                     Spacer(Modifier.height(8.dp))
                 }
                 if (Sharing.hasWhatsApp(context)) {
-                    SecondaryButton("WhatsApp", Modifier.fillMaxWidth(), enabled = bitmap != null) {
+                    SecondaryButton(if (writing) "Preparing…" else "WhatsApp", Modifier.fillMaxWidth(), enabled = bitmap != null && !writing) {
                         send { uri -> if (!Sharing.shareToWhatsApp(context, uri, text)) Sharing.shareSheet(context, uri, text) }
                     }
                     Spacer(Modifier.height(8.dp))
                 }
-                SecondaryButton("More apps", Modifier.fillMaxWidth(), enabled = bitmap != null) {
+                SecondaryButton(if (writing) "Preparing…" else "More apps", Modifier.fillMaxWidth(), enabled = bitmap != null && !writing) {
                     send { uri -> Sharing.shareSheet(context, uri, text) }
                 }
             }

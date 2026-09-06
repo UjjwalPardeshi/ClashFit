@@ -1,6 +1,7 @@
 package com.clashfit
 
 import android.app.Application
+import com.clashfit.map.MapTiles
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
@@ -20,6 +21,10 @@ class ClashFitApp : Application() {
         installStrictMode()
         CloudConfig.initialize(this)
         graph = AppGraph(this)
+        // Off the main thread and before any map exists: the tile config makes two directories and
+        // reads a preferences file, and a map that pays for that while it is composing drops the
+        // frame it was trying to draw.
+        MapTiles.warmUp(this, graph.scope)
         graph.config.reload()
         // Config is re-read on every foreground: edit a JSON on the phone, background, resume.
         // Scores go up whenever they change, and only ever when somebody is signed in.

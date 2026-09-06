@@ -2,6 +2,9 @@ package com.clashfit.map
 
 import android.content.Context
 import org.osmdroid.config.Configuration
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 
 /**
@@ -37,8 +40,12 @@ object MapTiles {
     @Volatile private var configured = false
 
     /**
-     * Idempotent. Safe to call from any composable that is about to show a map, which is the
-     * point: there is no initialisation order to get wrong and nothing to remember in `AppGraph`.
+     * Idempotent, and best called off the main thread before any map exists.
+     *
+     * It makes two directories and reads a SharedPreferences file, which is disk work — and it was
+     * being done from inside the composable that draws a map, so the first activity anybody opened
+     * paid for it on the frame that was trying to draw. [warmUp] does it in the background at
+     * startup; this stays safe to call from a composable because by then it is a flag check.
      */
     fun ensureConfigured(context: Context) {
         if (configured) return
@@ -81,6 +88,11 @@ object MapTiles {
             }
             configured = true
         }
+    }
+
+    /** Configure ahead of time, off the main thread, so no map ever waits on the filesystem. */
+    fun warmUp(context: Context, scope: CoroutineScope) {
+        scope.launch(Dispatchers.IO) { runCatching { ensureConfigured(context) } }
     }
 
     private fun appVersion(ctx: Context): String = runCatching {
