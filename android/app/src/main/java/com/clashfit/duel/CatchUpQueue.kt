@@ -21,12 +21,16 @@ import com.clashfit.core.model.DuelMessage
  *
  * Everything else is kept in order up to [CAP], oldest dropped first: a catch-up only needs the
  * recent past, and without a cap a lobby left open with nobody in it would grow forever.
+ *
+ * Synchronised: a session sends from a coroutine while Play Services delivers connection results
+ * on its own callback threads, and both reach this.
  */
 class CatchUpQueue(private val cap: Int = CAP) {
 
     private val queued = mutableListOf<DuelMessage>()
 
     /** Parks [msg] for whoever links next. Returns false when the message was not worth keeping. */
+    @Synchronized
     fun offer(msg: DuelMessage): Boolean {
         if (msg.type in TRANSIENT) return false
         if (msg.type in COLLAPSING) queued.removeAll { it.type == msg.type && it.playerId == msg.playerId }
@@ -36,11 +40,13 @@ class CatchUpQueue(private val cap: Int = CAP) {
     }
 
     /** What a phone linking right now should be told, oldest first. */
+    @Synchronized
     fun backlog(): List<DuelMessage> = queued.toList()
 
+    @Synchronized
     fun clear() = queued.clear()
 
-    val size: Int get() = queued.size
+    val size: Int @Synchronized get() = queued.size
 
     private companion object {
         /** Sixty-four is enough recent past for a catch-up and small enough to replay instantly. */
