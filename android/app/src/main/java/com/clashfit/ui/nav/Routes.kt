@@ -32,6 +32,10 @@ sealed interface Route
 @Serializable data object Weekly : Route
 
 @Serializable data object Modes : Route
+
+/** The gym log. A workout is a bag of sets; a set is one trip through the session screen. */
+@Serializable data object WorkoutHome : Route
+@Serializable data class WorkoutSetup(val workoutId: Long, val exerciseId: String? = null) : Route
 @Serializable data class ExercisePicker(val mode: String) : Route
 /** Calibration, fight, rest and victory are phases of one session, not separate screens. */
 @Serializable data class Session(
@@ -48,6 +52,16 @@ sealed interface Route
      * on screen throughout: a judge who is told is fine, a judge who finds out is not.
      */
     val replay: Boolean = false,
+    /**
+     * The open workout this set belongs to, or zero when this is not a gym set.
+     *
+     * Carried on the route rather than held in a view model because the session screen can be
+     * recreated by a rotation or by Android reclaiming the process, and a set that forgets which
+     * workout it was part of is a set that cannot be written down.
+     */
+    val workoutId: Long = 0,
+    /** What is on the bar, in kilograms. Zero is a real answer: it means bodyweight. */
+    val weightKg: Float = 0f,
 ) : Route
 @Serializable data class Summary(val sessionId: Long) : Route
 

@@ -32,6 +32,7 @@ import com.clashfit.ui.screens.onboarding.SignInScreen
 import com.clashfit.ui.screens.onboarding.SignUpScreen
 import com.clashfit.ui.screens.onboarding.WelcomeScreen
 import com.clashfit.ui.screens.progress.ProgressScreen
+import com.clashfit.ui.screens.workout.workoutRoutes
 import com.clashfit.ui.screens.roster.rosterRoutes
 import com.clashfit.ui.screens.session.sessionRoutes
 import com.clashfit.ui.screens.shellRoutes
@@ -154,6 +155,7 @@ fun AppNavHost(
             // ── the four tab roots ──
             composable<Home> { HomeScreen(graph, nav) }
             composable<Progress> { ProgressScreen(graph, nav) }
+            workoutRoutes(graph, nav)
             composable<You> { YouScreen(graph, nav) }
             // Library's root is registered with its detail screen in libraryRoutes, via shellRoutes.
 

@@ -56,7 +56,14 @@ data class SessionArgs(
     val durationSec: Int? = null,
     /** Replay a recorded trace instead of opening the camera. Always labelled on screen. */
     val replay: Boolean = false,
-)
+    /** The open workout this set belongs to, or zero when this is not a gym set. */
+    val workoutId: Long = 0,
+    /** What was on the bar, in kilograms. Zero means bodyweight, which is a real answer. */
+    val weightKg: Float = 0f,
+) {
+    /** A gym set: counted and graded like anything else, but outside the meta-game. */
+    val isWorkout: Boolean get() = workoutId > 0L
+}
 
 /** Transient things the HUD animates once. Never state — they are fired and forgotten. */
 sealed interface HudEvent {
@@ -420,6 +427,26 @@ class SessionViewModel(
                 formMean = formMean, peakFatigue = last?.fatigue?.value ?: 0f, peakBand = (last?.fatigue?.band ?: FatigueBand.FRESH).name,
                 casual = args.casual, ghostId = args.ghostId,
             ))
+            // A gym set is written into the log inside the same transaction that wrote the
+            // session. Two writes would mean a crash between them could leave a session whose
+            // reps exist and whose logbook entry does not, which is the one inconsistency a
+            // training log cannot survive: the number you are trying to beat next week.
+            if (args.isWorkout) {
+                val done = graph.db.workouts().setCountOf(args.workoutId, args.exerciseId)
+                val setMean = if (all.isEmpty()) 0f else all.map { it.formScore }.average().toFloat()
+                graph.db.workouts().addSet(
+                    com.clashfit.data.WorkoutSetEntity(
+                        workoutId = args.workoutId,
+                        exerciseId = args.exerciseId,
+                        setIndex = done + 1,
+                        weightKg = args.weightKg,
+                        reps = all.size,
+                        formMean = setMean,
+                        startedAtMs = startedAtMs,
+                        endedAtMs = now,
+                    ),
+                )
+            }
             for (set in completedSets) {
                 val setMean = if (set.reps.isEmpty()) 0f else set.reps.map { it.formScore }.average().toFloat()
                 val endF = set.reps.lastOrNull()?.fatigue
@@ -446,10 +473,18 @@ class SessionViewModel(
         // a file rather than by a body. On a board other people are on, that is not a rounding
         // error, it is cheating. The session is still written so the summary can show the fatigue
         // curve, which is the whole reason to run a replay in front of anyone.
-        if (!args.replay) {
-            bank(id, all, formMean, now, s.playerDamage, reason, startedAtMs)
-        } else {
+        // A gym set banks nothing either, and for a different reason than a replay does.
+        //
+        // A replay earns nothing because a file did the work. A workout earns nothing because it
+        // was asked to be a private log: no experience, no streak, no leaderboard. The set is
+        // still counted and graded by exactly the same referee, and it still writes its session
+        // row, so the form score on your logbook entry means what it means everywhere else.
+        if (args.replay) {
             Log.i(TAG, "session $id was a replay: no xp, no streak, no board")
+        } else if (args.isWorkout) {
+            Log.i(TAG, "session $id was a gym set: logged, but outside the meta-game")
+        } else {
+            bank(id, all, formMean, now, s.playerDamage, reason, startedAtMs)
         }
         _finished.tryEmit(id)
     }

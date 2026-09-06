@@ -120,6 +120,31 @@ class MigrationSqlTest {
     }
 
     @Test
+    fun `the two tables added by migration 8 to 9 match the exported schema exactly`() {
+        val expected = createSqlByTable(9)
+        val tables = listOf("workouts", "workout_sets")
+        assertEquals(tables.size, MIGRATION_8_9_SQL.size, "one statement per new table")
+        tables.zip(MIGRATION_8_9_SQL).forEach { (table, actual) ->
+            val want = requireNotNull(expected[table]) { "schema 9 has no entity for $table" }
+            assertEquals(normalise(want), normalise(actual), "migration 8 to 9 disagrees on `$table`")
+        }
+    }
+
+    @Test
+    fun `schema 9 adds the gym log and touches nothing else`() {
+        val before = createSqlByTable(8)
+        val after = createSqlByTable(9)
+        assertEquals(
+            before.keys + "workouts" + "workout_sets",
+            after.keys,
+            "version 9 must add exactly the two workout tables and drop none",
+        )
+        before.forEach { (table, sql) ->
+            assertEquals(normalise(sql), normalise(after.getValue(table)), "version 9 changed `$table`")
+        }
+    }
+
+    @Test
     fun `the table added by migration 7 to 8 matches the exported schema exactly`() {
         // This is the test that caught the real mistake. The first version of this migration wrote
         // the id as a table-level `PRIMARY KEY(id)` with a separate NOT NULL, which produces a

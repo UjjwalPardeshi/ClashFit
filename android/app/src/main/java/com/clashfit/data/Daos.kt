@@ -102,6 +102,10 @@ interface WorkoutDao {
     @Query("SELECT COUNT(*) FROM workout_sets WHERE workoutId = :workoutId")
     suspend fun setCount(workoutId: Long): Int
 
+    /** Sets of ONE exercise inside this workout, which is what the set number counts. */
+    @Query("SELECT COUNT(*) FROM workout_sets WHERE workoutId = :workoutId AND exerciseId = :exerciseId")
+    suspend fun setCountOf(workoutId: Long, exerciseId: String): Int
+
     @Query("SELECT * FROM workout_sets WHERE workoutId = :workoutId ORDER BY id")
     fun setsOf(workoutId: Long): Flow<List<WorkoutSetEntity>>
 

@@ -76,6 +76,14 @@ class Prefs(private val context: Context) {
         val shareNoticeSeen: Boolean = false,
         /** Weekly distance goal for runs and walks, in metres. */
         val weeklyDistanceGoalM: Int = 15_000,
+        /**
+         * Show gym weights in pounds rather than kilograms.
+         *
+         * A display choice only. Every weight is stored in kilograms, so switching this cannot
+         * reinterpret a history entered under the other unit — which is the failure a per-row
+         * unit would eventually produce.
+         */
+        val weightUnitLbs: Boolean = false,
 
         // ── the chase, as the player set it up last time ──────────────────────────────────
         /** True to win Zombie Run by covering ground, false to win it by outlasting a clock. */
@@ -155,6 +163,7 @@ class Prefs(private val context: Context) {
             loaded = true,
             shareNoticeSeen = p[SHARE_NOTICE_SEEN] ?: false,
             weeklyDistanceGoalM = p[WEEKLY_DISTANCE_GOAL_M] ?: 15_000,
+            weightUnitLbs = p[WEIGHT_UNIT_LBS] ?: false,
             chaseWinByDistance = p[CHASE_BY_DISTANCE] ?: false,
             chaseDistanceKm = (p[CHASE_DISTANCE_KM] ?: 3).coerceIn(1, 50),
             chaseMinutes = (p[CHASE_MINUTES] ?: 10).coerceIn(1, 300),
@@ -187,6 +196,8 @@ class Prefs(private val context: Context) {
     suspend fun setAvatarColor(v: Int) = context.dataStore.edit { it[AVATAR_COLOR] = v }
     suspend fun setShareNoticeSeen(v: Boolean) = context.dataStore.edit { it[SHARE_NOTICE_SEEN] = v }
     suspend fun setWeeklyDistanceGoalM(v: Int) = context.dataStore.edit { it[WEEKLY_DISTANCE_GOAL_M] = v }
+
+    suspend fun setWeightUnitLbs(v: Boolean) = context.dataStore.edit { it[WEIGHT_UNIT_LBS] = v }
 
     /**
      * Answers the tile question, and records that it was asked.
@@ -253,5 +264,6 @@ class Prefs(private val context: Context) {
         val MAP_TILES_ASKED = booleanPreferencesKey("map_tiles_asked")
         val SHARE_NOTICE_SEEN = booleanPreferencesKey("share_notice_seen")
         val WEEKLY_DISTANCE_GOAL_M = intPreferencesKey("weekly_distance_goal_m")
+        val WEIGHT_UNIT_LBS = booleanPreferencesKey("weight_unit_lbs")
     }
 }

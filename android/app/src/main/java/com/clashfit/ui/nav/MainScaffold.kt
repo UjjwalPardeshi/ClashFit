@@ -58,6 +58,18 @@ enum class Tab(val label: String, val icon: ImageVector, val root: Route, val ow
             Breathing::class, Posture::class, Desk::class, Clinic::class),
     ),
 
+    /**
+     * The gym log, next to the battles and separate from them.
+     *
+     * Its own tab rather than a corner of Battle because the two are opposite errands: one is
+     * something you play, the other is something you record. Sharing a tab would mean every visit
+     * to the gym starting with a screen full of game modes.
+     */
+    WORKOUT(
+        "Workout", AppIcons.Grid, WorkoutHome,
+        setOf(WorkoutHome::class, WorkoutSetup::class),
+    ),
+
     LEADERBOARD(
         "Leaderboard", AppIcons.Trophy, Compete,
         setOf(Compete::class, Leaderboard::class, Friends::class, Achievements::class,
