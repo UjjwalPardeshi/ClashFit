@@ -27,6 +27,7 @@ import com.clashfit.core.config.ConfigStore
 import com.clashfit.core.util.Clock
 import com.clashfit.data.ClashDb
 import com.clashfit.data.Prefs
+import com.clashfit.duel.NearbyTransport
 import com.clashfit.play.PlayHub
 import com.clashfit.voice.VoiceCommands
 import kotlinx.coroutines.CoroutineScope
@@ -91,7 +92,7 @@ class AppGraph(val app: Context) {
     val voiceCommands: VoiceCommands by lazy { VoiceCommands(app, mainScope) }
 
     // Multiplayer links and pass-the-phone rosters outlive any one screen.
-    val playHub: PlayHub by lazy { PlayHub(app, json, clock, scope) }
+    val playHub: PlayHub by lazy { PlayHub(clock, scope) { NearbyTransport(app, json, scope) } }
 
     val auth: AuthService by lazy { if (CloudConfig.isConfigured) FirebaseAuthService(scope) else LocalAuthService(app, scope) }
     val leaderboard: LeaderboardRepository by lazy { if (CloudConfig.isConfigured) FirestoreLeaderboard(auth, scope) else NoCloudLeaderboard("This build has no cloud keys. Add FIREBASE_API_KEY, FIREBASE_APP_ID and FIREBASE_PROJECT_ID to android/local.properties.") }

@@ -165,8 +165,13 @@ class RaidSession(
     }
 
     /** Tear down the raid. Stops the collector; a session must not outlive its close(). */
-    fun close() {
+    /** Stops listening but leaves the link alone. PlayHub owns the transport across a re-arm. */
+    fun detach() {
         incomingJob.cancel()
+    }
+
+    fun close() {
+        detach()
         transport.close()
     }
 

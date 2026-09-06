@@ -132,8 +132,13 @@ class DuelSession(
     fun peerCount(): Int = peers.size
 
     /** Clean up and close the transport. */
-    fun close() {
+    /** Stops listening but leaves the link alone. PlayHub owns the transport across a re-arm. */
+    fun detach() {
         incomingJob.cancel()
+    }
+
+    fun close() {
+        detach()
         transport.close()
     }
 

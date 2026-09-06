@@ -1,6 +1,5 @@
 package com.clashfit.play
 
-import android.content.Context
 import com.clashfit.core.model.DuelMessage
 import com.clashfit.core.model.FatigueBand
 import com.clashfit.core.model.GameMode
@@ -8,7 +7,6 @@ import com.clashfit.core.model.LinkState
 import com.clashfit.core.util.Clock
 import com.clashfit.duel.DuelSession
 import com.clashfit.duel.DuelTransport
-import com.clashfit.duel.NearbyTransport
 import com.clashfit.duel.RaidSession
 import com.clashfit.duel.RepRaceSession
 import com.clashfit.duel.newPlayerId
@@ -28,7 +26,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 
 /** One row of a live leaderboard, as the fight HUD and the lobbies draw it. */
 data class Standing(
@@ -71,10 +68,13 @@ data class RemoteHit(val playerId: String, val seq: Int, val damage: Int)
  * permission is for accounts and score sync only, never for game play.
  */
 class PlayHub(
-    private val app: Context,
-    private val json: Json,
     private val clock: Clock,
     private val scope: CoroutineScope,
+    /**
+     * How a link is opened. Injected so the whole host -> arm -> start path is drivable on the
+     * JVM over [com.clashfit.duel.LoopbackTransport]; the app passes a Nearby transport.
+     */
+    private val openTransport: () -> DuelTransport,
 ) {
     val playerId: String = newPlayerId()
     @Volatile var playerName: String = "YOU"
@@ -86,6 +86,8 @@ class PlayHub(
     private var race: RepRaceSession? = null
     private var raid: RaidSession? = null
     private val jobs = mutableListOf<Job>()
+    /** Held apart from [jobs] so a re-arm replaces it instead of stacking another loop. */
+    private var heartbeat: Job? = null
     private var armed: StartSignal? = null
     private var isHost = false
 
@@ -107,10 +109,10 @@ class PlayHub(
     /** What is armed right now, if anything. */
     val armedSignal: StartSignal? get() = armed
 
-    /** Opens a fresh Nearby transport, tearing down whatever was there. */
+    /** Opens a fresh transport, tearing down whatever was there. */
     fun open(): DuelTransport {
         release()
-        val t = NearbyTransport(app, json, scope)
+        val t = openTransport()
         transport = t
         jobs += scope.launch { t.state.collect { s -> _linkState.value = s; refresh() } }
         jobs += scope.launch {
@@ -119,21 +121,48 @@ class PlayHub(
         return t
     }
 
+    /**
+     * Claim the host role, then open the link.
+     *
+     * The order matters and used to be the other way round: `isHost = true` ran first, then
+     * `open()` -> `release()` reset it straight back to false. The phone that pressed Host was
+     * therefore never marked as the host, so the lobby drew a guest's "Waiting for host..." and
+     * the Start button never appeared for anyone.
+     */
     suspend fun host(roomName: String): Result<Unit> {
+        val t = transport ?: open()
         isHost = true
-        return (transport ?: open()).host(roomName)
+        refresh()
+        return t.host(roomName)
     }
 
     suspend fun join(): Result<Unit> {
+        val t = transport ?: open()
         isHost = false
-        return (transport ?: open()).join()
+        refresh()
+        return t.join()
     }
 
-    /** Builds the per-mode session on the linked transport. Call on both phones once LINKED. */
+    /**
+     * Builds the per-mode session on the open transport. Call as soon as a link exists — the host
+     * arms while it is still advertising, so the lobby can offer Start before anyone has joined.
+     *
+     * Safe to call repeatedly. Re-arming the same signal is a no-op, and a genuine re-arm
+     * *detaches* the old session rather than closing it: a session's close() also closes the
+     * transport, and PlayHub owns the link. Closing it here dropped the very connection the lobby
+     * was sitting on the moment the link flapped LINKED -> LOST -> LINKED. The heartbeat is held
+     * in its own job for the same reason: it used to be appended to [jobs] on every arm, so each
+     * re-arm left another loop ticking the sessions forever.
+     */
     fun arm(mode: GameMode, exerciseId: String, durationSec: Int?) {
+        val next = StartSignal(mode, exerciseId, durationSec)
+        if (armed == next && transport != null) {
+            refresh()
+            return
+        }
         val t = transport ?: open()
-        closeSessions()
-        armed = StartSignal(mode, exerciseId, durationSec)
+        detachSessions()
+        armed = next
         val onRemote = { p: String, s: Int, d: Int -> _remoteHits.tryEmit(RemoteHit(p, s, d)); refresh() }
         when (mode) {
             GameMode.REP_RACE -> race = RepRaceSession(t, playerId, playerName, clock, scope, durationSec ?: 60) { refresh() }
@@ -141,7 +170,8 @@ class PlayHub(
                 raid = RaidSession(t, playerId, playerName, clock, scope, isHost, onRemote) { refresh() }
             else -> duel = DuelSession(t, playerId, clock, scope, onRemote) { refresh() }
         }
-        jobs += scope.launch {
+        heartbeat?.cancel()
+        heartbeat = scope.launch {
             while (isActive && armed != null) {
                 duel?.tick()
                 race?.tick()
@@ -157,7 +187,7 @@ class PlayHub(
     suspend fun start(): Result<Unit> {
         val a = armed ?: return Result.failure(IllegalStateException("Nothing is armed."))
         val t = transport ?: return Result.failure(IllegalStateException("No link."))
-        val r = race?.startRace() ?: runCatching {
+        val r = race?.startRace(a.exerciseId) ?: runCatching {
             t.send(
                 DuelMessage(
                     type = DuelMessage.START, playerId = playerId, name = playerName,
@@ -226,6 +256,12 @@ class PlayHub(
         )
     }
 
+    /** Drops the sessions but keeps the link — used when re-arming an already open transport. */
+    private fun detachSessions() {
+        duel?.detach(); race?.detach(); raid?.detach()
+        duel = null; race = null; raid = null
+    }
+
     private fun closeSessions() {
         duel?.close(); race?.close(); raid?.close()
         duel = null; race = null; raid = null
@@ -234,6 +270,8 @@ class PlayHub(
     /** Tears the link down. Safe to call twice. */
     fun release() {
         closeSessions()
+        heartbeat?.cancel()
+        heartbeat = null
         jobs.forEach { it.cancel() }
         jobs.clear()
         transport?.close()

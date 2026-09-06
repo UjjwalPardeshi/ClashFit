@@ -120,7 +120,11 @@ private fun DuelLobbyScreen(graph: AppGraph, nav: NavHostController, mode: GameM
     val armed = hud != null
 
     LaunchedEffect(name) { hub.playerName = name.ifBlank { "YOU" } }
-    LaunchedEffect(state) { if (state == LinkState.LINKED) hub.arm(mode, exerciseId, duration) }
+    // Arm the moment the link opens, not once a second phone arrives. Waiting for LINKED meant a
+    // host advertising on its own was never armed, so `hud` stayed null and the Start button it
+    // gates never appeared — one phone could not start a race at all. The clock is a key so
+    // changing it before the go re-arms the race with the new duration.
+    LaunchedEffect(state, duration) { if (state != LinkState.IDLE) hub.arm(mode, exerciseId, duration) }
     LaunchedEffect(Unit) {
         hub.started.collect { signal ->
             startedHere = true
@@ -152,7 +156,7 @@ private fun DuelLobbyScreen(graph: AppGraph, nav: NavHostController, mode: GameM
             SectionGap(20)
             Kicker("Clock")
             SectionGap(10)
-            DurationChips(seconds, enabled = !armed) { seconds = it }
+            DurationChips(seconds, enabled = hud?.raceStartedMs == null) { seconds = it }
         }
 
         SectionGap(24)
@@ -166,7 +170,7 @@ private fun DuelLobbyScreen(graph: AppGraph, nav: NavHostController, mode: GameM
 
         if (armed) {
             SectionGap(20)
-            ReadyBlock(isHost = hud?.isHost == true) {
+            ReadyBlock(isHost = hud?.isHost == true, peers = hud?.peers ?: 0) {
                 scope.launch { error = failure(hub.start()) }
             }
         }
@@ -192,7 +196,8 @@ private fun RaidRoomScreen(graph: AppGraph, nav: NavHostController, exerciseId: 
     val armed = hud != null
 
     LaunchedEffect(name) { hub.playerName = name.ifBlank { "YOU" } }
-    LaunchedEffect(state) { if (state == LinkState.LINKED) hub.arm(GameMode.RAID, exerciseId, null) }
+    // Same as the duel lobby: the host arms while advertising so Start is there before guests are.
+    LaunchedEffect(state) { if (state != LinkState.IDLE) hub.arm(GameMode.RAID, exerciseId, null) }
     LaunchedEffect(Unit) {
         hub.started.collect { signal ->
             startedHere = true
@@ -233,7 +238,7 @@ private fun RaidRoomScreen(graph: AppGraph, nav: NavHostController, exerciseId: 
             SectionGap(24)
             Standings(hub)
             SectionGap(20)
-            ReadyBlock(isHost = hud?.isHost == true, hostLabel = "Start raid") {
+            ReadyBlock(isHost = hud?.isHost == true, peers = hud?.peers ?: 0, hostLabel = "Start raid") {
                 scope.launch { error = failure(hub.start()) }
             }
         }
@@ -367,10 +372,23 @@ private fun HostJoinRow(enabled: Boolean, onHost: () -> Unit, onJoin: () -> Unit
     }
 }
 
+/**
+ * The host's go button, live from the moment they start hosting. A host with nobody joined yet is
+ * told so rather than left without a button: a single phone is still a valid run, and hiding Start
+ * until a peer arrives made the lobby look broken to anyone testing on their own.
+ */
 @Composable
-private fun ReadyBlock(isHost: Boolean, hostLabel: String = "Start", onStart: () -> Unit) {
+private fun ReadyBlock(isHost: Boolean, peers: Int, hostLabel: String = "Start", onStart: () -> Unit) {
     if (isHost) {
-        PrimaryButton(hostLabel, Modifier.fillMaxWidth(), onClick = onStart)
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            PrimaryButton(hostLabel, Modifier.fillMaxWidth(), onClick = onStart)
+            Text(
+                if (peers > 0) "Both phones go at once."
+                else "Nobody has joined yet — start anyway and you run it solo.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = InkMuted,
+            )
+        }
     } else {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Waiting for host…", style = MaterialTheme.typography.titleMedium, color = Ink)

@@ -15,6 +15,7 @@ import com.google.android.gms.nearby.connection.Payload
 import com.google.android.gms.nearby.connection.PayloadCallback
 import com.google.android.gms.nearby.connection.PayloadTransferUpdate
 import com.google.android.gms.nearby.connection.Strategy
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -40,6 +42,8 @@ class NearbyTransport(
     private companion object {
         const val TAG = "ClashFit/Nearby"
         const val SERVICE_ID = "com.clashfit.duel"
+        /** Nearby needs the radios; say which ones rather than "something went wrong". */
+        const val RADIO_HINT = "Could not open the link. Turn on Bluetooth, Wi-Fi and Location, then try again."
     }
 
     private val client: ConnectionsClient = Nearby.getConnectionsClient(context)
@@ -117,6 +121,11 @@ class NearbyTransport(
         }
     }
 
+    /**
+     * Awaits the advertising task rather than firing and forgetting it. The old version always
+     * returned success, so a refused start — Bluetooth off, location off, a permission the user
+     * declined — left the lobby sitting on "Not linked" with nothing on screen to explain it.
+     */
     override suspend fun host(roomName: String): Result<Unit> {
         this.roomName = roomName
 
@@ -124,17 +133,18 @@ class NearbyTransport(
             .setStrategy(Strategy.P2P_STAR)
             .build()
 
-        client.startAdvertising(roomName, SERVICE_ID, connectionCallback, opts)
-            .addOnSuccessListener {
-                Log.d(TAG, "Advertising started for $roomName")
-                _state.value = LinkState.ADVERTISING
-            }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "Advertising failed: ${e.message}")
-                _state.value = LinkState.IDLE
-            }
-
-        return Result.success(Unit)
+        return try {
+            client.startAdvertising(roomName, SERVICE_ID, connectionCallback, opts).await()
+            Log.d(TAG, "Advertising started for $roomName")
+            _state.value = LinkState.ADVERTISING
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Advertising failed: ${e.message}")
+            _state.value = LinkState.IDLE
+            Result.failure(IllegalStateException(RADIO_HINT, e))
+        }
     }
 
     override suspend fun join(): Result<Unit> {
@@ -153,17 +163,18 @@ class NearbyTransport(
             }
         }
 
-        client.startDiscovery(SERVICE_ID, discoveryCallback, opts)
-            .addOnSuccessListener {
-                Log.d(TAG, "Discovery started")
-                _state.value = LinkState.SEARCHING
-            }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "Discovery failed: ${e.message}")
-                _state.value = LinkState.IDLE
-            }
-
-        return Result.success(Unit)
+        return try {
+            client.startDiscovery(SERVICE_ID, discoveryCallback, opts).await()
+            Log.d(TAG, "Discovery started")
+            _state.value = LinkState.SEARCHING
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Discovery failed: ${e.message}")
+            _state.value = LinkState.IDLE
+            Result.failure(IllegalStateException(RADIO_HINT, e))
+        }
     }
 
     override fun send(msg: DuelMessage) {
