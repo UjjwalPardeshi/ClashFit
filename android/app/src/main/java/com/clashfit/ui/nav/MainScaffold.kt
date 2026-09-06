@@ -15,7 +15,14 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -199,16 +206,22 @@ fun MainScaffold(nav: NavHostController, content: @Composable (PaddingValues) ->
 }
 
 /**
- * A tab label that stays on one line.
+ * A tab label that stays on one line, whole.
  *
  * Five tabs give each label a fifth of the screen, where four gave it a quarter. "Leaderboard" is
- * the longest word in the bar and it was already the tight one at four; at five it has no room to
- * grow at all, and breaking into "Leaderboa / rd" is a worse outcome for the person who raised
- * their text size than a slightly smaller word would have been.
+ * the longest word in the bar and it did not survive the fifth tab: it drew as "Leaderbo…", which
+ * is worse than a smaller word — the point of a label is that it can be read.
  *
- * So the label no longer scales up: it is pinned at its own size whatever the system asks for.
- * Everything else on every screen still scales the whole way, which is where it actually helps —
- * a tab label is read once to learn the bar and then navigated by position and icon.
+ * Pinning the size against the system font scale was not enough, because it still did not fit at
+ * scale 1. So the label shrinks to fit instead. Each layout that reports an overflow steps the
+ * size down and asks again; the size only ever decreases, so it settles rather than oscillates,
+ * and it holds for any label, any language and any screen width rather than for the one word
+ * somebody measured. The floor stops it shrinking into illegibility, and the ellipsis is what
+ * happens if a label is so long that even the floor cannot hold it.
+ *
+ * Everything else on every screen still scales the whole way with the system font size, which is
+ * where it actually helps — a tab label is read once to learn the bar and then navigated by
+ * position and icon.
  */
 @Composable
 private fun TabLabel(text: String) {
@@ -216,6 +229,19 @@ private fun TabLabel(text: String) {
     val base = MaterialTheme.typography.labelMedium
     // Expressed in sp, which the renderer multiplies by the scale again — so dividing by the
     // scale here pins the drawn size, rather than merely reducing it a little.
-    val style = if (scale > 1f) base.copy(fontSize = base.fontSize * (1f / scale)) else base
-    Text(text, style = style, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+    val pinned = if (scale > 1f) base.copy(fontSize = base.fontSize * (1f / scale)) else base
+    BasicText(
+        text = text,
+        style = pinned.copy(color = LocalContentColor.current),
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        autoSize = TextAutoSize.StepBased(
+            minFontSize = LABEL_FLOOR,
+            maxFontSize = pinned.fontSize,
+            stepSize = 0.25.sp,
+        ),
+    )
 }
+
+/** Small enough to fit "Leaderboard" on a five-tab bar, large enough to still be a word. */
+private val LABEL_FLOOR = 9.sp

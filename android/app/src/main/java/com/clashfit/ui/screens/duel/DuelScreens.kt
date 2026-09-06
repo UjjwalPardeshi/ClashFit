@@ -38,6 +38,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.clashfit.AppGraph
 import com.clashfit.play.Standing
+import com.clashfit.auth.AuthState
 import com.clashfit.core.model.FatigueBand
 import com.clashfit.core.model.GameMode
 import com.clashfit.core.model.LinkState
@@ -86,6 +87,25 @@ import kotlinx.coroutines.launch
  * The two nearby lobbies. Both are the same three beats — name yourself, link the phones, start —
  * and every link state is named on screen, never a bare spinner. docs/07-MULTIPLAYER-SPEC.md §7
  */
+/**
+ * The name this phone plays under.
+ *
+ * Seeded from the account rather than left as the placeholder "YOU". Two phones in a rep race
+ * both showing YOU is not a scoreboard, and the person who has already told the app their name
+ * should not have to type it again to be told who won.
+ */
+@Composable
+private fun rememberPlayerName(graph: AppGraph): String {
+    val auth by graph.auth.state.collectAsStateWithLifecycle()
+    val hub = graph.playHub
+    return (auth as? AuthState.SignedIn)?.user?.shownName(fallback = "")?.takeIf { it.isNotBlank() }
+        ?: hub.playerName.takeIf { it != DEFAULT_PLAYER_NAME }
+        ?: DEFAULT_PLAYER_NAME
+}
+
+/** Only ever shown when nobody has said who they are. */
+private const val DEFAULT_PLAYER_NAME = "YOU"
+
 fun NavGraphBuilder.duelRoutes(graph: AppGraph, nav: NavHostController) {
     composable<DuelLobby> { entry ->
         val route = entry.toRoute<DuelLobby>()
@@ -129,7 +149,9 @@ private fun DuelLobbyScreen(graph: AppGraph, nav: NavHostController, mode: GameM
     val exercises by graph.config.exercises.collectAsStateWithLifecycle()
     val settings by graph.prefs.settings.collectAsStateWithLifecycle(initialValue = Prefs.Settings())
 
-    var name by rememberSaveable { mutableStateOf(hub.playerName) }
+    val suggested = rememberPlayerName(graph)
+    var typed by rememberSaveable { mutableStateOf<String?>(null) }
+    val name = typed ?: suggested
     var seconds by rememberSaveable { mutableStateOf(60) }
     var seat by rememberSaveable { mutableStateOf<Seat?>(null) }
     var chosen by rememberSaveable { mutableStateOf("") }
@@ -151,7 +173,7 @@ private fun DuelLobbyScreen(graph: AppGraph, nav: NavHostController, mode: GameM
     val agreed = if (hosting) chosen else hud?.exerciseId.orEmpty()
     val armed = hud != null
 
-    LaunchedEffect(name) { hub.playerName = name.ifBlank { "YOU" } }
+    LaunchedEffect(name) { hub.playerName = name.ifBlank { DEFAULT_PLAYER_NAME } }
     LaunchedEffect(choices, settings.preferredExercise) {
         if (choices.none { it.id == chosen }) {
             chosen = choices.firstOrNull { it.id == settings.preferredExercise }?.id ?: choices.firstOrNull()?.id ?: ""
@@ -201,7 +223,7 @@ private fun DuelLobbyScreen(graph: AppGraph, nav: NavHostController, mode: GameM
         )
 
         SectionGap(24)
-        NameField(name) { name = it }
+        NameField(name) { typed = it }
 
         SectionGap(24)
         LinkStrip(state, hud?.peers ?: 0)
@@ -304,12 +326,14 @@ private fun RaidRoomScreen(graph: AppGraph, nav: NavHostController, exerciseId: 
     val hud by hub.link.collectAsStateWithLifecycle()
     val exercises by graph.config.exercises.collectAsStateWithLifecycle()
 
-    var name by rememberSaveable { mutableStateOf(hub.playerName) }
+    val suggested = rememberPlayerName(graph)
+    var typed by rememberSaveable { mutableStateOf<String?>(null) }
+    val name = typed ?: suggested
     var error by remember { mutableStateOf<String?>(null) }
     var startedHere by remember { mutableStateOf(false) }
     val armed = hud != null
 
-    LaunchedEffect(name) { hub.playerName = name.ifBlank { "YOU" } }
+    LaunchedEffect(name) { hub.playerName = name.ifBlank { DEFAULT_PLAYER_NAME } }
     // Same as the duel lobby: the host arms while advertising so Start is there before guests are.
     LaunchedEffect(state) { if (state != LinkState.IDLE) hub.arm(GameMode.RAID, exerciseId, null) }
     LaunchedEffect(Unit) {
@@ -337,7 +361,7 @@ private fun RaidRoomScreen(graph: AppGraph, nav: NavHostController, exerciseId: 
         )
 
         SectionGap(24)
-        NameField(name) { name = it }
+        NameField(name) { typed = it }
 
         SectionGap(24)
         LinkStrip(state, hud?.peers ?: 0)
