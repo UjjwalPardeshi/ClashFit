@@ -234,6 +234,47 @@ class PlayHubTest {
         guest.release()
     }
 
+    /**
+     * A control message that beats the guest's arm() must not be thrown away.
+     *
+     * Both handlers need an armed signal to copy into, and the lobby arms from a Compose effect
+     * while messages arrive on the transport's own thread — nothing orders those two. A dropped
+     * SETUP only cost the guest the movement name; a dropped START left it sitting in the lobby
+     * while the host raced.
+     */
+    @Test
+    fun `a start that arrives before the guest arms is not lost`() = testScope.runTest {
+        val bus = mutableSetOf<LoopbackTransport>()
+        val clock = FakeClock()
+        val host = hub(bus, clock, backgroundScope)
+        val guest = hub(bus, clock, backgroundScope)
+
+        host.host("ClashFit · Rep Race")
+        guest.join()  // the link is open, but the lobby has not armed yet
+        host.arm(GameMode.REP_RACE, "bicep_curl", 30)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(host.start().isSuccess)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val got = mutableListOf<StartSignal>()
+        val watch = backgroundScope.launch { guest.started.collect { got += it } }
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        guest.arm(GameMode.REP_RACE, "", null)  // only now does the effect run
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(
+            listOf(StartSignal(GameMode.REP_RACE, "bicep_curl", 30)),
+            got,
+            "The held START is handed over the moment the guest arms",
+        )
+
+        watch.cancel()
+        host.release()
+        guest.release()
+    }
+
     /** A guest has no say. If it announced anything the host would follow its own guest. */
     @Test
     fun `a guest does not announce a movement of its own`() = testScope.runTest {

@@ -57,12 +57,13 @@ object ScreenMotion {
     private const val TRAIL = 0.18f
 
     /**
-     * The four tab roots. Named, rather than read off [Tab], so the typing matches [Tab.owns] —
-     * and asserted against [Tab] by a test, because a fifth tab added here and forgotten there
-     * would push sideways instead of fading, and nobody would think to look at this file.
+     * Every tab root. Named, rather than read off [Tab], so the typing matches [Tab.owns] — and
+     * asserted against [Tab] by a test, because a tab added there and forgotten here would push
+     * sideways instead of fading, and nobody would think to look at this file. Workout is the
+     * one that proved the test earns its keep.
      */
     internal val TAB_ROOTS: Set<KClass<out Route>> =
-        setOf(Home::class, Compete::class, Progress::class, You::class)
+        setOf(Home::class, WorkoutHome::class, Compete::class, Progress::class, You::class)
 
     private fun NavDestination.isTabRoot(): Boolean = TAB_ROOTS.any { hasRoute(it) }
 

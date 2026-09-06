@@ -94,6 +94,16 @@ class PlayHub(
     private var race: RepRaceSession? = null
     private var raid: RaidSession? = null
     private val jobs = mutableListOf<Job>()
+    /**
+     * A control message that arrived before this phone had armed, held until it has.
+     *
+     * Both handlers need an armed signal to copy into, and the lobby arms from a Compose effect
+     * while messages arrive on the transport's own thread — nothing orders those two. A dropped
+     * SETUP only cost the guest the movement name; a dropped START left it sitting in the lobby
+     * while the host raced. One slot is enough: a START supersedes a SETUP, and carries the same
+     * movement and clock.
+     */
+    private var pending: DuelMessage? = null
     /** Held apart from [jobs] so a re-arm replaces it instead of stacking another loop. */
     private var heartbeat: Job? = null
     private var armed: StartSignal? = null
@@ -179,6 +189,7 @@ class PlayHub(
         val next = StartSignal(mode, exerciseId, durationSec)
         if (armed == next && transport != null) {
             refresh()
+            deliverPending()
             return
         }
         val t = transport ?: open()
@@ -203,6 +214,17 @@ class PlayHub(
         }
         announceSetup()
         refresh()
+        deliverPending()
+    }
+
+    /** Hand over whatever arrived too early. Cleared before dispatch, so a replay cannot loop. */
+    private fun deliverPending() {
+        val held = pending ?: return
+        pending = null
+        when (held.type) {
+            DuelMessage.SETUP -> onSetupMessage(held)
+            DuelMessage.START -> onStartMessage(held)
+        }
     }
 
     /**
@@ -227,7 +249,11 @@ class PlayHub(
      */
     private fun onSetupMessage(m: DuelMessage) {
         if (isHost) return
-        val a = armed ?: return
+        val a = armed
+        if (a == null) {
+            pending = m
+            return
+        }
         val exerciseId = m.exerciseId.ifBlank { a.exerciseId }
         val durationSec = m.reps.takeIf { it > 0 } ?: a.durationSec
         arm(a.mode, exerciseId, durationSec)
@@ -251,7 +277,11 @@ class PlayHub(
 
     private fun onStartMessage(m: DuelMessage) {
         if (isHost) return
-        val a = armed ?: return
+        val a = armed
+        if (a == null) {
+            pending = m
+            return
+        }
         val sig = a.copy(
             exerciseId = m.exerciseId.ifBlank { a.exerciseId },
             durationSec = m.reps.takeIf { it > 0 } ?: a.durationSec,
@@ -329,6 +359,7 @@ class PlayHub(
         transport?.close()
         transport = null
         armed = null
+        pending = null
         isHost = false
         _linkState.value = LinkState.IDLE
         _link.value = null

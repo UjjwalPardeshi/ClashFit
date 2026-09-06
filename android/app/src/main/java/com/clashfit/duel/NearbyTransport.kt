@@ -27,6 +27,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Transport over Google Nearby Connections (P2P_STAR).
@@ -54,8 +56,11 @@ class NearbyTransport(
     override val state: StateFlow<LinkState> = _state.asStateFlow()
     override val incoming: SharedFlow<DuelMessage> = _incoming.asSharedFlow()
 
-    // Track connected endpoints and their IDs
-    private val connectedEndpoints = mutableSetOf<String>()
+    // Play Services adds and removes these on its own callback threads while a session sends
+    // from a coroutine, so the set has to tolerate both at once. A plain mutableSetOf here could
+    // throw ConcurrentModificationException mid-broadcast and lose the rest of the fan-out.
+    private val connectedEndpoints: MutableSet<String> =
+        Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
     /** Catch-up for a guest who joins after the host has already announced something. */
     private val backlog = CatchUpQueue()
     private var roomName = ""
