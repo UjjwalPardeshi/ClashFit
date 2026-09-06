@@ -65,7 +65,11 @@ sealed interface Route
 ) : Route
 @Serializable data class Summary(val sessionId: Long) : Route
 
-@Serializable data class DuelLobby(val mode: String, val exerciseId: String) : Route
+/**
+ * A 1v1 lobby. It takes no movement: the phone that hosts picks one inside, and the phone that
+ * joins is told. Choosing before the phones are linked let each end pick its own.
+ */
+@Serializable data class DuelLobby(val mode: String) : Route
 @Serializable data class RaidRoom(val exerciseId: String) : Route
 @Serializable data class Roster(val mode: String, val exerciseId: String) : Route
 

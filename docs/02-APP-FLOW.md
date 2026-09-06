@@ -132,7 +132,10 @@ navigate away — navigating away mid-set is infuriating. Resume is automatic wh
 - **This screen is what we show the jury when the demo is over.** It is evidence, not decoration.
 
 ### DUEL LOBBY
+- Reached straight from the mode grid — a versus mode does not go through the exercise picker.
 - Host creates, guest joins. Transport-agnostic (see `07-MULTIPLAYER-SPEC.md`).
+- **The host picks the movement here, for both phones**, and the Rep Race clock with it. The guest
+  chooses nothing; it is shown the host's pick as soon as the `SETUP` broadcast lands.
 - Shows connection state explicitly: `SEARCHING → LINKED → READY`. Never a bare spinner.
 - Both players calibrate independently; the fight starts only when both report `READY`.
 - **Casual mode toggle** lives here — low rep target, forgiving scoring, for the judge who is

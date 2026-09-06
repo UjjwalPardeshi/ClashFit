@@ -122,11 +122,22 @@ Half a second of skew between two phones is not perceptible in a duel.
 ## 7. Lobby UX
 
 ```
-SEARCHING → LINKED → both READY → 3-2-1 → FIGHT
+HOST / JOIN → SEARCHING → LINKED → host picks → host starts → 3-2-1 → FIGHT
 ```
 
 Every state is named on screen. Never a bare spinner — a judge watching an unexplained spinner
 assumes it is broken, and they are usually right.
+
+**The host picks the movement, inside the lobby, for both phones.** Choosing before the phones are
+linked meant each end walked in holding its own answer, and the two only reconciled on the `START`
+packet: a guest could sit through an entire lobby believing it was about to do squats. The host's
+choice is broadcast as `SETUP` (`exerciseId` plus `reps` as the clock in seconds) whenever it
+changes, and again the moment a phone links, so a late joiner catches up without depending on the
+transport backlog having survived. The guest is shown the choice read-only and has no picker.
+
+`NearbyTransport`'s backlog is a catch-up, not an outbox, so it drops `PING` and keeps only the
+newest `SETUP` per player. Queued beats used to fill its 64 slots in 76.8 seconds and evict the
+one message a late guest actually needed.
 
 **Casual mode toggle lives here.** When player two is a judge, this is what makes the demo enjoyable
 rather than embarrassing: damage ×1.6, form floor 0.6, boss HP ×0.5. See `04-GAME-DESIGN.md` §7.

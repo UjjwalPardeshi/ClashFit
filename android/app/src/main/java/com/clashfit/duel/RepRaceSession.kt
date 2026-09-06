@@ -71,8 +71,14 @@ class RepRaceSession(
         }
     }
 
-    /** Host broadcasts the race start with a 3-second offset. */
-    suspend fun startRace(): Result<Unit> {
+    /**
+     * Host broadcasts the race start with a 3-second offset.
+     *
+     * The clock and the exercise ride along on the START. Without them a guest raced whatever it
+     * had picked on its own lobby, so a 30-second host and a 60-second guest ran different races
+     * and the standings compared two different contests.
+     */
+    suspend fun startRace(exerciseId: String = ""): Result<Unit> {
         val startOffsetMs = clock.nowMs() + 3000L
         _raceStartedMs.value = startOffsetMs
 
@@ -82,6 +88,8 @@ class RepRaceSession(
                 type = DuelMessage.START,
                 playerId = playerId,
                 tMs = clock.nowMs(),
+                reps = durationSec,
+                exerciseId = exerciseId,
                 payload = startOffsetMs.toString()
             )
         )
@@ -159,9 +167,14 @@ class RepRaceSession(
         }
     }
 
+    /** Stops listening but leaves the link alone. PlayHub owns the transport across a re-arm. */
+    fun detach() {
+        incomingJob.cancel()
+    }
+
     /** Tear down the race. Stops the collector; a session must not outlive its close(). */
     fun close() {
-        incomingJob.cancel()
+        detach()
         transport.close()
     }
 

@@ -45,6 +45,7 @@ import com.clashfit.ui.components.SectionTitle
 import com.clashfit.ui.components.StatStrip
 import com.clashfit.ui.components.label
 import com.clashfit.ui.nav.ExercisePicker
+import com.clashfit.ui.screens.modes.modeDestination
 import com.clashfit.ui.nav.Modes
 import com.clashfit.ui.nav.Session
 import com.clashfit.ui.theme.Ember
@@ -164,7 +165,7 @@ fun HomeScreen(graph: AppGraph, nav: NavHostController) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(modes, key = { it.name }) { mode ->
-                        ModeCard(mode, onClick = { nav.navigate(ExercisePicker(mode.name)) }, width = 210)
+                        ModeCard(mode, onClick = { nav.navigate(modeDestination(mode)) }, width = 210)
                     }
                 }
             }

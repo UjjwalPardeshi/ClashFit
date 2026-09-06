@@ -139,9 +139,12 @@ confidence the two sides are averaged; otherwise the better-seen side is used.
 
 Measured by hand against the BlazePose keypoints, and listed for all six rep modes: Boss Fight,
 Time Attack, Ghost Race, Survival, Boss Rush and Duel. `FEATURED_EXERCISES` in
-`ui/screens/picker/ExercisePickerScreen.kt` is the whole selectable set — the picker and the library
-both filter to it, so the other fifty-three records on disk are loaded and scored but never offered.
-Widen that list to put them back; nothing else has to change.
+`ui/screens/picker/ExercisePickerScreen.kt` is the whole selectable set — the picker, the library
+and the versus lobby all filter to it, so the other fifty-three records on disk are loaded and
+scored but never offered. Widen that list to put them back; nothing else has to change.
+
+A versus mode skips the picker entirely: it goes straight to the lobby, where the host chooses the
+movement for both phones and broadcasts it. See `docs/07-MULTIPLAYER-SPEC.md` §7.
 
 | Exercise | Keypoints | Rest | Counts at | Sides |
 |---|---|---|---|---|
