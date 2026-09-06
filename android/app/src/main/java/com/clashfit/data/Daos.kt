@@ -88,6 +88,33 @@ interface LadderDao {
 }
 
 @Dao
+interface BreathingDao {
+    @Insert suspend fun insert(session: BreathingEntity): Long
+
+    @Query("SELECT * FROM breathing_sessions ORDER BY startedAtMs DESC LIMIT :limit")
+    fun recent(limit: Int = 50): Flow<List<BreathingEntity>>
+
+    @Query("SELECT COUNT(*) FROM breathing_sessions")
+    fun sessionCount(): Flow<Int>
+
+    @Query("SELECT COALESCE(SUM(seconds), 0) FROM breathing_sessions")
+    fun totalSeconds(): Flow<Int>
+
+    /** Distinct days that carry at least one session, newest first, as yyyy-MM-dd in local time. */
+    @Query(
+        "SELECT DISTINCT date(startedAtMs / 1000, 'unixepoch', 'localtime') AS day " +
+            "FROM breathing_sessions ORDER BY day DESC",
+    )
+    fun practiceDays(): Flow<List<String>>
+
+    @Query("SELECT COALESCE(SUM(seconds), 0) FROM breathing_sessions WHERE startedAtMs >= :sinceMs")
+    suspend fun secondsSince(sinceMs: Long): Int
+
+    @Query("DELETE FROM breathing_sessions WHERE id = :id")
+    suspend fun delete(id: Long)
+}
+
+@Dao
 interface RunDao {
     @Insert suspend fun insertRun(r: RunEntity): Long
     @Insert suspend fun insertPoints(points: List<RunPointEntity>)

@@ -13,9 +13,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         RunEntity::class, RunPointEntity::class,
         AlarmEntity::class, GhostEntity::class, PostureSampleEntity::class,
         MetaEntity::class, AchievementEntity::class, WeeklyEntity::class, XpLedgerEntity::class,
-        VoucherEntity::class,
+        VoucherEntity::class, BreathingEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 abstract class ClashDb : RoomDatabase() {
@@ -34,6 +34,38 @@ abstract class ClashDb : RoomDatabase() {
     abstract fun vouchers(): VoucherDao
     abstract fun weekly(): WeeklyDao
     abstract fun xpLedger(): XpLedgerDao
+    abstract fun breathing(): BreathingDao
+}
+
+/**
+ * Breathing sessions get written down.
+ *
+ * Nothing else in the schema changes, so this is one CREATE TABLE and no data movement. The column
+ * types and the NOT NULL / DEFAULT wording are copied from what Room itself generates for
+ * `BreathingEntity`, because a migration that merely produces a working table and not the identical
+ * one fails Room's own schema validation on the next launch rather than at build time.
+ */
+internal val MIGRATION_7_8_SQL: List<String> = listOf(
+    // Copied verbatim from `createSql` in schemas/8.json, down to the AUTOINCREMENT and the
+    // backticks. Room compares the table this produces against the one it would have generated,
+    // and an id column declared as a table-level PRIMARY KEY is NOT the same table as one declared
+    // `INTEGER PRIMARY KEY AUTOINCREMENT` even though both work. The mismatch does not fail the
+    // build; it throws on the first launch after an upgrade, on a player's phone, holding their data.
+    "CREATE TABLE IF NOT EXISTS `breathing_sessions` (" +
+        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`patternId` TEXT NOT NULL, " +
+        "`startedAtMs` INTEGER NOT NULL, " +
+        "`endedAtMs` INTEGER NOT NULL, " +
+        "`cyclesCompleted` INTEGER NOT NULL, " +
+        "`cyclesTarget` INTEGER NOT NULL, " +
+        "`seconds` INTEGER NOT NULL, " +
+        "`completed` INTEGER NOT NULL)",
+)
+
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        MIGRATION_7_8_SQL.forEach(db::execSQL)
+    }
 }
 
 val MIGRATION_1_2 = object : Migration(1, 2) {

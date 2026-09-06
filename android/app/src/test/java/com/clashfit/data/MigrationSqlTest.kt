@@ -120,6 +120,35 @@ class MigrationSqlTest {
     }
 
     @Test
+    fun `the table added by migration 7 to 8 matches the exported schema exactly`() {
+        // This is the test that caught the real mistake. The first version of this migration wrote
+        // the id as a table-level `PRIMARY KEY(id)` with a separate NOT NULL, which produces a
+        // perfectly working table — and not the same table. Room generates
+        // `id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL`, records the AUTOINCREMENT in its schema,
+        // and compares. A mismatch does not fail the build; it throws on the first launch after an
+        // upgrade, on somebody's phone, holding their history.
+        val expected = requireNotNull(createSqlByTable(8)["breathing_sessions"]) {
+            "schema 8 has no breathing_sessions entity"
+        }
+        assertEquals(1, MIGRATION_7_8_SQL.size, "one statement, one new table")
+        assertEquals(normalise(expected), normalise(MIGRATION_7_8_SQL.single()))
+    }
+
+    @Test
+    fun `schema 8 adds breathing sessions and touches nothing else`() {
+        val before = createSqlByTable(7)
+        val after = createSqlByTable(8)
+        assertEquals(
+            before.keys + "breathing_sessions",
+            after.keys,
+            "version 8 must add exactly one table and drop none",
+        )
+        before.forEach { (table, sql) ->
+            assertEquals(normalise(sql), normalise(after.getValue(table)), "version 8 changed `$table`")
+        }
+    }
+
+    @Test
     fun `schema 6 changes nothing but the runs table`() {
         val before = createSqlByTable(5)
         val after = createSqlByTable(6)

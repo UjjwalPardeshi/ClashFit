@@ -260,6 +260,33 @@ data class VoucherEntity(
     val redeemedAtMs: Long? = null,
 )
 
+/**
+ * One breathing session, finished or abandoned.
+ *
+ * Kept because a breathing practice is the kind of thing that only means anything as a record.
+ * One session is four minutes you will not remember by Thursday; forty of them is a habit, and the
+ * only way a person can see the difference is if the phone wrote each one down.
+ *
+ * Abandoned sessions are stored too, with [completed] false. A record that silently drops the
+ * evenings you gave up ninety seconds in is a flattering record rather than a true one, and it
+ * would also make the totals disagree with the streak.
+ */
+@Entity(tableName = "breathing_sessions")
+data class BreathingEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** The pattern id out of `BreathingPatterns`, e.g. "box" or "physiological-sigh". */
+    val patternId: String,
+    val startedAtMs: Long,
+    val endedAtMs: Long,
+    /** Cycles actually finished, which is not the same as the number aimed at. */
+    val cyclesCompleted: Int,
+    val cyclesTarget: Int,
+    /** Seconds the session actually ran for, wall clock. */
+    val seconds: Int,
+    /** False when the player stopped early. Stored either way; see the class note. */
+    val completed: Boolean,
+)
+
 @Entity(tableName = "weekly")
 data class WeeklyEntity(
     @PrimaryKey val weekKey: String,
