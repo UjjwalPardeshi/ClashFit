@@ -243,7 +243,7 @@ Burpee · Squat thrust · Jump squat · Tuck jump · Star jump · Lateral bound 
 > |---|---|---|---|---|---|
 > | Lateral raise | 23-11-13 / 24-12-14 | both arms < 20° | both arms 95-105°, out to the side | both | 1000 ms |
 > | Bicep curl | 11-13-15 / 12-14-16 | elbow > 135° | elbow < 80° | either arm | 800 ms |
-> | Shoulder press | 13-11-23 / 14-12-24 | arm-to-torso < 95° | arm-to-torso > 135° overhead, elbow never under 70° | better side | 1000 ms |
+> | Shoulder press | 13-11-23 / 14-12-24 | arm-to-torso 70–95° | arm-to-torso > 135° overhead, elbow never under 70° | better side | 1000 ms |
 > | Squat | 23-25-27 / 24-26-28 | both knees < 72° | both knees > 150° | both | 1000 ms |
 >
 > Lunge, front raise, overhead triceps extension and floor press are stage-counted too.
