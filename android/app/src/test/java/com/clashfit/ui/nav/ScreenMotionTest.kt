@@ -24,7 +24,7 @@ class ScreenMotionTest {
     @Test
     fun `every tab owns its own root`() {
         // owning() drives the bottom bar's highlight; TAB_ROOTS drives the transition. They read
-        // the same four destinations, and disagreeing would light one tab while animating another.
+        // the same set of destinations, and disagreeing would light one tab while animating another.
         Tab.entries.forEach { tab ->
             assertTrue("${tab.label} does not own its own root", tab.owns.contains(tab.root::class))
         }
