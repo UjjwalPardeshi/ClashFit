@@ -271,6 +271,43 @@ data class VoucherEntity(
  * evenings you gave up ninety seconds in is a flattering record rather than a true one, and it
  * would also make the totals disagree with the streak.
  */
+/**
+ * One set, lifted in a gym, counted by the camera.
+ *
+ * Weight is stored in kilograms and only in kilograms. The player may read and type pounds, and
+ * the app converts at the edge, but a single canonical unit in the table is what stops a history
+ * becoming unreadable the day somebody switches units — the alternative is every row carrying its
+ * own unit and every comparison having to remember to convert.
+ *
+ * [reps] and [formMean] come from the same engine a boss fight uses. There is no path that writes
+ * a rep here that a fight would not have counted.
+ */
+@Entity(tableName = "workout_sets")
+data class WorkoutSetEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** Groups the sets of one visit to the gym. */
+    val workoutId: Long,
+    val exerciseId: String,
+    /** 1 for the first set of that exercise in this workout, 2 for the next, and so on. */
+    val setIndex: Int,
+    /** Canonical. Zero for a bodyweight set, which is a real answer and not a missing one. */
+    val weightKg: Float,
+    val reps: Int,
+    /** Mean form score across the set, 0..1, exactly as a fight would have scored it. */
+    val formMean: Float,
+    val startedAtMs: Long,
+    val endedAtMs: Long,
+)
+
+/** One visit to the gym: a bag of sets with a start and an end. */
+@Entity(tableName = "workouts")
+data class WorkoutEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val startedAtMs: Long,
+    /** Null while the workout is still open. */
+    val endedAtMs: Long? = null,
+)
+
 @Entity(tableName = "breathing_sessions")
 data class BreathingEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

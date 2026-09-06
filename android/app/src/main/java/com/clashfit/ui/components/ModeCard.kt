@@ -34,10 +34,11 @@ import androidx.compose.ui.graphics.Brush
 /** How the four kinds of mode are named to a player. */
 fun ModeKind.label(): String = when (this) {
     ModeKind.SOLO -> "Solo"
-    ModeKind.VERSUS -> "Head to head"
+    ModeKind.VERSUS -> "Duo"
     ModeKind.GROUP -> "Group"
     ModeKind.FAMILY -> "By movement"
     ModeKind.CLINIC -> "Clinic"
+    ModeKind.WORKOUT -> "Workout"
 }
 
 /**

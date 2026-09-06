@@ -66,6 +66,21 @@ enum class GameMode(
         "A published protocol. A count, and your own trend over time.", "A published protocol"),
 
     /**
+     * WORKOUT — an ordinary set in an ordinary gym, counted by the same referee.
+     *
+     * Deliberately a game mode rather than a parallel implementation. Everything that makes a rep
+     * count in a boss fight — the state machine, the depth gate, the form score, the fatigue
+     * estimate — is wanted here unchanged, and the surest way to keep two things identical is for
+     * them to be one thing. The clinic protocol works the same way and proved the seam.
+     *
+     * Untimed, because a set ends when the person lifting says it does. Off the mode grid and out
+     * of [ModeKind.battles], because it is not something you choose to play against.
+     */
+    WORKOUT("Workout", ModeKind.WORKOUT, Family.REP_CYCLE, false,
+        "Your own set, in your own gym, counted and graded. No boss and no clock.",
+        "Log a real set"),
+
+    /**
      * ZOMBIE RUN — the outdoor chase.
      *
      * The constant keeps its old spelling on purpose. It is written into `sessions.mode` in the

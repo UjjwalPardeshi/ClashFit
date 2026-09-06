@@ -152,7 +152,7 @@ fun HomeScreen(graph: AppGraph, nav: NavHostController) {
             SectionGap(28)
             SectionTitle("Ways to play", Modifier.padding(horizontal = 20.dp), action = "All modes") { nav.navigate(Modes) }
 
-            for (kind in listOf(ModeKind.SOLO, ModeKind.VERSUS, ModeKind.GROUP, ModeKind.FAMILY, ModeKind.CLINIC)) {
+            for (kind in ModeKind.battles) {
                 val modes = GameMode.grid.filter { it.kind == kind }
                 if (modes.isEmpty()) continue
                 Text(

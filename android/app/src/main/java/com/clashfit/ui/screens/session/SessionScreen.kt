@@ -172,7 +172,7 @@ fun SessionScreen(
                     landmarks, exerciseNames[s.exerciseId], s.angleLeftDeg, s.angleRightDeg,
                     band = s.fatigue.band, flash = 0f, verdict = null,
                     level = meta?.progress?.level ?: 1, sourceAspect = sourceAspect,
-                    exoSuit = settings.exoSuit, modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                 )
                 CalibrationOverlay(
                     cue = s.cue, progress = s.calibProgress,
@@ -238,7 +238,7 @@ private fun FightLayout(
             landmarks, spec, s.angleLeftDeg, s.angleRightDeg,
             band = s.fatigue.band, flash = jolt, verdict = lastHit?.verdict,
             level = meta?.progress?.level ?: 1, sourceAspect = sourceAspect,
-            exoSuit = settings.exoSuit, modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
         )
 
         // The boss stands in the room with you, in the upper part of the frame so it never covers

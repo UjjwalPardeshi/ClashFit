@@ -147,7 +147,7 @@ fun YouScreen(graph: AppGraph, nav: NavHostController) {
                 InnerDivider()
                 NavRow(
                     "Health tools",
-                    { nav.switchTo(Tab.TRAIN) },
+                    { nav.switchTo(Tab.BATTLE) },
                     icon = AppIcons.Heart,
                     tint = Success,
                     supporting = "Run, breathing, clinic, posture, desk and the alarm, on Train",

@@ -63,15 +63,18 @@ object SessionWiring {
             override fun playerHit() = graph.haptics.playerHit()
         }
 
+        /**
+         * The coach and the boss are silent. On purpose, and permanently.
+         *
+         * Every line they used to say is already on the screen, and hearing it read aloud a beat
+         * later turned a glance into an interruption — it talks over your own counting, it talks in
+         * a shared gym, and it says the thing you have already read. The port stays because the
+         * engine is written against it and a session should not have to know whether anybody is
+         * listening; it simply does nothing.
+         */
         override val speech: SpeechPort = object : SpeechPort {
-            override fun speak(text: String, flush: Boolean) {
-                graph.mainScope.launch {
-                    if (!graph.prefs.settings.first().speech) return@launch
-                    if (flush) graph.speechOut.stop()
-                    graph.speechOut.speakCoach(text)
-                }
-            }
-            override fun stop() { graph.mainScope.launch { graph.speechOut.stop() } }
+            override fun speak(text: String, flush: Boolean) = Unit
+            override fun stop() = Unit
         }
     }
 }

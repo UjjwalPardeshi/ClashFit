@@ -76,8 +76,6 @@ fun SettingsScreen(graph: AppGraph, nav: NavHostController) {
                 supporting = "Draws the points and angles the camera is measuring, live over your body")
             SwitchRow("3D boss", settings.boss3d, { v -> scope.launch { graph.prefs.setBoss3d(v) } },
                 supporting = "Off draws the boss in flat shapes instead. Same fight either way.")
-            SwitchRow("Exo-suit overlay", settings.exoSuit, { v -> scope.launch { graph.prefs.setExoSuit(v) } },
-                supporting = "Armour drawn on your body instead of the measured points and angles. The same landmarks either way.")
             NavRow("Meet the boss", { nav.navigate(BossPreview) }, icon = AppIcons.Bolt,
                 supporting = "The Pacemaker, in every state it fights you in")
 
@@ -86,8 +84,6 @@ fun SettingsScreen(graph: AppGraph, nav: NavHostController) {
             SectionGap(4)
             SwitchRow("Haptics", settings.haptics, { v -> scope.launch { graph.prefs.setHaptics(v) } },
                 supporting = "Every counted rep, confirmed in the hand")
-            SwitchRow("Speech", settings.speech, { v -> scope.launch { graph.prefs.setSpeech(v) } },
-                supporting = "The coach and the boss, out loud")
             SwitchRow("Voice commands", settings.voiceCommands, { v -> scope.launch { graph.prefs.setVoiceCommands(v) } },
                 supporting = "Offline. Nothing is sent anywhere.")
 

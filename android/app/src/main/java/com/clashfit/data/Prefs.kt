@@ -21,7 +21,6 @@ class Prefs(private val context: Context) {
         val reduceMotion: Boolean = false,
         val haptics: Boolean = true,
         val voiceCommands: Boolean = false,
-        val speech: Boolean = true,
         val arenaMode: Boolean = false,
         val casual: Boolean = false,
         val debugOverlay: Boolean = false,
@@ -121,7 +120,6 @@ class Prefs(private val context: Context) {
          * what the deck and the landing page describe. One switch, because which of those matters
          * depends on who is holding the phone.
          */
-        val exoSuit: Boolean = false,
     )
 
     enum class Goal(val title: String, val blurb: String) {
@@ -136,7 +134,6 @@ class Prefs(private val context: Context) {
             reduceMotion = p[REDUCE_MOTION] ?: false,
             haptics = p[HAPTICS] ?: true,
             voiceCommands = p[VOICE] ?: false,
-            speech = p[SPEECH] ?: true,
             arenaMode = p[ARENA] ?: false,
             casual = p[CASUAL] ?: false,
             debugOverlay = p[DEBUG] ?: false,
@@ -164,19 +161,16 @@ class Prefs(private val context: Context) {
             chaseZombieKph = (p[CHASE_ZOMBIE_KPH] ?: 8).coerceIn(1, 10),
             gestures = p[GESTURES] ?: true,
             cloudCoach = p[CLOUD_COACH] ?: false,
-            exoSuit = p[EXO_SUIT] ?: false,
         )
     }
 
     suspend fun setGuest(v: Boolean) = context.dataStore.edit { it[GUEST] = v }
     suspend fun setGestures(v: Boolean) = context.dataStore.edit { it[GESTURES] = v }
     suspend fun setCloudCoach(v: Boolean) = context.dataStore.edit { it[CLOUD_COACH] = v }
-    suspend fun setExoSuit(v: Boolean) = context.dataStore.edit { it[EXO_SUIT] = v }
     suspend fun setReduceMotion(v: Boolean) = context.dataStore.edit { it[REDUCE_MOTION] = v }
     suspend fun setBoss3d(v: Boolean) = context.dataStore.edit { it[BOSS_3D] = v }
     suspend fun setHaptics(v: Boolean) = context.dataStore.edit { it[HAPTICS] = v }
     suspend fun setVoiceCommands(v: Boolean) = context.dataStore.edit { it[VOICE] = v }
-    suspend fun setSpeech(v: Boolean) = context.dataStore.edit { it[SPEECH] = v }
     suspend fun setArenaMode(v: Boolean) = context.dataStore.edit { it[ARENA] = v }
     suspend fun setCasual(v: Boolean) = context.dataStore.edit { it[CASUAL] = v }
     suspend fun setDebugOverlay(v: Boolean) = context.dataStore.edit { it[DEBUG] = v }
@@ -234,7 +228,6 @@ class Prefs(private val context: Context) {
         val BOSS_3D = booleanPreferencesKey("boss_3d")
         val HAPTICS = booleanPreferencesKey("haptics")
         val VOICE = booleanPreferencesKey("voice_commands")
-        val SPEECH = booleanPreferencesKey("speech")
         val ARENA = booleanPreferencesKey("arena_mode")
         val CASUAL = booleanPreferencesKey("casual")
         val DEBUG = booleanPreferencesKey("debug_overlay")
@@ -254,7 +247,6 @@ class Prefs(private val context: Context) {
         val GUEST = booleanPreferencesKey("guest")
         val GESTURES = booleanPreferencesKey("gestures")
         val CLOUD_COACH = booleanPreferencesKey("cloud_coach")
-        val EXO_SUIT = booleanPreferencesKey("exo_suit")
         val GOAL = stringPreferencesKey("goal")
         val AVATAR_COLOR = intPreferencesKey("avatar_color")
         val MAP_TILES = booleanPreferencesKey("map_tiles")

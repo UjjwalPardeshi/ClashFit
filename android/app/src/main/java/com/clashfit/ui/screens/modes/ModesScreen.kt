@@ -39,7 +39,7 @@ fun ModesScreen(nav: NavHostController) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            for (kind in ModeKind.entries) {
+            for (kind in ModeKind.battles) {
                 val modes = GameMode.entries.filter { it.kind == kind }
                 if (modes.isEmpty()) continue
                 item(key = "kind-${kind.name}", span = { GridItemSpan(2) }) {

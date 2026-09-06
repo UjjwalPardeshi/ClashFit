@@ -88,6 +88,55 @@ interface LadderDao {
 }
 
 @Dao
+interface WorkoutDao {
+    @Insert suspend fun startWorkout(w: WorkoutEntity): Long
+
+    @Query("UPDATE workouts SET endedAtMs = :endedAtMs WHERE id = :id")
+    suspend fun finishWorkout(id: Long, endedAtMs: Long)
+
+    @Query("DELETE FROM workouts WHERE id = :id")
+    suspend fun deleteWorkout(id: Long)
+
+    @Insert suspend fun addSet(set: WorkoutSetEntity): Long
+
+    @Query("SELECT COUNT(*) FROM workout_sets WHERE workoutId = :workoutId")
+    suspend fun setCount(workoutId: Long): Int
+
+    @Query("SELECT * FROM workout_sets WHERE workoutId = :workoutId ORDER BY id")
+    fun setsOf(workoutId: Long): Flow<List<WorkoutSetEntity>>
+
+    @Query("SELECT * FROM workouts WHERE endedAtMs IS NOT NULL ORDER BY startedAtMs DESC LIMIT :limit")
+    fun recentWorkouts(limit: Int = 30): Flow<List<WorkoutEntity>>
+
+    @Query("SELECT * FROM workout_sets WHERE workoutId IN (:ids) ORDER BY id")
+    suspend fun setsForWorkouts(ids: List<Long>): List<WorkoutSetEntity>
+
+    /**
+     * The last set of this exercise, from any previous workout.
+     *
+     * This is what fills the weight and rep placeholders. Seeing what you did last time is the
+     * whole mechanism by which a log makes anybody stronger: the number to beat has to be on the
+     * screen at the moment you are deciding what to load, not two taps away in a history page.
+     */
+    @Query(
+        "SELECT * FROM workout_sets WHERE exerciseId = :exerciseId AND workoutId != :exceptWorkoutId " +
+            "ORDER BY endedAtMs DESC LIMIT 1",
+    )
+    suspend fun lastSetOf(exerciseId: String, exceptWorkoutId: Long): WorkoutSetEntity?
+
+    /** The heaviest set ever recorded for this exercise, for the personal record line. */
+    @Query("SELECT MAX(weightKg) FROM workout_sets WHERE exerciseId = :exerciseId")
+    suspend fun heaviestKg(exerciseId: String): Float?
+
+    /** The most reps ever done at or above a weight, so a record means something specific. */
+    @Query("SELECT MAX(reps) FROM workout_sets WHERE exerciseId = :exerciseId AND weightKg >= :atLeastKg")
+    suspend fun bestRepsAt(exerciseId: String, atLeastKg: Float): Int?
+
+    @Query("SELECT COUNT(*) FROM workout_sets")
+    fun totalSets(): Flow<Int>
+}
+
+@Dao
 interface BreathingDao {
     @Insert suspend fun insert(session: BreathingEntity): Long
 

@@ -104,7 +104,10 @@ object AchievementRules {
             ModeKind.VERSUS -> ids += "versus_first"
             ModeKind.GROUP -> ids += "raid_first"
             ModeKind.CLINIC -> ids += "clinic_first"
-            ModeKind.SOLO, ModeKind.FAMILY, null -> Unit
+            // A gym set earns no badge. The workout log is deliberately outside the meta-game:
+            // it keeps no score, moves no level, and touches no leaderboard, so there is nothing
+            // here for it to unlock.
+            ModeKind.SOLO, ModeKind.FAMILY, ModeKind.WORKOUT, null -> Unit
         }
 
         return ids.asSequence()

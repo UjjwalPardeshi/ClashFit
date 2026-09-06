@@ -13,7 +13,6 @@ import com.clashfit.coach.CoachEngine
 import kotlinx.coroutines.flow.first
 import com.clashfit.coach.LlmEngine
 import com.clashfit.coach.RefereeEyes
-import com.clashfit.coach.SpeechOut
 import com.clashfit.cloud.CloudConfig
 import com.clashfit.cloud.ScoreSync
 import com.clashfit.cloud.WeeklyTotals
@@ -65,6 +64,7 @@ class AppGraph(val app: Context) {
                 com.clashfit.data.MIGRATION_5_6,
                 com.clashfit.data.MIGRATION_6_7,
                 com.clashfit.data.MIGRATION_7_8,
+                com.clashfit.data.MIGRATION_8_9,
             )
             .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
             .build()
@@ -84,7 +84,6 @@ class AppGraph(val app: Context) {
     }
     /** The referee's eyes: the on-device model looking at the worst rep. On-device only, always. */
     val refereeEyes: RefereeEyes by lazy { RefereeEyes(llmEngine) }
-    val speechOut: SpeechOut by lazy { SpeechOut(app, mainScope) }
 
     // Audio fires first. Everything is synthesised; there are no sound assets.
     val sfx: Sfx by lazy { Sfx() }

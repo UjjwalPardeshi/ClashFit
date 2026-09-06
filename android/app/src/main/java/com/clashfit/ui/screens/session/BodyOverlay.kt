@@ -7,7 +7,6 @@ import com.clashfit.core.model.FatigueBand
 import com.clashfit.core.model.Landmarks
 import com.clashfit.core.model.Verdict
 import com.clashfit.perception.ExercisePoints
-import com.clashfit.perception.ExoRig
 
 /**
  * What is drawn on the player's body: the measured points, or the suit.
@@ -32,12 +31,12 @@ fun BodyOverlay(
     verdict: Verdict?,
     level: Int,
     sourceAspect: Float?,
-    exoSuit: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    if (exoSuit) {
-        ExoRig(landmarks, band, flash, verdict, modifier, level = level, sourceAspect = sourceAspect)
-    } else {
-        ExercisePoints(landmarks, spec, angleLeft, angleRight, modifier, sourceAspect = sourceAspect)
-    }
+    // One overlay, always: the joints being measured, drawn where they are.
+    //
+    // The exo-suit alternative drew an armoured rig over the body instead. It was the more
+    // impressive screenshot and the less useful one — it hid the very landmarks the referee is
+    // judging, so when a rep was refused there was nothing on screen that showed why.
+    ExercisePoints(landmarks, spec, angleLeft, angleRight, modifier, sourceAspect = sourceAspect)
 }

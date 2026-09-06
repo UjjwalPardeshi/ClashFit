@@ -46,8 +46,8 @@ import androidx.compose.ui.text.style.TextOverflow
  * permanent tab for a list you visit once a week was spending a fifth of the bar on browsing.
  */
 enum class Tab(val label: String, val icon: ImageVector, val root: Route, val owns: Set<KClass<out Route>>) {
-    TRAIN(
-        "Train", AppIcons.Bolt, Home,
+    BATTLE(
+        "Battle", AppIcons.Bolt, Home,
         setOf(Home::class, Modes::class, ExercisePicker::class, Session::class, Summary::class,
             DuelLobby::class, RaidRoom::class, Roster::class,
             Library::class, ExerciseDetail::class,
@@ -67,8 +67,8 @@ enum class Tab(val label: String, val icon: ImageVector, val root: Route, val ow
         "Progress", AppIcons.Chart, Progress,
         setOf(Progress::class, Streaks::class, History::class, Character::class, Ghosts::class),
     ),
-    YOU(
-        "You", AppIcons.Person, You,
+    PROFILE(
+        "Profile", AppIcons.Person, You,
         setOf(You::class, Settings::class, Privacy::class, Preflight::class,
             Account::class, About::class, Help::class, BossPreview::class),
     );

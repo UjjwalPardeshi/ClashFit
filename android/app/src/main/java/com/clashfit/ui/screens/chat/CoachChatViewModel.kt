@@ -157,10 +157,6 @@ class CoachChatViewModel(
                 thinking = false,
                 source = answer.source,
             )
-            // Out loud, if speech is on: the player is two metres away and probably on the floor.
-            if (graph.prefs.settings.first().speech) {
-                runCatching { graph.speechOut.speakCoach(answer.text) }
-            }
         }
     }
 
@@ -168,7 +164,7 @@ class CoachChatViewModel(
         askJob?.cancel()
         // Stopping speech suspends, and onCleared cannot. The app scope outlives this screen,
         // which is the point: leaving the chat should cut the sentence off, not wait for it.
-        graph.mainScope.launch { runCatching { graph.speechOut.stop() } }
+        // Nothing to stop: the coach does not speak.
     }
 
     companion object {

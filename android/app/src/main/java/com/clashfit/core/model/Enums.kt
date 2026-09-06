@@ -27,4 +27,22 @@ enum class LinkState { IDLE, ADVERTISING, SEARCHING, LINKED, LOST }
 
 enum class GameOutcome { RUNNING, WON, LOST }
 
-enum class ModeKind { SOLO, VERSUS, GROUP, FAMILY, CLINIC }
+enum class ModeKind {
+    SOLO, VERSUS, GROUP, FAMILY, CLINIC,
+
+    /**
+     * The gym log, which is not a way to play and must never appear in a list of them.
+     *
+     * It has its own kind rather than borrowing SOLO precisely so that it cannot be swept into a
+     * battle screen by a filter somebody writes later. Every screen that lists battles iterates
+     * [battles] instead of every entry, so leaving this one out is a fact about the type rather
+     * than a rule each screen has to remember.
+     */
+    WORKOUT,
+    ;
+
+    companion object {
+        /** The kinds that are ways to play. Battle screens list these and only these. */
+        val battles: List<ModeKind> = listOf(SOLO, VERSUS, GROUP, FAMILY, CLINIC)
+    }
+}

@@ -14,8 +14,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         AlarmEntity::class, GhostEntity::class, PostureSampleEntity::class,
         MetaEntity::class, AchievementEntity::class, WeeklyEntity::class, XpLedgerEntity::class,
         VoucherEntity::class, BreathingEntity::class,
+        WorkoutEntity::class, WorkoutSetEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = true,
 )
 abstract class ClashDb : RoomDatabase() {
@@ -35,6 +36,42 @@ abstract class ClashDb : RoomDatabase() {
     abstract fun weekly(): WeeklyDao
     abstract fun xpLedger(): XpLedgerDao
     abstract fun breathing(): BreathingDao
+    abstract fun workouts(): WorkoutDao
+}
+
+/**
+ * The gym log gets its own two tables.
+ *
+ * Two rather than one because a workout and a set are different lifetimes: a workout is open while
+ * you are still in the gym and a set is finished the moment you rack the weight. Flattening them
+ * would mean either repeating the workout's start time on every row or losing the ability to tell
+ * an empty visit from no visit.
+ *
+ * The statements are copied verbatim from `createSql` in schemas/9.json. See the note on
+ * [MIGRATION_7_8_SQL]: a table that merely works is not the same as the table Room expects, and
+ * the difference surfaces on a player's phone rather than at build time.
+ */
+internal val MIGRATION_8_9_SQL: List<String> = listOf(
+    "CREATE TABLE IF NOT EXISTS `workouts` (" +
+        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`startedAtMs` INTEGER NOT NULL, " +
+        "`endedAtMs` INTEGER)",
+    "CREATE TABLE IF NOT EXISTS `workout_sets` (" +
+        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+        "`workoutId` INTEGER NOT NULL, " +
+        "`exerciseId` TEXT NOT NULL, " +
+        "`setIndex` INTEGER NOT NULL, " +
+        "`weightKg` REAL NOT NULL, " +
+        "`reps` INTEGER NOT NULL, " +
+        "`formMean` REAL NOT NULL, " +
+        "`startedAtMs` INTEGER NOT NULL, " +
+        "`endedAtMs` INTEGER NOT NULL)",
+)
+
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        MIGRATION_8_9_SQL.forEach(db::execSQL)
+    }
 }
 
 /**

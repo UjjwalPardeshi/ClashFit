@@ -16,6 +16,7 @@ import com.clashfit.core.model.ModeKind
 import com.clashfit.ui.theme.Rival
 import com.clashfit.ui.theme.Ember
 import com.clashfit.ui.theme.Fresh
+import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.Success
 import com.clashfit.ui.theme.Working
@@ -32,6 +33,9 @@ fun ModeKind.tint(): Color = when (this) {
     ModeKind.GROUP -> Success
     ModeKind.FAMILY -> Fresh
     ModeKind.CLINIC -> Working
+    // Never actually drawn: the workout log is not a card in a list of modes. It is named here
+    // because the compiler is right to insist that every kind has an answer.
+    ModeKind.WORKOUT -> Ink
 }
 
 /**
