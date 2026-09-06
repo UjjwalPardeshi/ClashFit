@@ -21,7 +21,9 @@ import com.clashfit.ui.components.ModeCard
 import com.clashfit.ui.components.ScreenScaffold
 import com.clashfit.ui.components.SectionTitle
 import com.clashfit.ui.components.label
+import com.clashfit.ui.nav.DuelLobby
 import com.clashfit.ui.nav.ExercisePicker
+import com.clashfit.ui.nav.Route
 import com.clashfit.ui.nav.ZombieRun
 
 /**
@@ -48,17 +50,26 @@ fun ModesScreen(nav: NavHostController) {
                 items(modes, key = { it.name }) { mode ->
                     ModeCard(
                         mode,
-                        onClick = {
-                            // Zombie Run picks no exercise: it is a chase, and the picker
-                            // would ask a question the mode has no answer to.
-                            if (mode == GameMode.OUTBREAK) nav.navigate(ZombieRun)
-                            else nav.navigate(ExercisePicker(mode.name))
-                        },
+                        onClick = { nav.navigate(modeDestination(mode)) },
                     )
                 }
             }
         }
     }
+}
+
+/**
+ * Where a mode tile goes.
+ *
+ * Zombie Run picks no exercise: it is a chase, and the picker would ask a question the mode has
+ * no answer to. A versus mode does not pick one here either — the phones have to agree on the
+ * movement, and only the host gets to say, so the choice happens inside the lobby once a phone
+ * has claimed that role.
+ */
+fun modeDestination(mode: GameMode): Route = when {
+    mode == GameMode.OUTBREAK -> ZombieRun
+    mode.kind == ModeKind.VERSUS -> DuelLobby(mode.name)
+    else -> ExercisePicker(mode.name)
 }
 
 fun NavGraphBuilder.modesRoutes(graph: AppGraph, nav: NavHostController) {

@@ -39,7 +39,13 @@ data class Standing(
     val me: Boolean,
 )
 
-/** Everything a screen needs to show about the other phones. Null when nothing is armed. */
+/**
+ * Everything a screen needs to show about the other phones. Null when nothing is armed.
+ *
+ * [exerciseId] and [durationSec] are the host's lobby settings as this phone currently knows
+ * them. On a guest they are blank/null until the host's SETUP arrives, and the lobby draws that
+ * gap as "waiting for the host to choose" rather than guessing at a movement.
+ */
 data class LinkHud(
     val mode: GameMode,
     val state: LinkState,
@@ -49,6 +55,8 @@ data class LinkHud(
     val opponentReps: Int,
     val standings: List<Standing>,
     val raceStartedMs: Long?,
+    val exerciseId: String,
+    val durationSec: Int?,
 )
 
 /** The host's go signal. Both phones navigate into the session on it. */
@@ -114,9 +122,22 @@ class PlayHub(
         release()
         val t = openTransport()
         transport = t
-        jobs += scope.launch { t.state.collect { s -> _linkState.value = s; refresh() } }
+        jobs += scope.launch {
+            t.state.collect { s ->
+                val linked = s == LinkState.LINKED && _linkState.value != LinkState.LINKED
+                _linkState.value = s
+                // Say it again to whoever just arrived. The backlog already replays the last
+                // SETUP, but a re-announce does not depend on the backlog having survived, and
+                // it costs one 120-byte packet per link.
+                if (linked) announceSetup()
+                refresh()
+            }
+        }
         jobs += scope.launch {
             t.incoming.filter { it.type == DuelMessage.START }.collect { onStartMessage(it) }
+        }
+        jobs += scope.launch {
+            t.incoming.filter { it.type == DuelMessage.SETUP }.collect { onSetupMessage(it) }
         }
         return t
     }
@@ -180,7 +201,36 @@ class PlayHub(
                 delay(HEARTBEAT_MS)
             }
         }
+        announceSetup()
         refresh()
+    }
+
+    /**
+     * Tell the other phones what the host has chosen. Host only — the guest has no say, so a
+     * guest that announced anything would be racing the host's lobby against its own.
+     */
+    private fun announceSetup() {
+        if (!isHost) return
+        val a = armed ?: return
+        val t = transport ?: return
+        t.send(
+            DuelMessage(
+                type = DuelMessage.SETUP, playerId = playerId, name = playerName,
+                exerciseId = a.exerciseId, reps = a.durationSec ?: 0, tMs = clock.nowMs(),
+            ),
+        )
+    }
+
+    /**
+     * The host's lobby settings landed. Re-arm on them so the guest's session is built for the
+     * movement and the clock it is actually about to race, and so the lobby can name them.
+     */
+    private fun onSetupMessage(m: DuelMessage) {
+        if (isHost) return
+        val a = armed ?: return
+        val exerciseId = m.exerciseId.ifBlank { a.exerciseId }
+        val durationSec = m.reps.takeIf { it > 0 } ?: a.durationSec
+        arm(a.mode, exerciseId, durationSec)
     }
 
     /** Host only. Rep Race carries its own START; every other mode sends a plain go signal. */
@@ -253,6 +303,8 @@ class PlayHub(
             opponentReps = others.maxOfOrNull { it.reps } ?: 0,
             standings = standings,
             raceStartedMs = raceNow?.raceStartedMs?.value,
+            exerciseId = a.exerciseId,
+            durationSec = a.durationSec,
         )
     }
 

@@ -57,7 +57,7 @@ class NearbyTransport(
     // Track connected endpoints and their IDs
     private val connectedEndpoints = mutableSetOf<String>()
     /** Catch-up for a guest who joins after the host has already announced something. */
-    private val outgoingQueue = mutableListOf<DuelMessage>()
+    private val backlog = CatchUpQueue()
     private var roomName = ""
     private var isClosed = false
 
@@ -103,7 +103,7 @@ class NearbyTransport(
                     // the host had already announced, and started a different match from everybody
                     // else. The queue is a joining player's catch-up, so it belongs to the session
                     // rather than to the first connection.
-                    for (msg in outgoingQueue) {
+                    for (msg in backlog.backlog()) {
                         sendRaw(endpointId, msg)
                     }
                 }
@@ -179,11 +179,7 @@ class NearbyTransport(
 
     override fun send(msg: DuelMessage) {
         if (connectedEndpoints.isEmpty()) {
-            // Bounded, oldest dropped first. The queue exists so a guest who joins late catches
-            // up, and a catch-up only needs the recent past; without a cap a lobby left open with
-            // nobody in it would grow it forever.
-            outgoingQueue.add(msg)
-            while (outgoingQueue.size > MAX_QUEUED) outgoingQueue.removeAt(0)
+            backlog.offer(msg)
             return
         }
 
@@ -194,7 +190,7 @@ class NearbyTransport(
 
     override fun close() {
         if (isClosed) return
-        outgoingQueue.clear()
+        backlog.clear()
         isClosed = true
 
         client.stopAdvertising()
@@ -228,6 +224,3 @@ class NearbyTransport(
         }
     }
 }
-
-/** How much backlog a late guest is worth. Beyond this the oldest is dropped. */
-private const val MAX_QUEUED = 64

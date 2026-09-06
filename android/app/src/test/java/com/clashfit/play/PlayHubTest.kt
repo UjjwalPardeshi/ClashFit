@@ -130,9 +130,43 @@ class PlayHubTest {
     }
 
     /**
-     * The host's START carries the clock and the exercise. Without them a 30-second host and a
-     * 60-second guest each raced their own lobby's settings and the standings compared two
-     * different contests.
+     * The whole point of the lobby: the guest chooses nothing and is told what it is about to do
+     * BEFORE anyone presses start. It arms blank, the way the lobby arms it, and the host's SETUP
+     * fills it in.
+     */
+    @Test
+    fun `the guest learns the host's movement before anyone starts`() = testScope.runTest {
+        val bus = mutableSetOf<LoopbackTransport>()
+        val clock = FakeClock()
+        val host = hub(bus, clock, backgroundScope)
+        val guest = hub(bus, clock, backgroundScope)
+
+        host.host("ClashFit · Rep Race")
+        guest.join()
+        guest.arm(GameMode.REP_RACE, "", null)  // the guest has nothing to say
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("", guest.link.value?.exerciseId, "Nothing heard from the host yet")
+
+        host.arm(GameMode.REP_RACE, "bicep_curl", 30)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("bicep_curl", guest.link.value?.exerciseId, "The host's pick reaches the guest's lobby")
+        assertEquals(30, guest.link.value?.durationSec, "And so does the clock")
+
+        // The host changes its mind; the guest follows.
+        host.arm(GameMode.REP_RACE, "squat", 90)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals("squat", guest.link.value?.exerciseId)
+        assertEquals(90, guest.link.value?.durationSec)
+
+        host.release()
+        guest.release()
+    }
+
+    /**
+     * The host's START carries the clock and the exercise too, so a guest that somehow missed
+     * every SETUP still lands on the right movement rather than on whatever it had.
      */
     @Test
     fun `the host's clock and exercise reach the guest`() = testScope.runTest {
@@ -146,7 +180,7 @@ class PlayHubTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         host.arm(GameMode.REP_RACE, "bicep_curl", 30)
-        guest.arm(GameMode.REP_RACE, "squat", 90)  // whatever the guest had picked on its own
+        guest.arm(GameMode.REP_RACE, "", null)
         testDispatcher.scheduler.advanceUntilIdle()
 
         val got = mutableListOf<StartSignal>()
@@ -163,6 +197,62 @@ class PlayHubTest {
         )
 
         watch.cancel()
+        host.release()
+        guest.release()
+    }
+
+    /**
+     * A guest that links after the host has already picked. The transport backlog replays the
+     * last SETUP, but the host also says it again on every link, so the catch-up does not depend
+     * on the backlog having survived the wait.
+     */
+    @Test
+    fun `a guest that links late is told the movement`() = testScope.runTest {
+        val bus = mutableSetOf<LoopbackTransport>()
+        val clock = FakeClock()
+        val host = hub(bus, clock, backgroundScope)
+
+        host.host("ClashFit · Rep Race")
+        host.arm(GameMode.REP_RACE, "shoulder_press", 90)
+        testDispatcher.scheduler.advanceUntilIdle()
+        val hostTransport = bus.single()
+
+        // Only now does the second phone show up.
+        val guest = hub(bus, clock, backgroundScope)
+        guest.join()
+        guest.arm(GameMode.REP_RACE, "", null)
+        testDispatcher.scheduler.advanceUntilIdle()
+        assertEquals("", guest.link.value?.exerciseId, "It arrived after the host had already chosen")
+
+        hostTransport.simulateLinked()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("shoulder_press", guest.link.value?.exerciseId, "Linking is what tells it")
+        assertEquals(90, guest.link.value?.durationSec)
+
+        host.release()
+        guest.release()
+    }
+
+    /** A guest has no say. If it announced anything the host would follow its own guest. */
+    @Test
+    fun `a guest does not announce a movement of its own`() = testScope.runTest {
+        val bus = mutableSetOf<LoopbackTransport>()
+        val clock = FakeClock()
+        val host = hub(bus, clock, backgroundScope)
+        val guest = hub(bus, clock, backgroundScope)
+
+        host.host("ClashFit · Rep Race")
+        guest.join()
+        host.arm(GameMode.REP_RACE, "bicep_curl", 30)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        guest.arm(GameMode.REP_RACE, "squat", 90)  // as if the guest had a picker
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("bicep_curl", host.link.value?.exerciseId, "The host is unmoved")
+        assertEquals(30, host.link.value?.durationSec)
+
         host.release()
         guest.release()
     }

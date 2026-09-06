@@ -161,6 +161,8 @@ fun LinkStripPreview(myDamage: Int, theirDamage: Int, modifier: Modifier = Modif
             opponentReps = 0,
             standings = emptyList(),
             raceStartedMs = null,
+            exerciseId = "squat",
+            durationSec = null,
         ),
         myReps = 0,
         myDamage = myDamage,

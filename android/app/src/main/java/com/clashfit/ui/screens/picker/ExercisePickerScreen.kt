@@ -1,6 +1,5 @@
 package com.clashfit.ui.screens.picker
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,11 +14,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.draw.rotate
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -42,14 +37,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.clashfit.AppGraph
-import com.clashfit.core.config.ExerciseSpec
 import com.clashfit.core.model.GameMode
 import com.clashfit.core.model.ModeKind
 import com.clashfit.data.Prefs
 import com.clashfit.ui.components.AppIcons
 import com.clashfit.ui.components.EmptyState
-import com.clashfit.ui.components.ExerciseDemo
-import com.clashfit.ui.components.hasExerciseDemo
+import com.clashfit.ui.components.ExerciseChoice
+import com.clashfit.ui.components.RadioDot
 import com.clashfit.ui.components.InnerDivider
 import com.clashfit.ui.components.ListGroup
 import com.clashfit.ui.components.PrimaryButton
@@ -63,7 +57,6 @@ import com.clashfit.ui.nav.Roster
 import com.clashfit.ui.nav.Session
 import com.clashfit.ui.screens.library.displayName
 import com.clashfit.ui.theme.Ember
-import com.clashfit.ui.theme.EmberTint
 import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.Ground2
 import com.clashfit.ui.theme.Ink
@@ -71,7 +64,6 @@ import com.clashfit.ui.theme.InkFaint
 import com.clashfit.ui.theme.InkMuted
 import com.clashfit.ui.theme.Panel
 import com.clashfit.ui.theme.Rule
-import com.clashfit.ui.theme.RuleSoft
 
 /**
  * Pick the movement for a mode. Only the families the mode allows are listed; the confirm
@@ -188,73 +180,12 @@ fun ExercisePickerScreen(modeStr: String, graph: AppGraph, nav: NavHostControlle
     }
 }
 
-@Composable
-private fun ExerciseChoice(ex: ExerciseSpec, selected: Boolean, reduceMotion: Boolean, onSelect: () -> Unit) {
-    var showing by rememberSaveable(ex.id) { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth().background(if (selected) EmberTint else androidx.compose.ui.graphics.Color.Transparent)) {
-        Row(
-            Modifier.fillMaxWidth().clickable(onClick = onSelect).heightIn(min = 60.dp)
-                .padding(start = 16.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            RadioDot(selected)
-            Column(Modifier.weight(1f)) {
-                Text(ex.name, style = MaterialTheme.typography.bodyLarge, color = Ink)
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 5.dp)) {
-                    repeat(3) { i ->
-                        Box(Modifier.size(width = 14.dp, height = 4.dp).clip(CircleShape).background(if (i < ex.difficulty) Ember else RuleSoft))
-                    }
-                    Text(
-                        when (ex.difficulty) { 1 -> "Easy"; 2 -> "Moderate"; else -> "Hard" },
-                        style = MaterialTheme.typography.labelSmall, color = InkMuted, modifier = Modifier.padding(start = 6.dp),
-                    )
-                }
-            }
-            if (ex.tags.isNotEmpty()) Tag(ex.tags.first())
-            // The drawing is a second, quieter affordance: tapping it must not change the selection.
-            if (hasExerciseDemo(ex.id)) {
-                Box(
-                    Modifier.size(40.dp).clickable { showing = !showing },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    val turn by animateFloatAsState(if (showing) -90f else 90f, label = "demo-chevron")
-                    Icon(
-                        AppIcons.Chevron,
-                        contentDescription = if (showing) "Hide how to do it" else "Show how to do it",
-                        tint = InkMuted, modifier = Modifier.size(18.dp).rotate(turn),
-                    )
-                }
-            }
-        }
-        AnimatedVisibility(visible = showing && hasExerciseDemo(ex.id)) {
-            Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
-                ExerciseDemo(ex.id, reduceMotion)
-                ex.cues["enter"]?.let {
-                    Spacer(Modifier.height(6.dp))
-                    Text(it, style = MaterialTheme.typography.bodyMedium, color = InkMuted)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun RadioDot(on: Boolean) {
-    Box(
-        Modifier.size(22.dp).clip(CircleShape).background(if (on) Ember else Panel)
-            .then(if (on) Modifier else Modifier.padding(0.dp)),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (on) Icon(AppIcons.Check, contentDescription = "Selected", tint = Ground, modifier = Modifier.size(14.dp))
-        else Box(Modifier.size(18.dp).clip(CircleShape).background(Ground2))
-    }
-}
-
 /** What the big button says and does, by mode. */
 private fun confirmAction(mode: GameMode, exerciseId: String, ghostId: String?, settings: Prefs.Settings, nav: NavHostController): Pair<String, () -> Unit> =
     when {
-        mode.kind == ModeKind.VERSUS -> "Find a phone" to { nav.navigate(DuelLobby(mode.name, exerciseId)) }
+        // Versus modes reach their lobby straight from the mode grid now — the host picks the
+        // movement there, for both phones. Kept so an unexpected route still lands somewhere real.
+        mode.kind == ModeKind.VERSUS -> "Find a phone" to { nav.navigate(DuelLobby(mode.name)) }
         mode == GameMode.RAID || mode == GameMode.TEAM_VS_TEAM -> "Open the raid" to { nav.navigate(RaidRoom(exerciseId)) }
         mode.kind == ModeKind.GROUP -> "Set the roster" to { nav.navigate(Roster(mode.name, exerciseId)) }
         mode == GameMode.GHOST_RACE -> "Race" to { nav.navigate(Session(mode.name, exerciseId, casual = settings.casual, ghostId = ghostId)) }
