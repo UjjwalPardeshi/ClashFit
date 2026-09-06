@@ -5,16 +5,20 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The transition a screen gets is decided by whether both ends are tab roots, and that decision
- * reads from a hand-written set. Add a fifth tab and forget this file and the new tab pushes
- * sideways like a stacked screen instead of fading like a sibling — a bug nobody would think to
- * look for here, so the drift is caught in a test instead.
+ * The transition a screen gets is decided by whether both ends are tab roots.
+ *
+ * That decision used to read from a hand-written list, and a Workout tab and a Profile tab
+ * arrived without it: two of five tabs pushed sideways like a stacked screen instead of fading
+ * like the siblings they are. The list is derived now, so these assert the invariants that are
+ * still capable of breaking.
  */
 class ScreenMotionTest {
 
     @Test
-    fun `the tab roots the motion knows about are exactly the tabs`() {
-        assertEquals(Tab.entries.map { it.root::class }.toSet(), ScreenMotion.TAB_ROOTS)
+    fun `every tab has a root, and every root is distinct`() {
+        // A shared root would make two tabs the same destination: the bar would light the wrong
+        // one, and a switch between them would animate as if nothing had happened.
+        assertEquals(Tab.entries.size, ScreenMotion.TAB_ROOTS.size)
     }
 
     @Test

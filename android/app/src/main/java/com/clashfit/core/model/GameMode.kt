@@ -77,8 +77,8 @@ enum class GameMode(
      * of [ModeKind.battles], because it is not something you choose to play against.
      */
     WORKOUT("Workout", ModeKind.WORKOUT, Family.REP_CYCLE, false,
-        "Your own set, in your own gym, counted and graded. No boss and no clock.",
-        "Log a real set"),
+        "Your own set, in your own gym, with a coach watching the form. No boss and no clock.",
+        "Train with a coach"),
 
     /**
      * ZOMBIE RUN — the outdoor chase.

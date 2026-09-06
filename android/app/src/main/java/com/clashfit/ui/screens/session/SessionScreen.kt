@@ -183,13 +183,34 @@ fun SessionScreen(
                 ExitCorner(onExit)
             }
             Phase.FIGHTING, Phase.FRAMING_LOST -> {
-                FightLayout(s, vm, lastHit, lastPlayerHit, jolt.value, shake.value, playerShake.value, paused, reduceMotion, camera, landmarks, meta, settings, sourceAspect, exerciseNames[s.exerciseId], gestureHold, lastGesture)
+                // A workout is the same session with a different face on it. Everything under this
+                // line — the counter, the depth gate, the form score, the fatigue estimate — is the
+                // same code the fight runs; a lifter logging a working set simply does not want a
+                // monster's health bar between them and their rep count.
+                if (s.mode == com.clashfit.core.model.GameMode.WORKOUT) {
+                    WorkoutLayout(
+                        s = s, vm = vm, paused = paused, camera = camera, landmarks = landmarks,
+                        settings = settings, sourceAspect = sourceAspect,
+                        spec = exerciseNames[s.exerciseId],
+                        exerciseName = exerciseNames[s.exerciseId]?.name
+                            ?: s.exerciseId.replace('_', ' ').replaceFirstChar { it.uppercase() },
+                        gestureHold = gestureHold, lastGesture = lastGesture,
+                        onEndSet = { vm.stop() },
+                    )
+                } else {
+                    FightLayout(s, vm, lastHit, lastPlayerHit, jolt.value, shake.value, playerShake.value, paused, reduceMotion, camera, landmarks, meta, settings, sourceAspect, exerciseNames[s.exerciseId], gestureHold, lastGesture)
+                }
             }
             Phase.DEAD -> EndPanel(s, onSummary = { /* wait for persistence */ }, onExit = onExit)
         }
-        if (s.ended && s.phase != Phase.DEAD) EndPanel(s, onSummary = {}, onExit = onExit)
+        // A finished workout set is not a victory screen: the route already sends it straight back
+        // to the workout, where the next set is one tap away. Showing "Boss down" in between would
+        // be a lie and a tap.
+        if (s.ended && s.phase != Phase.DEAD && s.mode != com.clashfit.core.model.GameMode.WORKOUT) {
+            EndPanel(s, onSummary = {}, onExit = onExit)
+        }
         // Over the top of whatever is showing: the fight has to end on screen, not on the next one.
-        BossDownStamp(s.combat.dead, reduceMotion)
+        if (s.mode != com.clashfit.core.model.GameMode.WORKOUT) BossDownStamp(s.combat.dead, reduceMotion)
 
         if (readying && !s.ended) {
             GetReady(
@@ -300,7 +321,7 @@ private fun FightLayout(
 }
 
 @Composable
-private fun PausedOverlay(onResume: () -> Unit, onStop: () -> Unit) {
+internal fun PausedOverlay(onResume: () -> Unit, onStop: () -> Unit) {
     Column(Modifier.fillMaxSize().background(Ground.copy(alpha = 0.86f)).padding(28.dp), verticalArrangement = Arrangement.Center) {
         Text("Paused", style = MaterialTheme.typography.displayMedium, color = Ink)
         Text("The boss is frozen. Your fatigue baseline is held.", style = MaterialTheme.typography.bodyLarge, color = InkMuted)
@@ -373,7 +394,7 @@ private fun ExitCorner(onExit: () -> Unit) {
  * occupies and leave the middle — where your body is — untouched.
  */
 @Composable
-private fun BoxScope.CameraScrims(top: Float = 0.30f, bottom: Float = 0.34f) {
+internal fun BoxScope.CameraScrims(top: Float = 0.30f, bottom: Float = 0.34f) {
     if (top > 0f) {
         Box(
             Modifier.align(Alignment.TopCenter).fillMaxWidth().fillMaxHeight(top)

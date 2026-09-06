@@ -92,10 +92,19 @@ fun WorkoutHomeScreen(graph: AppGraph, nav: NavHostController) {
                 .padding(horizontal = 20.dp).padding(bottom = 28.dp),
         ) {
             Text(
-                "Your own sets, in your own gym. The camera counts the reps and grades the shape " +
-                    "of them; you say what was on the bar. Nothing here touches the leaderboard.",
+                "Your own sets, in your own gym, with a coach watching. The camera counts the reps " +
+                    "and grades the shape of them, and tells you what to change while you can still " +
+                    "change it; you say what was on the bar.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = InkMuted,
+            )
+            SectionGap(10)
+            Text(
+                "Same camera as a fight, different job. In Battle it referees — it rules on a rep " +
+                    "and says nothing else. Here it coaches. Nothing in this tab touches the " +
+                    "leaderboard.",
+                style = MaterialTheme.typography.bodySmall,
+                color = InkFaint,
             )
             SectionGap(20)
 
@@ -109,7 +118,7 @@ fun WorkoutHomeScreen(graph: AppGraph, nav: NavHostController) {
             }
 
             SectionGap(28)
-            Text("Previous workouts", style = MaterialTheme.typography.labelMedium, color = InkMuted)
+            Text("Previous sessions", style = MaterialTheme.typography.labelMedium, color = InkMuted)
             SectionGap(12)
 
             if (recent.isEmpty()) {

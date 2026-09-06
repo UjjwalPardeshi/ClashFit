@@ -43,26 +43,41 @@ import kotlin.reflect.KClass
 object ScreenMotion {
 
     private const val DURATION = 300
-    private const val FADE = 200
+    private const val FADE = 240
     private const val REDUCED = 150
 
     /** Material's emphasized-decelerate: leaves fast, settles slowly, never rubber-bands. */
     private val Decelerate = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
 
-    /** Emphasized-accelerate, for the half that is leaving. */
-    private val Accelerate = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)
-
-    /** The arriving screen crosses this much of the width; the leaving one only covers [TRAIL]. */
-    private const val LEAD = 0.40f
-    private const val TRAIL = 0.18f
+    /**
+     * For the half that is leaving. Deliberately not Material's emphasized-accelerate, which holds
+     * almost still for the first third and then whips out — correct on paper, and on a phone it
+     * reads as the old screen not moving at all while the new one slides in over it. This one
+     * starts moving immediately, so a back gesture looks like something being pushed off rather
+     * than something being covered up.
+     */
+    private val Accelerate = CubicBezierEasing(0.4f, 0f, 0.7f, 0.9f)
 
     /**
-     * The four tab roots. Named, rather than read off [Tab], so the typing matches [Tab.owns] —
-     * and asserted against [Tab] by a test, because a fifth tab added here and forgotten there
-     * would push sideways instead of fading, and nobody would think to look at this file.
+     * The arriving screen crosses this much of the width; the leaving one only covers [TRAIL].
+     *
+     * Both were smaller and the movement did not register on a real phone at 300ms — a slide you
+     * have to be told about is decoration. The gap between them is what sells it: matched
+     * distances read as one sheet, and the parallax is what makes the old screen sit behind.
      */
-    internal val TAB_ROOTS: Set<KClass<out Route>> =
-        setOf(Home::class, Compete::class, Progress::class, You::class)
+    private const val LEAD = 0.55f
+    private const val TRAIL = 0.22f
+
+    /**
+     * The tab roots, read off [Tab] rather than listed here.
+     *
+     * They were listed by hand once, and within hours a Workout tab and a Profile tab arrived and
+     * the list did not: two of the five tabs pushed sideways like a stacked screen instead of
+     * fading like the siblings they are. A test caught it, which is the only reason it is not
+     * still in the app — but a list that has to be kept in step with another list is a bug waiting
+     * for the next tab, so now there is only one list.
+     */
+    internal val TAB_ROOTS: Set<KClass<out Route>> = Tab.entries.map { it.root::class }.toSet()
 
     private fun NavDestination.isTabRoot(): Boolean = TAB_ROOTS.any { hasRoute(it) }
 
