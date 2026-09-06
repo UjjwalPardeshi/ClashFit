@@ -201,10 +201,14 @@ fun MainScaffold(nav: NavHostController, content: @Composable (PaddingValues) ->
 /**
  * A tab label that stays on one line.
  *
- * Four tabs give each label a quarter of the screen. "Leaderboard" fits at the default text size
- * and breaks into "Leaderboa / rd" at 1.5x — which is a worse outcome for the person who raised
- * the text size than a slightly smaller word would have been. The label is capped at 1.15x of
- * its own size; everything else on every screen still scales the whole way.
+ * Five tabs give each label a fifth of the screen, where four gave it a quarter. "Leaderboard" is
+ * the longest word in the bar and it was already the tight one at four; at five it has no room to
+ * grow at all, and breaking into "Leaderboa / rd" is a worse outcome for the person who raised
+ * their text size than a slightly smaller word would have been.
+ *
+ * So the label no longer scales up: it is pinned at its own size whatever the system asks for.
+ * Everything else on every screen still scales the whole way, which is where it actually helps —
+ * a tab label is read once to learn the bar and then navigated by position and icon.
  */
 @Composable
 private fun TabLabel(text: String) {
@@ -212,6 +216,6 @@ private fun TabLabel(text: String) {
     val base = MaterialTheme.typography.labelMedium
     // Expressed in sp, which the renderer multiplies by the scale again — so dividing by the
     // scale here pins the drawn size, rather than merely reducing it a little.
-    val style = if (scale > 1.15f) base.copy(fontSize = base.fontSize * (1.15f / scale)) else base
+    val style = if (scale > 1f) base.copy(fontSize = base.fontSize * (1f / scale)) else base
     Text(text, style = style, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
 }
