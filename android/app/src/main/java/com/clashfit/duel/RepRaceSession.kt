@@ -50,6 +50,15 @@ class RepRaceSession(
     /** The highest sequence applied per player; an older packet is dropped, not applied. */
     private val playerNewestSeq = mutableMapOf<String, Int>()
 
+    /**
+     * What each remote player calls themselves.
+     *
+     * Every REP carries a name and the standings threw it away, falling back to the raw four-char
+     * player id — so the scoreboard, and the panel that names a winner, read "ZCNE" where a
+     * person's name belonged.
+     */
+    private val playerNames = mutableMapOf<String, String>()
+
     private val playerSeqs = mutableMapOf<String, MutableSet<Int>>()  // dedupe by seq
     private val playerLastSeenMs = mutableMapOf<String, Long>()  // Track last message from each player
     private var lastBeatMs = 0L  // Track last heartbeat send
@@ -156,6 +165,7 @@ class RepRaceSession(
             playerReps.remove(lostId)
             playerSeqs.remove(lostId)
             playerLastSeenMs.remove(lostId)
+            playerNames.remove(lostId)
             // Same reason as the raid: a reconnecting player restarts their counter, and a stale
             // high-water mark rejects everything they send afterwards.
             playerNewestSeq.remove(lostId)
@@ -203,6 +213,7 @@ class RepRaceSession(
                 // reps visibly counted down.
                 val seqs = playerSeqs.getOrPut(msg.playerId) { mutableSetOf() }
                 val newest = playerNewestSeq[msg.playerId] ?: Int.MIN_VALUE
+                if (msg.name.isNotBlank()) playerNames[msg.playerId] = msg.name
                 if (msg.seq !in seqs && msg.seq > newest) {
                     seqs.add(msg.seq)
                     playerNewestSeq[msg.playerId] = msg.seq
@@ -222,7 +233,7 @@ class RepRaceSession(
             .map { (id, reps) ->
                 RaceStanding(
                     playerId = id,
-                    name = if (id == playerId) playerName else id,
+                    name = if (id == playerId) playerName else playerNames[id] ?: id,
                     reps = reps,
                     finished = isRaceFinished()
                 )

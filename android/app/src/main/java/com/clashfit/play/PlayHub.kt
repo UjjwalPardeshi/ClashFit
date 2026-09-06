@@ -59,6 +59,31 @@ data class LinkHud(
     val durationSec: Int?,
 )
 
+/**
+ * How a versus session finished, kept after the link is torn down.
+ *
+ * The scoreboard lives on the transport's sessions, and those go when the fight's view model is
+ * cleared — which happens on the way to the summary. Without a frozen copy the one screen the
+ * player actually reads afterwards has nothing left to name a winner from.
+ */
+data class VersusResult(
+    val mode: GameMode,
+    val myName: String,
+    val myScore: Int,
+    val theirName: String,
+    val theirScore: Int,
+    /** False when nobody else ever linked: a solo run has no winner, only a score. */
+    val hadOpponent: Boolean,
+    /** What the two numbers are, for the line under them. */
+    val unit: String,
+    /** The persisted session these numbers belong to, so a summary cannot show an older match. */
+    val sessionId: Long = 0,
+) {
+    val won: Boolean get() = hadOpponent && myScore > theirScore
+    val lost: Boolean get() = hadOpponent && myScore < theirScore
+    val drew: Boolean get() = hadOpponent && myScore == theirScore
+}
+
 /** The host's go signal. Both phones navigate into the session on it. */
 data class StartSignal(val mode: GameMode, val exerciseId: String, val durationSec: Int?)
 
@@ -114,6 +139,18 @@ class PlayHub(
 
     private val _link = MutableStateFlow<LinkHud?>(null)
     val link: StateFlow<LinkHud?> = _link.asStateFlow()
+
+    /**
+     * The final scoreboard of the last versus session, or null if there has not been one.
+     *
+     * Outlives [release] on purpose — the summary reads it after the fight's view model has been
+     * cleared. Cleared when a new match arms, so it can never name the wrong contest.
+     */
+    private val _result = MutableStateFlow<VersusResult?>(null)
+    val result: StateFlow<VersusResult?> = _result.asStateFlow()
+
+    /** My own reps and damage as the fight ended. Non-null once settled; the trigger for [_result]. */
+    private var finalScore: Pair<Int, Int>? = null
 
     private val _remoteHits = MutableSharedFlow<RemoteHit>(extraBufferCapacity = 128)
     val remoteHits: SharedFlow<RemoteHit> = _remoteHits.asSharedFlow()
@@ -194,6 +231,9 @@ class PlayHub(
         }
         val t = transport ?: open()
         detachSessions()
+        // A new contest: the last one's scoreboard must not survive into it.
+        finalScore = null
+        _result.value = null
         armed = next
         val onRemote = { p: String, s: Int, d: Int -> _remoteHits.tryEmit(RemoteHit(p, s, d)); refresh() }
         when (mode) {
@@ -305,6 +345,23 @@ class PlayHub(
         refresh()
     }
 
+    /**
+     * The fight is over: freeze the scoreboard.
+     *
+     * It keeps tracking until [release], because the two clocks are not the same clock — the
+     * opponent's last rep can land a moment after mine ran out, and a result frozen dead on the
+     * buzzer would report a score they had already beaten.
+     */
+    fun settle(myReps: Int, myDamage: Int) {
+        finalScore = myReps to myDamage
+        refresh()
+    }
+
+    /** Bind the frozen result to the session row it belongs to, once that row has an id. */
+    fun tagResult(sessionId: Long) {
+        _result.value = _result.value?.copy(sessionId = sessionId)
+    }
+
     fun refresh() {
         val a = armed
         if (a == null || transport == null) {
@@ -336,6 +393,22 @@ class PlayHub(
             exerciseId = a.exerciseId,
             durationSec = a.durationSec,
         )
+        finalScore?.let { (myReps, myDamage) ->
+            // A rep race is settled on reps; everything else on damage, so the deeper set beats
+            // the faster one exactly as it does during the fight.
+            val onReps = a.mode == GameMode.REP_RACE
+            val best = others.maxByOrNull { if (onReps) it.reps else it.damage }
+            _result.value = VersusResult(
+                mode = a.mode,
+                myName = playerName,
+                myScore = if (onReps) myReps else myDamage,
+                theirName = best?.name ?: "The other phone",
+                theirScore = if (onReps) (_link.value?.opponentReps ?: 0) else (_link.value?.opponentDamage ?: 0),
+                hadOpponent = (_link.value?.peers ?: 0) > 0,
+                unit = if (onReps) "reps" else "damage",
+                sessionId = _result.value?.sessionId ?: 0,
+            )
+        }
     }
 
     /** Drops the sessions but keeps the link — used when re-arming an already open transport. */
@@ -360,6 +433,8 @@ class PlayHub(
         transport = null
         armed = null
         pending = null
+        // finalScore goes, but _result stays: the summary reads it after the fight is torn down.
+        finalScore = null
         isHost = false
         _linkState.value = LinkState.IDLE
         _link.value = null

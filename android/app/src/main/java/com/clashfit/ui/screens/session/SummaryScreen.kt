@@ -289,6 +289,9 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
     // after this screen composes. Observe the store rather than reading it once, or the XP block
     // is missing on every fast phone.
     val rewards by graph.rewards.byId.collectAsStateWithLifecycle()
+    // Frozen as the fight ended and tagged with this session's id, so it outlives the link and
+    // can never label this summary with an older match's score.
+    val versus by graph.playHub.result.collectAsStateWithLifecycle()
     val reward = rewards[sessionId]
     val d = data
     if (d == null) { EmptyState("Summary", "Loading the set…"); return }
@@ -302,15 +305,40 @@ fun SummaryScreen(graph: AppGraph, sessionId: Long, onHome: () -> Unit, onAgain:
         // reasons and this used to name three of them, so a family game you won, a timed mode that
         // ran out, and a set you walked away from all read "Set saved" — which told the player
         // nothing about the thing they had just done.
-        Headline(when (d.session.outcome) {
-            "BOSS_DOWN" -> "Boss down"
-            "GAME_WON" -> "You won"
-            "GAME_LOST" -> "It caught you"
-            "DEFEATED" -> "Defeated"
-            "TIME" -> "Time"
-            "WALKED_AWAY" -> "You left"
-            else -> "Set saved"
+        // A versus fight is judged on the scoreboard, not on why the engine stopped. Every rep
+        // race ends because the clock ran out, so reading the end reason called all of them
+        // "Time" and never said who won.
+        val decided = versus?.takeIf { it.sessionId == sessionId && it.hadOpponent }
+        Headline(when {
+            decided != null && decided.won -> "You won"
+            decided != null && decided.lost -> "They won"
+            decided != null -> "Dead even"
+            else -> when (d.session.outcome) {
+                "BOSS_DOWN" -> "Boss down"
+                "GAME_WON" -> "You won"
+                "GAME_LOST" -> "It caught you"
+                "DEFEATED" -> "Defeated"
+                "TIME" -> "Time"
+                "WALKED_AWAY" -> "You left"
+                else -> "Set saved"
+            }
         })
+        decided?.let { v ->
+            SectionGap(14)
+            AppCard(Modifier.fillMaxWidth(), padding = 18) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(18.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    FinalScore(v.myName.ifBlank { "You" }, v.myScore, leading = v.myScore >= v.theirScore)
+                    Text("–", style = MaterialTheme.typography.headlineMedium, color = InkFaint)
+                    FinalScore(v.theirName.ifBlank { "Them" }, v.theirScore, leading = v.theirScore >= v.myScore)
+                    Spacer(Modifier.weight(1f))
+                    Text(v.unit.uppercase(), style = MaterialTheme.typography.labelSmall, color = InkFaint)
+                }
+            }
+        }
         SectionGap(16)
 
         // Reward progression, revealed in order rather than printed all at once. Every number
@@ -549,5 +577,14 @@ fun FormSparkline(reps: List<RepEntity>, modifier: Modifier = Modifier) {
             val bh = h * r.formScore.coerceIn(0.04f, 1f)
             drawRect(colour, topLeft = Offset(i * bw + 1f, h - bh), size = Size((bw - 2f).coerceAtLeast(1f), bh))
         }
+    }
+}
+
+/** One side of the final score. The winner is in ember; a draw lights both. */
+@Composable
+private fun FinalScore(name: String, score: Int, leading: Boolean) {
+    Column {
+        Text("$score", style = MaterialTheme.typography.headlineLarge, color = if (leading) Ember else InkMuted)
+        Text(name.uppercase(), style = MaterialTheme.typography.labelSmall, color = InkFaint)
     }
 }

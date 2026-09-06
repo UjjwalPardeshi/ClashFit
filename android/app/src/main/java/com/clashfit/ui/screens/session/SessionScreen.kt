@@ -36,6 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.clashfit.AppGraph
 import com.clashfit.core.model.EndReason
+import com.clashfit.play.VersusResult
 import com.clashfit.core.model.FatigueBand
 import com.clashfit.core.model.Phase
 import com.clashfit.core.model.SessionState
@@ -87,6 +88,8 @@ fun SessionScreen(
     val vm: SessionViewModel = viewModel(key = "session-${args.hashCode()}", factory = SessionViewModel.factory(graph, deps, args))
     val state by vm.state.collectAsStateWithLifecycle()
     val paused by vm.paused.collectAsStateWithLifecycle()
+    // The final scoreboard, for the panel that closes the fight. Null outside a versus mode.
+    val versus by vm.versus.collectAsStateWithLifecycle()
     val landmarks by vm.skeleton.collectAsStateWithLifecycle()
     // The hand being held up to the camera, and the last command it gave.
     val gestureHold by vm.gestureHold.collectAsStateWithLifecycle()
@@ -201,13 +204,13 @@ fun SessionScreen(
                     FightLayout(s, vm, lastHit, lastPlayerHit, jolt.value, shake.value, playerShake.value, paused, reduceMotion, camera, landmarks, meta, settings, sourceAspect, exerciseNames[s.exerciseId], gestureHold, lastGesture)
                 }
             }
-            Phase.DEAD -> EndPanel(s, onSummary = { /* wait for persistence */ }, onExit = onExit)
+            Phase.DEAD -> EndPanel(s, onSummary = { /* wait for persistence */ }, onExit = onExit, versus = versus)
         }
         // A finished workout set is not a victory screen: the route already sends it straight back
         // to the workout, where the next set is one tap away. Showing "Boss down" in between would
         // be a lie and a tap.
         if (s.ended && s.phase != Phase.DEAD && s.mode != com.clashfit.core.model.GameMode.WORKOUT) {
-            EndPanel(s, onSummary = {}, onExit = onExit)
+            EndPanel(s, onSummary = {}, onExit = onExit, versus = versus)
         }
         // Over the top of whatever is showing: the fight has to end on screen, not on the next one.
         if (s.mode != com.clashfit.core.model.GameMode.WORKOUT) BossDownStamp(s.combat.dead, reduceMotion)
@@ -332,22 +335,47 @@ internal fun PausedOverlay(onResume: () -> Unit, onStop: () -> Unit) {
     }
 }
 
-/** Victory, or "you stopped". There is no fail state for being tired. */
+/**
+ * Victory, or "you stopped". There is no fail state for being tired.
+ *
+ * A versus fight is judged on [versus] rather than on the end reason. A rep race always ends
+ * because the clock ran out, so every one of them used to close on the word "Time" — the panel
+ * covers the scoreboard, so the two people who had just raced were told the time was up and never
+ * told who won.
+ */
 @Composable
-fun EndPanel(s: SessionState, onSummary: () -> Unit, onExit: () -> Unit) {
-    val won = s.endReason == EndReason.BOSS_DOWN || s.endReason == EndReason.GAME_WON
-    val defeated = s.endReason == EndReason.DEFEATED
-    val title = when (s.endReason) {
-        EndReason.BOSS_DOWN -> "Boss down"
-        EndReason.GAME_WON -> "You won"
-        EndReason.GAME_LOST -> "It caught you"
-        EndReason.DEFEATED -> "Defeated"
-        EndReason.TIME -> "Time"
-        EndReason.STOPPED, EndReason.WALKED_AWAY, null -> "You stopped"
+fun EndPanel(s: SessionState, onSummary: () -> Unit, onExit: () -> Unit, versus: VersusResult? = null) {
+    val decided = versus?.takeIf { it.hadOpponent }
+    val won = decided?.won ?: (s.endReason == EndReason.BOSS_DOWN || s.endReason == EndReason.GAME_WON)
+    val defeated = decided?.lost ?: (s.endReason == EndReason.DEFEATED)
+    val title = when {
+        decided != null && decided.won -> "You won"
+        decided != null && decided.lost -> "They won"
+        decided != null -> "Dead even"
+        else -> when (s.endReason) {
+            EndReason.BOSS_DOWN -> "Boss down"
+            EndReason.GAME_WON -> "You won"
+            EndReason.GAME_LOST -> "It caught you"
+            EndReason.DEFEATED -> "Defeated"
+            EndReason.TIME -> "Time"
+            EndReason.STOPPED, EndReason.WALKED_AWAY, null -> "You stopped"
+        }
+    }
+    val kicker = when {
+        decided != null && decided.won -> "Victory"
+        decided != null && decided.lost -> "Beaten"
+        decided != null -> "Drawn"
+        won -> "Victory"
+        defeated -> "Defeat"
+        else -> "Set saved"
     }
     Column(Modifier.fillMaxSize().background(Ground.copy(alpha = 0.94f)).safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.Start) {
-        Kicker(if (won) "Victory" else if (defeated) "Defeat" else "Set saved")
+        Kicker(kicker)
         Text(title, style = MaterialTheme.typography.displayMedium, color = if (won) Ember else if (defeated) Ember else Ink)
+        if (versus != null) {
+            Spacer(Modifier.height(16.dp))
+            Scoreline(versus)
+        }
         Spacer(Modifier.height(20.dp))
         if (defeated) {
             Text(
@@ -373,6 +401,38 @@ fun EndPanel(s: SessionState, onSummary: () -> Unit, onExit: () -> Unit) {
         PrimaryButton("Done", Modifier.fillMaxWidth(), onClick = onExit)
         Spacer(Modifier.height(10.dp))
         SecondaryButton("Summary", Modifier.fillMaxWidth(), onClick = onSummary)
+    }
+}
+
+/**
+ * The two scores, side by side, with the winner in ember.
+ *
+ * The rope in the fight HUD answers "am I ahead" at a glance mid-set. This answers "by how much"
+ * once there is time to read, which is the question you have the moment you stop.
+ */
+@Composable
+private fun Scoreline(v: VersusResult) {
+    if (!v.hadOpponent) {
+        Text(
+            "${v.myScore} ${v.unit} · nobody else joined",
+            style = MaterialTheme.typography.bodyLarge, color = InkMuted,
+        )
+        return
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Score(v.myName.ifBlank { "You" }, v.myScore, leading = v.myScore >= v.theirScore)
+        Text("–", style = MaterialTheme.typography.headlineMedium, color = InkFaint)
+        Score(v.theirName.ifBlank { "Them" }, v.theirScore, leading = v.theirScore >= v.myScore)
+    }
+    Spacer(Modifier.height(6.dp))
+    Text(v.unit, style = MaterialTheme.typography.labelSmall, color = InkFaint)
+}
+
+@Composable
+private fun Score(name: String, score: Int, leading: Boolean) {
+    Column {
+        Text("$score", style = MaterialTheme.typography.displaySmall, color = if (leading) Ember else InkMuted)
+        Text(name.uppercase(), style = MaterialTheme.typography.labelSmall, color = InkFaint)
     }
 }
 

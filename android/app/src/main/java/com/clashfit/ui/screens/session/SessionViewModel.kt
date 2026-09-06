@@ -27,6 +27,7 @@ import com.clashfit.data.SetEntity
 import com.clashfit.engine.session.SessionEngine
 import com.clashfit.engine.summary.Progression
 import com.clashfit.play.LinkHud
+import com.clashfit.play.VersusResult
 import com.clashfit.perception.gesture.GestureIntent
 import com.clashfit.perception.gesture.GestureSource
 import com.clashfit.perception.gesture.HandGesture
@@ -143,6 +144,9 @@ class SessionViewModel(
     private val hub = graph.playHub
     /** The other phones, when this is a duel, race or raid. Null otherwise. */
     val link: StateFlow<LinkHud?> = hub.link
+
+    /** The final scoreboard of a versus fight. Survives the link's teardown; the summary reads it. */
+    val versus: StateFlow<VersusResult?> = hub.result
     /** True when this session is one turn of a pass-the-phone game. */
     val rosterTurn: Boolean = hub.roster.value != null
     private var linkJob: Job? = null
@@ -371,7 +375,12 @@ class SessionViewModel(
         override fun onEnd(reason: EndReason, state: SessionState) {
             if (reason == EndReason.BOSS_DOWN || reason == EndReason.GAME_WON) deps.sfx.bossDown()
             _events.tryEmit(HudEvent.BossDown)
-            if (hub.active) hub.onLocalOut()
+            if (hub.active) {
+                hub.onLocalOut()
+                // Freeze the scoreboard here, not in persist: persist is asynchronous and the end
+                // panel is already on screen by the time it finishes.
+                hub.settle(myReps = state.reps, myDamage = state.playerDamage)
+            }
             viewModelScope.launch { persist(reason) }
         }
     }
@@ -486,6 +495,7 @@ class SessionViewModel(
         } else {
             bank(id, all, formMean, now, s.playerDamage, reason, startedAtMs)
         }
+        hub.tagResult(id)
         _finished.tryEmit(id)
     }
 
