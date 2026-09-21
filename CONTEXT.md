@@ -7,7 +7,7 @@ that are easy to break, and the parts that are not obvious from the code.
 it counts, and the grade becomes damage against a boss. Pose scoring runs on the phone; camera
 frames and landmarks never leave it. Built for the iQOO Hackathon 2026, Pune City Battle, HealthTech.
 
-**Team.** Da Goats — Omkar Kadam and Ujjwal Pardeshi. **Live site:** clash-fit.vercel.app.
+**Team.** Da Goats — Omkar Kadam and Ujjwal Pardeshi. **Live site:** fitmon-iqoo.vercel.app.
 
 ---
 

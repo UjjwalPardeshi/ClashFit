@@ -944,7 +944,7 @@ private fun ShareDialog(stats: ShareCard.Stats, onDismiss: () -> Unit) {
     }
 
     val text = "${formatDistance(stats.distanceM)} with Fitmon — every rep graded by the camera. " +
-        "clash-fit.vercel.app"
+        "fitmon-iqoo.vercel.app"
 
     val scope = rememberCoroutineScope()
     var writing by remember { mutableStateOf(false) }

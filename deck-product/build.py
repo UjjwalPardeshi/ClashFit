@@ -383,7 +383,7 @@ S.append(slide(f"""
     <h1 style="margin-top:30px;font-size:126px">Make them<br>earn <span class="hot">every</span><br>rep.</h1>
     <div class="rule"></div>
     <div class="sub" style="font-size:34px">Omkar Kadam &nbsp;·&nbsp; Ujjwal Pardeshi<br>
-    <span style="color:var(--hot)">clash-fit.vercel.app</span></div>
+    <span style="color:var(--hot)">fitmon-iqoo.vercel.app</span></div>
   </div>
   <div style="display:flex;gap:30px;flex:none">
     {phone('26-boss-preview.png', 760, 'tilt2')}

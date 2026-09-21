@@ -59,7 +59,7 @@ object MapTiles {
 
             Configuration.getInstance().apply {
                 load(ctx, ctx.getSharedPreferences("osmdroid", Context.MODE_PRIVATE))
-                userAgentValue = "Fitmon/${appVersion(ctx)} (+https://clash-fit.vercel.app)"
+                userAgentValue = "Fitmon/${appVersion(ctx)} (+https://fitmon-iqoo.vercel.app)"
                 osmdroidBasePath = base
                 osmdroidTileCache = tiles
                 tileFileSystemCacheMaxBytes = CACHE_MAX_BYTES

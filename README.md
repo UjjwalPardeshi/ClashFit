@@ -14,8 +14,8 @@ but camera frames, pose landmarks and coaching text never leave the phone.
 > Team **Da Goats** — Omkar Kadam, Ujjwal Pardeshi
 > Phase-1 submission closes **1 September 2026, 23:59 IST** · Battle **5–6 September**
 
-**Live:** [clash-fit.vercel.app](https://clash-fit.vercel.app) ·
-**Prototype:** [/app](https://clash-fit.vercel.app/app) ·
+**Live:** [fitmon-iqoo.vercel.app](https://fitmon-iqoo.vercel.app) ·
+**Prototype:** [/app](https://fitmon-iqoo.vercel.app/app) ·
 **Deck:** [`deck-phase1/`](deck-phase1/)
 
 ---

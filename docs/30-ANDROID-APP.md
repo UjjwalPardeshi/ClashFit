@@ -1,7 +1,7 @@
 # 30 · Android App — Build Plan
 
 The Android app lives in [`android/`](../android/), a Gradle project alongside the prototype.
-Everything the product site at clash-fit.vercel.app promises is in scope; everything the
+Everything the product site at fitmon-iqoo.vercel.app promises is in scope; everything the
 prototype proves is ported, not redesigned. The JavaScript in `src/` and its 143 assertions are
 the specification for the engine.
 

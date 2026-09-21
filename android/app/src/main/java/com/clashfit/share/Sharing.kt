@@ -100,7 +100,7 @@ object Sharing {
             setDataAndType(uri, "image/png")
             setPackage(INSTAGRAM_PACKAGE)
             putExtra("interactive_asset_uri", uri)
-            putExtra("content_url", "https://clash-fit.vercel.app")
+            putExtra("content_url", "https://fitmon-iqoo.vercel.app")
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         context.grantUriPermission(INSTAGRAM_PACKAGE, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)

@@ -110,11 +110,11 @@ fun AboutScreen(graph: AppGraph, nav: NavHostController, onPrivacy: () -> Unit, 
                     "Open the website",
                     {
                         runCatching {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, "https://clash-fit.vercel.app/".toUri()))
+                            context.startActivity(Intent(Intent.ACTION_VIEW, "https://fitmon-iqoo.vercel.app/".toUri()))
                         }
                     },
                     icon = AppIcons.Grid,
-                    supporting = "clash-fit.vercel.app",
+                    supporting = "fitmon-iqoo.vercel.app",
                 )
             }
 
