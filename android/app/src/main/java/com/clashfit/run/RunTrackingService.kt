@@ -622,7 +622,7 @@ class RunTrackingService : LifecycleService(), LocationListener, SensorEventList
     }
 
     companion object {
-        private const val TAG = "ClashFit/run"
+        private const val TAG = "Fitmon/run"
 
         /**
          * The accuracy recorded against a dead-reckoned point.

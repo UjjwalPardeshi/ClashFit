@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build ClashFit and push it to a phone over USB.
+# Build Fitmon and push it to a phone over USB.
 #
 #   ./install-to-phone.sh            debug build, install, launch
 #   ./install-to-phone.sh release    release build (smaller), install, launch

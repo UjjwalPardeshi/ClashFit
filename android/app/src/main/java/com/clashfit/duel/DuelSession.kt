@@ -26,7 +26,7 @@ class DuelSession(
     private val onState: (LinkState) -> Unit = { _ -> },
 ) {
     private companion object {
-        const val TAG = "ClashFit/duel"
+        const val TAG = "Fitmon/duel"
         const val TAIL = 8
         const val HEARTBEAT_MS = 1200L
         const val LOST_AFTER_MS = 4000L

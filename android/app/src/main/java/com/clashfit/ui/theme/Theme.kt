@@ -87,7 +87,7 @@ object Motion {
 val LocalReduceMotion = compositionLocalOf { false }
 
 @Composable
-fun ClashFitTheme(content: @Composable () -> Unit) {
+fun FitmonTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = Scheme,
         typography = ClashTypography,

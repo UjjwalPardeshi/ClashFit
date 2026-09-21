@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Build the ClashFit deck HTML: screenshots embedded as data URIs, fonts inlined."""
+"""Build the Fitmon deck HTML: screenshots embedded as data URIs, fonts inlined."""
 import base64, io, os, sys
 from PIL import Image
 
-ROOT = '/home/palkia/code/stuff/hacks/iqoo/ClashFit'
+ROOT = '/home/palkia/code/stuff/hacks/iqoo/Fitmon'
 SHOTS = os.path.join(ROOT, 'android/app/screenshots')
-SP = '/tmp/claude-1000/-home-palkia-code-stuff-hacks-iqoo-ClashFit/71b0d431-fcb2-45f3-be33-f50e6e4a0231/scratchpad'
+SP = '/tmp/claude-1000/-home-palkia-code-stuff-hacks-iqoo-Fitmon/71b0d431-fcb2-45f3-be33-f50e6e4a0231/scratchpad'
 FONTS = open(os.path.join(SP, 'fonts.css')).read()
 
 _cache = {}
@@ -109,7 +109,7 @@ h3{font-family:'Anton';font-weight:400;font-size:62px;line-height:1;text-transfo
 .badge.ghost{background:transparent;color:var(--hot);border:2px solid var(--hot)}
 """
 
-def slide(inner, tag='ClashFit', no=None, cls=''):
+def slide(inner, tag='Fitmon', no=None, cls=''):
     p = f'<div class="pageno">{no:02d}</div>' if no else ''
     t = f'<div class="tag">{tag}</div>' if tag else ''
     return f'<section class="slide {cls}">{inner}{t}{p}</section>'
@@ -129,7 +129,7 @@ S.append(slide(f"""
       becomes damage against a boss that fights back.
     </div>
     <div style="margin-top:38px;display:flex;gap:16px">
-      <span class="badge">ClashFit</span>
+      <span class="badge">Fitmon</span>
       <span class="badge ghost">Team Da Goats</span>
     </div>
   </div>
@@ -334,7 +334,7 @@ S.append(slide(f"""
     Or your video leaving the room to be scored</div>
   </div>
   <div>
-    <h4>ClashFit</h4>
+    <h4>Fitmon</h4>
     <div class="li">The phone already in your pocket<br><br>
     A fight that adapts to the fatigue it measures<br><br>
     Nothing about your body leaves the device</div>
@@ -391,7 +391,7 @@ S.append(slide(f"""
   </div>
 </div>""", tag='', no=None))
 
-html = f"""<!doctype html><html><head><meta charset="utf-8"><title>ClashFit</title>
+html = f"""<!doctype html><html><head><meta charset="utf-8"><title>Fitmon</title>
 <style>{FONTS}</style><style>{CSS}</style></head><body>{''.join(S)}</body></html>"""
 
 out = os.path.join(SP, 'deck.html')

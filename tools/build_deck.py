@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Builds the ClashFit pitch deck.
+Builds the Fitmon pitch deck.
 
 Ten slides, 16:9, in the app's own palette, so the deck and the thing on the phone
 look like one product rather than two.
@@ -146,7 +146,7 @@ def build(zombie, walk):
 
     # ── 1 · title ─────────────────────────────────────────────────────────────────────────
     s = slide(prs)
-    text(s, Inches(0.9), Inches(2.1), Inches(8), Inches(1.6), "CLASHFIT",
+    text(s, Inches(0.9), Inches(2.1), Inches(8), Inches(1.6), "FITMON",
          size=76, bold=True, color=INK)
     text(s, Inches(0.95), Inches(3.5), Inches(8.4), Inches(1.2),
          "Your body is the controller.\nYour camera is the referee.",
@@ -176,7 +176,7 @@ def build(zombie, walk):
          "Make the camera the referee and\nevery number becomes evidence.",
          size=19, color=INK, spacing=1.45)
     text(s, Inches(0.9), Inches(5.4), Inches(11.5), Inches(0.9),
-         "ClashFit scores depth, range, tempo and alignment on every single rep, on the phone, "
+         "Fitmon scores depth, range, tempo and alignment on every single rep, on the phone, "
          "and pays you in damage for the good ones.",
          size=16, color=EMBER, spacing=1.35)
 
@@ -331,7 +331,7 @@ def build(zombie, walk):
          "go to the leaderboard — and the app says so on its own privacy screen.",
          size=15, color=INK, spacing=1.35)
 
-    out = os.path.join(ROOT, "ClashFit.pptx")
+    out = os.path.join(ROOT, "Fitmon.pptx")
     prs.save(out)
     return out
 

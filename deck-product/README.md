@@ -1,6 +1,6 @@
 # Product pitch deck
 
-`ClashFit-Product-Deck.pdf` — 15 slides, 1920×1080, 16:9.
+`Fitmon-Product-Deck.pdf` — 15 slides, 1920×1080, 16:9.
 
 Opens on the promise: **your personal fitness coach, gamified**. Then the problem
 (every app counts what you tell it), the insight (the camera is already there), the
@@ -13,7 +13,7 @@ slide 13 is checked against the repo — see the build script for the sources.
 
 ```bash
 python3 build.py     # writes index.html with fonts and screenshots inlined
-python3 render.py index.html frames ClashFit-Product-Deck.pdf
+python3 render.py index.html frames Fitmon-Product-Deck.pdf
 ```
 
 `build.py` embeds the screenshots as data URIs sized by height (the captures are

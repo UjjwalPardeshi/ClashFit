@@ -81,7 +81,7 @@ fun PreflightScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier 
         }
 
         checks = listOf(
-            PreflightCheck("Camera", checkCamera(graph.app), "ClashFit cannot count a rep it cannot see"),
+            PreflightCheck("Camera", checkCamera(graph.app), "Fitmon cannot count a rep it cannot see"),
             PreflightCheck("Movement tracking", checkPoseModel(graph.app), "Reads your body from the camera, on this phone"),
             PreflightCheck("Hand gestures", checkGestureModel(graph.app), "Palm, thumb and fist, to control a set without touching the phone"),
             PreflightCheck("Exercise data", checkConfig(configVersion), "The movements, their targets and how they score"),
@@ -139,7 +139,7 @@ fun PreflightScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier 
             if (lastCrash != null) {
                 var showTrace by remember { mutableStateOf(false) }
                 SectionGap(28)
-                SectionTitle("ClashFit closed unexpectedly")
+                SectionTitle("Fitmon closed unexpectedly")
                 SectionGap(10)
                 AppCard(Modifier.fillMaxWidth(), padding = 16) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

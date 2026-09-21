@@ -17,7 +17,7 @@ class DeskBootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Log.d(TAG, "DeskBootReceiver: re-arming on ${intent.action}")
 
-        val graph = (context.applicationContext as? com.clashfit.ClashFitApp)?.graph ?: return
+        val graph = (context.applicationContext as? com.clashfit.FitmonApp)?.graph ?: return
         val pendingResult = goAsync()
         val scope = CoroutineScope(Dispatchers.IO)
 
@@ -36,6 +36,6 @@ class DeskBootReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        private const val TAG = "ClashFit/desk"
+        private const val TAG = "Fitmon/desk"
     }
 }

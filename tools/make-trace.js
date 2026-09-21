@@ -104,7 +104,7 @@ const round = (v, places) => {
 function build(spec) {
   const frames = synthWorldSet(spec.opts);
   const head = JSON.stringify({
-    type: 'clashfit-trace',
+    type: 'fitmon-trace',
     v: 1,
     keep: KEEP,
     meta: { exercise: spec.exercise, note: spec.note, generator: 'tools/make-trace.js' },

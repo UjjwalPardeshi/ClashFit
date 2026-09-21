@@ -97,7 +97,7 @@ fun HomeScreen(graph: AppGraph, nav: NavHostController) {
         sessions.count { !Instant.ofEpochMilli(it.startedAtMs).atZone(zone).toLocalDate().isBefore(weekAgo) }
     }
 
-    ScreenScaffold(title = "ClashFit") { padding ->
+    ScreenScaffold(title = "Fitmon") { padding ->
         Column(
             Modifier.fillMaxWidth().padding(padding).verticalScroll(rememberScrollState()).padding(bottom = 28.dp),
         ) {

@@ -41,7 +41,7 @@ import kotlin.math.min
  * off-screen bitmap at a fixed 1080×1920 — a size no phone's screen actually is — and capturing
  * Compose off-screen at an arbitrary size is a fight that buys nothing here.
  *
- * **The route is drawn on ClashFit's own grid, never on map tiles.** Two reasons, and the second
+ * **The route is drawn on Fitmon's own grid, never on map tiles.** Two reasons, and the second
  * is the load-bearing one: the picture looks like this product rather than like every other run
  * app, and redistributing OpenStreetMap imagery carries an attribution requirement that a picture
  * pasted into an Instagram story cannot reliably honour. Our own line on our own grid owes nobody
@@ -131,7 +131,7 @@ object ShareCard {
     }
 
     private fun wordmark(canvas: Canvas, fonts: Fonts, x: Float, y: Float) {
-        canvas.drawText("CLASHFIT", x, y, paint(Ink.toArgb(), 46f, fonts.display).apply { letterSpacing = 0.14f })
+        canvas.drawText("FITMON", x, y, paint(Ink.toArgb(), 46f, fonts.display).apply { letterSpacing = 0.14f })
         val p = paint(Ember.toArgb(), 46f, fonts.display)
         canvas.drawRect(x, y + 14f, x + 96f, y + 20f, p)
     }

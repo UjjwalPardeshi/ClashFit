@@ -146,7 +146,7 @@ fun ClinicScreen(graph: AppGraph, nav: NavHostController, modifier: Modifier = M
                 SectionGap(8)
                 EmptyState(
                     title = "Protocol not found",
-                    body = "This test could not be loaded. Close ClashFit and open it again.",
+                    body = "This test could not be loaded. Close Fitmon and open it again.",
                     icon = AppIcons.Heart
                 )
             }

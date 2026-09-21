@@ -76,7 +76,7 @@ export function encodeChallenge(c) {
 
 export function decodeChallenge(code) {
   const raw = String(code ?? '').trim();
-  if (!raw.startsWith(PREFIX)) throw new Error('Not a ClashFit challenge code.');
+  if (!raw.startsWith(PREFIX)) throw new Error('Not a Fitmon challenge code.');
   const rest = raw.slice(PREFIX.length);
   const dot = rest.lastIndexOf('.');
   if (dot < 0) throw new Error('Challenge code is incomplete.');
@@ -89,7 +89,7 @@ export function decodeChallenge(code) {
   return {
     kind: p.k, exerciseId: p.e, mode: p.m, name: p.n || null, target: p.t ?? null,
     ghost: p.g
-      ? { type: 'clashfit-ghost', v: 1,
+      ? { type: 'fitmon-ghost', v: 1,
           meta: { name: p.n || 'Challenge', exercise: p.e, fromChallenge: true },
           events: unpackEvents(p.g) }
       : null,

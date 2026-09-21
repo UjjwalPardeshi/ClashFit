@@ -1,11 +1,11 @@
-# ClashFit
+# Fitmon
 
 **Your body is the controller. Your camera is the referee.**
 
 Every fitness app on your phone counts what you *tell* it. Tap ten, it logs ten. None of them can
 see whether the rep actually happened — so the log goes up while the movement quietly falls apart.
 
-ClashFit makes the front camera the referee. Every rep is graded before it counts, and the grade
+Fitmon makes the front camera the referee. Every rep is graded before it counts, and the grade
 becomes damage against a boss. A shallow rep does almost nothing, so the only way to win is to move
 better. Pose scoring runs on-device. Leaderboards, achievements and progression are in the cloud,
 but camera frames, pose landmarks and coaching text never leave the phone.
@@ -247,5 +247,5 @@ pre-existing-components field.
 
 Photography is public domain or Creative Commons — attributions in [`credits.html`](credits.html)
 and [`img/CREDITS.md`](img/CREDITS.md). The iQOO 15 shown is the manufacturer's own product render,
-used to identify the device this is built for; ClashFit is an independent entry and is not published
+used to identify the device this is built for; Fitmon is an independent entry and is not published
 or endorsed by iQOO or vivo.

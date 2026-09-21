@@ -68,7 +68,7 @@ fun AboutScreen(graph: AppGraph, nav: NavHostController, onPrivacy: () -> Unit, 
                 Box(Modifier.size(72.dp).clip(CircleShape).background(Ember), contentAlignment = Alignment.Center) {
                     Icon(AppIcons.Bolt, contentDescription = null, tint = Ground, modifier = Modifier.size(40.dp))
                 }
-                Text("ClashFit", style = MaterialTheme.typography.headlineMedium, color = Ink, modifier = Modifier.padding(top = 12.dp))
+                Text("Fitmon", style = MaterialTheme.typography.headlineMedium, color = Ink, modifier = Modifier.padding(top = 12.dp))
                 Text(
                     "Version ${BuildConfig.VERSION_NAME}",
                     style = MaterialTheme.typography.bodySmall, color = InkMuted,

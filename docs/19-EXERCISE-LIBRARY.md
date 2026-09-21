@@ -115,12 +115,12 @@ completion  = accuracy sustained for the asana's target duration
 
 Reference poses were sourced from fitmon's JavaScript detector, which uses simple 2D pixel rules.
 This section validates that a real person holding each pose within fitmon's acceptance criteria
-will score ≥ 0.70 in ClashFit's 3D angle matching.
+will score ≥ 0.70 in Fitmon's 3D angle matching.
 
 **Methodology:** Translate fitmon's 2D pixel thresholds to 3D joint angle expectations, then calculate
-ClashFit accuracy. Adjust tolerances conservatively where fitmon-compliant poses would be rejected.
+Fitmon accuracy. Adjust tolerances conservatively where fitmon-compliant poses would be rejected.
 
-| Pose | fitmon rule | Fitmon scenario → ClashFit accuracy | Decision | Adjustment |
+| Pose | fitmon rule | Fitmon scenario → Fitmon accuracy | Decision | Adjustment |
 |---|---|---|---|---|
 | **Vrikshasana (Tree)** | One ankle ≥ 80 px higher; wrists < 100 px apart | Standing leg at 176°, arms at 165° → **accuracy 1.0** | Accept | None |
 | **Utkatasana (Chair)** | Both knees < 100° | Knees at 95° → **accuracy 0.615** ✗ | Adjust | HIP-KNEE-ANKLE: `120 ± 14` → `110 ± 20` |

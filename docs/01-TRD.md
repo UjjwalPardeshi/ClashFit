@@ -199,7 +199,7 @@ transfer**. Document this in the demo — it is a legitimate and scoreable use o
 
 **From Saturday 19:00 onward, a working APK is installed on both phones at all times.**
 
-After every green build that demonstrably works, copy the APK to `/sdcard/ClashFit/golden/` with a
+After every green build that demonstrably works, copy the APK to `/sdcard/Fitmon/golden/` with a
 timestamp. If the tree breaks at 03:00 and cannot be fixed, we still have something to demo. This
 single practice has saved more hackathon teams than any other.
 

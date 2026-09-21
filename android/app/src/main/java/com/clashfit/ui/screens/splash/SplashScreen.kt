@@ -60,7 +60,7 @@ fun SplashScreen(graph: AppGraph, onReady: (Route) -> Unit) {
             Box(Modifier.size(72.dp).clip(CircleShape).background(Ember), contentAlignment = Alignment.Center) {
                 Icon(AppIcons.Bolt, contentDescription = null, tint = Ground, modifier = Modifier.size(40.dp))
             }
-            Text("CLASHFIT", style = MaterialTheme.typography.headlineLarge, color = Ink)
+            Text("FITMON", style = MaterialTheme.typography.headlineLarge, color = Ink)
             Text(
                 if (version > 0) "Ready." else "Loading the referee…",
                 style = MaterialTheme.typography.labelLarge,

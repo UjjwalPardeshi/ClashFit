@@ -56,7 +56,7 @@ class LlmEngine(
     private val scope: CoroutineScope,
     private val json: Json,
 ) {
-    private val tag = "ClashFit/coach"
+    private val tag = "Fitmon/coach"
     // Android/data/com.clashfit/files/models/, which is where android/README.md tells you to push
     // it. This is the one definition of that path: the screens that report whether the coach model
     // is installed read it from here rather than guessing, so the two can never disagree.

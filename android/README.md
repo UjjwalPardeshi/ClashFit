@@ -1,4 +1,4 @@
-# ClashFit · Android
+# Fitmon · Android
 
 Offline AI fitness combat. Your body is the controller, the camera is the referee, and nothing
 leaves the phone. This is the Android app; the product site and the JavaScript prototype live one
@@ -77,7 +77,7 @@ packages only `arm64-v8a` and `x86_64`. Signing is read from the environment; wi
 APK is signed with the debug key so the build still proves the shrinker configuration:
 
 ```bash
-export KEYSTORE_FILE=/path/to/release.jks KEYSTORE_PASSWORD=… KEY_ALIAS=clashfit KEY_PASSWORD=…
+export KEYSTORE_FILE=/path/to/release.jks KEYSTORE_PASSWORD=… KEY_ALIAS=fitmon KEY_PASSWORD=…
 ./gradlew :app:assembleRelease      # app/build/outputs/apk/release/app-release.apk
 ```
 

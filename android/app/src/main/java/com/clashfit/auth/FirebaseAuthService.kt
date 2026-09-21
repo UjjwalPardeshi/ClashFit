@@ -246,4 +246,4 @@ class FirebaseAuthService(private val scope: CoroutineScope) : AuthService {
     }
 }
 
-private const val TAG = "ClashFit/auth"
+private const val TAG = "Fitmon/auth"

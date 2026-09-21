@@ -171,7 +171,7 @@ class AlarmRingViewModel(context: Context, private val alarmId: Long) : ViewMode
     }
 
     companion object {
-        private const val TAG = "ClashFit/alarm"
+        private const val TAG = "Fitmon/alarm"
         private const val HOLD_DURATION_MS = 5_000L
         private const val HOLD_TICK_MS = 100L
 

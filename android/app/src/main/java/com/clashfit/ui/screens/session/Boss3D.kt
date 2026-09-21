@@ -27,7 +27,7 @@ import com.google.android.filament.utils.Utils
 import java.nio.ByteBuffer
 import com.google.android.filament.Engine
 
-private const val TAG = "ClashFit/boss3d"
+private const val TAG = "Fitmon/boss3d"
 private const val MODEL = "models/pacemaker.glb"
 
 /**

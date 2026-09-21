@@ -31,7 +31,7 @@ boring before you walk in.
 
 Goal: prove the pose → rep → damage loop, and produce footage for the video.
 
-- [ ] New **public** repo, `clashfit-prototype`, dated. This is not the event repo.
+- [ ] New **public** repo, `fitmon-prototype`, dated. This is not the event repo.
 - [ ] CameraX + MediaPipe Pose Landmarker, landmarks on screen
 - [ ] Squat rep state machine with hysteresis
 - [ ] Depth + ROM form score

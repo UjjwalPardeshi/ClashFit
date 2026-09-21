@@ -943,7 +943,7 @@ private fun ShareDialog(stats: ShareCard.Stats, onDismiss: () -> Unit) {
         }
     }
 
-    val text = "${formatDistance(stats.distanceM)} with ClashFit — every rep graded by the camera. " +
+    val text = "${formatDistance(stats.distanceM)} with Fitmon — every rep graded by the camera. " +
         "clash-fit.vercel.app"
 
     val scope = rememberCoroutineScope()

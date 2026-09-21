@@ -39,7 +39,7 @@ object Sharing {
      * a person's movements sitting on disk forever, and the only file that matters is the one
      * about to be sent.
      */
-    fun writeCard(context: Context, bitmap: Bitmap, name: String = "clashfit-activity"): Uri {
+    fun writeCard(context: Context, bitmap: Bitmap, name: String = "fitmon-activity"): Uri {
         val dir = File(context.filesDir, DIR).apply {
             if (exists()) listFiles()?.forEach { it.delete() } else mkdirs()
         }

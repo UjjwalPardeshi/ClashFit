@@ -58,7 +58,7 @@ object ChallengeCodec {
     /** Decode a challenge code into a card. Throws [IllegalArgumentException] with a friendly message. */
     fun decode(code: String): ChallengeCard {
         val raw = code.trim()
-        if (!raw.startsWith(PREFIX)) throw IllegalArgumentException("Not a ClashFit challenge code.")
+        if (!raw.startsWith(PREFIX)) throw IllegalArgumentException("Not a Fitmon challenge code.")
         val rest = raw.drop(PREFIX.length)
         val dot = rest.lastIndexOf('.')
         if (dot < 0) throw IllegalArgumentException("Challenge code is incomplete.")
@@ -69,7 +69,7 @@ object ChallengeCodec {
         }
         val p = runCatching { json.decodeFromString(Wire.serializer(), body) }
             .getOrElse { throw IllegalArgumentException("Challenge code did not read.") }
-        if (p.v != 1) throw IllegalArgumentException("That code was made by a newer version of ClashFit. Update the app to open it.")
+        if (p.v != 1) throw IllegalArgumentException("That code was made by a newer version of Fitmon. Update the app to open it.")
         return ChallengeCard(
             kind = p.k.ifEmpty { "GHOST" },
             exerciseId = p.e.ifEmpty { "squat" },

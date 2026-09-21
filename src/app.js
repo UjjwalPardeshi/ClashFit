@@ -674,9 +674,9 @@ function wire() {
   el.sumBtn.onclick = () => openSummary();
   el.sumClose.onclick = () => el.sum.classList.remove('show');
   el.sumPng.onclick = () => exportPng(el.sumCanvas,
-    `clashfit-${el.exercise.value}-${sumTab}-${engine.reps.length}reps.png`);
+    `fitmon-${el.exercise.value}-${sumTab}-${engine.reps.length}reps.png`);
   el.sumCsv.onclick = () => exportCsv(engine.reps,
-    `clashfit-${el.exercise.value}-${engine.reps.length}reps.csv`);
+    `fitmon-${el.exercise.value}-${engine.reps.length}reps.csv`);
   el.dbgBtn.onclick = () => {
     el.dbg.classList.toggle('show');
     el.dbgBtn.classList.toggle('on', el.dbg.classList.contains('show'));

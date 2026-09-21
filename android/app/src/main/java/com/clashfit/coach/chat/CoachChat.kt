@@ -24,7 +24,7 @@ class CoachChat(
     private val cloud: CloudCoach?,
     private val cloudAllowed: suspend () -> Boolean = { false },
 ) {
-    private val tag = "ClashFit/chat"
+    private val tag = "Fitmon/chat"
 
     data class Answer(val text: String, val source: CoachSource)
 

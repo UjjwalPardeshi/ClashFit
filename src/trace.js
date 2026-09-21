@@ -29,7 +29,7 @@ export class TraceRecorder {
 
   /** JSON Lines: one header, then one frame per line. Diffable, streamable, trivially parsed. */
   toJsonl() {
-    const head = JSON.stringify({ type: 'clashfit-trace', v: 1, keep: KEEP, meta: this.meta, frames: this.frames.length });
+    const head = JSON.stringify({ type: 'fitmon-trace', v: 1, keep: KEEP, meta: this.meta, frames: this.frames.length });
     return [head, ...this.frames.map((f) => JSON.stringify(f))].join('\n') + '\n';
   }
 

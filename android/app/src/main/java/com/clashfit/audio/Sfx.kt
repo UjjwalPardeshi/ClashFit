@@ -15,11 +15,11 @@ import kotlin.math.sin
  * All methods are non-blocking; audio playback happens on a background thread.
  */
 class Sfx {
-    private val tag = "ClashFit/audio"
+    private val tag = "Fitmon/audio"
     private val sampleRate = 44100
     private val muted = false // Set via prefs later if needed
     private val audioExecutor = Executors.newSingleThreadExecutor { t ->
-        Thread(t).apply { isDaemon = true; name = "ClashFit-Audio" }
+        Thread(t).apply { isDaemon = true; name = "Fitmon-Audio" }
     }
 
     /**

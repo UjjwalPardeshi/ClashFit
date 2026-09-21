@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- The window behind Compose. Dark by design; the site and the app share one world. -->
-    <style name="Theme.ClashFit" parent="android:Theme.Material.NoActionBar">
+    <style name="Theme.Fitmon" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/ground</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
@@ -10,10 +10,10 @@
         <item name="android:enforceNavigationBarContrast">false</item>
     </style>
 
-    <style name="Theme.ClashFit.Splash" parent="Theme.SplashScreen">
+    <style name="Theme.Fitmon.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/ground</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_mark</item>
         <item name="windowSplashScreenAnimationDuration">300</item>
-        <item name="postSplashScreenTheme">@style/Theme.ClashFit</item>
+        <item name="postSplashScreenTheme">@style/Theme.Fitmon</item>
     </style>
 </resources>

@@ -37,10 +37,10 @@ export class GhostSource {
 
 /** Turn a completed set into a ghost. Times are relative to the first rep of the run. */
 export function ghostFromReps(reps, meta = {}) {
-  if (!reps.length) return { type: 'clashfit-ghost', v: 1, meta, events: [] };
+  if (!reps.length) return { type: 'fitmon-ghost', v: 1, meta, events: [] };
   const t0 = reps[0].tStartMs;
   return {
-    type: 'clashfit-ghost',
+    type: 'fitmon-ghost',
     v: 1,
     meta: {
       ...meta,
@@ -55,7 +55,7 @@ export function ghostFromReps(reps, meta = {}) {
 
 export function parseGhost(text) {
   const g = typeof text === 'string' ? JSON.parse(text) : text;
-  if (g.type !== 'clashfit-ghost') throw new Error('not a ClashFit ghost file');
+  if (g.type !== 'fitmon-ghost') throw new Error('not a Fitmon ghost file');
   return g;
 }
 

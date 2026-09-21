@@ -3,46 +3,46 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ClashFit &mdash; AI fitness combat, on your phone</title>
+<title>Fitmon &mdash; AI fitness combat, on your phone</title>
 <meta name="description" content="AI fitness combat for Android. Your body is the controller, your camera is the referee, and your camera never leaves the phone.">
 
 <!-- Link previews. Without these the URL shares as a blank card, which is how a
      judge is most likely to first meet this page. Card built by tools/og-card.html. -->
 <link rel="canonical" href="https://clash-fit.vercel.app/">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="ClashFit">
+<meta property="og:site_name" content="Fitmon">
 <meta property="og:url" content="https://clash-fit.vercel.app/">
-<meta property="og:title" content="ClashFit &mdash; your body is the controller">
+<meta property="og:title" content="Fitmon &mdash; your body is the controller">
 <meta property="og:description" content="Camera-verified reps become damage. Pose, form scoring, fatigue and the language model all run on the phone. Only your scores sync.">
 <meta property="og:image" content="https://clash-fit.vercel.app/img/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="ClashFit on an iQOO 15: a boss fight scoring a squat at 312 damage.">
+<meta property="og:image:alt" content="Fitmon on an iQOO 15: a boss fight scoring a squat at 312 damage.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="ClashFit &mdash; your body is the controller">
+<meta name="twitter:title" content="Fitmon &mdash; your body is the controller">
 <meta name="twitter:description" content="Camera-verified reps become damage. Pose, form scoring, fatigue and the language model all run on the phone.">
 <meta name="twitter:image" content="https://clash-fit.vercel.app/img/og.jpg">
-<meta name="theme-color" content="#0b0b0c">
+<meta name="theme-color" content="#ffffff">
 <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAzMiAzMic+PHJlY3Qgd2lkdGg9JzMyJyBoZWlnaHQ9JzMyJyBmaWxsPScjZmY0ZjFmJy8+PHRleHQgeD0nMTYnIHk9JzIyJyBmb250LWZhbWlseT0nSW1wYWN0LEFyaWFsIE5hcnJvdyxzYW5zLXNlcmlmJyBmb250LXNpemU9JzE1JyBmaWxsPScjMGIwYjBjJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJz5DRjwvdGV4dD48L3N2Zz4=">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* ============================================================
-   ClashFit — gym-template treatment
+   Fitmon — gym-template treatment
    Black ground, off-white type, one burnt-orange accent.
    Condensed uppercase display, full-bleed exercise photography.
    Single theme by design: this is a poster, not a document.
    ============================================================ */
 :root{
-  --paper:#0b0b0c;   --paper-2:#111113;  --panel:#17171a;
-  --ink:#f3efe8;     --muted:rgba(243,239,232,.66); --faint:rgba(243,239,232,.55);
-  --rule:rgba(243,239,232,.16); --rule-soft:rgba(243,239,232,.08);
-  --ember:#ff4f1f;   --ember-lift:#ff6b40; --brass:#ffb59b; --sand:rgba(255,79,31,.14);
+  --paper:#ffffff;   --paper-2:#f5f4f1;  --panel:#eceae5;
+  --ink:#111114;     --muted:rgba(17,17,20,.68); --faint:rgba(17,17,20,.54);
+  --rule:rgba(17,17,20,.14); --rule-soft:rgba(17,17,20,.07);
+  --ember:#ff4f1f;   --ember-lift:#ff6b40; --ember-ink:#bd3007; --brass:#9a4526; --sand:rgba(255,79,31,.14);
   --dark:#0a0a0b;    --dark-2:#141416;
   --on-dark:#f3efe8; --on-dark-muted:rgba(243,239,232,.66); --on-dark-faint:rgba(243,239,232,.55); --on-dark-rule:rgba(243,239,232,.16);
   --dark-accent:#ff4f1f; --dark-brass:#ffb59b;
-  --fresh:#8fd18a;   --working:#f2c14e;  --heavy:#ff8a3d;  --gassed:#ff4f1f;
+  --fresh:#2f7d32;   --working:#8a6200;  --heavy:#b4500e;  --gassed:#bd3007;
   --shell:1280px;    --gut:clamp(18px,4.5vw,56px);
   --display:"Big Shoulders Display",Impact,"Arial Narrow","Helvetica Neue",sans-serif;
   --body:"Barlow","Helvetica Neue",Arial,sans-serif;
@@ -67,7 +67,7 @@ p{margin:0}
 /* ---------- type ---------- */
 .kicker{
   font-family:var(--body);font-weight:600;font-size:12px;letter-spacing:.22em;text-transform:uppercase;
-  color:var(--ember);margin:0 0 18px;display:flex;align-items:center;gap:12px;
+  color:var(--ember-ink);margin:0 0 18px;display:flex;align-items:center;gap:12px;
 }
 .kicker::before{content:"";width:22px;height:2px;background:currentColor;flex:none}
 .band--ember .kicker{color:#0b0b0c}
@@ -75,7 +75,7 @@ h1,h2,h3{font-family:var(--display);font-weight:900;text-transform:uppercase;mar
 h1{font-size:clamp(58px,10vw,138px);line-height:.88;letter-spacing:-.005em}
 h2{font-size:clamp(42px,6.2vw,88px);line-height:.9;letter-spacing:-.003em}
 h3{font-size:clamp(26px,2.6vw,36px);line-height:.95;font-weight:700}
-h1 em,h2 em{font-style:normal;color:var(--ember)}
+h1 em,h2 em{font-style:normal;color:var(--ember-ink)}
 .band--ember h2 em{color:var(--ink)}
 .lede{font-size:clamp(17px,1.3vw,19px);line-height:1.55;color:var(--muted);max-width:58ch;margin-top:22px}
 .band--ember .lede{color:rgba(11,11,12,.78)}
@@ -101,14 +101,22 @@ h1 em,h2 em{font-style:normal;color:var(--ember)}
   display:inline-block;font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
   border:1px solid var(--rule);padding:6px 10px;color:var(--muted);
 }
-.tag--ember{border-color:var(--ember);color:var(--ember)}
+.tag--ember{border-color:var(--ember);color:var(--ember-ink)}
 .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
 
 /* ---------- nav ---------- */
-.nav{position:sticky;top:0;z-index:40;background:rgba(11,11,12,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--rule-soft)}
+.hero,.bleed,.cta,.nav,.ph,.btn--ink,.band--ember .card{
+  --ink:#f3efe8; --muted:rgba(243,239,232,.66); --faint:rgba(243,239,232,.55);
+  --rule:rgba(243,239,232,.16); --rule-soft:rgba(243,239,232,.08);
+  --ember-ink:#ff4f1f; --brass:#ffb59b;
+  --fresh:#8fd18a; --working:#f2c14e; --heavy:#ff8a3d; --gassed:#ff4f1f;
+}
+.nav{position:sticky;top:0;z-index:40;color:var(--ink);background:rgba(11,11,12,.86);backdrop-filter:blur(12px);border-bottom:1px solid var(--rule-soft)}
 .nav__in{display:flex;align-items:center;gap:32px;height:68px}
 .brand{font-family:var(--display);font-weight:900;font-size:30px;letter-spacing:.01em;text-transform:uppercase;text-decoration:none;line-height:1;display:flex;align-items:center;gap:10px}
 .brand i{width:12px;height:12px;background:var(--ember);display:inline-block}
+/* The footer inherits --muted for its body copy; the wordmark is not body copy. */
+.foot .brand{color:var(--ink)}
 .nav__links{display:flex;gap:26px;margin-left:auto;font-size:12.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
 .nav__links a{text-decoration:none;color:var(--muted);white-space:nowrap}
 .nav__links a:hover{color:var(--ink)}
@@ -150,7 +158,7 @@ h1 em,h2 em{font-style:normal;color:var(--ember)}
 }
 
 /* ---------- hero ---------- */
-.hero{position:relative;isolation:isolate;min-height:min(92vh,980px);display:flex;align-items:end;overflow:hidden}
+.hero{position:relative;isolation:isolate;color:var(--ink);min-height:min(92vh,980px);display:flex;align-items:end;overflow:hidden}
 .hero__img{position:absolute;inset:0;z-index:-2}
 .hero__img img{width:100%;height:100%;object-fit:cover;object-position:var(--focal,60% center)}
 .hero__scrim{position:absolute;inset:0;z-index:-1;
@@ -192,7 +200,7 @@ h1 em,h2 em{font-style:normal;color:var(--ember)}
 @media(max-width:900px){.story{grid-template-columns:1fr}}
 .steps{list-style:none;margin:36px 0 0;padding:0;border-top:1px solid var(--rule)}
 .steps li{display:grid;grid-template-columns:64px 1fr;gap:18px;padding:20px 0;border-bottom:1px solid var(--rule);align-items:baseline}
-.steps b{font-family:var(--display);font-weight:900;font-size:40px;line-height:.9;color:var(--ember)}
+.steps b{font-family:var(--display);font-weight:900;font-size:40px;line-height:.9;color:var(--ember-ink)}
 .steps strong{display:block;font-family:var(--display);font-weight:700;font-size:26px;text-transform:uppercase;line-height:1;margin-bottom:6px}
 .steps span{color:var(--muted);font-size:15.5px}
 
@@ -206,13 +214,13 @@ h1 em,h2 em{font-style:normal;color:var(--ember)}
 @media(max-width:960px){.feature,.feature--flip{grid-template-columns:minmax(0,1fr);gap:36px}.feature>.m-last{order:2}}
 .signals{list-style:none;padding:0;margin:30px 0 0;border-top:1px solid var(--rule)}
 .signals li{display:grid;grid-template-columns:150px 1fr;gap:16px;padding:16px 0;border-bottom:1px solid var(--rule)}
-.signals b{font-family:var(--display);font-weight:700;font-size:22px;text-transform:uppercase;color:var(--ember);line-height:1;padding-top:2px}
+.signals b{font-family:var(--display);font-weight:700;font-size:22px;text-transform:uppercase;color:var(--ember-ink);line-height:1;padding-top:2px}
 .signals span{color:var(--muted);font-size:15.5px}
 @media(max-width:560px){.signals li{grid-template-columns:1fr;gap:6px}}
 .panel{background:var(--panel);border:1px solid var(--rule);padding:clamp(18px,2.2vw,28px)}
 .panel__head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 16px;margin-bottom:16px}
 .panel__head>*{min-width:0}
-.panel__title{font-family:var(--body);font-weight:600;font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ember)}
+.panel__title{font-family:var(--body);font-weight:600;font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ember-ink)}
 .panel__note{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--faint)}
 .chart{width:100%;height:auto;display:block;overflow:visible}
 .chart .grid-line{stroke:var(--rule);stroke-width:1}
@@ -249,7 +257,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 @media(max-width:900px){.plans{grid-template-columns:1fr}}
 .plan{background:var(--panel);border:1px solid var(--rule);display:flex;flex-direction:column}
 .plan__body{padding:24px 22px 22px;display:flex;flex-direction:column;gap:14px;flex:1}
-.plan__k{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--ember)}
+.plan__k{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--ember-ink)}
 .plan h3{font-size:44px;font-weight:900}
 .plan ul{list-style:none;margin:6px 0 0;padding:0;border-top:1px solid var(--rule)}
 .plan li{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--rule);font-size:15px}
@@ -269,7 +277,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .split-row__bar{display:block;height:9px;background:var(--rule-soft)}
 .split-row__bar i{display:block;height:100%;background:var(--ember);opacity:.55}
 .split-row--best .split-row__bar i{opacity:1}
-.split-row--best .split-row__t{color:var(--ember)}
+.split-row--best .split-row__t{color:var(--ember-ink)}
 .split-row--part{opacity:.6}
 .split-row__t{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;text-align:right}
 .run__big{font-family:var(--display);font-weight:900;font-size:clamp(56px,6vw,84px);line-height:.9}
@@ -281,7 +289,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 /* ---------- library (schedule-style rows) ---------- */
 .fam{border-top:2px solid var(--ink);margin-top:clamp(32px,4vw,52px)}
 .fam__row{display:grid;grid-template-columns:64px 96px minmax(0,1fr) minmax(0,1.5fr) 110px;gap:clamp(14px,2vw,28px);align-items:center;padding:16px 0;border-bottom:1px solid var(--rule)}
-.fam__no{font-family:var(--display);font-weight:900;font-size:40px;color:var(--ember);line-height:1}
+.fam__no{font-family:var(--display);font-weight:900;font-size:40px;color:var(--ember-ink);line-height:1}
 .fam__th{width:96px;height:96px}
 .fam__game{font-family:var(--display);font-weight:900;font-size:34px;line-height:.9;text-transform:uppercase}
 .fam__game em{display:block;font-style:normal;font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:.18em;color:var(--faint);margin-top:8px}
@@ -298,9 +306,9 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 /* ---------- quotes ---------- */
 .quotes{display:grid;gap:14px;margin-top:30px}
 .quote{border:1px solid var(--rule);padding:24px 22px;background:var(--panel)}
-.quote__who{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--ember);margin-bottom:12px}
+.quote__who{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--ember-ink);margin-bottom:12px}
 .quote p{font-family:var(--display);font-weight:700;font-size:28px;line-height:1;text-transform:uppercase}
-.quote--boss p{color:var(--ember)}
+.quote--boss p{color:var(--ember-ink)}
 
 /* ---------- grid cards ---------- */
 .grid{display:grid;gap:clamp(12px,1.6vw,22px);margin-top:clamp(32px,4vw,52px)}
@@ -309,7 +317,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 @media(max-width:940px){.grid--3,.grid--4{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.grid--3,.grid--4{grid-template-columns:1fr}}
 .card{background:var(--panel);border:1px solid var(--rule);padding:24px 22px;display:flex;flex-direction:column;gap:10px}
-.card__k{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--ember)}
+.card__k{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--ember-ink)}
 .card h3{font-size:28px}
 .card p{color:var(--muted);font-size:15px}
 .band--ember .card{background:#0b0b0c;border-color:#0b0b0c;color:var(--ink)}
@@ -318,7 +326,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 /* ---------- arch ---------- */
 .arch{font-family:var(--mono);font-size:13px;line-height:2;color:var(--muted);white-space:pre;overflow-x:auto;margin:0;padding:clamp(20px,2.4vw,30px);border:1px solid var(--rule);background:var(--panel)}
 .arch b{color:var(--ink);font-weight:500}
-.arch u{color:var(--ember);text-decoration:none}
+.arch u{color:var(--ember-ink);text-decoration:none}
 
 /* ---------- metrics ---------- */
 .metrics{display:grid;grid-template-columns:repeat(5,1fr);border-top:2px solid var(--ink);border-bottom:1px solid var(--rule);margin-top:clamp(32px,4vw,48px)}
@@ -326,7 +334,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 @media(max-width:520px){.metrics{grid-template-columns:1fr}}
 .metric{padding:28px 22px 26px;border-right:1px solid var(--rule)}
 .metric:last-child{border-right:0}
-.metric__v{font-family:var(--display);font-weight:900;font-size:clamp(52px,5.4vw,76px);line-height:.9;color:var(--ember)}
+.metric__v{font-family:var(--display);font-weight:900;font-size:clamp(52px,5.4vw,76px);line-height:.9;color:var(--ember-ink)}
 .metric__k{margin-top:12px;font-family:var(--display);font-weight:700;font-size:24px;text-transform:uppercase;line-height:1}
 .metric__s{margin-top:6px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
 
@@ -335,6 +343,8 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .cta__img{position:absolute;inset:0;z-index:-2}
 .cta__img img{width:100%;height:100%;object-fit:cover;object-position:var(--focal,center);filter:grayscale(.3)}
 .cta__scrim{position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(11,11,12,.92),rgba(11,11,12,.55) 60%,rgba(11,11,12,.3))}
+
+.cta{color:var(--ink)}
 .cta__in{padding-block:clamp(96px,12vw,170px);max-width:900px}
 .stores{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
 
@@ -596,7 +606,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .reel__rail i{width:14px;height:1px;background:currentColor;flex:none;transition:width .3s ease}
 .reel__rail button:hover{color:var(--ink)}
 .reel__rail button:focus-visible{outline:1px solid var(--ember);outline-offset:3px}
-.reel__rail button[aria-current="true"]{color:var(--ember)}
+.reel__rail button[aria-current="true"]{color:var(--ember-ink)}
 .reel__rail button[aria-current="true"] i{width:30px}
 
 .reel__steps{list-style:none;margin:0;padding:0}
@@ -605,7 +615,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   padding-block:clamp(24px,4vh,56px);opacity:.28;transition:opacity .45s ease;
 }
 .reel__step.is-on{opacity:1}
-.reel__n{margin:0;font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ember)}
+.reel__n{margin:0;font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ember-ink)}
 .reel__n span{color:var(--faint);margin-left:7px}
 .reel__step h3{
   margin:15px 0 0;font-family:var(--display);font-weight:900;text-transform:uppercase;
@@ -707,7 +717,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .iq__use{list-style:none;margin:26px 0 0;padding:0;border-top:1px solid var(--rule-soft)}
 .iq__use li{display:grid;grid-template-columns:132px 1fr;gap:clamp(12px,2vw,26px);padding:16px 0;border-bottom:1px solid var(--rule-soft)}
 @media(max-width:560px){.iq__use li{grid-template-columns:1fr;gap:5px}}
-.iq__part{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ember);padding-top:3px}
+.iq__part{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ember-ink);padding-top:3px}
 .iq__what{color:var(--muted);font-size:15px;line-height:1.5}
 .iq__what b{color:var(--ink);font-weight:600;display:block;margin-bottom:2px;font-size:16px}
 
@@ -820,7 +830,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   gap:clamp(14px,2.4vw,34px);align-items:start;
   padding:clamp(20px,2.6vw,32px) 0;border-bottom:1px solid var(--rule-soft);
 }
-.tool__n{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--ember);padding-top:5px}
+.tool__n{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--ember-ink);padding-top:5px}
 .tool__b h3{margin:0;font-family:var(--display);font-weight:700;font-size:clamp(21px,2.1vw,29px);line-height:1.04;letter-spacing:-.004em}
 .tool__b p{margin:11px 0 0;color:var(--muted);font-size:15px;line-height:1.6;max-width:62ch}
 .tool__t{
@@ -857,7 +867,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 /* ---------- the three answers ---------- */
 .ans{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(22px,3.4vw,58px)}
 .ans__c{display:flex;flex-direction:column;padding-top:22px;border-top:2px solid var(--ember)}
-.ans__n{margin:0;font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ember)}
+.ans__n{margin:0;font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ember-ink)}
 .ans__h{
   margin:16px 0 0;font-family:var(--display);font-weight:700;text-transform:none;
   font-size:clamp(21px,1.9vw,27px);line-height:1.06;letter-spacing:-.004em;color:var(--ink);
@@ -868,7 +878,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
 }
 .ans__l::after{content:" \2192"}
-.ans__l:hover{color:var(--ember)}
+.ans__l:hover{color:var(--ember-ink)}
 @media(max-width:900px){.ans{grid-template-columns:minmax(0,1fr);gap:0}
   .ans__c{padding:22px 0 28px}.ans__c+.ans__c{border-top-width:1px;border-top-color:var(--rule-soft)}
   .ans__l{padding-top:14px}}
@@ -877,7 +887,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .out{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);gap:clamp(28px,5vw,72px);align-items:center}
 .out__rules{list-style:none;margin:30px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 26px}
 .out__rules li{display:grid;grid-template-columns:66px 1fr;gap:14px;align-items:start}
-.out__rules b{font-family:var(--display);font-weight:900;font-size:26px;line-height:1;color:var(--ember)}
+.out__rules b{font-family:var(--display);font-weight:900;font-size:26px;line-height:1;color:var(--ember-ink)}
 .out__rules span{font-size:14px;line-height:1.5;color:var(--muted)}
 .out__note{
   margin-top:30px;border-left:2px solid var(--ember);background:rgba(255,79,31,.06);
@@ -898,7 +908,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
 <header class="nav">
   <div class="shell nav__in">
-    <a class="brand" href="#top"><i></i>ClashFit</a>
+    <a class="brand" href="#top"><i></i>Fitmon</a>
     <nav class="nav__links">
       <a href="#loop">The loop</a>
       <a href="#fatigue">Fatigue</a>
@@ -1188,7 +1198,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
     <div class="rise">
       <p class="kicker">The device</p>
       <h2>Six pieces of the phone. <em>No accessories.</em></h2>
-      <p class="lede">No band, no strap, no chest belt, no gym machine reporting to an app. Everything ClashFit measures, it measures with hardware already in your hand — and the whole loop closes on that hardware.</p>
+      <p class="lede">No band, no strap, no chest belt, no gym machine reporting to an app. Everything Fitmon measures, it measures with hardware already in your hand — and the whole loop closes on that hardware.</p>
       <ul class="iq__use">
         <li>
           <span class="iq__part">32&nbsp;MP &middot; 90&deg;</span>
@@ -1882,7 +1892,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
           <text x="260" y="544" fill="#f2c14e">AMMO</text>
         </g>
       </svg>
-      <p class="out__cap">Zombie Run &middot; the only ClashFit mode that asks for the network</p>
+      <p class="out__cap">Zombie Run &middot; the only Fitmon mode that asks for the network</p>
     </div>
   </div>
 </section>
@@ -2061,7 +2071,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
   <div class="shell">
     <div class="foot__grid">
       <div>
-        <a class="brand" href="#top"><i></i>ClashFit</a>
+        <a class="brand" href="#top"><i></i>Fitmon</a>
         <p>AI fitness combat. Your body is the controller, your camera is the referee, only your scores sync to the cloud.</p>
       </div>
       <div><h4>Play</h4><ul><li><a href="#modes">Modes</a></li><li><a href="#race">1v1 Duel</a></li><li><a href="#raid">Raid room</a></li><li><a href="#run">Run tracker</a></li><li><a href="#zombie-run">Zombie Run</a></li><li><a href="#alarm">Wake-up alarm</a></li><li><a href="#tools">Health tools</a></li></ul></div>
@@ -2069,7 +2079,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
       <div><h4>More</h4><ul><li><a href="#library">Exercise library</a></li><li><a href="#screens">Every screen</a></li><li><a href="#clinic">Clinic mode</a></li><li><a href="/credits">Credits</a></li></ul></div>
     </div>
     <div class="foot__base">
-      <span>ClashFit · iQOO Hackathon 2026 · Pune City Battle</span>
+      <span>Fitmon · iQOO Hackathon 2026 · Pune City Battle</span>
       <span>Not a medical device</span>
     </div>
   </div>
@@ -2095,7 +2105,7 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
     <div id="wl-done" hidden>
       <p class="kicker">Noted</p>
       <h2 style="font-size:clamp(30px,4.6vw,42px);margin-top:10px">See you in<br><em>the arena.</em></h2>
-      <p class="wl__lede">ClashFit lands on Android in 2026. Your camera never leaves your phone, your profile and levels sync to the cloud.</p>
+      <p class="wl__lede">Fitmon lands on Android in 2026. Your camera never leaves your phone, your profile and levels sync to the cloud.</p>
       <div class="tags"><span class="tag">Email sign-in</span><span class="tag">Levels · Leaderboards</span><span class="tag">Free core, forever</span></div>
     </div>
 

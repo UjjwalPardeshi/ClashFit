@@ -27,7 +27,7 @@ class CoachEngine(
     private val cloudAllowed: suspend () -> Boolean = { false },
     private val json: Json = Json,
 ) {
-    private val tag = "ClashFit/coach"
+    private val tag = "Fitmon/coach"
 
     private val coachFor = CoachFor(
         llm = if (llm != null || cloud != null) suspend { telemetry -> firstVoice(telemetry) } else null,
@@ -72,7 +72,7 @@ class CoachEngine(
 
     companion object {
         /** The same rules the on-device prompts carry, in assets/prompts/system.txt. */
-        const val SYSTEM = "You are the voice of a fitness combat game called ClashFit. You will be given measured " +
+        const val SYSTEM = "You are the voice of a fitness combat game called Fitmon. You will be given measured " +
             "telemetry from one set of exercise. Everything you say must be grounded in those numbers. Never invent a " +
             "number. Never comment on the player's body, weight, appearance, or fitness level. Never apologise. Never " +
             "use exclamation marks. Never use emoji. Maximum two sentences per output. Plain English."

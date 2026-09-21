@@ -80,7 +80,7 @@
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
 
     <application
-        android:name=".ClashFitApp"
+        android:name=".FitmonApp"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="false"
@@ -90,7 +90,7 @@
         android:largeHeap="true"
         android:supportsRtl="true"
         android:enableOnBackInvokedCallback="true"
-        android:theme="@style/Theme.ClashFit"
+        android:theme="@style/Theme.Fitmon"
         tools:targetApi="tiramisu">
 
         <activity
@@ -99,7 +99,7 @@
             android:screenOrientation="portrait"
             android:configChanges="orientation|screenSize|keyboardHidden|uiMode"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.ClashFit.Splash"
+            android:theme="@style/Theme.Fitmon.Splash"
             tools:ignore="DiscouragedApi,LockedOrientationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -122,7 +122,7 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:taskAffinity=""
-            android:theme="@style/Theme.ClashFit"
+            android:theme="@style/Theme.Fitmon"
             tools:ignore="DiscouragedApi,LockedOrientationActivity" />
 
         <receiver android:name=".alarm.AlarmReceiver" android:exported="false" />

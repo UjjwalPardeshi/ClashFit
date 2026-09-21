@@ -17,7 +17,7 @@
 
 # ---------------------------------------------------------------- startup path
 # Everything between the launcher icon and the first frame of Train.
-HSPLcom/clashfit/ClashFitApp;->**(**)**
+HSPLcom/clashfit/FitmonApp;->**(**)**
 HSPLcom/clashfit/MainActivity;->**(**)**
 HSPLcom/clashfit/AppGraph;->**(**)**
 HSPLcom/clashfit/AppGraph$Companion;->**(**)**

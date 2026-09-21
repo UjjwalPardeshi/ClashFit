@@ -28,7 +28,7 @@ export function newPlayerId() {
 /** Same-machine transport for two browser tabs. The Android build swaps in hotspot sockets
  *  behind this identical interface — that is the whole point of having an interface. */
 export class BroadcastChannelTransport {
-  constructor(room = 'clashfit-duel') {
+  constructor(room = 'fitmon-duel') {
     this.room = room;
     this.listeners = new Set();
     this.ch = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(room) : null;

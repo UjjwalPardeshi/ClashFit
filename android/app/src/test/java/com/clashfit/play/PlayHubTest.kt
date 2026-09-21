@@ -46,7 +46,7 @@ class PlayHubTest {
         val bus = mutableSetOf<LoopbackTransport>()
         val hub = hub(bus, FakeClock(), backgroundScope)
 
-        assertTrue(hub.host("ClashFit · Rep Race").isSuccess)
+        assertTrue(hub.host("Fitmon · Rep Race").isSuccess)
         testDispatcher.scheduler.advanceUntilIdle()
         assertEquals(LinkState.ADVERTISING, hub.linkState.value, "Hosting should advertise")
 
@@ -67,7 +67,7 @@ class PlayHubTest {
         val bus = mutableSetOf<LoopbackTransport>()
         val hub = hub(bus, FakeClock(), backgroundScope)
 
-        hub.host("ClashFit · Rep Race")
+        hub.host("Fitmon · Rep Race")
         hub.arm(GameMode.REP_RACE, "bicep_curl", 30)
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -114,7 +114,7 @@ class PlayHubTest {
         val bus = mutableSetOf<LoopbackTransport>()
         val hub = hub(bus, FakeClock(), backgroundScope)
 
-        hub.host("ClashFit · Rep Race")
+        hub.host("Fitmon · Rep Race")
         hub.arm(GameMode.REP_RACE, "bicep_curl", 30)
         testDispatcher.scheduler.advanceUntilIdle()
         val transport = bus.single()
@@ -141,7 +141,7 @@ class PlayHubTest {
         val host = hub(bus, clock, backgroundScope)
         val guest = hub(bus, clock, backgroundScope)
 
-        host.host("ClashFit · Rep Race")
+        host.host("Fitmon · Rep Race")
         guest.join()
         guest.arm(GameMode.REP_RACE, "", null)  // the guest has nothing to say
         testDispatcher.scheduler.advanceUntilIdle()
@@ -175,7 +175,7 @@ class PlayHubTest {
         val host = hub(bus, clock, backgroundScope)
         val guest = hub(bus, clock, backgroundScope)
 
-        host.host("ClashFit · Rep Race")
+        host.host("Fitmon · Rep Race")
         guest.join()
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -212,7 +212,7 @@ class PlayHubTest {
         val clock = FakeClock()
         val host = hub(bus, clock, backgroundScope)
 
-        host.host("ClashFit · Rep Race")
+        host.host("Fitmon · Rep Race")
         host.arm(GameMode.REP_RACE, "shoulder_press", 90)
         testDispatcher.scheduler.advanceUntilIdle()
         val hostTransport = bus.single()
@@ -249,7 +249,7 @@ class PlayHubTest {
         val host = hub(bus, clock, backgroundScope)
         val guest = hub(bus, clock, backgroundScope)
 
-        host.host("ClashFit · Rep Race")
+        host.host("Fitmon · Rep Race")
         guest.join()  // the link is open, but the lobby has not armed yet
         host.arm(GameMode.REP_RACE, "bicep_curl", 30)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -283,7 +283,7 @@ class PlayHubTest {
         val host = hub(bus, clock, backgroundScope)
         val guest = hub(bus, clock, backgroundScope)
 
-        host.host("ClashFit · Rep Race")
+        host.host("Fitmon · Rep Race")
         guest.join()
         host.arm(GameMode.REP_RACE, "bicep_curl", 30)
         testDispatcher.scheduler.advanceUntilIdle()

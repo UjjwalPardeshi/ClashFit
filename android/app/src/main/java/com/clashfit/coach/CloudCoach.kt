@@ -33,7 +33,7 @@ class CloudCoach(
     private val endpoint: String = ENDPOINT,
     private val json: Json = Json { ignoreUnknownKeys = true },
 ) {
-    private val tag = "ClashFit/cloud"
+    private val tag = "Fitmon/cloud"
 
     /** True when a key was built in. Without one the rung is simply absent from the ladder. */
     val isConfigured: Boolean get() = apiKey.isNotBlank()
@@ -75,8 +75,8 @@ class CloudCoach(
             setRequestProperty("Authorization", "Bearer $apiKey")
             setRequestProperty("Content-Type", "application/json")
             // OpenRouter asks for these so the app shows up by name on their dashboard.
-            setRequestProperty("HTTP-Referer", "https://clashfit.app")
-            setRequestProperty("X-Title", "ClashFit")
+            setRequestProperty("HTTP-Referer", "https://fitmon.app")
+            setRequestProperty("X-Title", "Fitmon")
         }
         return try {
             conn.outputStream.use { it.write(body.toByteArray()) }

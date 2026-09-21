@@ -7,7 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.clashfit.ui.nav.AppNavHost
-import com.clashfit.ui.theme.ClashFitTheme
+import com.clashfit.ui.theme.FitmonTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
 
         val graph = AppGraph.of(this)
         setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 AppNavHost(graph, deskExerciseId, shortcutAction)
             }
         }

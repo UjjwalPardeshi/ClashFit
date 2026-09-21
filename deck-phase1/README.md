@@ -6,8 +6,8 @@ event-day pitch for 5–6 Sep and talks about what shipped in 30 hours.
 | File | What it is |
 | --- | --- |
 | `index.html` | The deck itself. Animated, keyboard-driven, 15 slides. |
-| `ClashFit-Phase1-Deck.pdf` | 15 pages, 1920×1080. |
-| `ClashFit-Phase1-Deck.pptx` | 15 slides, 13.333 × 7.5 in (16:9). |
+| `Fitmon-Phase1-Deck.pdf` | 15 pages, 1920×1080. |
+| `Fitmon-Phase1-Deck.pptx` | 15 slides, 13.333 × 7.5 in (16:9). |
 | `slides/` | The 15 frames both exports are built from. |
 
 ## Presenting

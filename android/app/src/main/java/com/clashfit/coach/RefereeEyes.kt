@@ -24,7 +24,7 @@ import kotlinx.coroutines.CancellationException
  */
 class RefereeEyes(private val llm: LlmEngine) {
 
-    private val tag = "ClashFit/referee"
+    private val tag = "Fitmon/referee"
 
     /** Whether a critique is possible at all right now: no model, no eyes. */
     val available: Boolean get() = llm.ready

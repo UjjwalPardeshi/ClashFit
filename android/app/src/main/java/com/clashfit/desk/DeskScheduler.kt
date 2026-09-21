@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
  * Re-arms after each fire. Skips quiet hours and snooze windows.
  */
 object DeskScheduler {
-    private const val TAG = "ClashFit/desk"
+    private const val TAG = "Fitmon/desk"
     private const val ACTION = "com.clashfit.desk.DESK_ALARM"
 
     /**
@@ -24,7 +24,7 @@ object DeskScheduler {
      */
     fun schedule(context: Context, clock: Clock, scope: CoroutineScope) {
         scope.launch(Dispatchers.IO) {
-            val graph = (context.applicationContext as? com.clashfit.ClashFitApp)?.graph
+            val graph = (context.applicationContext as? com.clashfit.FitmonApp)?.graph
             val prefs = graph?.prefs ?: return@launch
             val settings = prefs.settings.first() ?: return@launch
 

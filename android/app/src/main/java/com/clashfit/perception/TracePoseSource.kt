@@ -43,7 +43,7 @@ class TracePoseSource(
     private val replayRealTiming: Boolean = true,
 ) : PoseSource {
 
-    private val TAG = "ClashFit/perception"
+    private val TAG = "Fitmon/perception"
     // Recreated on every start(): a finished replay closes its channel so collectors complete.
     private var frameChannel = Channel<PoseFrame>(capacity = 1)
     override val frames: Flow<PoseFrame> get() = frameChannel.receiveAsFlow()

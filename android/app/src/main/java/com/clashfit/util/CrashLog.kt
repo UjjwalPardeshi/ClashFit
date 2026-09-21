@@ -23,7 +23,7 @@ import java.util.Locale
  */
 object CrashLog {
 
-    private const val TAG = "ClashFit/crash"
+    private const val TAG = "Fitmon/crash"
     private const val FILE = "crash.log"
 
     /** Serialises the read-modify-write, since crashes do not queue politely. */

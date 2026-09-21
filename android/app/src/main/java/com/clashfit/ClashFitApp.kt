@@ -10,7 +10,7 @@ import com.clashfit.util.CrashLog
 import com.clashfit.BuildConfig
 import android.os.StrictMode
 
-class ClashFitApp : Application() {
+class FitmonApp : Application() {
     lateinit var graph: AppGraph
         private set
 

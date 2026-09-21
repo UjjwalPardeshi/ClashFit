@@ -328,7 +328,7 @@ private fun acceptCode(
         return AcceptResult(error = friendly?.takeIf { it.isNotBlank() } ?: "That code did not read. Check you copied all of it.")
     }
     if (exercises.isNotEmpty() && !exercises.containsKey(card.exerciseId)) {
-        return AcceptResult(error = "That challenge uses an exercise ClashFit does not have.")
+        return AcceptResult(error = "That challenge uses an exercise Fitmon does not have.")
     }
     val mode = runCatching { GameMode.valueOf(card.mode) }.getOrDefault(GameMode.BOSS_FIGHT)
     val events = card.ghost?.events.orEmpty().map { GhostData.Event(t = it.t, damage = it.damage) }
@@ -420,7 +420,7 @@ private fun shareText(context: Context, text: String) {
 
 private fun copyText(context: Context, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
-    runCatching { clipboard?.setPrimaryClip(ClipData.newPlainText("ClashFit challenge", text)) }
+    runCatching { clipboard?.setPrimaryClip(ClipData.newPlainText("Fitmon challenge", text)) }
 }
 
 fun NavGraphBuilder.challengeRoutes(graph: AppGraph, nav: NavHostController) {

@@ -13,7 +13,7 @@
 // apps, and breaking someone's streak because they had flu is a product choosing to lose a user.
 // docs/23-META-PROGRESSION.md §6
 
-const KEY = 'clashfit:v1';
+const KEY = 'fitmon:v1';
 const KEEP_FULL_SESSIONS = 20;
 const DAY_MS = 86_400_000;
 const MAX_FREEZE_GAP_DAYS = 3;

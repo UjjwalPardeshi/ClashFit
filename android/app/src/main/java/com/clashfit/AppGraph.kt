@@ -99,7 +99,7 @@ class AppGraph(val app: Context) {
     val friends: FriendsRepository by lazy { if (CloudConfig.isConfigured) FirestoreFriends(auth, scope) else NoCloudFriends("This build has no cloud keys. Add FIREBASE_API_KEY, FIREBASE_APP_ID and FIREBASE_PROJECT_ID to android/local.properties.") }
 
     /**
-     * Publishes the player's standing to the leaderboard. Started once by [ClashFitApp]; it does
+     * Publishes the player's standing to the leaderboard. Started once by [FitmonApp]; it does
      * nothing at all until somebody is signed in, and nothing ever leaves here but scores.
      */
     val scoreSync: ScoreSync by lazy {
@@ -121,6 +121,6 @@ class AppGraph(val app: Context) {
     }
 
     companion object {
-        fun of(context: Context): AppGraph = (context.applicationContext as ClashFitApp).graph
+        fun of(context: Context): AppGraph = (context.applicationContext as FitmonApp).graph
     }
 }

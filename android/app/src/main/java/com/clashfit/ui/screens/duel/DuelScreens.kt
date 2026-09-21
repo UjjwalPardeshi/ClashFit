@@ -232,7 +232,7 @@ private fun DuelLobbyScreen(graph: AppGraph, nav: NavHostController, mode: GameM
             enabled = seat == null || state == LinkState.LOST,
             onHost = {
                 seat = Seat.HOST
-                scope.launch { error = failure(hub.host("ClashFit · " + mode.title)) }
+                scope.launch { error = failure(hub.host("Fitmon · " + mode.title)) }
             },
             onJoin = {
                 seat = Seat.GUEST
@@ -368,7 +368,7 @@ private fun RaidRoomScreen(graph: AppGraph, nav: NavHostController, exerciseId: 
         SectionGap(14)
         HostJoinRow(
             enabled = state == LinkState.IDLE || state == LinkState.LOST,
-            onHost = { scope.launch { error = failure(hub.host("ClashFit · Raid")) } },
+            onHost = { scope.launch { error = failure(hub.host("Fitmon · Raid")) } },
             onJoin = { scope.launch { error = failure(hub.join()) } },
         )
 

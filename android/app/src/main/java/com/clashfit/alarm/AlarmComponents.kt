@@ -25,7 +25,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.clashfit.R
 import com.clashfit.data.AlarmEntity
 import com.clashfit.data.AlarmDao
-import com.clashfit.ui.theme.ClashFitTheme
+import com.clashfit.ui.theme.FitmonTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -39,7 +39,7 @@ private val Context.alarmDataStore by preferencesDataStore("alarm_prefs")
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val alarmId = intent.getLongExtra(EXTRA_ALARM_ID, 0L)
-        Log.d("ClashFit/alarm", "AlarmReceiver: firing alarm $alarmId")
+        Log.d("Fitmon/alarm", "AlarmReceiver: firing alarm $alarmId")
         AlarmService.start(context, alarmId)
     }
 
@@ -52,7 +52,7 @@ class AlarmReceiver : BroadcastReceiver() {
 /** Reschedules enabled alarms after reboot or time change. */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("ClashFit/alarm", "BootReceiver: rescheduling on ${intent.action}")
+        Log.d("Fitmon/alarm", "BootReceiver: rescheduling on ${intent.action}")
         AlarmScheduler.rescheduleAll(context)
     }
 }
@@ -68,7 +68,7 @@ class AlarmService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val alarmId = intent?.getLongExtra(AlarmReceiver.EXTRA_ALARM_ID, 0L) ?: 0L
-        Log.d("ClashFit/alarm", "AlarmService.onStartCommand: $alarmId")
+        Log.d("Fitmon/alarm", "AlarmService.onStartCommand: $alarmId")
 
         ensureNotificationChannel(this)
 
@@ -152,7 +152,7 @@ class AlarmService : Service() {
                 audioTrack.release()
                 this@AlarmService.audioTrack = null
             } catch (e: Exception) {
-                Log.e("ClashFit/alarm", "Error playing alarm tone", e)
+                Log.e("Fitmon/alarm", "Error playing alarm tone", e)
             }
         }
     }
@@ -164,7 +164,7 @@ class AlarmService : Service() {
                 it.stop()
                 it.release()
             } catch (e: Exception) {
-                Log.e("ClashFit/alarm", "Error stopping audio", e)
+                Log.e("Fitmon/alarm", "Error stopping audio", e)
             }
         }
         audioTrack = null
@@ -211,7 +211,7 @@ class AlarmRingActivity : ComponentActivity() {
         val alarmId = intent.getLongExtra(AlarmReceiver.EXTRA_ALARM_ID, 0L)
 
         setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 AlarmRingScreen(
                     alarmId = alarmId,
                     onDismissed = {
@@ -227,7 +227,7 @@ class AlarmRingActivity : ComponentActivity() {
 
 /** Schedules and manages alarms. */
 object AlarmScheduler {
-    private const val TAG = "ClashFit/alarm"
+    private const val TAG = "Fitmon/alarm"
 
     /** Schedule all enabled alarms. Call on boot and after time change. */
     fun rescheduleAll(context: Context) {
@@ -378,14 +378,14 @@ object AlarmScheduler {
 
     private fun getAlarmDao(context: Context): AlarmDao? = try {
         val app = context.applicationContext
-        if (app !is com.clashfit.ClashFitApp) {
-            Log.e(TAG, "Application context is not ClashFitApp: ${app?.javaClass?.simpleName}")
+        if (app !is com.clashfit.FitmonApp) {
+            Log.e(TAG, "Application context is not FitmonApp: ${app?.javaClass?.simpleName}")
             return null
         }
 
         val graph = app.graph
         if (graph == null) {
-            Log.e(TAG, "ClashFitApp.graph is null")
+            Log.e(TAG, "FitmonApp.graph is null")
             return null
         }
 

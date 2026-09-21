@@ -13,7 +13,7 @@ a Zombie Run is also a recorded activity.
 > adding a network permission — has already been taken. Zombie Run remains the only mode that requests
 > location or downloads map tiles; the analysis below is still valid as a record of that decision.
 
-Every other mode in ClashFit runs with the radio off. **This one does not, and that has to be said
+Every other mode in Fitmon runs with the radio off. **This one does not, and that has to be said
 plainly everywhere it appears** — see [§ What it costs us](#what-it-costs-us) below, which is the
 part of this document that actually matters.
 

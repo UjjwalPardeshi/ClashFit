@@ -18,7 +18,7 @@ import com.clashfit.core.model.GameMode
 import com.clashfit.meta.Levels
 import com.clashfit.ui.components.ModeSigil
 import com.clashfit.ui.components.RankInsignia
-import com.clashfit.ui.theme.ClashFitTheme
+import com.clashfit.ui.theme.FitmonTheme
 import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.InkMuted
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -59,7 +59,7 @@ class GameArtScreenshotTest {
     fun rankLadder() {
         val levels = listOf(1, 2, 3, 5, 7, 8, 10, 12, 16, 20, 30, 40)
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 Column(
                     Modifier.fillMaxSize().background(Ground).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(18.dp),
@@ -89,7 +89,7 @@ class GameArtScreenshotTest {
     fun badgeTiers() {
         val samples = listOf(Tier.BRONZE, Tier.SILVER, Tier.GOLD)
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 Column(
                     Modifier.fillMaxSize().background(Ground).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -121,7 +121,7 @@ class GameArtScreenshotTest {
     @Test
     fun familyMarks() {
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 Row(
                     Modifier.fillMaxSize().background(Ground).padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -146,7 +146,7 @@ class GameArtScreenshotTest {
     @Test
     fun modeSigils() {
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 Column(
                     Modifier.fillMaxSize().background(Ground).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -182,7 +182,7 @@ class GameArtScreenshotTest {
     @Test
     fun chaseGlyphs() {
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 Column(
                     Modifier.fillMaxSize().background(Ground).padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(24.dp),

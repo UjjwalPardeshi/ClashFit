@@ -1,6 +1,6 @@
-# Firebase Setup for ClashFit
+# Firebase Setup for Fitmon
 
-This directory contains the Firestore rules and indexes for ClashFit's cloud backend.
+This directory contains the Firestore rules and indexes for Fitmon's cloud backend.
 
 ## Data Model
 
@@ -41,7 +41,7 @@ Fields:
 
 1. **Create the Firebase Project**
    - Go to [Firebase Console](https://console.firebase.google.com)
-   - Create a new project named "ClashFit"
+   - Create a new project named "Fitmon"
    - Accept the default settings
 
 2. **Add an Android App**
@@ -115,7 +115,7 @@ The MetaRepository's weekly progress is synced to Firestore if the metric matche
 they refuse what they are meant to refuse. This does:
 
 ```bash
-FIREBASE_TEST_EMAIL=omkar.test@clashfit.app \
+FIREBASE_TEST_EMAIL=omkar.test@fitmon.app \
 FIREBASE_TEST_PASSWORD=... \
 python3 firebase/verify-rules.py
 ```

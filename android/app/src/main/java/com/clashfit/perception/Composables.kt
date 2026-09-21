@@ -42,7 +42,7 @@ import com.clashfit.ui.theme.Ink
 import com.clashfit.ui.theme.Panel
 
 /**
- * Draws the 11 ClashFit skeleton joints and their connections on a canvas overlay.
+ * Draws the 11 Fitmon skeleton joints and their connections on a canvas overlay.
  * Landm landmarks are expected to be normalized 0..1 in image space.
  */
 @Composable
@@ -58,7 +58,7 @@ fun SkeletonOverlay(
 }
 
 private fun DrawScope.drawSkeleton(landmarks: Landmarks, canvasWidth: Float, canvasHeight: Float) {
-    // ClashFit uses 11 joints. Landmark indices from MediaPipe Pose:
+    // Fitmon uses 11 joints. Landmark indices from MediaPipe Pose:
     // 11: left shoulder, 12: right shoulder
     // 13: left elbow, 14: right elbow
     // 15: left wrist, 16: right wrist
@@ -198,7 +198,7 @@ private fun CameraPermissionRationale(
             )
 
             Text(
-                text = "ClashFit needs your camera to track your movement and count reps. " +
+                text = "Fitmon needs your camera to track your movement and count reps. " +
                     "Your pose landmarks are processed locally on your phone and never sent anywhere.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Ink,

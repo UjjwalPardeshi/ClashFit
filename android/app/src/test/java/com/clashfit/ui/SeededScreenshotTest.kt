@@ -28,7 +28,7 @@ import com.clashfit.ui.screens.history.HistoryScreen
 import com.clashfit.ui.screens.progress.ProgressScreen
 import com.clashfit.ui.screens.streaks.StreaksScreen
 import com.clashfit.ui.screens.you.YouScreen
-import com.clashfit.ui.theme.ClashFitTheme
+import com.clashfit.ui.theme.FitmonTheme
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
 import kotlinx.coroutines.runBlocking
@@ -196,7 +196,7 @@ class SeededScreenshotTest {
 
     private fun shot(name: String, route: Route, content: @Composable (NavHostController) -> Unit) {
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 val nav = rememberNavController()
                 MainScaffold(nav) { padding ->
                     NavHost(nav, startDestination = route, modifier = Modifier.padding(padding).consumeWindowInsets(padding)) {
@@ -235,7 +235,7 @@ class SeededScreenshotTest {
     @Test
     fun summaryWithData() {
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 SummaryScreen(graph, lastSessionId, onHome = {}, onAgain = {})
             }
         }

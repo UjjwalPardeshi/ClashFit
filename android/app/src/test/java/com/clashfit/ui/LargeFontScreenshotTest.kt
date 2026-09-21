@@ -29,7 +29,7 @@ import com.clashfit.ui.screens.progress.ProgressScreen
 import com.clashfit.ui.screens.settings.SettingsScreen
 import com.clashfit.ui.screens.social.WeeklyScreen
 import com.clashfit.ui.screens.you.YouScreen
-import com.clashfit.ui.theme.ClashFitTheme
+import com.clashfit.ui.theme.FitmonTheme
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
@@ -64,7 +64,7 @@ class LargeFontScreenshotTest {
             CompositionLocalProvider(
                 LocalDensity provides Density(density = base.density, fontScale = 1.5f),
             ) {
-                ClashFitTheme {
+                FitmonTheme {
                     val nav = rememberNavController()
                     MainScaffold(nav) { padding ->
                         NavHost(

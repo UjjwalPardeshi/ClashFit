@@ -126,7 +126,7 @@ function hexA(hex, a) {
 }
 
 /** Straight into the deck. */
-export function exportPng(cv, name = 'clashfit-fatigue-curve.png') {
+export function exportPng(cv, name = 'fitmon-fatigue-curve.png') {
   cv.toBlob((blob) => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -137,7 +137,7 @@ export function exportPng(cv, name = 'clashfit-fatigue-curve.png') {
 }
 
 /** Per-rep CSV — the raw evidence, for a judge who asks or for tuning in a spreadsheet. */
-export function exportCsv(reps, name = 'clashfit-session.csv') {
+export function exportCsv(reps, name = 'fitmon-session.csv') {
   const head = ['rep','form','verdict','depth','rom','tempo','alignment','depth_cm',
                 'ecc_s','pause_s','con_s','vel_deg_s','fatigue','band','damage','combo'];
   const rows = reps.map((r) => [

@@ -36,7 +36,7 @@ class RaidSession(
     private val onStandingChanged: (List<RaidStanding>) -> Unit = { _ -> },
 ) {
     private companion object {
-        const val TAG = "ClashFit/raid"
+        const val TAG = "Fitmon/raid"
         const val HEARTBEAT_MS = 1200L
         const val LOST_AFTER_MS = 4000L
     }

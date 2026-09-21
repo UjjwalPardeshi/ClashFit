@@ -1,6 +1,6 @@
 # 28 · Judge-Proofing
 
-Every claim ClashFit makes, the defence, and **the evidence you show.** A team that answers a hard
+Every claim Fitmon makes, the defence, and **the evidence you show.** A team that answers a hard
 question with a number and a screen wins the exchange. A team that answers with adjectives loses it.
 
 **Rehearse these out loud on Saturday.** Harvest the real questions at Eval R1 and add them here

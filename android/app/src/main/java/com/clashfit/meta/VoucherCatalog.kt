@@ -20,9 +20,9 @@ data class Voucher(
 enum class VoucherKind { NUTRITION, GEAR, GYM, RECOVERY, CLINIC }
 
 /**
- * The vouchers ClashFit can award, and what earns each one.
+ * The vouchers Fitmon can award, and what earns each one.
  *
- * The partners are ClashFit's own: five brands built for this programme rather than licensed from
+ * The partners are Fitmon's own: five brands built for this programme rather than licensed from
  * anybody, which is why the offers can be stated plainly instead of hedged. Nothing here claims a
  * relationship with a company that has not agreed to one.
  *

@@ -104,7 +104,7 @@ private fun RecordAudioPermissionRationale(
             )
 
             Text(
-                text = "ClashFit uses your microphone to recognise voice commands like \"stop\" " +
+                text = "Fitmon uses your microphone to recognise voice commands like \"stop\" " +
                     "and \"next\". Everything is processed locally on your phone.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Ink,

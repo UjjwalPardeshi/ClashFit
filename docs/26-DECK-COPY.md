@@ -12,7 +12,7 @@ Slot markers `[LIKE THIS]` need your input.
 
 ## Slide 1 · Title
 
-> # ClashFit
+> # Fitmon
 > ### Offline AI fitness combat
 >
 > Your body is the controller. Your camera is the referee.

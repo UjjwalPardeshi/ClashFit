@@ -34,7 +34,7 @@ import com.clashfit.ui.screens.session.PAUSE_TARGET_INSET
 import com.clashfit.ui.screens.session.PauseTarget
 import com.clashfit.ui.screens.session.PlayerBar
 import com.clashfit.ui.screens.session.RepCounter
-import com.clashfit.ui.theme.ClashFitTheme
+import com.clashfit.ui.theme.FitmonTheme
 import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.InkMuted
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
@@ -122,7 +122,7 @@ class FightHudScreenshotTest {
         nextAttackInMs: Long? = null,
     ) {
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 // Ground stands in for the camera preview, which cannot render on the JVM.
                 Box(Modifier.fillMaxSize().background(Ground)) {
                     BossFigure(state, jolt = 0f, shake = 0f, Modifier.fillMaxSize().padding(top = 90.dp, bottom = 160.dp))
@@ -202,7 +202,7 @@ class FightHudScreenshotTest {
     /** A duel: the rope, with you ahead. */
     @Test fun duelAhead() {
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 Box(Modifier.fillMaxSize().background(Ground), contentAlignment = Alignment.Center) {
                     Column(Modifier.padding(16.dp)) {
                         LinkStripPreview(myDamage = 640, theirDamage = 415)

@@ -28,7 +28,7 @@ class DeskReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Log.d(TAG, "DeskReceiver: firing")
 
-        val graph = (context.applicationContext as? com.clashfit.ClashFitApp)?.graph ?: return
+        val graph = (context.applicationContext as? com.clashfit.FitmonApp)?.graph ?: return
         val pendingResult = goAsync()
         val scope = CoroutineScope(Dispatchers.IO)
 
@@ -109,7 +109,7 @@ class DeskReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        private const val TAG = "ClashFit/desk"
+        private const val TAG = "Fitmon/desk"
         const val EXTRA_DESK_EXERCISE_ID = "desk_exercise_id"
         private const val DESK_CHANNEL_ID = "desk"
         private const val DESK_NOTIFICATION_ID = 43

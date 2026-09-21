@@ -1,6 +1,6 @@
 # 25 · Clinic Mode — Validated Assessments
 
-**Why this exists.** Everything else in ClashFit measures quantities we invented. Clinic Mode
+**Why this exists.** Everything else in Fitmon measures quantities we invented. Clinic Mode
 measures quantities that clinicians already use, with protocols that already have published
 normative data. That changes the impact claim from *"we made a fitness game"* to *"we put a set of
 standard functional assessments on a phone that anyone already owns."*

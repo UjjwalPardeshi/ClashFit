@@ -43,7 +43,7 @@ import com.clashfit.ui.screens.social.LeaderboardScreen
 import com.clashfit.ui.screens.social.WeeklyScreen
 import com.clashfit.ui.screens.streaks.StreaksScreen
 import com.clashfit.ui.screens.you.YouScreen
-import com.clashfit.ui.theme.ClashFitTheme
+import com.clashfit.ui.theme.FitmonTheme
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
@@ -82,7 +82,7 @@ class ScreenshotTest {
      */
     private fun shot(name: String, route: Route, content: @Composable (NavHostController) -> Unit) {
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 val nav = rememberNavController()
                 MainScaffold(nav) { padding ->
                     NavHost(nav, startDestination = route, modifier = Modifier.padding(padding).consumeWindowInsets(padding)) {
@@ -100,7 +100,7 @@ class ScreenshotTest {
     }
 
     private fun bare(name: String, content: @Composable () -> Unit) {
-        compose.setContent { ClashFitTheme { content() } }
+        compose.setContent { FitmonTheme { content() } }
         settle()
         compose.onRoot().captureRoboImage("screenshots/$name.png")
     }
@@ -179,7 +179,7 @@ class WideScreenshotTest {
 
     private fun shot(name: String, route: Route, content: @Composable (NavHostController) -> Unit) {
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 val nav = rememberNavController()
                 MainScaffold(nav) { padding ->
                     NavHost(nav, startDestination = route, modifier = Modifier.padding(padding).consumeWindowInsets(padding)) {

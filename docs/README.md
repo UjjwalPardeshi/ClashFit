@@ -1,4 +1,4 @@
-# ClashFit — Documentation Index
+# Fitmon — Documentation Index
 
 **Event:** iQOO Hackathon 2026 · Pune City Battle · Working-Professional bucket
 **Team:** Omkar Kadam, Ujjwal (2 builders, 2 loaner iQOO 15 devices)
@@ -94,7 +94,7 @@ check-in we open a fresh repository and implement against these specs.
 ## The three sentences that matter
 
 1. **Camera-based fitness apps upload the most intimate footage you own. We never do — pose and the LLM coach both run on the Snapdragon NPU, airplane mode on.**
-2. **ClashFit reads fatigue from your movement — velocity decay, collapsing range of motion, tempo drift — and the boss adapts in real time.**
+2. **Fitmon reads fatigue from your movement — velocity decay, collapsing range of motion, tempo drift — and the boss adapts in real time.**
 3. **The phone is not a screen. It is the sensor, the referee, the coach and the opponent.**
 
 Everything in these docs exists to make those three sentences true and demonstrable in front of a jury.

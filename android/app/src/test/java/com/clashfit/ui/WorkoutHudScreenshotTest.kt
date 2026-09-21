@@ -12,7 +12,7 @@ import com.clashfit.core.model.Family
 import com.clashfit.core.model.RepRecord
 import com.clashfit.core.model.Verdict
 import com.clashfit.ui.screens.session.WorkoutHud
-import com.clashfit.ui.theme.ClashFitTheme
+import com.clashfit.ui.theme.FitmonTheme
 import com.clashfit.ui.theme.Ground
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
@@ -57,7 +57,7 @@ class WorkoutHudScreenshotTest {
         framingLost: Boolean = false,
     ) {
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 // Ground stands in for the camera, which cannot render on the JVM.
                 Box(Modifier.fillMaxSize().background(Ground)) {
                     WorkoutHud(

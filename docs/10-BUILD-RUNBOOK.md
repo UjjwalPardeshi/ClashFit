@@ -71,7 +71,7 @@ duel with no differentiator is the one outcome worse than shipping no duel.
 ## 4. Standing rules
 
 1. **Golden APK.** After every green build that demonstrably works, copy the APK to
-   `/sdcard/ClashFit/golden/<timestamp>.apk` on both phones. If the tree breaks at 03:00 and cannot
+   `/sdcard/Fitmon/golden/<timestamp>.apk` on both phones. If the tree breaks at 03:00 and cannot
    be fixed, you still have a demo.
 2. **Commit every 30 minutes**, message or not. `git commit -am wip` is fine.
 3. **No new dependency after Saturday 19:00.** A Gradle sync at 02:00 is how weekends die.

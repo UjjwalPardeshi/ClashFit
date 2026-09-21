@@ -19,7 +19,7 @@ import com.clashfit.ui.nav.Roster
 import com.clashfit.ui.nav.Route
 import com.clashfit.ui.nav.RunSummary
 import com.clashfit.ui.screens.roster.RosterScreen
-import com.clashfit.ui.theme.ClashFitTheme
+import com.clashfit.ui.theme.FitmonTheme
 import com.github.takahirom.roborazzi.captureRoboImage
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
@@ -48,7 +48,7 @@ class LobbyScreenshotTest {
 
     private fun shot(name: String, route: Route, content: @Composable (NavHostController) -> Unit) {
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 val nav = rememberNavController()
                 NavHost(nav, startDestination = route) { composable(route::class) { content(nav) } }
             }

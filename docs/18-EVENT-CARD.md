@@ -46,7 +46,7 @@ Light. Confirm this before you travel. [30-RULES-DELTA](30-RULES-DELTA.md) §1.
 
 ## Ten standing rules
 
-1. **Golden APK** on both phones after every working build. `/sdcard/ClashFit/golden/`
+1. **Golden APK** on both phones after every working build. `/sdcard/Fitmon/golden/`
 2. Commit every 30 minutes
 3. **No new dependency after Sat 19:00**
 4. **No contract change after Sat 19:00** — write an adapter
@@ -96,7 +96,7 @@ Light. Confirm this before you travel. [30-RULES-DELTA](30-RULES-DELTA.md) §1.
 
 1. Every camera fitness app uploads the most intimate footage you own. **We never do** — pose and the
    coach both run on the NPU, airplane mode on.
-2. **ClashFit reads fatigue from your movement** — velocity decay, range-of-motion collapse, tempo
+2. **Fitmon reads fatigue from your movement** — velocity decay, range-of-motion collapse, tempo
    drift — and the boss adapts in real time.
 3. The phone isn't a screen here. It's the **sensor, the referee, the coach and the opponent**.
 

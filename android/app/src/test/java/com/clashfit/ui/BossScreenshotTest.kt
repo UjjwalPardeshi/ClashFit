@@ -18,7 +18,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import com.clashfit.core.model.CombatState
 import com.clashfit.ui.screens.session.BossFigure
-import com.clashfit.ui.theme.ClashFitTheme
+import com.clashfit.ui.theme.FitmonTheme
 import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.InkMuted
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
@@ -74,7 +74,7 @@ class BossScreenshotTest {
             "Death" to Triple(boss(0.0f, "desperation", dead = true), 0f, 0f),
         )
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 Column(Modifier.fillMaxSize().background(Ground).padding(8.dp)) {
                     states.chunked(3).forEach { row ->
                         Row(Modifier.fillMaxWidth().height(230.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {

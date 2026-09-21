@@ -1,6 +1,6 @@
 # 34 · Accounts, Leaderboards and the Social Layer
 
-**Why this exists.** Everything ClashFit measures happens on one phone, and for most of the build
+**Why this exists.** Everything Fitmon measures happens on one phone, and for most of the build
 that was the whole story. But a fitness game with no one else in it is a stopwatch. This document
 describes the layer that puts other people on the screen — accounts, friends, boards, levels,
 badges and a weekly target — and, just as importantly, the line it will not cross: **nothing that

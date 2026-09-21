@@ -25,7 +25,7 @@ import com.clashfit.ui.components.Heatmap
 import com.clashfit.ui.components.RadarChart
 import com.clashfit.ui.components.StackedBar
 import com.clashfit.ui.components.TrendLine
-import com.clashfit.ui.theme.ClashFitTheme
+import com.clashfit.ui.theme.FitmonTheme
 import com.clashfit.ui.theme.Clean
 import com.clashfit.ui.theme.Ground
 import com.clashfit.ui.theme.Ink
@@ -62,7 +62,7 @@ class ChartsScreenshotTest {
         val days = List(84) { if (rng.nextInt(10) < 6) rng.nextFloat() else 0f }
 
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 Column(
                     Modifier.fillMaxSize().background(Ground).verticalScroll(rememberScrollState()).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),

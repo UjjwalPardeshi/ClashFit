@@ -236,4 +236,4 @@ class FirestoreLeaderboard(
     }
 }
 
-private const val TAG = "ClashFit/board"
+private const val TAG = "Fitmon/board"

@@ -63,7 +63,7 @@ class MediaPipePoseSource(
     private val scope: CoroutineScope,
 ) : PoseSource, CameraPreviewSource, GestureSource, FrameSource {
 
-    private val TAG = "ClashFit/perception"
+    private val TAG = "Fitmon/perception"
     /**
      * Frames reach the engine newest-first and in order.
      *

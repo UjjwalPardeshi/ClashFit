@@ -17,7 +17,7 @@ keeps ringing until the camera has counted them.
 
 The point is not novelty. It is that the hardest part of a morning session is
 being upright, and an alarm that cannot be dismissed from bed solves exactly
-that. Nothing else in ClashFit reaches the user before they have decided to
+that. Nothing else in Fitmon reaches the user before they have decided to
 train; this does.
 
 ## Rules

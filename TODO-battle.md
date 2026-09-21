@@ -1,4 +1,4 @@
-# ClashFit · battle build · 4 Sep 2026
+# Fitmon · battle build · 4 Sep 2026
 
 Event is 5–6 Sep. Priority: polish first, then close promise gaps by visibility.
 
@@ -53,14 +53,14 @@ has never run on a device.
 - [ ] Install and open Settings → 3D boss preview. If it renders, we are done.
 - [ ] One real fight end to end: camera full screen, exo-suit tracking, boss
       standing in the frame, a rep landing
-- [ ] Walk the whole app on the test account (`omkar.test@clashfit.app`)
+- [ ] Walk the whole app on the test account (`omkar.test@fitmon.app`)
 
 If the boss looks wrong on the day, turn off **Settings → 3D boss**. The fight
 is identical; only the boss's rendering changes.
 
 ## Firebase — done
 
-Rules and indexes are deployed to `clashfit-1d337`, which is the same project the
+Rules and indexes are deployed to `fitmon-1d337`, which is the same project the
 app is built against. The leaderboard is live: sign in and the board loads.
 
 All nine rule checks pass against the live project (`python3

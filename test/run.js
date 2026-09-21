@@ -444,7 +444,7 @@ t('TIME_ATTACK · no reps counted after the clock stops', () => {
 });
 
 t('GHOST_RACE · ghost damage lands through the duel path', () => {
-  const g = { type: 'clashfit-ghost', v: 1, meta: { name: 'T' },
+  const g = { type: 'fitmon-ghost', v: 1, meta: { name: 'T' },
               events: Array.from({ length: 10 }, (_, i) => ({ t: (i + 1) * 1500, damage: 70 })) };
   const e = new SessionEngine(store, 'squat');
   e.loadGhost(g);
@@ -454,7 +454,7 @@ t('GHOST_RACE · ghost damage lands through the duel path', () => {
 });
 
 t('GHOST_RACE · replaying the same ghost twice is idempotent', () => {
-  const g = { type: 'clashfit-ghost', v: 1, meta: {},
+  const g = { type: 'fitmon-ghost', v: 1, meta: {},
               events: [{ t: 500, damage: 100 }, { t: 900, damage: 100 }] };
   const src = new GhostSource(g);
   src.start(0);
@@ -821,7 +821,7 @@ const mkSession = (endedAt, exerciseId = 'squat', reps = 8, form = 0.8) => ({
 
 t('store · survives corrupt storage instead of taking the app down', () => {
   const b = memBackend();
-  b.setItem('clashfit:v1', '{ this is not json');
+  b.setItem('fitmon:v1', '{ this is not json');
   const s2 = new Store(b);
   eq(s2.sessions.length, 0);
   s2.saveSession(mkSession(Date.now()));

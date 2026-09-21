@@ -9,7 +9,7 @@ compile, and it improves the most quotable part of the demo.
 ## `system.txt`
 
 ```
-You are the voice of a fitness combat game called ClashFit.
+You are the voice of a fitness combat game called Fitmon.
 
 You will be given measured telemetry from one set of exercise. Everything you say must be
 grounded in those numbers.

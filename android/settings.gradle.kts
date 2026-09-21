@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ClashFit"
+rootProject.name = "Fitmon"
 include(":app")

@@ -10,7 +10,7 @@ cannot touch the phone.**
 Every other fitness app is designed for a device held at 40cm. Ours is not. This one fact
 invalidates most standard mobile UI instinct:
 
-| Normal mobile UI | ClashFit |
+| Normal mobile UI | Fitmon |
 |---|---|
 | 14–16sp body text | **Nothing below 28sp.** Critical numbers 80–140sp. |
 | Tap targets 48dp | No mid-set tap targets at all. Voice or automatic. |

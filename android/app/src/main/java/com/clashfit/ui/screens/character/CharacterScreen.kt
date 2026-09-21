@@ -124,7 +124,7 @@ fun CharacterScreen(graph: AppGraph, nav: NavHostController) {
                         DomainBar(d, 0f, dimmed = true)
                     }
                     Text(
-                        "Energy comes from sleep and Nourishment from meals. ClashFit measures neither, so it will not " +
+                        "Energy comes from sleep and Nourishment from meals. Fitmon measures neither, so it will not " +
                             "put a number on either one.",
                         style = MaterialTheme.typography.bodySmall, color = InkFaint,
                     )

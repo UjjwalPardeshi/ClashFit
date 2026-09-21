@@ -1,8 +1,8 @@
-# ClashFit Exercise Detection — Source of Truth
+# Fitmon Exercise Detection — Source of Truth
 
 **Version:** 1.0  
 **Last updated:** 2026-09-05  
-**Purpose:** Single authoritative reference for MediaPipe Pose landmark indices, angle conventions, state machines, feature calculation, form validation, and per-exercise configuration used by the ClashFit application.
+**Purpose:** Single authoritative reference for MediaPipe Pose landmark indices, angle conventions, state machines, feature calculation, form validation, and per-exercise configuration used by the Fitmon application.
 
 All numeric thresholds are **initial detector values**. They must be tuned against real landmark traces. They are not universal biomechanical standards.
 
@@ -338,7 +338,7 @@ FormValidator
 │ BALLISTIC   │ POSE_MATCH  │              │
 └─────────────┴─────────────┴──────────────┘
   ↓
-RESULT → ClashFit scoring
+RESULT → Fitmon scoring
 ```
 
 Form validation is **separated** from rep/hold counting.

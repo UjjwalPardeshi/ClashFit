@@ -1,6 +1,6 @@
 # 00 · Product Requirements Document
 
-**Product:** ClashFit — Offline AI Fitness Combat
+**Product:** Fitmon — Offline AI Fitness Combat
 **Status:** Pre-build. Locked for the Pune City Battle unless an ADR supersedes.
 **Owners:** Omkar (Android + perception), Ujjwal (game systems + inference)
 
@@ -36,7 +36,7 @@ per-rep on-device.
 
 ## 3. Users
 
-| Persona | Situation | What ClashFit gives them |
+| Persona | Situation | What Fitmon gives them |
 |---|---|---|
 | **The lapsed starter** (primary) | Downloaded three fitness apps, quit all three inside two weeks. Owns no equipment. Trains at home or not at all. | A reason to do the next set that isn't discipline. Progression that survives a missed day. |
 | **The form-anxious beginner** | Wants to train but is genuinely unsure whether they are doing it right, and won't go to a gym to find out. | A referee that tells them, per rep, what was wrong — without a human watching. |

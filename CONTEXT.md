@@ -1,4 +1,4 @@
-# ClashFit — context for a new session
+# Fitmon — context for a new session
 
 Read this first if you are joining the project, with or without Claude. It is the map, the rules
 that are easy to break, and the parts that are not obvious from the code.
@@ -33,7 +33,7 @@ frames and landmarks never leave it. Built for the iQOO Hackathon 2026, Pune Cit
 
 ## 2. Rules that are easy to break
 
-1. **Push to both remotes.** `origin` is `omkarrr88/ClashFit`, `fork` is `UjjwalPardeshi/ClashFit`.
+1. **Push to both remotes.** `origin` is `omkarrr88/Fitmon`, `fork` is `UjjwalPardeshi/Fitmon`.
    Vercel deploys from the fork, so `git push origin main && git push fork main` every time.
 2. **The two config copies must stay identical.** Edit `config/exercises/<id>.json`, then copy it to
    `android/app/src/main/assets/config/exercises/<id>.json`. Both `index.json` files list every id

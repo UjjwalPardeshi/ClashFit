@@ -22,7 +22,7 @@ class Haptics(
     private val prefs: Prefs,
     private val scope: CoroutineScope? = null,
 ) {
-    private val tag = "ClashFit/audio"
+    private val tag = "Fitmon/audio"
     private val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
     } else {

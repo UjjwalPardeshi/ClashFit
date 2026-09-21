@@ -111,7 +111,7 @@ fun FriendsScreen(graph: AppGraph, onBack: () -> Unit) {
                             myCode?.let { clipboard.setText(AnnotatedString(it)) }
                         }
                         SecondaryButton("Share", Modifier.weight(1f), enabled = myCode != null) {
-                            val text = "Add me on ClashFit. My friend code is ${myCode ?: ""}."
+                            val text = "Add me on Fitmon. My friend code is ${myCode ?: ""}."
                             context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }, "Share your code"))
                         }
                     }

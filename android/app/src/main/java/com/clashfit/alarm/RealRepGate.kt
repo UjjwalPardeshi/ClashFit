@@ -252,7 +252,7 @@ class RealRepGate(
     }
 
     private companion object {
-        const val TAG = "ClashFit/alarm"
+        const val TAG = "Fitmon/alarm"
         const val LANDMARK_COUNT = 33
         const val CONFIG_WAIT_MS = 4_000L
         const val LOST_POSE_MS = 2_000L

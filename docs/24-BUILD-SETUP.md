@@ -215,7 +215,7 @@ The lookup you would otherwise be searching for mid-build. 33 landmarks, both im
 | **15** | **left_wrist** | | 32 | right_foot_index |
 | **16** | **right_wrist** | | | |
 
-**Bold = every landmark ClashFit actually uses.** Eleven of thirty-three.
+**Bold = every landmark Fitmon actually uses.** Eleven of thirty-three.
 
 - **Squat angle** = angle(23/24 hip, 25/26 knee, 27/28 ankle)
 - **Push-up angle** = angle(11/12 shoulder, 13/14 elbow, 15/16 wrist)

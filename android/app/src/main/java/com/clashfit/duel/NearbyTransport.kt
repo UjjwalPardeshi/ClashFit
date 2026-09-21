@@ -42,7 +42,7 @@ class NearbyTransport(
 ) : DuelTransport {
 
     private companion object {
-        const val TAG = "ClashFit/Nearby"
+        const val TAG = "Fitmon/Nearby"
         const val SERVICE_ID = "com.clashfit.duel"
         /** Nearby needs the radios; say which ones rather than "something went wrong". */
         const val RADIO_HINT = "Could not open the link. Turn on Bluetooth, Wi-Fi and Location, then try again."

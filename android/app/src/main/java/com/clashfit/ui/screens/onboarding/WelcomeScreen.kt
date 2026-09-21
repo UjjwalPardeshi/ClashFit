@@ -56,7 +56,7 @@ fun WelcomeScreen(onCreateAccount: () -> Unit, onSignIn: () -> Unit, onSkip: () 
                 Icon(AppIcons.Bolt, contentDescription = null, tint = Ground, modifier = Modifier.size(16.dp))
             }
             Spacer(Modifier.width(10.dp))
-            Text("ClashFit", style = MaterialTheme.typography.titleMedium, color = Ink)
+            Text("Fitmon", style = MaterialTheme.typography.titleMedium, color = Ink)
         }
 
         HorizontalPager(pager, Modifier.weight(1f)) { i ->

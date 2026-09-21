@@ -418,7 +418,7 @@ clip("death", death_tracks)
 
 _pad4()
 gltf = {
-    "asset": {"version": "2.0", "generator": "ClashFit tools/make-boss.py"},
+    "asset": {"version": "2.0", "generator": "Fitmon tools/make-boss.py"},
     "extensionsUsed": ["KHR_materials_emissive_strength"],
     "scene": 0,
     "scenes": [{"name": "pacemaker", "nodes": [root]}],

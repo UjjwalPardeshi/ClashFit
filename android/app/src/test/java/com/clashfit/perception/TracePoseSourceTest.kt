@@ -35,7 +35,7 @@ class TracePoseSourceTest {
     @Test
     fun `replays trace with correct landmark count`() = runBlocking {
         val trace = """
-            {"type":"clashfit-trace","v":1,"keep":[11,12,13,14,15,16,23,24,25,26,27,28,29,30,31,32],"meta":{},"frames":2}
+            {"type":"fitmon-trace","v":1,"keep":[11,12,13,14,15,16,23,24,25,26,27,28,29,30,31,32],"meta":{},"frames":2}
             {"t":0,"lm":[[-0.12,-0.45,0,0.95],[0.12,-0.45,0,0.95],[-0.12,-0.25,0,0.9],[0.12,-0.25,0,0.9],[-0.12,-0.05,0,0.9],[0.12,-0.05,0,0.9],[-0.12,0,0,0.95],[0.12,0,0,0.95],[-0.12,0.42,0,0.95],[0.12,0.42,0,0.95],[-0.0615,0.8359,0,0.95],[0.1785,0.8359,0,0.95],[-0.0615,0.8359,0,0.95],[0.1785,0.8359,0,0.95],[-0.0615,0.8359,0,0.95],[0.1785,0.8359,0,0.95]]}
             {"t":33,"lm":[[-0.12,-0.45,0,0.95],[0.12,-0.45,0,0.95],[-0.12,-0.25,0,0.9],[0.12,-0.25,0,0.9],[-0.12,-0.05,0,0.9],[0.12,-0.05,0,0.9],[-0.12,0,0,0.95],[0.12,0,0,0.95],[-0.12,0.42,0,0.95],[0.12,0.42,0,0.95],[-0.0615,0.8359,0,0.95],[0.1785,0.8359,0,0.95],[-0.0615,0.8359,0,0.95],[0.1785,0.8359,0,0.95],[-0.0615,0.8359,0,0.95],[0.1785,0.8359,0,0.95]]}
         """.trimIndent()
@@ -58,7 +58,7 @@ class TracePoseSourceTest {
     @Test
     fun `reconstructs full landmark array from sparse representation`() = runBlocking {
         val trace = """
-            {"type":"clashfit-trace","v":1,"keep":[11,12,13],"meta":{},"frames":1}
+            {"type":"fitmon-trace","v":1,"keep":[11,12,13],"meta":{},"frames":1}
             {"t":0,"lm":[[1.0,2.0,3.0,0.9],[4.0,5.0,6.0,0.8],[7.0,8.0,9.0,0.7]]}
         """.trimIndent()
 
@@ -96,7 +96,7 @@ class TracePoseSourceTest {
     @Test
     fun `emits fps measurements`() = runBlocking {
         val trace = """
-            {"type":"clashfit-trace","v":1,"keep":[11,12,13,14,15,16,23,24,25,26,27,28,29,30,31,32],"meta":{},"frames":11}
+            {"type":"fitmon-trace","v":1,"keep":[11,12,13,14,15,16,23,24,25,26,27,28,29,30,31,32],"meta":{},"frames":11}
             ${(0..10).joinToString("\n") { i ->
                 """{"t":${i * 33},"lm":[[-0.12,-0.45,0,0.95],[0.12,-0.45,0,0.95],[-0.12,-0.25,0,0.9],[0.12,-0.25,0,0.9],[-0.12,-0.05,0,0.9],[0.12,-0.05,0,0.9],[-0.12,0,0,0.95],[0.12,0,0,0.95],[-0.12,0.42,0,0.95],[0.12,0.42,0,0.95],[-0.0615,0.8359,0,0.95],[0.1785,0.8359,0,0.95],[-0.0615,0.8359,0,0.95],[0.1785,0.8359,0,0.95],[-0.0615,0.8359,0,0.95],[0.1785,0.8359,0,0.95]]}"""
             }}
@@ -118,7 +118,7 @@ class TracePoseSourceTest {
     @Test
     fun `handles empty trace gracefully`() = runBlocking {
         val trace = """
-            {"type":"clashfit-trace","v":1,"keep":[],"meta":{},"frames":0}
+            {"type":"fitmon-trace","v":1,"keep":[],"meta":{},"frames":0}
         """.trimIndent()
 
         val source = TracePoseSource({ trace }, clock, scope, replayRealTiming = false)
@@ -134,7 +134,7 @@ class TracePoseSourceTest {
     @Test
     fun `handles malformed frames by skipping them`() = runBlocking {
         val trace = """
-            {"type":"clashfit-trace","v":1,"keep":[11,12],"meta":{},"frames":2}
+            {"type":"fitmon-trace","v":1,"keep":[11,12],"meta":{},"frames":2}
             {"t":0,"lm":[[1.0,2.0,3.0,0.9],[4.0,5.0,6.0,0.8]]}
             {"t":33,"invalid":"json"}
         """.trimIndent()

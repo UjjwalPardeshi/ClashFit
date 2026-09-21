@@ -24,7 +24,7 @@ import com.clashfit.ui.screens.modes.ModesScreen
 import com.clashfit.ui.screens.progress.ProgressScreen
 import com.clashfit.ui.screens.social.CompeteScreen
 import com.clashfit.ui.screens.you.YouScreen
-import com.clashfit.ui.theme.ClashFitTheme
+import com.clashfit.ui.theme.FitmonTheme
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
 import org.junit.Test
@@ -51,7 +51,7 @@ class NarrowPhoneScreenshotTest {
 
     private fun shot(name: String, route: Route, content: @Composable (NavHostController) -> Unit) {
         compose.setContent {
-            ClashFitTheme {
+            FitmonTheme {
                 val nav = rememberNavController()
                 MainScaffold(nav) { padding ->
                     NavHost(nav, startDestination = route, modifier = Modifier.padding(padding).consumeWindowInsets(padding)) {

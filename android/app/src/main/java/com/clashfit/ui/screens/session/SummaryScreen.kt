@@ -121,7 +121,7 @@ class SummaryViewModel(private val graph: AppGraph, private val sessionId: Long)
         viewModelScope.launch {
             val file = withContext(Dispatchers.IO) {
                 val dir = File(context.filesDir, "export").apply { mkdirs() }
-                val f = File(dir, "clashfit-${d.session.exerciseId}-${d.session.id}.csv")
+                val f = File(dir, "fitmon-${d.session.exerciseId}-${d.session.id}.csv")
                 f.bufferedWriter().use { w ->
                     w.appendLine("repIndex,tStartMs,tEndMs,formScore,depth,rom,tempo,alignment,reason,verdict,concentricVelocity,damage,combo,fatigue,band,validFrameRatio,depthCm,heightCm,holdSec")
                     for (r in d.reps) {
@@ -142,7 +142,7 @@ class SummaryViewModel(private val graph: AppGraph, private val sessionId: Long)
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/csv"
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, "ClashFit Session · ${d.session.exerciseId}")
+                putExtra(Intent.EXTRA_SUBJECT, "Fitmon Session · ${d.session.exerciseId}")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             context.startActivity(Intent.createChooser(shareIntent, "Share CSV export"))
@@ -156,7 +156,7 @@ class SummaryViewModel(private val graph: AppGraph, private val sessionId: Long)
             try {
                 val pngFile = withContext(Dispatchers.IO) {
                     val dir = File(context.filesDir, "export").apply { mkdirs() }
-                    val f = File(dir, "clashfit-${d.session.exerciseId}-${d.session.id}.png")
+                    val f = File(dir, "fitmon-${d.session.exerciseId}-${d.session.id}.png")
 
                     // Render summary card to a bitmap
                     val bitmap = createSummaryCardBitmap(d)
@@ -174,7 +174,7 @@ class SummaryViewModel(private val graph: AppGraph, private val sessionId: Long)
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "image/png"
                     putExtra(Intent.EXTRA_STREAM, uri)
-                    putExtra(Intent.EXTRA_SUBJECT, "ClashFit Session · ${d.session.exerciseId}")
+                    putExtra(Intent.EXTRA_SUBJECT, "Fitmon Session · ${d.session.exerciseId}")
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
                 context.startActivity(Intent.createChooser(shareIntent, "Share result"))
@@ -197,7 +197,7 @@ class SummaryViewModel(private val graph: AppGraph, private val sessionId: Long)
 
         // Title
         var y = 60f
-        drawTextCentered(canvas, "ClashFit", y, 48f, 0xFFFFFFFF.toInt())
+        drawTextCentered(canvas, "Fitmon", y, 48f, 0xFFFFFFFF.toInt())
         y += 80f
 
         // Exercise name
@@ -244,7 +244,7 @@ class SummaryViewModel(private val graph: AppGraph, private val sessionId: Long)
 
     private fun shareTextSummary(context: Context, d: SummaryData) {
         val text = """
-            ClashFit Session
+            Fitmon Session
             ${d.session.exerciseId.replace('_', ' ')}
 
             Reps: ${d.session.totalReps}
@@ -255,7 +255,7 @@ class SummaryViewModel(private val graph: AppGraph, private val sessionId: Long)
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_TEXT, text)
-            putExtra(Intent.EXTRA_SUBJECT, "ClashFit Session · ${d.session.exerciseId}")
+            putExtra(Intent.EXTRA_SUBJECT, "Fitmon Session · ${d.session.exerciseId}")
         }
         context.startActivity(Intent.createChooser(shareIntent, "Share result"))
     }

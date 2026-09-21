@@ -1,6 +1,6 @@
 # 20 · Solo, Versus, Co-op and Community
 
-Every mode ClashFit supports, from one person alone to a room full of people to an offline
+Every mode Fitmon supports, from one person alone to a room full of people to an offline
 community. **Weekend reality is §6** — kept separate so scope decisions stay yours.
 
 ---

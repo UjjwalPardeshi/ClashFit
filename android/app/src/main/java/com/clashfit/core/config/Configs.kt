@@ -207,7 +207,7 @@ data class ExerciseIndex(val count: Int = 0, val exercises: List<Entry> = emptyL
 /** A recorded rep timeline. A ghost is a file you can send. */
 @Serializable
 data class GhostData(
-    val type: String = "clashfit-ghost",
+    val type: String = "fitmon-ghost",
     val v: Int = 1,
     val meta: Meta,
     val events: List<Event>,

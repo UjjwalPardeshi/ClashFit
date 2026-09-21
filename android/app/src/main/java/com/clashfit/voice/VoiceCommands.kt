@@ -27,7 +27,7 @@ class VoiceCommands(
     private val context: Context,
     private val scope: CoroutineScope,
 ) {
-    private val tag = "ClashFit/voice"
+    private val tag = "Fitmon/voice"
     private val recognizer = SpeechRecognizer.createSpeechRecognizer(context)
 
     private val _commands = MutableSharedFlow<Command>(replay = 0)
