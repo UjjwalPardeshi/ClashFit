@@ -17,8 +17,11 @@ python3 render.py index.html frames Fitmon-Product-Deck.pdf
 ```
 
 `build.py` embeds the screenshots as data URIs sized by height (the captures are
-1078×2399, so width-sizing overflows a 1080-tall slide) and inlines Anton, Archivo
-and Barlow Condensed as base64, so the HTML and the PDF are both self-contained.
+1078×2399, so width-sizing overflows a 1080-tall slide) and inlines `fonts.css` —
+Anton, Archivo and Barlow Condensed as base64 — so the HTML and the PDF are both
+self-contained. `fonts.css` is checked in for exactly that reason: without it the
+build cannot be reproduced, and it used to be read from a scratch directory that
+did not survive the session that made it.
 
 `render.py` shows one `.slide` at a time in headless Chromium at 2× and screenshots
 each, then assembles the frames with Pillow. Chrome's own print-to-PDF was not used:

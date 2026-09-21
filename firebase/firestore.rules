@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// ClashFit. Only scores, display names and levels live here. No camera frame, no pose landmark
+// Fitmon. Only scores, display names and levels live here. No camera frame, no pose landmark
 // and no rep timeline is ever written to Firestore, so nothing in this file needs to guard them.
 service cloud.firestore {
   match /databases/{database}/documents {

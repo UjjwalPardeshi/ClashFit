@@ -262,7 +262,7 @@ Burpee · Squat thrust · Jump squat · Tuck jump · Star jump · Lateral bound 
 > Two rules go beyond fitmon, because fitmon miscounts without them: an overhead exercise needs
 > the wrist above the shoulder to be at rest, and dropping the arm clears the stage, so curling at your sides after
 > an overhead set cannot count. Every other exercise follows
-> `ClashFit_Exercise_Detection_Source_of_Truth.md`.
+> `Fitmon_Exercise_Detection_Source_of_Truth.md`.
 
 > **Shipped, as of 5 Sep 2026: 57 of these 67.** Six additional upper-body strength exercises
 > were added to the catalogue: Bicep Curl, Lateral Raise, Front Raise, Shoulder Press, Overhead

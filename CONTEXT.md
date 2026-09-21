@@ -21,7 +21,7 @@ frames and landmarks never leave it. Built for the iQOO Hackathon 2026, Pune Cit
 | `config/exercises/`, `config/clinic/`, `config/ghosts/`, `config/*.json` | The prototype's copy of every exercise, clinic protocol, pacer ghost and tuning record. |
 | `android/app/src/main/assets/config/` | The app's copy of the same records. **Must stay byte-identical to `config/`.** |
 | `docs/` | Thirty-plus pre-event design documents. `docs/README.md` is the index. |
-| `ClashFit_Exercise_Detection_Source_of_Truth.md` | The authoritative spec for landmarks, angles and per-exercise detection. Newer than most of `docs/`. |
+| `Fitmon_Exercise_Detection_Source_of_Truth.md` | The authoritative spec for landmarks, angles and per-exercise detection. Newer than most of `docs/`. |
 | `tools/angles.html` | The angle-measuring page. Same model and filter as the phone, in a browser. |
 | `traces/` | Recorded landmark traces. `reference-*.jsonl` are the four picker animations as the shipped model reads them, replayed by `ReferenceFormTest`; `synthetic-f3-to-failure.jsonl` is replayed by `TraceReplayTest` and is duplicated into the app's assets. `tools/make-trace.js` writes new ones. |
 | `firebase/` | Firestore rules, indexes and the data model. Deployed with the Firebase CLI, not by the app. |
@@ -246,7 +246,7 @@ Two further rules were added on top of fitmon, because fitmon miscounts without 
 extension needs the wrist above the shoulder to be at rest, and dropping the arm clears the stage,
 so curling at your sides after an overhead set cannot count.
 
-Every other exercise follows `ClashFit_Exercise_Detection_Source_of_Truth.md`.
+Every other exercise follows `Fitmon_Exercise_Detection_Source_of_Truth.md`.
 
 ---
 

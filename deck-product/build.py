@@ -3,10 +3,10 @@
 import base64, io, os, sys
 from PIL import Image
 
-ROOT = '/home/palkia/code/stuff/hacks/iqoo/Fitmon'
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
 SHOTS = os.path.join(ROOT, 'android/app/screenshots')
-SP = '/tmp/claude-1000/-home-palkia-code-stuff-hacks-iqoo-Fitmon/71b0d431-fcb2-45f3-be33-f50e6e4a0231/scratchpad'
-FONTS = open(os.path.join(SP, 'fonts.css')).read()
+FONTS = open(os.path.join(HERE, 'fonts.css'), encoding='utf-8').read()
 
 _cache = {}
 def shot(name, h=700):
@@ -394,6 +394,6 @@ S.append(slide(f"""
 html = f"""<!doctype html><html><head><meta charset="utf-8"><title>Fitmon</title>
 <style>{FONTS}</style><style>{CSS}</style></head><body>{''.join(S)}</body></html>"""
 
-out = os.path.join(SP, 'deck.html')
-open(out, 'w').write(html)
+out = os.path.join(HERE, 'index.html')
+open(out, 'w', encoding='utf-8').write(html)
 print(f"{len(S)} slides -> {out}  ({len(html)/1e6:.1f} MB)")
