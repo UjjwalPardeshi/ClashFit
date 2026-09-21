@@ -30,3 +30,7 @@ ClashFit.pptx
 # come from clips the repo does not carry, and the frames are the source of every phone on the deck.
 ClashFit.pdf
 deck-assets/framed/
+# the deck build now writes these names; the ClashFit.* rules above still
+# cover the old artefacts sitting in working copies.
+Fitmon.pptx
+Fitmon.pdf
